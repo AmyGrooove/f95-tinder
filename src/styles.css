@@ -93,6 +93,30 @@ body {
   justify-content: flex-end;
 }
 
+.topBarNotice {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(182, 140, 58, 0.55);
+  background: rgba(92, 67, 18, 0.24);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topBarNoticeText {
+  flex: 1 1 320px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #ffe7b2;
+}
+
+.topBarNoticeButton {
+  flex-shrink: 0;
+}
+
 .swipeSessionBlock {
   display: grid;
   gap: 10px;
@@ -1617,6 +1641,13 @@ body {
   cursor: pointer;
 }
 
+.listItemCardUpdated {
+  border-color: rgba(86, 138, 255, 0.92);
+  box-shadow:
+    0 16px 28px rgba(47, 125, 255, 0.16),
+    inset 0 0 0 1px rgba(47, 125, 255, 0.08);
+}
+
 .listItemCoverLink {
   display: block;
 }
@@ -1634,6 +1665,38 @@ body {
   gap: 8px;
 }
 
+.listItemBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.listItemTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.listItemStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(42, 58, 87, 0.95);
+  background: rgba(18, 26, 40, 0.9);
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(233, 237, 245, 0.82);
+}
+
+.listItemStatusBadgeUpdated {
+  border-color: rgba(86, 138, 255, 0.92);
+  background: rgba(47, 125, 255, 0.14);
+  color: #d9e7ff;
+}
+
 .listItemTitle {
   font-weight: 900;
   font-size: 14px;
@@ -1646,6 +1709,16 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.listItemUpdateLine {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d9e7ff;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(86, 138, 255, 0.4);
+  background: rgba(47, 125, 255, 0.1);
 }
 
 .listItemActionsRow {

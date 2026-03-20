@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useF95Browser } from "./f95/useF95Browser";
-import { buildThreadLink } from "./f95/api";
+import {
+  buildThreadLink,
+  isLikelyCookieRefreshErrorMessage,
+} from "./f95/api";
 import {
   clearHiddenDownloadHosts,
   clearDisabledDownloadHosts,
@@ -22,12 +25,13 @@ import {
   hideDownloadHost,
   showDownloadHost,
 } from "./f95/downloads";
+import { countUpdatedTrackedItems } from "./f95/updateTracking";
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "./f95/utils";
 import { normalizeSessionState, normalizeTagsMap, saveSessionState, saveTagsMap } from "./f95/storage";
 import type { ListType, ProcessedThreadItem, ThreadDownloadsData } from "./f95/types";
 import { Dashboard } from "./components/Dashboard";
 import { DownloadModal } from "./components/DownloadModal";
-import { SettingsPage } from "./components/SettingsPage";
+import { SettingsPage, type SettingsTab } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
 
 const openLinkInNewTab = (link: string) => {
@@ -86,15 +90,59 @@ const createClosedDownloadModalState = (): DownloadModalState => ({
 
 type PageType = "swipe" | "dashboard" | "settings";
 
+const readHashRoute = () => {
+  const rawHashValue = window.location.hash.replace("#", "").trim().toLowerCase();
+  const [pageValue, queryValue = ""] = rawHashValue.split("?");
+
+  return {
+    pageValue,
+    searchParams: new URLSearchParams(queryValue),
+  };
+};
+
 const readPageFromHash = (): PageType => {
-  const hashValue = window.location.hash.replace("#", "").trim().toLowerCase();
-  if (hashValue === "dashboard") {
+  const { pageValue } = readHashRoute();
+  if (pageValue === "dashboard") {
     return "dashboard";
   }
-  if (hashValue === "settings") {
+  if (pageValue === "settings") {
     return "settings";
   }
   return "swipe";
+};
+
+const isSettingsTab = (value: string | null): value is SettingsTab => {
+  return (
+    value === "hosts" ||
+    value === "cookies" ||
+    value === "tags" ||
+    value === "data"
+  );
+};
+
+const readSettingsTabFromHash = (): SettingsTab | null => {
+  const { pageValue, searchParams } = readHashRoute();
+  if (pageValue !== "settings") {
+    return null;
+  }
+
+  const requestedTab = searchParams.get("tab");
+  return isSettingsTab(requestedTab) ? requestedTab : null;
+};
+
+const buildHashForPage = (
+  nextPageType: PageType,
+  nextSettingsTab: SettingsTab | null = null,
+) => {
+  if (nextPageType === "dashboard") {
+    return "#dashboard";
+  }
+
+  if (nextPageType === "settings") {
+    return nextSettingsTab ? `#settings?tab=${nextSettingsTab}` : "#settings";
+  }
+
+  return "#swipe";
 };
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -202,6 +250,7 @@ const App = () => {
     tagsMap,
     updateTagsMap,
     metadataSyncState,
+    startMetadataSync,
     moveLinkToList,
     removeLinkFromList,
   } = useF95Browser();
@@ -212,6 +261,8 @@ const App = () => {
   const [downloadModalState, setDownloadModalState] =
     useState<DownloadModalState>(() => createClosedDownloadModalState());
   const [pageType, setPageType] = useState<PageType>(() => readPageFromHash());
+  const [requestedSettingsTab, setRequestedSettingsTab] =
+    useState<SettingsTab | null>(() => readSettingsTabFromHash());
   const [preferredDownloadHosts, setPreferredDownloadHosts] = useState<string[]>(
     () => loadPreferredDownloadHosts(),
   );
@@ -447,6 +498,40 @@ const App = () => {
     }
   }, [setErrorMessage, updateTagsMap]);
 
+  const handleImportBundledTagsMap = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+
+      const response = await fetch("/tags.json", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Не удалось загрузить встроенные теги: ${response.status}`,
+        );
+      }
+
+      const parsedJson = (await response.json()) as unknown;
+      const normalizedTagsMap = normalizeTagsMap(parsedJson);
+
+      if (Object.keys(normalizedTagsMap).length === 0) {
+        throw new Error("Встроенный tags.json пустой или имеет неверный формат");
+      }
+
+      updateTagsMap(normalizedTagsMap);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Ошибка загрузки встроенных тегов",
+      );
+    }
+  }, [normalizeTagsMap, setErrorMessage, updateTagsMap]);
+
   const openViewer = useCallback(
     (imageUrlList: string[], startIndex: number) => {
       setViewerState({ isOpen: true, imageUrlList, activeIndex: startIndex });
@@ -612,14 +697,15 @@ const App = () => {
     });
   }, []);
 
-  const setPage = useCallback((nextPageType: PageType) => {
+  const setPage = useCallback((
+    nextPageType: PageType,
+    nextSettingsTab: SettingsTab | null = null,
+  ) => {
     setPageType(nextPageType);
-    window.location.hash =
-      nextPageType === "dashboard"
-        ? "#dashboard"
-        : nextPageType === "settings"
-          ? "#settings"
-          : "#swipe";
+    setRequestedSettingsTab(
+      nextPageType === "settings" ? nextSettingsTab : null,
+    );
+    window.location.hash = buildHashForPage(nextPageType, nextSettingsTab);
   }, []);
 
   const openSettingsPage = useCallback(() => {
@@ -652,6 +738,7 @@ const App = () => {
   useEffect(() => {
     const handleHashChange = () => {
       setPageType(readPageFromHash());
+      setRequestedSettingsTab(readSettingsTabFromHash());
     };
 
     window.addEventListener("hashchange", handleHashChange);
@@ -827,6 +914,36 @@ const App = () => {
     sessionState.processedThreadItemsByLink,
     sessionState.threadItemsByIdentifier,
   ]);
+
+  const favoritesUpdatedCount = useMemo(() => {
+    return countUpdatedTrackedItems(
+      sessionState.favoritesLinks,
+      sessionState.processedThreadItemsByLink,
+    );
+  }, [sessionState.favoritesLinks, sessionState.processedThreadItemsByLink]);
+
+  const playedUpdatedCount = useMemo(() => {
+    return countUpdatedTrackedItems(
+      playedLinks,
+      sessionState.processedThreadItemsByLink,
+    );
+  }, [playedLinks, sessionState.processedThreadItemsByLink]);
+
+  const cookieRefreshNoticeMessage = useMemo(() => {
+    if (!isLikelyCookieRefreshErrorMessage(metadataSyncState.error)) {
+      return null;
+    }
+
+    return "Не удалось проверить обновления. Похоже, F95 не принял текущие куки. Обнови их во вкладке Куки.";
+  }, [metadataSyncState.error]);
+
+  const handleManualMetadataSync = useCallback(() => {
+    const pageLimit = Math.max(
+      5,
+      Math.min(20, Math.max(sessionState.currentPageNumber, 1)),
+    );
+    void startMetadataSync(pageLimit);
+  }, [sessionState.currentPageNumber, startMetadataSync]);
 
   const handleMoveLinkToList = useCallback(
     (threadLink: string, listType: ListType) => {
@@ -1127,6 +1244,11 @@ const App = () => {
             <div className="smallText" style={{ marginTop: 6 }}>
               Средний рейтинг: {averageFavoritesRating}
             </div>
+            {favoritesUpdatedCount > 0 ? (
+              <div className="smallText" style={{ marginTop: 4 }}>
+                Обновились: {favoritesUpdatedCount}
+              </div>
+            ) : null}
           </div>
           <div className="metricCard">
             <div className="metricLabel">Мусор</div>
@@ -1135,6 +1257,11 @@ const App = () => {
           <div className="metricCard">
             <div className="metricLabel">Играл</div>
             <div className="metricValue">{playedCount}</div>
+            {playedUpdatedCount > 0 ? (
+              <div className="smallText" style={{ marginTop: 6 }}>
+                Обновились: {playedUpdatedCount}
+              </div>
+            ) : null}
           </div>
           <div className="metricCard">
             <div className="metricLabel">В очереди</div>
@@ -1172,6 +1299,7 @@ const App = () => {
       knownDownloadHosts={knownDownloadHosts}
       tagsCount={Object.keys(tagsMap).length}
       metadataSyncState={metadataSyncState}
+      onStartMetadataSync={handleManualMetadataSync}
       onMoveDownloadHost={handleMoveDownloadHost}
       onDisableDownloadHostTemporarily={handleDisableDownloadHostTemporarily}
       onEnableDownloadHost={handleEnableDownloadHost}
@@ -1180,6 +1308,9 @@ const App = () => {
       onResetPreferredDownloadHosts={handleResetPreferredDownloadHosts}
       onClearDisabledDownloadHosts={handleClearDisabledDownloadHosts}
       onClearHiddenDownloadHosts={handleClearHiddenDownloadHosts}
+      onImportBundledTagsMap={() => {
+        void handleImportBundledTagsMap();
+      }}
       onOpenImportTagsMap={() => importTagsMapInputRef.current?.click()}
       onImportTagsMapChange={() => {
         void handleImportTagsMapChange();
@@ -1192,6 +1323,7 @@ const App = () => {
       onClearAllData={handleConfirmClearAllData}
       importSessionStateInputRef={importSessionStateInputRef}
       importTagsMapInputRef={importTagsMapInputRef}
+      requestedTab={requestedSettingsTab}
     />
   );
 
@@ -1234,6 +1366,21 @@ const App = () => {
         {errorMessage ? (
           <div className="smallText" style={{ marginTop: 8 }}>
             {errorMessage}
+          </div>
+        ) : null}
+
+        {cookieRefreshNoticeMessage ? (
+          <div className="topBarNotice">
+            <div className="topBarNoticeText">
+              {cookieRefreshNoticeMessage}
+            </div>
+            <button
+              className="button topBarNoticeButton"
+              type="button"
+              onClick={() => setPage("settings", "cookies")}
+            >
+              Перейти в Куки
+            </button>
           </div>
         ) : null}
       </div>

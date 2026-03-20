@@ -188,6 +188,10 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     processedThreadItemsByLink,
     viewedCount: possibleSessionState.viewedCount,
     filterState,
+    lastMetadataSyncAtUnixMs:
+      typeof possibleSessionState.lastMetadataSyncAtUnixMs === 'number'
+        ? possibleSessionState.lastMetadataSyncAtUnixMs
+        : null,
   }
 }
 
@@ -218,6 +222,7 @@ const createDefaultSessionState = (): SessionState => {
     processedThreadItemsByLink: {},
     viewedCount: 0,
     filterState: { ...DEFAULT_FILTER_STATE },
+    lastMetadataSyncAtUnixMs: null,
   }
 }
 
@@ -319,8 +324,20 @@ const normalizeProcessedThreadItems = (
         typeof rawItem.creator === 'string' ? rawItem.creator : 'Unknown',
       cover: typeof rawItem.cover === 'string' ? rawItem.cover : '',
       rating: typeof rawItem.rating === 'number' ? rawItem.rating : 0,
+      trackedVersion:
+        typeof rawItem.trackedVersion === 'string'
+          ? rawItem.trackedVersion
+          : typeof rawItem.version === 'string'
+          ? rawItem.version
+          : '',
       version: typeof rawItem.version === 'string' ? rawItem.version : '',
       tags,
+      trackedTs:
+        typeof rawItem.trackedTs === 'number'
+          ? rawItem.trackedTs
+          : typeof rawItem.ts === 'number'
+          ? rawItem.ts
+          : undefined,
       ts: typeof rawItem.ts === 'number' ? rawItem.ts : undefined,
       addedAtUnixSeconds:
         typeof rawItem.addedAtUnixSeconds === 'number'

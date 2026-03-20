@@ -1,5 +1,27 @@
 import type { F95ApiResponse, F95ThreadItem } from './types'
 
+const F95_COOKIE_REFRESH_ERROR_MESSAGE =
+  'Не удалось проверить обновления: F95 вернул неожиданный ответ. Похоже, куки устарели или сломались. Обнови их во вкладке Куки.'
+
+const isLikelyCookieRefreshErrorMessage = (
+  message: string | null | undefined,
+) => {
+  if (!message) {
+    return false
+  }
+
+  const normalizedMessage = message.trim().toLowerCase()
+  return (
+    normalizedMessage.includes('куки') ||
+    normalizedMessage.includes('cookie') ||
+    normalizedMessage.includes('unexpected api response shape') ||
+    normalizedMessage.includes('not valid json') ||
+    normalizedMessage.includes('unexpected token') ||
+    normalizedMessage.includes('network error: 401') ||
+    normalizedMessage.includes('network error: 403')
+  )
+}
+
 const buildThreadLink = (threadIdentifier: number) => `https://f95zone.to/threads/${threadIdentifier}`
 
 const buildLatestGamesEndpointUrl = (pageNumber: number) => {
@@ -32,13 +54,24 @@ const fetchLatestGamesPage = async (pageNumber: number, abortSignal: AbortSignal
   })
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(F95_COOKIE_REFRESH_ERROR_MESSAGE)
+    }
+
     throw new Error(`Network error: ${response.status}`)
   }
 
-  const parsedJson = (await response.json()) as F95ApiResponse
+  const responseText = await response.text()
+  let parsedJson: F95ApiResponse
+
+  try {
+    parsedJson = JSON.parse(responseText) as F95ApiResponse
+  } catch {
+    throw new Error(F95_COOKIE_REFRESH_ERROR_MESSAGE)
+  }
 
   if (!parsedJson || parsedJson.status !== 'ok' || !parsedJson.msg || !Array.isArray(parsedJson.msg.data)) {
-    throw new Error('Unexpected API response shape')
+    throw new Error(F95_COOKIE_REFRESH_ERROR_MESSAGE)
   }
 
   const threadItemList: F95ThreadItem[] = parsedJson.msg.data
@@ -52,4 +85,9 @@ const fetchLatestGamesPage = async (pageNumber: number, abortSignal: AbortSignal
   }
 }
 
-export { buildThreadLink, fetchLatestGamesPage }
+export {
+  buildThreadLink,
+  fetchLatestGamesPage,
+  F95_COOKIE_REFRESH_ERROR_MESSAGE,
+  isLikelyCookieRefreshErrorMessage,
+}

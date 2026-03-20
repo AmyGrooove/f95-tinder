@@ -22,10 +22,14 @@ import {
   loadTagsMap,
   saveTagsMap,
 } from './storage'
+import {
+  isUpdateTrackedListType,
+} from './updateTracking'
 import { mergeUniqueStringArrays, removeStringFromArray } from './utils'
 
 const MAX_CACHED_PAGES_COUNT = 15
 const PREFETCH_THRESHOLD_REMAINING_COUNT = 5
+const AUTO_METADATA_SYNC_ENABLED = false
 
 type ActionType = ListType
 
@@ -38,6 +42,40 @@ const parseThreadIdentifierFromLink = (threadLink: string) => {
 }
 
 const toUnixSeconds = () => Math.floor(Date.now() / 1000)
+
+const resolveTrackedSnapshot = (
+  listType: ListType | null,
+  version: string,
+  ts: number | undefined,
+  existingItem: ProcessedThreadItem | undefined,
+) => {
+  const fallbackTrackedVersion =
+    typeof existingItem?.trackedVersion === 'string'
+      ? existingItem.trackedVersion
+      : version
+  const fallbackTrackedTs =
+    typeof existingItem?.trackedTs === 'number' ? existingItem.trackedTs : ts
+
+  if (!isUpdateTrackedListType(listType)) {
+    return {
+      trackedVersion: fallbackTrackedVersion,
+      trackedTs: fallbackTrackedTs,
+    }
+  }
+
+  const wasTrackedBefore = isUpdateTrackedListType(existingItem?.listType)
+  if (!wasTrackedBefore) {
+    return {
+      trackedVersion: version,
+      trackedTs: ts,
+    }
+  }
+
+  return {
+    trackedVersion: fallbackTrackedVersion,
+    trackedTs: fallbackTrackedTs,
+  }
+}
 
 const buildProcessedThreadItem = (
   threadLink: string,
@@ -74,6 +112,12 @@ const buildProcessedThreadItem = (
     typeof threadItem?.ts === 'number'
       ? threadItem.ts
       : existingItem?.ts
+  const { trackedVersion, trackedTs } = resolveTrackedSnapshot(
+    listType,
+    version,
+    ts,
+    existingItem,
+  )
 
   const addedAtUnixSeconds =
     existingItem?.addedAtUnixSeconds ?? toUnixSeconds()
@@ -85,8 +129,10 @@ const buildProcessedThreadItem = (
     creator: fallbackCreator,
     cover,
     rating,
+    trackedVersion,
     version,
     tags,
+    trackedTs,
     ts,
     addedAtUnixSeconds,
     listType,
@@ -126,6 +172,24 @@ const collectMetadataSyncCandidateLinks = (sessionState: SessionState) => {
     isProcessedItemMissingMetadata(
       sessionState.processedThreadItemsByLink[threadLink],
     ),
+  )
+}
+
+const collectUpdateTrackerCandidateLinks = (sessionState: SessionState) => {
+  return Array.from(
+    new Set<string>([
+      ...sessionState.favoritesLinks,
+      ...getPlayedLinks(sessionState),
+    ]),
+  )
+}
+
+const collectSyncCandidateLinks = (sessionState: SessionState) => {
+  return Array.from(
+    new Set<string>([
+      ...collectMetadataSyncCandidateLinks(sessionState),
+      ...collectUpdateTrackerCandidateLinks(sessionState),
+    ]),
   )
 }
 
@@ -384,37 +448,16 @@ const useF95Browser = () => {
         delete playedByLinkNext[threadLink]
       }
 
-      const processedThreadItemsByLinkNext: Record<string, ProcessedThreadItem> = { ...sessionState.processedThreadItemsByLink }
+      const processedThreadItemsByLinkNext: Record<string, ProcessedThreadItem> = {
+        ...sessionState.processedThreadItemsByLink,
+      }
 
-      const processedItem: ProcessedThreadItem = threadItem
-        ? {
-            threadIdentifier: currentThreadIdentifier,
-            threadLink,
-            title: threadItem.title,
-            creator: threadItem.creator,
-            cover: threadItem.cover,
-            rating: threadItem.rating ?? 0,
-            version: threadItem.version ?? '',
-            tags: Array.isArray(threadItem.tags)
-              ? threadItem.tags.filter((tag) => typeof tag === 'number')
-              : [],
-            ts: typeof threadItem.ts === 'number' ? threadItem.ts : undefined,
-            addedAtUnixSeconds: toUnixSeconds(),
-            listType: actionType,
-          }
-        : {
-            threadIdentifier: currentThreadIdentifier,
-            threadLink,
-            title: `Thread ${currentThreadIdentifier}`,
-            creator: 'Unknown',
-            cover: '',
-            rating: 0,
-            version: '',
-            tags: [],
-            ts: undefined,
-            addedAtUnixSeconds: toUnixSeconds(),
-            listType: actionType,
-          }
+      const processedItem = buildProcessedThreadItem(
+        threadLink,
+        actionType,
+        threadItem,
+        processedThreadItemsByLinkNext[threadLink],
+      )
 
       processedThreadItemsByLinkNext[threadLink] = processedItem
 
@@ -588,10 +631,14 @@ const useF95Browser = () => {
       const pageLimit = Math.max(1, Math.floor(requestedPageLimit))
       const initialState = sessionStateRef.current ?? sessionState
       const candidateLinkList =
-        explicitCandidateLinkList ?? collectMetadataSyncCandidateLinks(initialState)
+        explicitCandidateLinkList ?? collectSyncCandidateLinks(initialState)
       const candidateLinkSet = new Set<string>(candidateLinkList)
 
       if (candidateLinkSet.size === 0) {
+        persistSessionState({
+          ...initialState,
+          lastMetadataSyncAtUnixMs: Date.now(),
+        })
         setMetadataSyncState({
           isRunning: false,
           currentPage: 0,
@@ -684,6 +731,11 @@ const useF95Browser = () => {
         }
       }
 
+      persistSessionState({
+        ...(sessionStateRef.current ?? currentState),
+        lastMetadataSyncAtUnixMs: Date.now(),
+      })
+
       setMetadataSyncState((previousState) => ({
         ...previousState,
         isRunning: false,
@@ -695,7 +747,7 @@ const useF95Browser = () => {
   )
 
   const metadataSyncCandidateLinks = useMemo(
-    () => collectMetadataSyncCandidateLinks(sessionState),
+    () => collectSyncCandidateLinks(sessionState),
     [
       sessionState.favoritesLinks,
       sessionState.playedLinks,
@@ -705,6 +757,11 @@ const useF95Browser = () => {
   )
 
   useEffect(() => {
+    if (!AUTO_METADATA_SYNC_ENABLED) {
+      lastAutoMetadataSyncSignatureRef.current = null
+      return
+    }
+
     if (metadataSyncCandidateLinks.length === 0) {
       lastAutoMetadataSyncSignatureRef.current = null
       return

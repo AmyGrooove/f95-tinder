@@ -50,8 +50,10 @@ type ProcessedThreadItem = {
   creator: string
   cover: string
   rating: number
+  trackedVersion: string
   version: string
   tags: number[]
+  trackedTs?: number
   ts?: number
   addedAtUnixSeconds: number
   listType: ListType | null
@@ -72,6 +74,7 @@ type SessionState = {
 
   viewedCount: number
   filterState: FilterState
+  lastMetadataSyncAtUnixMs: number | null
 }
 
 type UndoSnapshot = {

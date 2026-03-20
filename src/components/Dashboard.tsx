@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { TagChips } from "./TagChips";
 import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
+import {
+  countUpdatedTrackedItems,
+  getProcessedThreadItemUpdateLabel,
+  hasProcessedThreadItemUpdate,
+} from "../f95/updateTracking";
 
 type DashboardCard = {
   threadLink: string;
@@ -8,6 +13,9 @@ type DashboardCard = {
   title: string;
   creator: string;
   rating: number;
+  version: string;
+  isUpdated: boolean;
+  updateLabel: string | null;
   tags: number[];
   addedAt: number;
   isPlayed: boolean;
@@ -102,6 +110,7 @@ export const Dashboard = ({
   const [activeTab, setActiveTab] = useState<"bookmarks" | "trash" | "played">(
     "bookmarks",
   );
+  const [onlyUpdatedTracked, setOnlyUpdatedTracked] = useState(false);
   const [sortField, setSortField] = useState<"addedAt" | "rating" | "title">(
     "addedAt",
   );
@@ -167,9 +176,13 @@ export const Dashboard = ({
   const sortDirectionLabel =
     sortDirection === "desc" ? "По убыванию" : "По возрастанию";
 
-  const searchAndSortSummary = searchText.trim()
-    ? `Поиск: ${searchText.trim()} • ${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`
-    : `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`;
+  const searchAndSortSummary = [
+    searchText.trim() ? `Поиск: ${searchText.trim()}` : null,
+    `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`,
+    onlyUpdatedTracked ? "только обновленные" : null,
+  ]
+    .filter(Boolean)
+    .join(" • ");
 
   const buildTags = (threadLink: string) => {
     const processedItem = sessionState.processedThreadItemsByLink[threadLink];
@@ -237,6 +250,12 @@ export const Dashboard = ({
         continue;
       }
 
+      const processedItem = sessionState.processedThreadItemsByLink[threadLink];
+      const isUpdated = hasProcessedThreadItemUpdate(processedItem);
+      if (onlyUpdatedTracked && sectionKey !== "trash" && !isUpdated) {
+        continue;
+      }
+
       const membershipListType: ListType | null =
         sessionState.favoritesLinks.includes(threadLink)
           ? "favorite"
@@ -245,6 +264,14 @@ export const Dashboard = ({
             : playedLinks.includes(threadLink)
               ? "played"
               : null;
+      const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
+      const threadItem =
+        threadIdentifier !== null
+          ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
+          : null;
+      const version =
+        processedItem?.version?.trim() ||
+        (typeof threadItem?.version === "string" ? threadItem.version : "");
 
       filteredCards.push({
         threadLink,
@@ -260,10 +287,11 @@ export const Dashboard = ({
           sessionState.processedThreadItemsByLink,
           sessionState.threadItemsByIdentifier,
         ),
+        version,
+        isUpdated,
+        updateLabel: getProcessedThreadItemUpdateLabel(processedItem),
         tags: cardTags,
-        addedAt:
-          sessionState.processedThreadItemsByLink[threadLink]
-            ?.addedAtUnixSeconds ?? 0,
+        addedAt: processedItem?.addedAtUnixSeconds ?? 0,
         isPlayed: playedLinks.includes(threadLink),
         isInFavorites: sessionState.favoritesLinks.includes(threadLink),
         isInTrash: sessionState.trashLinks.includes(threadLink),
@@ -285,6 +313,7 @@ export const Dashboard = ({
       sortField,
       sortDirection,
       normalizedSearchText,
+      onlyUpdatedTracked,
       includeTagNumbers,
       excludeTagNumbers,
       pickCoverForLink,
@@ -304,6 +333,7 @@ export const Dashboard = ({
       sortField,
       sortDirection,
       normalizedSearchText,
+      onlyUpdatedTracked,
       includeTagNumbers,
       excludeTagNumbers,
       pickCoverForLink,
@@ -322,6 +352,7 @@ export const Dashboard = ({
       sortField,
       sortDirection,
       normalizedSearchText,
+      onlyUpdatedTracked,
       includeTagNumbers,
       excludeTagNumbers,
       pickCoverForLink,
@@ -356,6 +387,24 @@ export const Dashboard = ({
   const toggleSortDirection = () => {
     setSortDirection((previous) => (previous === "desc" ? "asc" : "desc"));
   };
+
+  const favoritesUpdatedCount = useMemo(
+    () =>
+      countUpdatedTrackedItems(
+        sessionState.favoritesLinks,
+        sessionState.processedThreadItemsByLink,
+      ),
+    [sessionState.favoritesLinks, sessionState.processedThreadItemsByLink],
+  );
+
+  const playedUpdatedCount = useMemo(
+    () =>
+      countUpdatedTrackedItems(
+        playedLinks,
+        sessionState.processedThreadItemsByLink,
+      ),
+    [playedLinks, sessionState.processedThreadItemsByLink],
+  );
 
   const renderTagFilterPanel = (
     title: string,
@@ -415,9 +464,24 @@ export const Dashboard = ({
   };
 
   const tabItems = [
-    { id: "bookmarks" as const, label: "Закладки", cards: favoritesCards },
-    { id: "trash" as const, label: "Мусор", cards: trashCards },
-    { id: "played" as const, label: "Играл", cards: playedCards },
+    {
+      id: "bookmarks" as const,
+      label: "Закладки",
+      cards: favoritesCards,
+      updatedCount: favoritesUpdatedCount,
+    },
+    {
+      id: "trash" as const,
+      label: "Мусор",
+      cards: trashCards,
+      updatedCount: 0,
+    },
+    {
+      id: "played" as const,
+      label: "Играл",
+      cards: playedCards,
+      updatedCount: playedUpdatedCount,
+    },
   ];
 
   const activeTabItem =
@@ -531,7 +595,10 @@ export const Dashboard = ({
     );
   };
 
-  const renderCardsList = (cards: DashboardCard[]) => {
+  const renderCardsList = (
+    cards: DashboardCard[],
+    tabId: "bookmarks" | "trash" | "played",
+  ) => {
     if (cards.length === 0) {
       return (
         <div className="statusBox dashboardEmptyState">
@@ -539,7 +606,9 @@ export const Dashboard = ({
             В этом списке пока ничего нет
           </div>
           <div className="mutedText">
-            Попробуй сменить вкладку или ослабить фильтры поиска и тегов.
+            {onlyUpdatedTracked && tabId !== "trash"
+              ? "Сейчас нет карточек с апдейтом. Попробуй снять фильтр или дождаться следующей синхронизации."
+              : "Попробуй сменить вкладку или ослабить фильтры поиска и тегов."}
           </div>
         </div>
       );
@@ -548,7 +617,12 @@ export const Dashboard = ({
     return (
       <div className="listGrid" style={{ marginTop: 12 }}>
         {cards.map((card) => (
-          <div key={card.threadLink} className="listItemCard">
+          <div
+            key={card.threadLink}
+            className={`listItemCard ${
+              card.isUpdated ? "listItemCardUpdated" : ""
+            }`}
+          >
             <a
               className="listItemCoverLink"
               href={card.threadLink}
@@ -567,11 +641,24 @@ export const Dashboard = ({
               )}
             </a>
             <div className="listItemBody">
-              <div className="listItemTitle">{card.title}</div>
+              <div className="listItemTitleRow">
+                {card.isUpdated ? (
+                  <span className="listItemStatusBadge listItemStatusBadgeUpdated">
+                    Обновилось
+                  </span>
+                ) : null}
+                <div className="listItemTitle">{card.title}</div>
+              </div>
               <div className="listItemMeta">
                 <span>{card.creator}</span>
+                {card.version ? <span>Version: {card.version}</span> : null}
                 <span>Rating: {card.rating}</span>
               </div>
+              {card.isUpdated && card.updateLabel ? (
+                <div className="listItemUpdateLine">
+                  Обновление: {card.updateLabel}
+                </div>
+              ) : null}
               <TagChips tags={card.tags} tagsMap={tagsMap} />
               {renderCardActions(card)}
             </div>
@@ -654,6 +741,22 @@ export const Dashboard = ({
                   {sortDirectionLabel}
                 </button>
               </div>
+
+              <label className="checkboxRow">
+                <input
+                  type="checkbox"
+                  checked={onlyUpdatedTracked}
+                  onChange={(event) =>
+                    setOnlyUpdatedTracked(event.target.checked)
+                  }
+                />
+                Только обновленные в закладках и Играл
+              </label>
+
+              <div className="smallText">
+                Трекер сравнивает сохраненную `version/ts` с последней
+                синхронизацией метаданных.
+              </div>
             </div>
           ) : null}
         </div>
@@ -679,9 +782,15 @@ export const Dashboard = ({
       <div className="panel">
         <div className="sectionTitleRow">
           <div className="sectionTitle">{activeTabItem.label}</div>
-          <div className="sectionMeta">{activeTabItem.cards.length} игр</div>
+          <div className="sectionMeta">
+            {activeTabItem.cards.length} игр
+            {activeTabItem.updatedCount > 0 &&
+            activeTabItem.id !== "trash"
+              ? ` • обновились ${activeTabItem.updatedCount}`
+              : ""}
+          </div>
         </div>
-        {renderCardsList(activeTabItem.cards)}
+        {renderCardsList(activeTabItem.cards, activeTabItem.id)}
       </div>
     </div>
   );

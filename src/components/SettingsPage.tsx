@@ -9,6 +9,8 @@ import {
 import { SyncMetadataPanel } from "./SyncMetadataPanel";
 import type { MetadataSyncState } from "../f95/types";
 
+type SettingsTab = "hosts" | "cookies" | "tags" | "data";
+
 type SettingsPageProps = {
   preferredDownloadHosts: string[];
   disabledDownloadHosts: Record<string, number>;
@@ -16,6 +18,7 @@ type SettingsPageProps = {
   knownDownloadHosts: string[];
   tagsCount: number;
   metadataSyncState: MetadataSyncState;
+  onStartMetadataSync: () => void;
   onMoveDownloadHost: (hostLabel: string, direction: -1 | 1) => void;
   onDisableDownloadHostTemporarily: (hostLabel: string) => void;
   onEnableDownloadHost: (hostLabel: string) => void;
@@ -24,6 +27,7 @@ type SettingsPageProps = {
   onResetPreferredDownloadHosts: () => void;
   onClearDisabledDownloadHosts: () => void;
   onClearHiddenDownloadHosts: () => void;
+  onImportBundledTagsMap: () => void;
   onOpenImportTagsMap: () => void;
   onImportTagsMapChange: () => void;
   onExportSessionState: () => void;
@@ -32,6 +36,7 @@ type SettingsPageProps = {
   onClearAllData: () => void;
   importSessionStateInputRef: RefObject<HTMLInputElement | null>;
   importTagsMapInputRef: RefObject<HTMLInputElement | null>;
+  requestedTab?: SettingsTab | null;
 };
 
 const formatDisabledUntilTime = (expiresAtUnixMs: number) => {
@@ -48,6 +53,7 @@ export const SettingsPage = ({
   knownDownloadHosts,
   tagsCount,
   metadataSyncState,
+  onStartMetadataSync,
   onMoveDownloadHost,
   onDisableDownloadHostTemporarily,
   onEnableDownloadHost,
@@ -56,6 +62,7 @@ export const SettingsPage = ({
   onResetPreferredDownloadHosts,
   onClearDisabledDownloadHosts,
   onClearHiddenDownloadHosts,
+  onImportBundledTagsMap,
   onOpenImportTagsMap,
   onImportTagsMapChange,
   onExportSessionState,
@@ -64,6 +71,7 @@ export const SettingsPage = ({
   onClearAllData,
   importSessionStateInputRef,
   importTagsMapInputRef,
+  requestedTab = null,
 }: SettingsPageProps) => {
   const pausedHostCount = Object.keys(disabledDownloadHosts).length;
   const hiddenHostCount = hiddenDownloadHosts.length;
@@ -73,9 +81,9 @@ export const SettingsPage = ({
   const collapsedHiddenHostList = knownDownloadHosts.filter((hostLabel) =>
     hiddenDownloadHosts.includes(hostLabel),
   );
-  const [activeTab, setActiveTab] = useState<
-    "hosts" | "cookies" | "tags" | "data"
-  >("hosts");
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    requestedTab ?? "hosts",
+  );
   const [cookieProxyStatus, setCookieProxyStatus] =
     useState<CookieProxyStatus | null>(null);
   const [cookieProxyDraft, setCookieProxyDraft] = useState("");
@@ -112,6 +120,12 @@ export const SettingsPage = ({
       isCancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (requestedTab) {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
 
   const handleSaveCookieProxyInput = async () => {
     try {
@@ -626,6 +640,13 @@ export const SettingsPage = ({
               <button
                 className="button buttonPrimary"
                 type="button"
+                onClick={onImportBundledTagsMap}
+              >
+                Загрузить встроенные теги
+              </button>
+              <button
+                className="button"
+                type="button"
                 onClick={onOpenImportTagsMap}
               >
                 Импорт tagsMap.json
@@ -641,6 +662,10 @@ export const SettingsPage = ({
             />
 
             <div className="settingsDataNote">
+              <div className="smallText">
+                `Загрузить встроенные теги` берет локальный `/tags.json` из
+                проекта одним кликом.
+              </div>
               <div className="smallText">
                 Формат: {`{ "45": "3D", "130": "RenPy" }`}
               </div>
@@ -708,10 +733,16 @@ export const SettingsPage = ({
               </div>
             </div>
 
-            <SyncMetadataPanel metadataSyncState={metadataSyncState} />
+            <SyncMetadataPanel
+              metadataSyncState={metadataSyncState}
+              autoSyncEnabled={false}
+              onStartSync={onStartMetadataSync}
+            />
           </>
         )}
       </div>
     </div>
   );
 };
+
+export type { SettingsTab };
