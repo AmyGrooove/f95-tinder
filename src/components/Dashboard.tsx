@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { CollapsibleSection } from "./CollapsibleSection";
 import { TagChips } from "./TagChips";
 import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
 
@@ -20,9 +19,15 @@ type DashboardCard = {
 
 type DashboardProps = {
   sessionState: SessionState;
+  openBestDownloadForThread: (
+    threadLink: string,
+    threadTitle: string,
+  ) => void | Promise<void>;
   tagsMap: Record<string, string>;
-  togglePlayedForLink: (link: string) => void;
-  setPlayedFlagForLink: (link: string, value: boolean) => void;
+  openDownloadsForThread: (
+    threadLink: string,
+    threadTitle: string,
+  ) => void | Promise<void>;
   moveLinkToList: (link: string, listType: ListType) => void;
   removeLinkFromList: (link: string, listType: ListType) => void;
   pickCoverForLink: (
@@ -78,9 +83,9 @@ const sortCards = (
 
 export const Dashboard = ({
   sessionState,
+  openBestDownloadForThread,
   tagsMap,
-  togglePlayedForLink,
-  setPlayedFlagForLink,
+  openDownloadsForThread,
   moveLinkToList,
   removeLinkFromList,
   pickCoverForLink,
@@ -91,15 +96,16 @@ export const Dashboard = ({
   const [searchText, setSearchText] = useState("");
   const [includeTags, setIncludeTags] = useState<string[]>([]);
   const [excludeTags, setExcludeTags] = useState<string[]>([]);
+  const [isSearchAndSortOpen, setIsSearchAndSortOpen] = useState(false);
+  const [isIncludeTagsOpen, setIsIncludeTagsOpen] = useState(false);
+  const [isExcludeTagsOpen, setIsExcludeTagsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"bookmarks" | "trash" | "played">(
+    "bookmarks",
+  );
   const [sortField, setSortField] = useState<"addedAt" | "rating" | "title">(
     "addedAt",
   );
-  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
-  const [openSections, setOpenSections] = useState({
-    bookmarks: true,
-    trash: false,
-    played: false,
-  });
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("asc");
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
     [sessionState.playedLinks],
@@ -151,24 +157,19 @@ export const Dashboard = ({
     [searchText],
   );
 
-  const toggleSection = (sectionKey: keyof typeof openSections) => {
-    setOpenSections((previous) => ({
-      ...previous,
-      [sectionKey]: !previous[sectionKey],
-    }));
-  };
+  const sortFieldLabel =
+    sortField === "addedAt"
+      ? "Дата добавления"
+      : sortField === "rating"
+        ? "Рейтинг"
+        : "Название";
 
-  const scrollToSection = (sectionId: string) => {
-    const targetElement = document.getElementById(sectionId);
-    if (!targetElement) {
-      return;
-    }
-    setOpenSections((previous) => ({
-      ...previous,
-      [sectionId]: true,
-    }));
-    targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const sortDirectionLabel =
+    sortDirection === "desc" ? "По убыванию" : "По возрастанию";
+
+  const searchAndSortSummary = searchText.trim()
+    ? `Поиск: ${searchText.trim()} • ${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`
+    : `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`;
 
   const buildTags = (threadLink: string) => {
     const processedItem = sessionState.processedThreadItemsByLink[threadLink];
@@ -241,7 +242,9 @@ export const Dashboard = ({
           ? "favorite"
           : sessionState.trashLinks.includes(threadLink)
             ? "trash"
-            : null;
+            : playedLinks.includes(threadLink)
+              ? "played"
+              : null;
 
       filteredCards.push({
         threadLink,
@@ -261,7 +264,7 @@ export const Dashboard = ({
         addedAt:
           sessionState.processedThreadItemsByLink[threadLink]
             ?.addedAtUnixSeconds ?? 0,
-        isPlayed: Boolean(sessionState.playedByLink[threadLink]),
+        isPlayed: playedLinks.includes(threadLink),
         isInFavorites: sessionState.favoritesLinks.includes(threadLink),
         isInTrash: sessionState.trashLinks.includes(threadLink),
         listType: membershipListType,
@@ -278,7 +281,7 @@ export const Dashboard = ({
       sessionState.favoritesLinks,
       sessionState.processedThreadItemsByLink,
       sessionState.threadItemsByIdentifier,
-      sessionState.playedByLink,
+      playedLinks,
       sortField,
       sortDirection,
       normalizedSearchText,
@@ -297,7 +300,7 @@ export const Dashboard = ({
       sessionState.trashLinks,
       sessionState.processedThreadItemsByLink,
       sessionState.threadItemsByIdentifier,
-      sessionState.playedByLink,
+      playedLinks,
       sortField,
       sortDirection,
       normalizedSearchText,
@@ -311,12 +314,11 @@ export const Dashboard = ({
   );
 
   const playedCards = useMemo(
-    () => createCards(playedLinks, "played", false),
+    () => createCards(playedLinks, "played"),
     [
       playedLinks,
       sessionState.processedThreadItemsByLink,
       sessionState.threadItemsByIdentifier,
-      sessionState.playedByLink,
       sortField,
       sortDirection,
       normalizedSearchText,
@@ -355,24 +357,82 @@ export const Dashboard = ({
     setSortDirection((previous) => (previous === "desc" ? "asc" : "desc"));
   };
 
-  const navItems = [
-    {
-      id: "bookmarks",
-      label: "К Закладкам",
-      count: sessionState.favoritesLinks.length,
-    },
-    { id: "trash", label: "К Мусору", count: sessionState.trashLinks.length },
-    { id: "played", label: "К Играл", count: playedLinks.length },
+  const renderTagFilterPanel = (
+    title: string,
+    selectedTagIds: string[],
+    isOpen: boolean,
+    onToggleOpen: () => void,
+    onToggleTag: (tagId: string) => void,
+  ) => {
+    const selectedCount = selectedTagIds.length;
+
+    return (
+      <div className="tagFilterPanel">
+        <button
+          className="tagFilterHeader"
+          type="button"
+          onClick={onToggleOpen}
+          aria-expanded={isOpen}
+        >
+          <span className="tagFilterHeaderText">
+            <span className="label">{title}</span>
+            <span className="tagFilterHeaderMeta">
+              {selectedCount > 0
+                ? `Выбрано: ${selectedCount}`
+                : "Ничего не выбрано"}
+            </span>
+          </span>
+          <span className="tagFilterHeaderToggle">
+            {isOpen ? "Скрыть" : "Показать"}
+          </span>
+        </button>
+
+        {isOpen ? (
+          <div className="tagFilterBody">
+            <div className="tagFilterChips">
+              {availableTagOptions.map((option) => (
+                <button
+                  key={`${title}-${option.id}`}
+                  type="button"
+                  className={`tagFilterChip ${
+                    selectedTagIds.includes(option.id)
+                      ? "tagFilterChipActive"
+                      : ""
+                  }`}
+                  onClick={() => onToggleTag(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+              {!availableTagOptions.length ? (
+                <span className="smallText">Нет меток</span>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const tabItems = [
+    { id: "bookmarks" as const, label: "Закладки", cards: favoritesCards },
+    { id: "trash" as const, label: "Мусор", cards: trashCards },
+    { id: "played" as const, label: "Играл", cards: playedCards },
   ];
+
+  const activeTabItem =
+    tabItems.find((item) => item.id === activeTab) ?? tabItems[0];
 
   const renderCardActions = (card: DashboardCard) => {
     const isInFavorites = card.isInFavorites;
     const isInTrash = card.isInTrash;
     const isPlayed = card.isPlayed;
+    const quickActionCount =
+      Number(!isPlayed) + Number(!isInFavorites) + Number(!isInTrash) + 1;
 
     const handleDangerClick = () => {
       if (card.sectionKey === "played") {
-        setPlayedFlagForLink(card.threadLink, false);
+        removeLinkFromList(card.threadLink, "played");
         return;
       }
       removeLinkFromList(card.threadLink, card.sectionKey as ListType);
@@ -380,290 +440,249 @@ export const Dashboard = ({
 
     return (
       <div className="listItemActionsRow">
-        <div className="listItemActions">
+        <div className="listItemPrimaryActions">
           <button
-            className={`iconButton iconButtonPlayed ${isPlayed ? "iconButtonActive" : ""}`}
+            className="button listItemDownloadButton listItemBestDownloadButton"
+            type="button"
             onClick={() => {
-              togglePlayedForLink(card.threadLink);
+              void openBestDownloadForThread(card.threadLink, card.title);
             }}
-            aria-pressed={isPlayed}
-            aria-label={isPlayed ? "Снять отметку Играл" : "Отметить как Играл"}
           >
-            <span aria-hidden>🎮</span>
-            <span className="srOnly">
-              {isPlayed ? "Снять отметку Играл" : "Отметить как Играл"}
-            </span>
+            Лучший
           </button>
           <button
-            className={`iconButton iconButtonStar ${isInFavorites ? "iconButtonActive" : ""}`}
+            className="button listItemDownloadButton listItemAllDownloadsButton"
+            type="button"
             onClick={() => {
-              moveLinkToList(card.threadLink, "favorite");
+              void openDownloadsForThread(card.threadLink, card.title);
             }}
-            disabled={isInFavorites}
+          >
+            Зеркала
+          </button>
+        </div>
+        <div
+          className="listItemQuickActions"
+          style={{
+            gridTemplateColumns: `repeat(${quickActionCount}, minmax(0, 1fr))`,
+          }}
+        >
+          {!isPlayed ? (
+            <button
+              className="iconButton listItemActionIconButton iconButtonPlayed"
+              onClick={() => {
+                moveLinkToList(card.threadLink, "played");
+              }}
+              title="Перенести в Играл"
+              aria-label="Перенести в Играл"
+            >
+              <span aria-hidden>🎮</span>
+              <span className="srOnly">Перенести в Играл</span>
+            </button>
+          ) : null}
+          {!isInFavorites ? (
+            <button
+              className="iconButton listItemActionIconButton iconButtonStar"
+              onClick={() => {
+                moveLinkToList(card.threadLink, "favorite");
+              }}
+              title="Перенести в избранное"
+              aria-label="Перенести в избранное"
+            >
+              <span aria-hidden>★</span>
+              <span className="srOnly">Перенести в избранное</span>
+            </button>
+          ) : null}
+          {!isInTrash ? (
+            <button
+              className="iconButton listItemActionIconButton iconButtonTrash"
+              onClick={() => {
+                moveLinkToList(card.threadLink, "trash");
+              }}
+              title="Перенести в мусор"
+              aria-label="Перенести в мусор"
+            >
+              <span aria-hidden>🗑</span>
+              <span className="srOnly">Перенести в мусор</span>
+            </button>
+          ) : null}
+          <button
+            className="iconButton listItemActionIconButton iconButtonDanger"
+            onClick={handleDangerClick}
+            title={
+              card.sectionKey === "played"
+                ? "Снять отметку Играл"
+                : "Удалить из списка"
+            }
             aria-label={
-              isInFavorites ? "Уже в избранном" : "Перенести в избранное"
+              card.sectionKey === "played"
+                ? "Снять отметку Играл"
+                : "Удалить из списка"
             }
           >
-            <span aria-hidden>★</span>
+            <span aria-hidden>✖</span>
             <span className="srOnly">
-              {isInFavorites ? "Уже в избранном" : "Перенести в избранное"}
-            </span>
-          </button>
-          <button
-            className={`iconButton iconButtonTrash ${isInTrash ? "iconButtonActive" : ""}`}
-            onClick={() => {
-              moveLinkToList(card.threadLink, "trash");
-            }}
-            disabled={isInTrash}
-            aria-label={isInTrash ? "Уже в мусоре" : "Перенести в мусор"}
-          >
-            <span aria-hidden>🗑</span>
-            <span className="srOnly">
-              {isInTrash ? "Уже в мусоре" : "Перенести в мусор"}
+              {card.sectionKey === "played"
+                ? "Снять отметку Играл"
+                : "Удалить из списка"}
             </span>
           </button>
         </div>
-        <button
-          className="iconButton iconButtonDanger listItemActionsDanger"
-          onClick={handleDangerClick}
-          aria-label={
-            card.sectionKey === "played"
-              ? "Снять отметку Играл"
-              : "Удалить из списка"
-          }
-        >
-          <span aria-hidden>✖</span>
-          <span className="srOnly">
-            {card.sectionKey === "played"
-              ? "Снять отметку Играл"
-              : "Удалить из списка"}
-          </span>
-        </button>
       </div>
     );
   };
+
+  const renderCardsList = (cards: DashboardCard[]) => {
+    if (cards.length === 0) {
+      return (
+        <div className="statusBox dashboardEmptyState">
+          <div style={{ fontWeight: 900, fontSize: 18 }}>
+            В этом списке пока ничего нет
+          </div>
+          <div className="mutedText">
+            Попробуй сменить вкладку или ослабить фильтры поиска и тегов.
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="listGrid" style={{ marginTop: 12 }}>
+        {cards.map((card) => (
+          <div key={card.threadLink} className="listItemCard">
+            <a
+              className="listItemCoverLink"
+              href={card.threadLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {card.coverUrl ? (
+                <img
+                  className="listItemCover"
+                  src={card.coverUrl}
+                  alt="cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="listItemCover" />
+              )}
+            </a>
+            <div className="listItemBody">
+              <div className="listItemTitle">{card.title}</div>
+              <div className="listItemMeta">
+                <span>{card.creator}</span>
+                <span>Rating: {card.rating}</span>
+              </div>
+              <TagChips tags={card.tags} tagsMap={tagsMap} />
+              {renderCardActions(card)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard">
-      <div className="dashboardNav">
-        {navItems.map((item) => (
+      <div className="dashboardTabBar" role="tablist" aria-label="Списки дашборда">
+        {tabItems.map((item) => (
           <button
-            key={item.id}
+            key={`tab-${item.id}`}
             type="button"
-            className="dashboardNavButton"
-            onClick={() => scrollToSection(item.id)}
+            role="tab"
+            aria-selected={activeTab === item.id}
+            className={`button dashboardTabButton ${
+              activeTab === item.id ? "dashboardTabButtonActive" : ""
+            }`}
+            onClick={() => setActiveTab(item.id)}
           >
             {item.label}
-            <span className="pill">
-              <strong>{item.count}</strong>
-            </span>
           </button>
         ))}
       </div>
 
       <div className="dashboardFilters">
-        <div className="formRow">
-          <div className="label">Поиск по title / creator</div>
-          <input
-            className="input"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="например: team18"
-          />
-        </div>
-
-        <div className="formRow" style={{ flexDirection: "row", gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <div className="label">Сортировка</div>
-            <select
-              className="input"
-              value={sortField}
-              onChange={(event) =>
-                setSortField(
-                  event.target.value as "addedAt" | "rating" | "title",
-                )
-              }
-            >
-              <option value="addedAt">По дате добавления</option>
-              <option value="rating">По рейтингу</option>
-              <option value="title">По названию</option>
-            </select>
-          </div>
+        <div className="tagFilterPanel dashboardFilterPanel">
           <button
-            className="button"
+            className="tagFilterHeader"
             type="button"
-            onClick={toggleSortDirection}
+            onClick={() => setIsSearchAndSortOpen((previous) => !previous)}
+            aria-expanded={isSearchAndSortOpen}
           >
-            {sortDirection === "desc" ? "По убыванию" : "По возрастанию"}
+            <span className="tagFilterHeaderText">
+              <span className="label">Поиск и сортировка</span>
+              <span className="tagFilterHeaderMeta">{searchAndSortSummary}</span>
+            </span>
+            <span className="tagFilterHeaderToggle">
+              {isSearchAndSortOpen ? "Скрыть" : "Показать"}
+            </span>
           </button>
+
+          {isSearchAndSortOpen ? (
+            <div className="tagFilterBody dashboardFilterBody">
+              <div className="formRow">
+                <div className="label">Поиск по title / creator</div>
+                <input
+                  className="input"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="например: team18"
+                />
+              </div>
+
+              <div className="dashboardSortControls">
+                <div className="formRow dashboardSortField">
+                  <div className="label">Сортировка</div>
+                  <select
+                    className="input"
+                    value={sortField}
+                    onChange={(event) =>
+                      setSortField(
+                        event.target.value as "addedAt" | "rating" | "title",
+                      )
+                    }
+                  >
+                    <option value="addedAt">По дате добавления</option>
+                    <option value="rating">По рейтингу</option>
+                    <option value="title">По названию</option>
+                  </select>
+                </div>
+                <button
+                  className="button dashboardSortDirectionButton"
+                  type="button"
+                  onClick={toggleSortDirection}
+                >
+                  {sortDirectionLabel}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="tagFilterRow">
-          <div>
-            <div className="label">Include теги</div>
-            <div className="tagFilterChips">
-              {availableTagOptions.map((option) => (
-                <button
-                  key={`include-${option.id}`}
-                  type="button"
-                  className={`tagFilterChip ${
-                    includeTags.includes(option.id) ? "tagFilterChipActive" : ""
-                  }`}
-                  onClick={() => toggleIncludeTag(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-              {!availableTagOptions.length ? (
-                <span className="smallText">Нет меток</span>
-              ) : null}
-            </div>
-          </div>
-          <div>
-            <div className="label">Exclude теги</div>
-            <div className="tagFilterChips">
-              {availableTagOptions.map((option) => (
-                <button
-                  key={`exclude-${option.id}`}
-                  type="button"
-                  className={`tagFilterChip ${
-                    excludeTags.includes(option.id) ? "tagFilterChipActive" : ""
-                  }`}
-                  onClick={() => toggleExcludeTag(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-              {!availableTagOptions.length ? (
-                <span className="smallText">Нет меток</span>
-              ) : null}
-            </div>
-          </div>
+          {renderTagFilterPanel(
+            "Include теги",
+            includeTags,
+            isIncludeTagsOpen,
+            () => setIsIncludeTagsOpen((previous) => !previous),
+            toggleIncludeTag,
+          )}
+          {renderTagFilterPanel(
+            "Exclude теги",
+            excludeTags,
+            isExcludeTagsOpen,
+            () => setIsExcludeTagsOpen((previous) => !previous),
+            toggleExcludeTag,
+          )}
         </div>
       </div>
 
-      <CollapsibleSection
-        id="bookmarks"
-        title="Закладки"
-        count={favoritesCards.length}
-        isOpen={openSections.bookmarks}
-        onToggle={() => toggleSection("bookmarks")}
-      >
-        <div className="listGrid" style={{ marginTop: 12 }}>
-          {favoritesCards.map((card) => (
-            <div key={card.threadLink} className="listItemCard">
-              <a
-                className="listItemCoverLink"
-                href={card.threadLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {card.coverUrl ? (
-                  <img
-                    className="listItemCover"
-                    src={card.coverUrl}
-                    alt="cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="listItemCover" />
-                )}
-              </a>
-              <div className="listItemBody">
-                <div className="listItemTitle">{card.title}</div>
-                <div className="listItemMeta">
-                  <span>{card.creator}</span>
-                  <span>Rating: {card.rating}</span>
-                </div>
-                <TagChips tags={card.tags} tagsMap={tagsMap} />
-                {renderCardActions(card)}
-              </div>
-            </div>
-          ))}
+      <div className="panel">
+        <div className="sectionTitleRow">
+          <div className="sectionTitle">{activeTabItem.label}</div>
+          <div className="sectionMeta">{activeTabItem.cards.length} игр</div>
         </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        id="trash"
-        title="Мусор"
-        count={trashCards.length}
-        isOpen={openSections.trash}
-        onToggle={() => toggleSection("trash")}
-      >
-        <div className="listGrid" style={{ marginTop: 12 }}>
-          {trashCards.map((card) => (
-            <div key={card.threadLink} className="listItemCard">
-              <a
-                className="listItemCoverLink"
-                href={card.threadLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {card.coverUrl ? (
-                  <img
-                    className="listItemCover"
-                    src={card.coverUrl}
-                    alt="cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="listItemCover" />
-                )}
-              </a>
-              <div className="listItemBody">
-                <div className="listItemTitle">{card.title}</div>
-                <div className="listItemMeta">
-                  <span>{card.creator}</span>
-                  <span>Rating: {card.rating}</span>
-                </div>
-                <TagChips tags={card.tags} tagsMap={tagsMap} />
-                {renderCardActions(card)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        id="played"
-        title="Играл"
-        count={playedCards.length}
-        isOpen={openSections.played}
-        onToggle={() => toggleSection("played")}
-        defaultOpen={false}
-      >
-        <div className="listGrid" style={{ marginTop: 12 }}>
-          {playedCards.map((card) => (
-            <div key={card.threadLink} className="listItemCard">
-              <a
-                className="listItemCoverLink"
-                href={card.threadLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {card.coverUrl ? (
-                  <img
-                    className="listItemCover"
-                    src={card.coverUrl}
-                    alt="cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="listItemCover" />
-                )}
-              </a>
-              <div className="listItemBody">
-                <div className="listItemTitle">{card.title}</div>
-                <div className="listItemMeta">
-                  <span>{card.creator}</span>
-                  <span>Rating: {card.rating}</span>
-                </div>
-                <TagChips tags={card.tags} tagsMap={tagsMap} />
-                {renderCardActions(card)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CollapsibleSection>
+        {renderCardsList(activeTabItem.cards)}
+      </div>
     </div>
   );
 };

@@ -99,6 +99,36 @@ const getPlayedLinks = (state: SessionState) => {
 
 const normalizeText = (textValue: string) => textValue.trim().toLowerCase()
 
+const isProcessedItemMissingMetadata = (
+  processedItem: ProcessedThreadItem | undefined,
+) => {
+  if (!processedItem) {
+    return true
+  }
+
+  const hasFallbackTitle = /^Thread \d+$/.test(processedItem.title)
+  return (
+    hasFallbackTitle ||
+    processedItem.creator === 'Unknown' ||
+    !processedItem.cover ||
+    processedItem.tags.length === 0
+  )
+}
+
+const collectMetadataSyncCandidateLinks = (sessionState: SessionState) => {
+  const trackedLinkSet = new Set<string>([
+    ...sessionState.favoritesLinks,
+    ...sessionState.trashLinks,
+    ...getPlayedLinks(sessionState),
+  ])
+
+  return Array.from(trackedLinkSet).filter((threadLink) =>
+    isProcessedItemMissingMetadata(
+      sessionState.processedThreadItemsByLink[threadLink],
+    ),
+  )
+}
+
 const threadMatchesFilter = (threadItem: F95ThreadItem, filterState: FilterState) => {
   const searchText = normalizeText(filterState.searchText)
 
@@ -139,6 +169,7 @@ const appendPageToSessionState = (sessionState: SessionState, threadItemList: F9
 
   const favoritesLinkSet = new Set<string>(sessionState.favoritesLinks)
   const trashLinkSet = new Set<string>(sessionState.trashLinks)
+  const playedLinkSet = new Set<string>(sessionState.playedLinks ?? [])
 
   const updatedThreadItemsByIdentifier = { ...sessionState.threadItemsByIdentifier }
   const updatedRemainingThreadIdentifiers = [...sessionState.remainingThreadIdentifiers]
@@ -150,7 +181,10 @@ const appendPageToSessionState = (sessionState: SessionState, threadItemList: F9
     updatedThreadItemsByIdentifier[String(threadIdentifier)] = threadItem
 
     const isAlreadyInQueue = existingThreadIdentifierSet.has(threadIdentifier)
-    const isAlreadyProcessed = favoritesLinkSet.has(threadLink) || trashLinkSet.has(threadLink)
+    const isAlreadyProcessed =
+      favoritesLinkSet.has(threadLink) ||
+      trashLinkSet.has(threadLink) ||
+      playedLinkSet.has(threadLink)
 
     if (!isAlreadyInQueue && !isAlreadyProcessed) {
       updatedRemainingThreadIdentifiers.push(threadIdentifier)
@@ -191,8 +225,11 @@ const useF95Browser = () => {
     isRunning: false,
     currentPage: 0,
     pageLimit: 0,
+    syncedCount: 0,
+    trackedCount: 0,
     error: null,
   })
+  const lastAutoMetadataSyncSignatureRef = useRef<string | null>(null)
 
   const currentThreadIdentifier = useMemo(() => pickCurrentThreadIdentifier(sessionState), [sessionState])
   const currentThreadItem = useMemo(() => {
@@ -325,19 +362,27 @@ const useF95Browser = () => {
       const remainingThreadIdentifiersAfterAction = [...sessionState.remainingThreadIdentifiers]
       remainingThreadIdentifiersAfterAction.splice(currentThreadIdentifierIndex, 1)
 
-      const favoritesLinksAfterAdd =
+      const favoritesLinksNext =
         actionType === 'favorite'
           ? mergeUniqueStringArrays(sessionState.favoritesLinks, [threadLink])
           : removeStringFromArray(sessionState.favoritesLinks, threadLink)
 
-      const trashLinksAfterAdd =
+      const trashLinksNext =
         actionType === 'trash'
           ? mergeUniqueStringArrays(sessionState.trashLinks, [threadLink])
           : removeStringFromArray(sessionState.trashLinks, threadLink)
 
-      // Dedup: link can be only in one list
-      const favoritesLinksFinal = actionType === 'favorite' ? favoritesLinksAfterAdd : removeStringFromArray(favoritesLinksAfterAdd, threadLink)
-      const trashLinksFinal = actionType === 'trash' ? trashLinksAfterAdd : removeStringFromArray(trashLinksAfterAdd, threadLink)
+      const playedLinksNext =
+        actionType === 'played'
+          ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
+          : removeStringFromArray(sessionState.playedLinks, threadLink)
+
+      const playedByLinkNext = { ...sessionState.playedByLink }
+      if (actionType === 'played') {
+        playedByLinkNext[threadLink] = true
+      } else {
+        delete playedByLinkNext[threadLink]
+      }
 
       const processedThreadItemsByLinkNext: Record<string, ProcessedThreadItem> = { ...sessionState.processedThreadItemsByLink }
 
@@ -376,8 +421,10 @@ const useF95Browser = () => {
       const nextSessionState: SessionState = {
         ...sessionState,
         remainingThreadIdentifiers: remainingThreadIdentifiersAfterAction,
-        favoritesLinks: actionType === 'favorite' ? favoritesLinksFinal : removeStringFromArray(favoritesLinksFinal, threadLink),
-        trashLinks: actionType === 'trash' ? trashLinksFinal : removeStringFromArray(trashLinksFinal, threadLink),
+        favoritesLinks: favoritesLinksNext,
+        trashLinks: trashLinksNext,
+        playedLinks: playedLinksNext,
+        playedByLink: playedByLinkNext,
         processedThreadItemsByLink: processedThreadItemsByLinkNext,
         viewedCount: sessionState.viewedCount + 1,
       }
@@ -425,41 +472,13 @@ const useF95Browser = () => {
       isRunning: false,
       currentPage: 0,
       pageLimit: 0,
+      syncedCount: 0,
+      trackedCount: 0,
       error: null,
     })
     const nextState = createDefaultSessionState()
     persistSessionState(nextState)
   }, [persistSessionState])
-
-  const setPlayedFlagForLink = useCallback(
-    (threadLink: string, shouldBePlayed: boolean) => {
-      const nextPlayedByLink = { ...sessionState.playedByLink }
-      if (shouldBePlayed) {
-        nextPlayedByLink[threadLink] = true
-      } else {
-        delete nextPlayedByLink[threadLink]
-      }
-
-      const nextPlayedLinks = shouldBePlayed
-        ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
-        : removeStringFromArray(sessionState.playedLinks, threadLink)
-
-      persistSessionState({
-        ...sessionState,
-        playedByLink: nextPlayedByLink,
-        playedLinks: nextPlayedLinks,
-      })
-    },
-    [persistSessionState, sessionState],
-  )
-
-  const togglePlayedForLink = useCallback(
-    (threadLink: string) => {
-      const isCurrentlyPlayed = Boolean(sessionState.playedByLink[threadLink])
-      setPlayedFlagForLink(threadLink, !isCurrentlyPlayed)
-    },
-    [sessionState.playedByLink, setPlayedFlagForLink],
-  )
 
   const moveLinkToList = useCallback(
     (threadLink: string, targetList: ListType) => {
@@ -472,6 +491,18 @@ const useF95Browser = () => {
         targetList === 'trash'
           ? mergeUniqueStringArrays(sessionState.trashLinks, [threadLink])
           : removeStringFromArray(sessionState.trashLinks, threadLink)
+
+      const playedLinks =
+        targetList === 'played'
+          ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
+          : removeStringFromArray(sessionState.playedLinks, threadLink)
+
+      const playedByLink = { ...sessionState.playedByLink }
+      if (targetList === 'played') {
+        playedByLink[threadLink] = true
+      } else {
+        delete playedByLink[threadLink]
+      }
 
       const threadIdentifier = parseThreadIdentifierFromLink(threadLink)
       const threadItem =
@@ -494,6 +525,8 @@ const useF95Browser = () => {
         ...sessionState,
         favoritesLinks,
         trashLinks,
+        playedLinks,
+        playedByLink,
         processedThreadItemsByLink: nextProcessedThreadItems,
       })
     },
@@ -512,6 +545,16 @@ const useF95Browser = () => {
           ? removeStringFromArray(sessionState.trashLinks, threadLink)
           : sessionState.trashLinks
 
+      const playedLinks =
+        listType === 'played'
+          ? removeStringFromArray(sessionState.playedLinks, threadLink)
+          : sessionState.playedLinks
+
+      const playedByLink = { ...sessionState.playedByLink }
+      if (listType === 'played') {
+        delete playedByLink[threadLink]
+      }
+
       const nextProcessedThreadItems = { ...sessionState.processedThreadItemsByLink }
       const existingItem = nextProcessedThreadItems[threadLink]
 
@@ -526,6 +569,8 @@ const useF95Browser = () => {
         ...sessionState,
         favoritesLinks,
         trashLinks,
+        playedLinks,
+        playedByLink,
         processedThreadItemsByLink: nextProcessedThreadItems,
       })
     },
@@ -539,29 +584,44 @@ const useF95Browser = () => {
   }, [])
 
   const startMetadataSync = useCallback(
-    async (requestedPageLimit: number) => {
+    async (requestedPageLimit: number, explicitCandidateLinkList?: string[]) => {
       const pageLimit = Math.max(1, Math.floor(requestedPageLimit))
+      const initialState = sessionStateRef.current ?? sessionState
+      const candidateLinkList =
+        explicitCandidateLinkList ?? collectMetadataSyncCandidateLinks(initialState)
+      const candidateLinkSet = new Set<string>(candidateLinkList)
+
+      if (candidateLinkSet.size === 0) {
+        setMetadataSyncState({
+          isRunning: false,
+          currentPage: 0,
+          pageLimit: 0,
+          syncedCount: 0,
+          trackedCount: 0,
+          error: null,
+        })
+        return
+      }
+
       setMetadataSyncState({
         isRunning: true,
         currentPage: 0,
         pageLimit,
+        syncedCount: 0,
+        trackedCount: candidateLinkSet.size,
         error: null,
       })
 
-      let currentState = sessionStateRef.current ?? sessionState
+      const syncedLinkSet = new Set<string>()
+      let currentState = initialState
       for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
         const activeState = sessionStateRef.current ?? currentState
-        const trackedLinks = new Set<string>([
-          ...activeState.favoritesLinks,
-          ...activeState.trashLinks,
-          ...getPlayedLinks(activeState),
-        ])
 
         try {
           const pageResult = await loadPage(pageNumber)
           let nextStateAfterPage = activeState
 
-          if (trackedLinks.size > 0 && pageResult.threadItemList.length > 0) {
+          if (candidateLinkSet.size > 0 && pageResult.threadItemList.length > 0) {
             const nextProcessedThreadItems = {
               ...activeState.processedThreadItemsByLink,
             }
@@ -569,7 +629,7 @@ const useF95Browser = () => {
 
             for (const threadItem of pageResult.threadItemList) {
               const threadLink = buildThreadLink(threadItem.thread_id)
-              if (!trackedLinks.has(threadLink)) {
+              if (!candidateLinkSet.has(threadLink)) {
                 continue
               }
 
@@ -579,6 +639,8 @@ const useF95Browser = () => {
                 ? 'favorite'
                 : activeState.trashLinks.includes(threadLink)
                 ? 'trash'
+                : activeState.playedLinks.includes(threadLink)
+                ? 'played'
                 : null
 
               nextProcessedThreadItems[threadLink] = buildProcessedThreadItem(
@@ -588,6 +650,7 @@ const useF95Browser = () => {
                 nextProcessedThreadItems[threadLink],
               )
               hasUpdated = true
+              syncedLinkSet.add(threadLink)
             }
 
             if (hasUpdated) {
@@ -603,6 +666,7 @@ const useF95Browser = () => {
           setMetadataSyncState((previousState) => ({
             ...previousState,
             currentPage: pageNumber,
+            syncedCount: syncedLinkSet.size,
           }))
 
           if (pageResult.totalPages > 0 && pageNumber >= pageResult.totalPages) {
@@ -613,6 +677,7 @@ const useF95Browser = () => {
             ...previousState,
             isRunning: false,
             currentPage: pageNumber,
+            syncedCount: syncedLinkSet.size,
             error: error instanceof Error ? error.message : 'Не удалось синхронизировать метаданные',
           }))
           return
@@ -622,11 +687,50 @@ const useF95Browser = () => {
       setMetadataSyncState((previousState) => ({
         ...previousState,
         isRunning: false,
+        syncedCount: syncedLinkSet.size,
         error: null,
       }))
     },
     [loadPage, persistSessionState, sessionState],
   )
+
+  const metadataSyncCandidateLinks = useMemo(
+    () => collectMetadataSyncCandidateLinks(sessionState),
+    [
+      sessionState.favoritesLinks,
+      sessionState.playedLinks,
+      sessionState.processedThreadItemsByLink,
+      sessionState.trashLinks,
+    ],
+  )
+
+  useEffect(() => {
+    if (metadataSyncCandidateLinks.length === 0) {
+      lastAutoMetadataSyncSignatureRef.current = null
+      return
+    }
+
+    if (metadataSyncState.isRunning) {
+      return
+    }
+
+    const nextSignature = metadataSyncCandidateLinks.join('|')
+    if (lastAutoMetadataSyncSignatureRef.current === nextSignature) {
+      return
+    }
+
+    lastAutoMetadataSyncSignatureRef.current = nextSignature
+    const autoPageLimit = Math.max(
+      5,
+      Math.min(20, Math.max(sessionState.currentPageNumber, 1)),
+    )
+    void startMetadataSync(autoPageLimit, metadataSyncCandidateLinks)
+  }, [
+    metadataSyncCandidateLinks,
+    metadataSyncState.isRunning,
+    sessionState.currentPageNumber,
+    startMetadataSync,
+  ])
 
   return {
     sessionState,
@@ -644,8 +748,6 @@ const useF95Browser = () => {
     updateTagsMap,
     metadataSyncState,
     startMetadataSync,
-    togglePlayedForLink,
-    setPlayedFlagForLink,
     moveLinkToList,
     removeLinkFromList,
     setErrorMessage,

@@ -162,11 +162,15 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
   }
 
   const filterState = possibleSessionState.filterState ?? DEFAULT_FILTER_STATE
-  const playedByLink = normalizePlayedByLink(possibleSessionState.playedByLink)
+  const playedByLinkFallback = normalizePlayedByLink(possibleSessionState.playedByLink)
   const playedLinks = normalizePlayedLinks(
     possibleSessionState.playedLinks,
-    playedByLink,
+    playedByLinkFallback,
   )
+  const playedByLink: Record<string, boolean> = {}
+  for (const link of playedLinks) {
+    playedByLink[link] = true
+  }
 
   const processedThreadItemsByLink = normalizeProcessedThreadItems(
     possibleSessionState.processedThreadItemsByLink,
@@ -210,7 +214,6 @@ const createDefaultSessionState = (): SessionState => {
     favoritesLinks: [],
     trashLinks: [],
     playedByLink: {},
-    playedLinks: [],
     playedLinks: [],
     processedThreadItemsByLink: {},
     viewedCount: 0,
@@ -260,7 +263,7 @@ const normalizePlayedByLink = (value: unknown): Record<string, boolean> => {
 }
 
 const normalizeListType = (value: unknown): ListType | null => {
-  if (value === 'favorite' || value === 'trash') {
+  if (value === 'favorite' || value === 'trash' || value === 'played') {
     return value
   }
   return null

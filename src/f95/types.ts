@@ -41,7 +41,7 @@ type FilterState = {
   hideIgnored: boolean
 }
 
-type ListType = 'favorite' | 'trash'
+type ListType = 'favorite' | 'trash' | 'played'
 
 type ProcessedThreadItem = {
   threadIdentifier: number
@@ -82,7 +82,30 @@ type MetadataSyncState = {
   isRunning: boolean
   currentPage: number
   pageLimit: number
+  syncedCount: number
+  trackedCount: number
   error: string | null
+}
+
+type DownloadLink = {
+  label: string
+  url: string | null
+  isMasked: boolean
+}
+
+type DownloadGroup = {
+  label: string
+  links: DownloadLink[]
+}
+
+type ThreadDownloadsStatus = 'available' | 'login_required' | 'not_found'
+
+type ThreadDownloadsData = {
+  status: ThreadDownloadsStatus
+  groups: DownloadGroup[]
+  requiresAuth: boolean
+  threadLink: string
+  fetchedAtUnixMs: number
 }
 
 export type {
@@ -94,4 +117,8 @@ export type {
   SessionState,
   UndoSnapshot,
   MetadataSyncState,
+  DownloadLink,
+  DownloadGroup,
+  ThreadDownloadsStatus,
+  ThreadDownloadsData,
 }

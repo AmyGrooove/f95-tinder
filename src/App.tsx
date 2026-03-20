@@ -1,16 +1,40 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useF95Browser } from "./f95/useF95Browser";
 import { buildThreadLink } from "./f95/api";
+import {
+  clearHiddenDownloadHosts,
+  clearDisabledDownloadHosts,
+  clearAllCachedThreadDownloads,
+  disableDownloadHostTemporarily,
+  enableDownloadHost,
+  findBestDownloadLink,
+  loadCachedThreadDownloads,
+  loadDisabledDownloadHosts,
+  loadHiddenDownloadHosts,
+  loadKnownDownloadHosts,
+  loadOrFetchThreadDownloads,
+  loadPreferredDownloadHosts,
+  moveDownloadHostPreference,
+  removeCachedThreadDownloads,
+  resetPreferredDownloadHosts,
+  savePreferredDownloadHosts,
+  sortDownloadHostsByPreference,
+  hideDownloadHost,
+  showDownloadHost,
+} from "./f95/downloads";
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "./f95/utils";
 import { normalizeSessionState, normalizeTagsMap, saveSessionState, saveTagsMap } from "./f95/storage";
-import type { ProcessedThreadItem } from "./f95/types";
+import type { ListType, ProcessedThreadItem, ThreadDownloadsData } from "./f95/types";
 import { Dashboard } from "./components/Dashboard";
-import { SyncMetadataPanel } from "./components/SyncMetadataPanel";
+import { DownloadModal } from "./components/DownloadModal";
+import { SettingsPage } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
 
 const openLinkInNewTab = (link: string) => {
   window.open(link, "_blank", "noopener,noreferrer");
 };
+
+const DOWNLOAD_PRELOAD_LIMIT = 4;
 
 const isTextInputFocused = () => {
   const activeElement = document.activeElement;
@@ -42,11 +66,35 @@ const createClosedViewerState = (): ViewerState => ({
   activeIndex: 0,
 });
 
-type PageType = "swipe" | "dashboard";
+type DownloadModalState = {
+  isOpen: boolean;
+  threadLink: string | null;
+  threadTitle: string;
+  downloadsData: ThreadDownloadsData | null;
+  isLoading: boolean;
+  errorMessage: string | null;
+};
+
+const createClosedDownloadModalState = (): DownloadModalState => ({
+  isOpen: false,
+  threadLink: null,
+  threadTitle: "",
+  downloadsData: null,
+  isLoading: false,
+  errorMessage: null,
+});
+
+type PageType = "swipe" | "dashboard" | "settings";
 
 const readPageFromHash = (): PageType => {
   const hashValue = window.location.hash.replace("#", "").trim().toLowerCase();
-  return hashValue === "dashboard" ? "dashboard" : "swipe";
+  if (hashValue === "dashboard") {
+    return "dashboard";
+  }
+  if (hashValue === "settings") {
+    return "settings";
+  }
+  return "swipe";
 };
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -154,9 +202,6 @@ const App = () => {
     tagsMap,
     updateTagsMap,
     metadataSyncState,
-    startMetadataSync,
-    togglePlayedForLink,
-    setPlayedFlagForLink,
     moveLinkToList,
     removeLinkFromList,
   } = useF95Browser();
@@ -164,13 +209,22 @@ const App = () => {
   const [viewerState, setViewerState] = useState<ViewerState>(() =>
     createClosedViewerState(),
   );
+  const [downloadModalState, setDownloadModalState] =
+    useState<DownloadModalState>(() => createClosedDownloadModalState());
   const [pageType, setPageType] = useState<PageType>(() => readPageFromHash());
-  const [areBookmarkTagsVisible, setAreBookmarkTagsVisible] = useState(false);
-  const [areTrashTagsVisible, setAreTrashTagsVisible] = useState(false);
-  const [arePlayedTagsVisible, setArePlayedTagsVisible] = useState(false);
+  const [preferredDownloadHosts, setPreferredDownloadHosts] = useState<string[]>(
+    () => loadPreferredDownloadHosts(),
+  );
+  const [disabledDownloadHosts, setDisabledDownloadHosts] = useState<Record<string, number>>(
+    () => loadDisabledDownloadHosts(),
+  );
+  const [hiddenDownloadHosts, setHiddenDownloadHosts] = useState<string[]>(
+    () => loadHiddenDownloadHosts(),
+  );
 
   const importSessionStateInputRef = useRef<HTMLInputElement | null>(null);
   const importTagsMapInputRef = useRef<HTMLInputElement | null>(null);
+  const downloadRequestIdRef = useRef(0);
 
   const currentThreadLink = useMemo(() => {
     if (currentThreadIdentifier === null) {
@@ -189,7 +243,7 @@ const App = () => {
     [playedLinks],
   );
 
-  const progressPills = useMemo(() => {
+  const swipeProgressPills = useMemo(() => {
     return [
       { label: "Страница", value: sessionState.currentPageNumber },
       {
@@ -197,19 +251,107 @@ const App = () => {
         value: sessionState.remainingThreadIdentifiers.length,
       },
       { label: "Просмотрено", value: sessionState.viewedCount },
-      { label: "Избранное", value: sessionState.favoritesLinks.length },
-      { label: "Мусор", value: sessionState.trashLinks.length },
-      { label: "Играл", value: playedCount },
     ];
-  }, [sessionState, playedCount]);
+  }, [
+    sessionState.currentPageNumber,
+    sessionState.remainingThreadIdentifiers.length,
+    sessionState.viewedCount,
+  ]);
+
+  const handleMoveDownloadHost = useCallback(
+    (hostLabel: string, direction: -1 | 1) => {
+      setPreferredDownloadHosts((previousState) => {
+        const orderedHostList = sortDownloadHostsByPreference(
+          loadKnownDownloadHosts(),
+          previousState,
+        );
+        const currentIndex = orderedHostList.indexOf(hostLabel);
+        if (currentIndex === -1) {
+          return previousState;
+        }
+
+        let targetIndex = currentIndex + direction;
+        while (
+          targetIndex >= 0 &&
+          targetIndex < orderedHostList.length &&
+          hiddenDownloadHosts.includes(orderedHostList[targetIndex])
+        ) {
+          targetIndex += direction;
+        }
+
+        if (targetIndex < 0 || targetIndex >= orderedHostList.length) {
+          return previousState;
+        }
+
+        const nextState = moveDownloadHostPreference(
+          orderedHostList,
+          hostLabel,
+          targetIndex,
+        );
+        savePreferredDownloadHosts(nextState);
+        return nextState;
+      });
+    },
+    [hiddenDownloadHosts],
+  );
+
+  const handleDisableDownloadHostTemporarily = useCallback((hostLabel: string) => {
+    setDisabledDownloadHosts(disableDownloadHostTemporarily(hostLabel));
+  }, []);
+
+  const handleEnableDownloadHost = useCallback((hostLabel: string) => {
+    setDisabledDownloadHosts(enableDownloadHost(hostLabel));
+  }, []);
+
+  const handleResetPreferredDownloadHosts = useCallback(() => {
+    const nextHostList = resetPreferredDownloadHosts();
+    setPreferredDownloadHosts(nextHostList);
+  }, []);
+
+  const handleClearDisabledDownloadHosts = useCallback(() => {
+    clearDisabledDownloadHosts();
+    setDisabledDownloadHosts({});
+  }, []);
+
+  const handleHideDownloadHost = useCallback((hostLabel: string) => {
+    setHiddenDownloadHosts(hideDownloadHost(hostLabel));
+  }, []);
+
+  const handleShowDownloadHost = useCallback((hostLabel: string) => {
+    setHiddenDownloadHosts(showDownloadHost(hostLabel));
+  }, []);
+
+  const handleClearHiddenDownloadHosts = useCallback(() => {
+    clearHiddenDownloadHosts();
+    setHiddenDownloadHosts([]);
+  }, []);
+
+  const removeDownloadCacheForListType = useCallback(
+    (threadLink: string, listType: ListType) => {
+      if (listType === "trash" || listType === "played") {
+        removeCachedThreadDownloads(threadLink);
+      }
+    },
+    [],
+  );
 
   const handleFavorite = useCallback(() => {
     applyActionToCurrentCard("favorite");
   }, [applyActionToCurrentCard]);
 
   const handleTrash = useCallback(() => {
+    if (currentThreadLink) {
+      removeCachedThreadDownloads(currentThreadLink);
+    }
     applyActionToCurrentCard("trash");
-  }, [applyActionToCurrentCard]);
+  }, [applyActionToCurrentCard, currentThreadLink]);
+
+  const handlePlayed = useCallback(() => {
+    if (currentThreadLink) {
+      removeCachedThreadDownloads(currentThreadLink);
+    }
+    applyActionToCurrentCard("played");
+  }, [applyActionToCurrentCard, currentThreadLink]);
 
   const handleExportSessionState = useCallback(() => {
     downloadJsonFile("f95-tinder-session.json", {
@@ -316,6 +458,130 @@ const App = () => {
     setViewerState(createClosedViewerState());
   }, []);
 
+  const closeDownloadModal = useCallback(() => {
+    downloadRequestIdRef.current += 1;
+    setDownloadModalState(createClosedDownloadModalState());
+  }, []);
+
+  const showDownloadModal = useCallback(
+    (
+      threadLink: string,
+      threadTitle: string,
+      downloadsData: ThreadDownloadsData | null,
+      isLoading: boolean,
+      errorMessageValue: string | null,
+    ) => {
+      setDownloadModalState({
+        isOpen: true,
+        threadLink,
+        threadTitle,
+        downloadsData,
+        isLoading,
+        errorMessage: errorMessageValue,
+      });
+    },
+    [],
+  );
+
+  const openDownloadModal = useCallback(
+    async (threadLink: string, threadTitle: string) => {
+      const cachedDownloads = loadCachedThreadDownloads(threadLink);
+      const requestId = downloadRequestIdRef.current + 1;
+      downloadRequestIdRef.current = requestId;
+
+      if (cachedDownloads) {
+        showDownloadModal(
+          threadLink,
+          threadTitle,
+          cachedDownloads,
+          false,
+          null,
+        );
+        return;
+      }
+
+      showDownloadModal(threadLink, threadTitle, null, true, null);
+
+      try {
+        const downloadsData = await loadOrFetchThreadDownloads(threadLink);
+
+        if (downloadRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+      } catch (error) {
+        if (downloadRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        showDownloadModal(
+          threadLink,
+          threadTitle,
+          null,
+          false,
+          error instanceof Error
+            ? error.message
+            : "Не удалось загрузить download links",
+        );
+      }
+    },
+    [showDownloadModal],
+  );
+
+  const openCurrentThreadDownloads = useCallback(() => {
+    if (!currentThreadLink || !currentThreadItem) {
+      return;
+    }
+
+    void openDownloadModal(currentThreadLink, currentThreadItem.title);
+  }, [currentThreadItem, currentThreadLink, openDownloadModal]);
+
+  const openBestDownloadForThread = useCallback(
+    async (threadLink: string, threadTitle: string) => {
+      try {
+        const downloadsData = await loadOrFetchThreadDownloads(threadLink);
+        const bestDownloadLink = findBestDownloadLink(
+          downloadsData,
+          preferredDownloadHosts,
+          disabledDownloadHosts,
+          hiddenDownloadHosts,
+        );
+
+        if (bestDownloadLink?.url) {
+          openLinkInNewTab(bestDownloadLink.url);
+          return;
+        }
+
+        showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+      } catch (error) {
+        showDownloadModal(
+          threadLink,
+          threadTitle,
+          null,
+          false,
+          error instanceof Error
+            ? error.message
+            : "Не удалось загрузить download links",
+        );
+      }
+    },
+    [
+      disabledDownloadHosts,
+      hiddenDownloadHosts,
+      preferredDownloadHosts,
+      showDownloadModal,
+    ],
+  );
+
+  const openCurrentBestDownload = useCallback(() => {
+    if (!currentThreadLink || !currentThreadItem) {
+      return;
+    }
+
+    void openBestDownloadForThread(currentThreadLink, currentThreadItem.title);
+  }, [currentThreadItem, currentThreadLink, openBestDownloadForThread]);
+
   const showPreviousViewerImage = useCallback(() => {
     setViewerState((previousState) => {
       if (!previousState.isOpen || previousState.imageUrlList.length === 0) {
@@ -349,8 +615,39 @@ const App = () => {
   const setPage = useCallback((nextPageType: PageType) => {
     setPageType(nextPageType);
     window.location.hash =
-      nextPageType === "dashboard" ? "#dashboard" : "#swipe";
+      nextPageType === "dashboard"
+        ? "#dashboard"
+        : nextPageType === "settings"
+          ? "#settings"
+          : "#swipe";
   }, []);
+
+  const openSettingsPage = useCallback(() => {
+    closeDownloadModal();
+    setPage("settings");
+  }, [closeDownloadModal, setPage]);
+
+  const preloadThreadLinks = useMemo(() => {
+    const threadLinkList: string[] = [];
+
+    if (currentThreadLink) {
+      threadLinkList.push(currentThreadLink);
+    }
+
+    for (const threadIdentifier of sessionState.remainingThreadIdentifiers) {
+      const threadLink = buildThreadLink(threadIdentifier);
+      if (threadLinkList.includes(threadLink)) {
+        continue;
+      }
+
+      threadLinkList.push(threadLink);
+      if (threadLinkList.length >= DOWNLOAD_PRELOAD_LIMIT) {
+        break;
+      }
+    }
+
+    return threadLinkList;
+  }, [currentThreadLink, sessionState.remainingThreadIdentifiers]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -362,7 +659,43 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    if (pageType !== "swipe" || preloadThreadLinks.length === 0) {
+      return;
+    }
+
+    let isCancelled = false;
+    const preloadTimeoutId = window.setTimeout(() => {
+      void (async () => {
+        for (const threadLink of preloadThreadLinks) {
+          if (isCancelled || loadCachedThreadDownloads(threadLink)) {
+            continue;
+          }
+
+          try {
+            await loadOrFetchThreadDownloads(threadLink);
+          } catch {
+            // ignore preload failures
+          }
+        }
+      })();
+    }, 450);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(preloadTimeoutId);
+    };
+  }, [pageType, preloadThreadLinks]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (downloadModalState.isOpen) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeDownloadModal();
+        }
+        return;
+      }
+
       if (viewerState.isOpen) {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -402,6 +735,12 @@ const App = () => {
           return;
         }
 
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          handlePlayed();
+          return;
+        }
+
         if (event.key === "Enter") {
           if (currentThreadLink) {
             event.preventDefault();
@@ -423,9 +762,12 @@ const App = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     canUndo,
+    closeDownloadModal,
     closeViewer,
     currentThreadLink,
+    downloadModalState.isOpen,
     handleFavorite,
+    handlePlayed,
     handleTrash,
     pageType,
     showNextViewerImage,
@@ -454,64 +796,12 @@ const App = () => {
     [sessionState.processedThreadItemsByLink, sessionState.threadItemsByIdentifier],
   );
 
-  const isCurrentThreadPlayed = useMemo(() => {
-    if (!currentThreadLink) {
-      return false;
-    }
-    return Boolean(sessionState.playedByLink[currentThreadLink]);
-  }, [currentThreadLink, sessionState.playedByLink]);
-
   const currentThreadTags = useMemo(() => {
     if (!currentThreadLink) {
       return [];
     }
     return getTagsForLink(currentThreadLink);
   }, [currentThreadLink, getTagsForLink]);
-  const formatTagLabel = useCallback(
-    (tagId: number) => tagsMap[String(tagId)] ?? `#${tagId}`,
-    [tagsMap],
-  );
-
-  const buildTagStats = useCallback(
-    (links: string[]) => {
-      const countByTag = new Map<number, number>();
-
-      for (const threadLink of links) {
-        const tags = getTagsForLink(threadLink);
-        for (const tagId of tags) {
-          if (typeof tagId !== "number") {
-            continue;
-          }
-          countByTag.set(tagId, (countByTag.get(tagId) ?? 0) + 1);
-        }
-      }
-
-      return Array.from(countByTag.entries())
-        .sort((first, second) => second[1] - first[1])
-        .slice(0, 12)
-        .map(([tagId, count]) => ({
-          tagId,
-          label: formatTagLabel(tagId),
-          count,
-        }));
-    },
-    [formatTagLabel, getTagsForLink],
-  );
-
-  const tagStatsFavorites = useMemo(
-    () => buildTagStats(sessionState.favoritesLinks),
-    [buildTagStats, sessionState.favoritesLinks],
-  );
-
-  const tagStatsTrash = useMemo(
-    () => buildTagStats(sessionState.trashLinks),
-    [buildTagStats, sessionState.trashLinks],
-  );
-
-  const tagStatsPlayed = useMemo(
-    () => buildTagStats(playedLinks),
-    [buildTagStats, playedLinks],
-  );
 
   const averageFavoritesRating = useMemo(() => {
     if (sessionState.favoritesLinks.length === 0) {
@@ -538,10 +828,73 @@ const App = () => {
     sessionState.threadItemsByIdentifier,
   ]);
 
+  const handleMoveLinkToList = useCallback(
+    (threadLink: string, listType: ListType) => {
+      removeDownloadCacheForListType(threadLink, listType);
+      moveLinkToList(threadLink, listType);
+    },
+    [moveLinkToList, removeDownloadCacheForListType],
+  );
+
+  const handleClearAllData = useCallback(() => {
+    clearHiddenDownloadHosts();
+    clearDisabledDownloadHosts();
+    clearAllCachedThreadDownloads();
+    setPreferredDownloadHosts(resetPreferredDownloadHosts());
+    downloadRequestIdRef.current += 1;
+    setDownloadModalState(createClosedDownloadModalState());
+    setViewerState(createClosedViewerState());
+    setHiddenDownloadHosts([]);
+    setDisabledDownloadHosts({});
+    clearAllData();
+  }, [clearAllData]);
+
+  const handleConfirmClearAllData = useCallback(() => {
+    const shouldClear = window.confirm(
+      "Удалить все локальные данные (сессия + кэш страниц + download cache)?",
+    );
+    if (shouldClear) {
+      handleClearAllData();
+    }
+  }, [handleClearAllData]);
+
+  const knownDownloadHosts = useMemo(() => {
+    return sortDownloadHostsByPreference(
+      loadKnownDownloadHosts(),
+      preferredDownloadHosts,
+    );
+  }, [
+    preferredDownloadHosts,
+    disabledDownloadHosts,
+    hiddenDownloadHosts,
+    downloadModalState.downloadsData,
+  ]);
+
   const swipeView = (
     <div className="mainGrid">
       <div className="panel">
         <h3 className="panelTitle">Фильтры</h3>
+
+        <div className="swipeSessionBlock">
+          <div className="label">Сессия свайпа</div>
+          <div className="swipeSessionRow">
+            {swipeProgressPills.map((pill) => (
+              <span key={pill.label} className="pill">
+                {pill.label}: <strong>{pill.value}</strong>
+              </span>
+            ))}
+          </div>
+          <div className="swipeSessionActions">
+            <button
+              className="button"
+              type="button"
+              onClick={undoLastAction}
+              disabled={!canUndo}
+            >
+              Undo
+            </button>
+          </div>
+        </div>
 
         <div className="formRow">
           <div className="label">Поиск по title/creator</div>
@@ -611,8 +964,8 @@ const App = () => {
         </div>
 
         <div className="smallText" style={{ marginTop: 12 }}>
-          Хоткеи: Left - мусор, Right - избранное, Enter - открыть, Backspace/Z
-          - undo
+          Хоткеи: Left - мусор, Up - играл, Right - закладки, Enter - открыть,
+          Backspace/Z - undo
         </div>
 
         <div className="smallText" style={{ marginTop: 8 }}>
@@ -647,7 +1000,24 @@ const App = () => {
               <div className="cardLinkRow">
                 <div className="cardLink">{currentThreadLink}</div>
                 <button
+                  className="button buttonPrimary"
+                  type="button"
+                  onClick={openCurrentBestDownload}
+                  disabled={!currentThreadLink}
+                >
+                  Скачать лучший
+                </button>
+                <button
                   className="button"
+                  type="button"
+                  onClick={openCurrentThreadDownloads}
+                  disabled={!currentThreadLink}
+                >
+                  Загрузки
+                </button>
+                <button
+                  className="button"
+                  type="button"
                   onClick={() =>
                     currentThreadLink && openLinkInNewTab(currentThreadLink)
                   }
@@ -696,19 +1066,35 @@ const App = () => {
             </div>
 
             <div className="cardActions">
-              <button className="button buttonDanger" onClick={handleTrash}>
-                В мусор (Left)
+              <button
+                className="button swipeActionButton swipeActionTrash cardActionTrash"
+                onClick={handleTrash}
+              >
+                <span className="swipeActionIcon" aria-hidden>
+                  🗑
+                </span>
+                <span className="swipeActionLabel">В мусор</span>
+                <span className="swipeActionHint">Left</span>
               </button>
               <button
-                className="button"
-                onClick={() =>
-                  currentThreadLink && togglePlayedForLink(currentThreadLink)
-                }
+                className="button swipeActionButton swipeActionPlayed cardActionPlayed"
+                onClick={handlePlayed}
               >
-                {isCurrentThreadPlayed ? "Снять Играл" : "Играл"}
+                <span className="swipeActionIcon" aria-hidden>
+                  🎮
+                </span>
+                <span className="swipeActionLabel">Играл</span>
+                <span className="swipeActionHint">↑</span>
               </button>
-              <button className="button buttonPrimary" onClick={handleFavorite}>
-                В избранное (Right)
+              <button
+                className="button swipeActionButton swipeActionFavorite cardActionFavorite"
+                onClick={handleFavorite}
+              >
+                <span className="swipeActionIcon" aria-hidden>
+                  ★
+                </span>
+                <span className="swipeActionLabel">В закладки</span>
+                <span className="swipeActionHint">Right</span>
               </button>
             </div>
           </div>
@@ -717,124 +1103,17 @@ const App = () => {
     </div>
   );
 
-  const renderTagSection = (
-    title: string,
-    countLabel: string,
-    countValue: number,
-    stats: Array<{ tagId: number; label: string; count: number }>,
-    isVisible: boolean,
-    toggleVisibility: () => void,
-  ) => (
-    <div style={{ marginTop: 12 }}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <div className="label">{title}</div>
-          <div className="smallText" style={{ marginTop: 6 }}>
-            {countLabel}: <strong>{countValue}</strong>
-          </div>
-        </div>
-        <button className="button" type="button" onClick={toggleVisibility}>
-          {isVisible
-            ? "Скрыть популярные теги"
-            : "Показать популярные теги"}
-        </button>
-      </div>
-      {isVisible ? (
-        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-          {stats.length === 0 ? (
-            <div className="smallText">Пока нет тегов</div>
-          ) : (
-            stats.map((tagStat) => (
-              <div
-                key={`${title}-${tagStat.tagId}`}
-                className="pill"
-                style={{ justifyContent: "space-between" }}
-              >
-                <span>{tagStat.label}</span>
-                <strong>{tagStat.count}</strong>
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-
   const dashboardView = (
-    <div className="mainGrid">
+    <div className="dashboardScreen">
       <div className="panel">
-        <h3 className="panelTitle">Дашборд</h3>
-        <div className="smallText">
-          Здесь видно статистику и все игры в списках. В карточках можно открыть
-          тред.
-        </div>
-
-        {renderTagSection(
-          "Закладки",
-          "В закладках",
-          sessionState.favoritesLinks.length,
-          tagStatsFavorites,
-          areBookmarkTagsVisible,
-          () => setAreBookmarkTagsVisible((prev) => !prev),
-        )}
-        {renderTagSection(
-          "Мусор",
-          "В мусоре",
-          sessionState.trashLinks.length,
-          tagStatsTrash,
-          areTrashTagsVisible,
-          () => setAreTrashTagsVisible((prev) => !prev),
-        )}
-        {renderTagSection(
-          "Играл",
-          "Отмечено",
-          playedCount,
-          tagStatsPlayed,
-          arePlayedTagsVisible,
-          () => setArePlayedTagsVisible((prev) => !prev),
-        )}
-
-        <div className="smallText" style={{ marginTop: 12 }}>
-          Подсказка: если какие-то игры импортированы без данных, они покажутся
-          без обложки. Новые свайпы сохраняют title/creator/cover.
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <div className="label">Импорт тегов</div>
-          <button
-            className="button"
-            type="button"
-            onClick={() => importTagsMapInputRef.current?.click()}
-          >
-            Импорт tagsMap.json
-          </button>
-          <input
-            ref={importTagsMapInputRef}
-            type="file"
-            accept="application/json"
-            hidden
-            onChange={handleImportTagsMapChange}
-          />
-          <div className="smallText" style={{ marginTop: 6 }}>
-            Формат: {`{ "45": "3D", "130": "RenPy" }`}
+        <div className="sectionTitleRow">
+          <div>
+            <h3 className="panelTitle dashboardPanelTitle">Дашборд</h3>
+            <div className="smallText">
+              Все списки и фильтры собраны в одном месте.
+            </div>
           </div>
         </div>
-
-        <SyncMetadataPanel
-          metadataSyncState={metadataSyncState}
-          startMetadataSync={startMetadataSync}
-        />
-      </div>
-
-      <div className="dashboardGrid">
         <div className="dashboardCardsRow">
           <div className="metricCard">
             <div className="metricLabel">Просмотрено</div>
@@ -864,34 +1143,70 @@ const App = () => {
             </div>
           </div>
         </div>
-
-        <Dashboard
-          sessionState={sessionState}
-          tagsMap={tagsMap}
-          togglePlayedForLink={togglePlayedForLink}
-          setPlayedFlagForLink={setPlayedFlagForLink}
-          moveLinkToList={moveLinkToList}
-          removeLinkFromList={removeLinkFromList}
-          pickCoverForLink={pickCoverForLink}
-          pickTitleForLink={pickTitleForLink}
-          pickCreatorForLink={pickCreatorForLink}
-          pickRatingForLink={pickRatingForLink}
-        />
       </div>
+
+      <Dashboard
+        sessionState={sessionState}
+        openBestDownloadForThread={(threadLink, threadTitle) => {
+          void openBestDownloadForThread(threadLink, threadTitle);
+        }}
+        tagsMap={tagsMap}
+        openDownloadsForThread={(threadLink, threadTitle) => {
+          void openDownloadModal(threadLink, threadTitle);
+        }}
+        moveLinkToList={handleMoveLinkToList}
+        removeLinkFromList={removeLinkFromList}
+        pickCoverForLink={pickCoverForLink}
+        pickTitleForLink={pickTitleForLink}
+        pickCreatorForLink={pickCreatorForLink}
+        pickRatingForLink={pickRatingForLink}
+      />
     </div>
   );
+
+  const settingsView = (
+    <SettingsPage
+      preferredDownloadHosts={preferredDownloadHosts}
+      disabledDownloadHosts={disabledDownloadHosts}
+      hiddenDownloadHosts={hiddenDownloadHosts}
+      knownDownloadHosts={knownDownloadHosts}
+      tagsCount={Object.keys(tagsMap).length}
+      metadataSyncState={metadataSyncState}
+      onMoveDownloadHost={handleMoveDownloadHost}
+      onDisableDownloadHostTemporarily={handleDisableDownloadHostTemporarily}
+      onEnableDownloadHost={handleEnableDownloadHost}
+      onHideDownloadHost={handleHideDownloadHost}
+      onShowDownloadHost={handleShowDownloadHost}
+      onResetPreferredDownloadHosts={handleResetPreferredDownloadHosts}
+      onClearDisabledDownloadHosts={handleClearDisabledDownloadHosts}
+      onClearHiddenDownloadHosts={handleClearHiddenDownloadHosts}
+      onOpenImportTagsMap={() => importTagsMapInputRef.current?.click()}
+      onImportTagsMapChange={() => {
+        void handleImportTagsMapChange();
+      }}
+      onExportSessionState={handleExportSessionState}
+      onOpenImportSessionState={() => importSessionStateInputRef.current?.click()}
+      onImportSessionStateChange={() => {
+        void handleImportSessionStateChange();
+      }}
+      onClearAllData={handleConfirmClearAllData}
+      importSessionStateInputRef={importSessionStateInputRef}
+      importTagsMapInputRef={importTagsMapInputRef}
+    />
+  );
+
+  const pageView =
+    pageType === "dashboard"
+      ? dashboardView
+      : pageType === "settings"
+        ? settingsView
+        : swipeView;
 
   return (
     <div className="appRoot">
       <div className="topBar">
         <div className="topBarGrid">
-          <div className="progressText">
-            {progressPills.map((pill) => (
-              <span key={pill.label} className="pill">
-                {pill.label}: <strong>{pill.value}</strong>
-              </span>
-            ))}
-          </div>
+          <div />
 
           <div className="topBarButtons">
             <button
@@ -906,49 +1221,13 @@ const App = () => {
             >
               Дашборд
             </button>
-
             <button
-              className="button"
-              onClick={undoLastAction}
-              disabled={!canUndo || pageType !== "swipe"}
+              className={`button ${pageType === "settings" ? "navButtonActive" : ""}`}
+              onClick={() => setPage("settings")}
             >
-              Undo
+              Настройки
             </button>
 
-              <button
-                className="button"
-                onClick={handleExportSessionState}
-              >
-                Экспортировать
-              </button>
-
-              <button
-                className="button"
-                onClick={() => importSessionStateInputRef.current?.click()}
-              >
-                Импорт
-              </button>
-              <input
-                ref={importSessionStateInputRef}
-                type="file"
-                accept="application/json"
-                hidden
-                onChange={handleImportSessionStateChange}
-              />
-
-            <button
-              className="button buttonDanger"
-              onClick={() => {
-                const shouldClear = window.confirm(
-                  "Удалить все локальные данные (сессия + кэш страниц)?",
-                );
-                if (shouldClear) {
-                  clearAllData();
-                }
-              }}
-            >
-              Очистить
-            </button>
           </div>
         </div>
 
@@ -959,7 +1238,25 @@ const App = () => {
         ) : null}
       </div>
 
-      {pageType === "dashboard" ? dashboardView : swipeView}
+      {pageView}
+
+      <DownloadModal
+        isOpen={downloadModalState.isOpen}
+        threadLink={downloadModalState.threadLink}
+        threadTitle={downloadModalState.threadTitle}
+        isLoading={downloadModalState.isLoading}
+        errorMessage={downloadModalState.errorMessage}
+        downloadsData={downloadModalState.downloadsData}
+        preferredDownloadHosts={preferredDownloadHosts}
+        disabledDownloadHosts={disabledDownloadHosts}
+        hiddenDownloadHosts={hiddenDownloadHosts}
+        onClose={closeDownloadModal}
+        onOpenBestDownload={(threadLink, threadTitle) => {
+          void openBestDownloadForThread(threadLink, threadTitle);
+        }}
+        onOpenSettings={openSettingsPage}
+        onOpenThread={openLinkInNewTab}
+      />
 
       {viewerState.isOpen ? (
         <div
