@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import type { MouseEvent } from "react";
 import { TagChips } from "./TagChips";
 import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
 import {
@@ -25,11 +26,16 @@ type DashboardCard = {
   sectionKey: "favorite" | "trash" | "played";
 };
 
+type DashboardTabId = "bookmarks" | "trash" | "played";
+
 type DashboardProps = {
   sessionState: SessionState;
   openBestDownloadForThread: (
     threadLink: string,
     threadTitle: string,
+    options?: {
+      openInBackground?: boolean;
+    },
   ) => void | Promise<void>;
   tagsMap: Record<string, string>;
   openDownloadsForThread: (
@@ -70,6 +76,15 @@ const parseThreadIdentifierFromLink = (threadLink: string) => {
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
 
+const INITIAL_VISIBLE_CARD_COUNT = 120;
+const VISIBLE_CARD_COUNT_STEP = 120;
+
+const createInitialVisibleCardCounts = (): Record<DashboardTabId, number> => ({
+  bookmarks: INITIAL_VISIBLE_CARD_COUNT,
+  trash: INITIAL_VISIBLE_CARD_COUNT,
+  played: INITIAL_VISIBLE_CARD_COUNT,
+});
+
 const sortCards = (
   cards: DashboardCard[],
   sortField: "addedAt" | "rating" | "title",
@@ -107,32 +122,43 @@ export const Dashboard = ({
   const [isSearchAndSortOpen, setIsSearchAndSortOpen] = useState(false);
   const [isIncludeTagsOpen, setIsIncludeTagsOpen] = useState(false);
   const [isExcludeTagsOpen, setIsExcludeTagsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"bookmarks" | "trash" | "played">(
-    "bookmarks",
-  );
+  const [activeTab, setActiveTab] = useState<DashboardTabId>("bookmarks");
   const [onlyUpdatedTracked, setOnlyUpdatedTracked] = useState(false);
   const [sortField, setSortField] = useState<"addedAt" | "rating" | "title">(
     "addedAt",
   );
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("asc");
+  const [visibleCardCountByTab, setVisibleCardCountByTab] = useState(
+    createInitialVisibleCardCounts,
+  );
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
     [sessionState.playedLinks],
   );
+  const deferredSearchText = useDeferredValue(searchText);
+  const favoritesLinkSet = useMemo(
+    () => new Set(sessionState.favoritesLinks),
+    [sessionState.favoritesLinks],
+  );
+  const trashLinkSet = useMemo(
+    () => new Set(sessionState.trashLinks),
+    [sessionState.trashLinks],
+  );
+  const playedLinkSet = useMemo(() => new Set(playedLinks), [playedLinks]);
 
   const trackedLinks = useMemo(() => {
     const linkSet = new Set<string>();
-    for (const link of sessionState.favoritesLinks) {
+    for (const link of favoritesLinkSet) {
       linkSet.add(link);
     }
-    for (const link of sessionState.trashLinks) {
+    for (const link of trashLinkSet) {
       linkSet.add(link);
     }
-    for (const link of playedLinks) {
+    for (const link of playedLinkSet) {
       linkSet.add(link);
     }
     return Array.from(linkSet);
-  }, [sessionState.favoritesLinks, sessionState.trashLinks, playedLinks]);
+  }, [favoritesLinkSet, trashLinkSet, playedLinkSet]);
 
   const availableTagOptions = useMemo(() => {
     const tagSet = new Set<number>();
@@ -162,9 +188,20 @@ export const Dashboard = ({
   );
 
   const normalizedSearchText = useMemo(
-    () => normalizeText(searchText),
-    [searchText],
+    () => normalizeText(deferredSearchText),
+    [deferredSearchText],
   );
+
+  useEffect(() => {
+    setVisibleCardCountByTab(createInitialVisibleCardCounts());
+  }, [
+    normalizedSearchText,
+    includeTagNumbers,
+    excludeTagNumbers,
+    onlyUpdatedTracked,
+    sortField,
+    sortDirection,
+  ]);
 
   const sortFieldLabel =
     sortField === "addedAt"
@@ -257,11 +294,11 @@ export const Dashboard = ({
       }
 
       const membershipListType: ListType | null =
-        sessionState.favoritesLinks.includes(threadLink)
+        favoritesLinkSet.has(threadLink)
           ? "favorite"
-          : sessionState.trashLinks.includes(threadLink)
+          : trashLinkSet.has(threadLink)
             ? "trash"
-            : playedLinks.includes(threadLink)
+            : playedLinkSet.has(threadLink)
               ? "played"
               : null;
       const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
@@ -292,9 +329,9 @@ export const Dashboard = ({
         updateLabel: getProcessedThreadItemUpdateLabel(processedItem),
         tags: cardTags,
         addedAt: processedItem?.addedAtUnixSeconds ?? 0,
-        isPlayed: playedLinks.includes(threadLink),
-        isInFavorites: sessionState.favoritesLinks.includes(threadLink),
-        isInTrash: sessionState.trashLinks.includes(threadLink),
+        isPlayed: playedLinkSet.has(threadLink),
+        isInFavorites: favoritesLinkSet.has(threadLink),
+        isInTrash: trashLinkSet.has(threadLink),
         listType: membershipListType,
         sectionKey,
       });
@@ -303,63 +340,40 @@ export const Dashboard = ({
     return sortCards(filteredCards, sortField, sortDirection);
   };
 
-  const favoritesCards = useMemo(
-    () => createCards(sessionState.favoritesLinks, "favorite"),
-    [
-      sessionState.favoritesLinks,
-      sessionState.processedThreadItemsByLink,
-      sessionState.threadItemsByIdentifier,
-      playedLinks,
-      sortField,
-      sortDirection,
-      normalizedSearchText,
-      onlyUpdatedTracked,
-      includeTagNumbers,
-      excludeTagNumbers,
-      pickCoverForLink,
-      pickTitleForLink,
-      pickCreatorForLink,
-      pickRatingForLink,
-    ],
-  );
+  const activeCards = useMemo(() => {
+    if (activeTab === "bookmarks") {
+      return createCards(sessionState.favoritesLinks, "favorite");
+    }
+    if (activeTab === "trash") {
+      return createCards(sessionState.trashLinks, "trash");
+    }
+    return createCards(playedLinks, "played");
+  }, [
+    activeTab,
+    sessionState.favoritesLinks,
+    sessionState.trashLinks,
+    playedLinks,
+    sessionState.processedThreadItemsByLink,
+    sessionState.threadItemsByIdentifier,
+    favoritesLinkSet,
+    trashLinkSet,
+    playedLinkSet,
+    sortField,
+    sortDirection,
+    normalizedSearchText,
+    onlyUpdatedTracked,
+    includeTagNumbers,
+    excludeTagNumbers,
+    pickCoverForLink,
+    pickTitleForLink,
+    pickCreatorForLink,
+    pickRatingForLink,
+  ]);
 
-  const trashCards = useMemo(
-    () => createCards(sessionState.trashLinks, "trash"),
-    [
-      sessionState.trashLinks,
-      sessionState.processedThreadItemsByLink,
-      sessionState.threadItemsByIdentifier,
-      playedLinks,
-      sortField,
-      sortDirection,
-      normalizedSearchText,
-      onlyUpdatedTracked,
-      includeTagNumbers,
-      excludeTagNumbers,
-      pickCoverForLink,
-      pickTitleForLink,
-      pickCreatorForLink,
-      pickRatingForLink,
-    ],
-  );
-
-  const playedCards = useMemo(
-    () => createCards(playedLinks, "played"),
-    [
-      playedLinks,
-      sessionState.processedThreadItemsByLink,
-      sessionState.threadItemsByIdentifier,
-      sortField,
-      sortDirection,
-      normalizedSearchText,
-      onlyUpdatedTracked,
-      includeTagNumbers,
-      excludeTagNumbers,
-      pickCoverForLink,
-      pickTitleForLink,
-      pickCreatorForLink,
-      pickRatingForLink,
-    ],
+  const visibleCardCount = visibleCardCountByTab[activeTab];
+  const visibleCards = useMemo(
+    () => activeCards.slice(0, visibleCardCount),
+    [activeCards, visibleCardCount],
   );
 
   const toggleIncludeTag = (tagId: string) => {
@@ -467,19 +481,16 @@ export const Dashboard = ({
     {
       id: "bookmarks" as const,
       label: "Закладки",
-      cards: favoritesCards,
       updatedCount: favoritesUpdatedCount,
     },
     {
       id: "trash" as const,
       label: "Мусор",
-      cards: trashCards,
       updatedCount: 0,
     },
     {
       id: "played" as const,
       label: "Играл",
-      cards: playedCards,
       updatedCount: playedUpdatedCount,
     },
   ];
@@ -502,12 +513,38 @@ export const Dashboard = ({
       removeLinkFromList(card.threadLink, card.sectionKey as ListType);
     };
 
+    const handleBestDownloadMiddleMouseDown = (
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      // Prevent the browser autoscroll gesture on middle click.
+      event.preventDefault();
+    };
+
+    const handleBestDownloadAuxClick = (
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      event.preventDefault();
+      void openBestDownloadForThread(card.threadLink, card.title, {
+        openInBackground: true,
+      });
+    };
+
     return (
       <div className="listItemActionsRow">
         <div className="listItemPrimaryActions">
           <button
             className="button listItemDownloadButton listItemBestDownloadButton"
             type="button"
+            onMouseDown={handleBestDownloadMiddleMouseDown}
+            onAuxClick={handleBestDownloadAuxClick}
             onClick={() => {
               void openBestDownloadForThread(card.threadLink, card.title);
             }}
@@ -597,9 +634,10 @@ export const Dashboard = ({
 
   const renderCardsList = (
     cards: DashboardCard[],
-    tabId: "bookmarks" | "trash" | "played",
+    totalCardsCount: number,
+    tabId: DashboardTabId,
   ) => {
-    if (cards.length === 0) {
+    if (totalCardsCount === 0) {
       return (
         <div className="statusBox dashboardEmptyState">
           <div style={{ fontWeight: 900, fontSize: 18 }}>
@@ -614,57 +652,98 @@ export const Dashboard = ({
       );
     }
 
+    const remainingCardsCount = totalCardsCount - cards.length;
+
     return (
-      <div className="listGrid" style={{ marginTop: 12 }}>
-        {cards.map((card) => (
-          <div
-            key={card.threadLink}
-            className={`listItemCard ${
-              card.isUpdated ? "listItemCardUpdated" : ""
-            }`}
-          >
-            <a
-              className="listItemCoverLink"
-              href={card.threadLink}
-              target="_blank"
-              rel="noopener noreferrer"
+      <>
+        <div className="listGrid" style={{ marginTop: 12 }}>
+          {cards.map((card) => (
+            <div
+              key={card.threadLink}
+              className={`listItemCard ${
+                card.isUpdated ? "listItemCardUpdated" : ""
+              }`}
             >
-              {card.coverUrl ? (
-                <img
-                  className="listItemCover"
-                  src={card.coverUrl}
-                  alt="cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="listItemCover" />
-              )}
-            </a>
-            <div className="listItemBody">
-              <div className="listItemTitleRow">
-                {card.isUpdated ? (
-                  <span className="listItemStatusBadge listItemStatusBadgeUpdated">
-                    Обновилось
-                  </span>
-                ) : null}
-                <div className="listItemTitle">{card.title}</div>
-              </div>
-              <div className="listItemMeta">
-                <span>{card.creator}</span>
-                {card.version ? <span>Version: {card.version}</span> : null}
-                <span>Rating: {card.rating}</span>
-              </div>
-              {card.isUpdated && card.updateLabel ? (
-                <div className="listItemUpdateLine">
-                  Обновление: {card.updateLabel}
+              <a
+                className="listItemCoverLink"
+                href={card.threadLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {card.coverUrl ? (
+                  <img
+                    className="listItemCover"
+                    src={card.coverUrl}
+                    alt="cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="listItemCover" />
+                )}
+              </a>
+              <div className="listItemBody">
+                <div className="listItemTitleRow">
+                  {card.isUpdated ? (
+                    <span className="listItemStatusBadge listItemStatusBadgeUpdated">
+                      Обновилось
+                    </span>
+                  ) : null}
+                  <div className="listItemTitle">{card.title}</div>
                 </div>
-              ) : null}
-              <TagChips tags={card.tags} tagsMap={tagsMap} />
-              {renderCardActions(card)}
+                <div className="listItemMeta">
+                  <span>{card.creator}</span>
+                  {card.version ? <span>Version: {card.version}</span> : null}
+                  <span>Rating: {card.rating}</span>
+                </div>
+                {card.isUpdated && card.updateLabel ? (
+                  <div className="listItemUpdateLine">
+                    Обновление: {card.updateLabel}
+                  </div>
+                ) : null}
+                <TagChips tags={card.tags} tagsMap={tagsMap} />
+                {renderCardActions(card)}
+              </div>
+            </div>
+          ))}
+        </div>
+        {remainingCardsCount > 0 ? (
+          <div className="dashboardPagination">
+            <div className="sectionMeta">
+              Показано {cards.length} из {totalCardsCount} игр
+            </div>
+            <div className="dashboardPaginationActions">
+              <button
+                className="button"
+                type="button"
+                onClick={() =>
+                  setVisibleCardCountByTab((previous) => ({
+                    ...previous,
+                    [tabId]: Math.min(
+                      previous[tabId] + VISIBLE_CARD_COUNT_STEP,
+                      totalCardsCount,
+                    ),
+                  }))
+                }
+              >
+                Показать еще {Math.min(VISIBLE_CARD_COUNT_STEP, remainingCardsCount)}
+              </button>
+              <button
+                className="button"
+                type="button"
+                onClick={() =>
+                  setVisibleCardCountByTab((previous) => ({
+                    ...previous,
+                    [tabId]: totalCardsCount,
+                  }))
+                }
+              >
+                Показать все
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        ) : null}
+      </>
     );
   };
 
@@ -783,14 +862,14 @@ export const Dashboard = ({
         <div className="sectionTitleRow">
           <div className="sectionTitle">{activeTabItem.label}</div>
           <div className="sectionMeta">
-            {activeTabItem.cards.length} игр
+            {activeCards.length} игр
             {activeTabItem.updatedCount > 0 &&
             activeTabItem.id !== "trash"
               ? ` • обновились ${activeTabItem.updatedCount}`
               : ""}
           </div>
         </div>
-        {renderCardsList(activeTabItem.cards, activeTabItem.id)}
+        {renderCardsList(visibleCards, activeCards.length, activeTabItem.id)}
       </div>
     </div>
   );

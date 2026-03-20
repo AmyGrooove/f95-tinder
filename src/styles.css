@@ -1175,6 +1175,25 @@ body {
   min-height: 180px;
 }
 
+.dashboardPagination {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 16px;
+  background: rgba(15, 21, 32, 0.62);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboardPaginationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .tagChips {
   display: flex;
   flex-wrap: wrap;
@@ -1639,6 +1658,8 @@ body {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+  content-visibility: auto;
+  contain-intrinsic-size: 360px;
 }
 
 .listItemCardUpdated {

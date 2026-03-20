@@ -38,6 +38,62 @@ const openLinkInNewTab = (link: string) => {
   window.open(link, "_blank", "noopener,noreferrer");
 };
 
+const openLinkViaAnchor = (link: string) => {
+  const linkElement = document.createElement("a");
+  linkElement.href = link;
+  linkElement.target = "_blank";
+  linkElement.rel = "noopener noreferrer";
+  linkElement.click();
+};
+
+const openBackgroundTarget = () => {
+  const openedWindow = window.open("", "_blank");
+  if (!openedWindow) {
+    return null;
+  }
+
+  try {
+    openedWindow.opener = null;
+    openedWindow.blur();
+    window.focus();
+  } catch {
+    // ignore browser-specific focus restrictions
+  }
+
+  return openedWindow;
+};
+
+const navigateBackgroundTarget = (openedWindow: Window | null, link: string) => {
+  if (openedWindow && !openedWindow.closed) {
+    try {
+      openedWindow.location.replace(link);
+      openedWindow.blur();
+      window.focus();
+      return;
+    } catch {
+      // ignore and fallback to a regular new tab open
+    }
+  }
+
+  openLinkViaAnchor(link);
+};
+
+const closeBackgroundTarget = (openedWindow: Window | null) => {
+  if (!openedWindow || openedWindow.closed) {
+    return;
+  }
+
+  try {
+    openedWindow.close();
+  } catch {
+    // ignore
+  }
+};
+
+type BestDownloadOpenOptions = {
+  openInBackground?: boolean;
+};
+
 const DOWNLOAD_PRELOAD_LIMIT = 4;
 
 const isTextInputFocused = () => {
@@ -623,7 +679,15 @@ const App = () => {
   }, [currentThreadItem, currentThreadLink, openDownloadModal]);
 
   const openBestDownloadForThread = useCallback(
-    async (threadLink: string, threadTitle: string) => {
+    async (
+      threadLink: string,
+      threadTitle: string,
+      options: BestDownloadOpenOptions = {},
+    ) => {
+      const pendingBackgroundTarget = options.openInBackground
+        ? openBackgroundTarget()
+        : null;
+
       try {
         const downloadsData = await loadOrFetchThreadDownloads(threadLink);
         const bestDownloadLink = findBestDownloadLink(
@@ -634,12 +698,18 @@ const App = () => {
         );
 
         if (bestDownloadLink?.url) {
-          openLinkInNewTab(bestDownloadLink.url);
+          if (options.openInBackground) {
+            navigateBackgroundTarget(pendingBackgroundTarget, bestDownloadLink.url);
+          } else {
+            openLinkInNewTab(bestDownloadLink.url);
+          }
           return;
         }
 
+        closeBackgroundTarget(pendingBackgroundTarget);
         showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
       } catch (error) {
+        closeBackgroundTarget(pendingBackgroundTarget);
         showDownloadModal(
           threadLink,
           threadTitle,
@@ -1274,13 +1344,9 @@ const App = () => {
 
       <Dashboard
         sessionState={sessionState}
-        openBestDownloadForThread={(threadLink, threadTitle) => {
-          void openBestDownloadForThread(threadLink, threadTitle);
-        }}
+        openBestDownloadForThread={openBestDownloadForThread}
         tagsMap={tagsMap}
-        openDownloadsForThread={(threadLink, threadTitle) => {
-          void openDownloadModal(threadLink, threadTitle);
-        }}
+        openDownloadsForThread={openDownloadModal}
         moveLinkToList={handleMoveLinkToList}
         removeLinkFromList={removeLinkFromList}
         pickCoverForLink={pickCoverForLink}
