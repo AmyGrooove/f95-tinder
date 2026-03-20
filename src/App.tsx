@@ -22,7 +22,6 @@ import {
   resetPreferredDownloadHosts,
   savePreferredDownloadHosts,
   sortDownloadHostsByPreference,
-  hideDownloadHost,
   showDownloadHost,
 } from "./f95/downloads";
 import { countUpdatedTrackedItems } from "./f95/updateTracking";
@@ -33,9 +32,16 @@ import { Dashboard } from "./components/Dashboard";
 import { DownloadModal } from "./components/DownloadModal";
 import { SettingsPage, type SettingsTab } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
+import {
+  getLauncherPrimaryActionLabel,
+  getLauncherStatusText,
+  isLauncherGameBusy,
+} from "./launcher/ui";
+import { loadBundledTagsMapViaLauncher, openExternalUrl } from "./launcher/runtime";
+import { useLauncherLibrary } from "./launcher/useLauncherLibrary";
 
 const openLinkInNewTab = (link: string) => {
-  window.open(link, "_blank", "noopener,noreferrer");
+  void openExternalUrl(link);
 };
 
 const openLinkViaAnchor = (link: string) => {
@@ -310,6 +316,14 @@ const App = () => {
     moveLinkToList,
     removeLinkFromList,
   } = useF95Browser();
+  const {
+    isAvailable: isLauncherAvailable,
+    gamesByThreadLink: launcherGamesByThreadLink,
+    libraryRootPath,
+    downloadGame,
+    launchGame,
+    revealGame,
+  } = useLauncherLibrary();
 
   const [viewerState, setViewerState] = useState<ViewerState>(() =>
     createClosedViewerState(),
@@ -332,6 +346,7 @@ const App = () => {
   const importSessionStateInputRef = useRef<HTMLInputElement | null>(null);
   const importTagsMapInputRef = useRef<HTMLInputElement | null>(null);
   const downloadRequestIdRef = useRef(0);
+  const hasAttemptedBundledTagsBootstrapRef = useRef(false);
 
   const currentThreadLink = useMemo(() => {
     if (currentThreadIdentifier === null) {
@@ -339,6 +354,13 @@ const App = () => {
     }
     return buildThreadLink(currentThreadIdentifier);
   }, [currentThreadIdentifier]);
+  const currentLauncherGame = useMemo(() => {
+    if (!currentThreadLink) {
+      return null;
+    }
+
+    return launcherGamesByThreadLink[currentThreadLink] ?? null;
+  }, [currentThreadLink, launcherGamesByThreadLink]);
 
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
@@ -418,10 +440,6 @@ const App = () => {
   const handleClearDisabledDownloadHosts = useCallback(() => {
     clearDisabledDownloadHosts();
     setDisabledDownloadHosts({});
-  }, []);
-
-  const handleHideDownloadHost = useCallback((hostLabel: string) => {
-    setHiddenDownloadHosts(hideDownloadHost(hostLabel));
   }, []);
 
   const handleShowDownloadHost = useCallback((hostLabel: string) => {
@@ -554,31 +572,39 @@ const App = () => {
     }
   }, [setErrorMessage, updateTagsMap]);
 
+  const loadBundledTagsMap = useCallback(async () => {
+    const launcherTagsMap = await loadBundledTagsMapViaLauncher();
+    const parsedJson = launcherTagsMap
+      ? (launcherTagsMap as unknown)
+      : ((await (async () => {
+          const response = await fetch("/tags.json", {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Не удалось загрузить встроенные теги: ${response.status}`,
+            );
+          }
+
+          return response.json();
+        })()) as unknown);
+    const normalizedTagsMap = normalizeTagsMap(parsedJson);
+
+    if (Object.keys(normalizedTagsMap).length === 0) {
+      throw new Error("Встроенный tags.json пустой или имеет неверный формат");
+    }
+
+    return normalizedTagsMap;
+  }, [normalizeTagsMap]);
+
   const handleImportBundledTagsMap = useCallback(async () => {
     try {
       setErrorMessage(null);
-
-      const response = await fetch("/tags.json", {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Не удалось загрузить встроенные теги: ${response.status}`,
-        );
-      }
-
-      const parsedJson = (await response.json()) as unknown;
-      const normalizedTagsMap = normalizeTagsMap(parsedJson);
-
-      if (Object.keys(normalizedTagsMap).length === 0) {
-        throw new Error("Встроенный tags.json пустой или имеет неверный формат");
-      }
-
-      updateTagsMap(normalizedTagsMap);
+      updateTagsMap(await loadBundledTagsMap());
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -586,7 +612,32 @@ const App = () => {
           : "Ошибка загрузки встроенных тегов",
       );
     }
-  }, [normalizeTagsMap, setErrorMessage, updateTagsMap]);
+  }, [loadBundledTagsMap, setErrorMessage, updateTagsMap]);
+
+  useEffect(() => {
+    if (Object.keys(tagsMap).length > 0) {
+      hasAttemptedBundledTagsBootstrapRef.current = false;
+      return;
+    }
+
+    if (hasAttemptedBundledTagsBootstrapRef.current) {
+      return;
+    }
+
+    hasAttemptedBundledTagsBootstrapRef.current = true;
+
+    void (async () => {
+      try {
+        updateTagsMap(await loadBundledTagsMap());
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Ошибка загрузки встроенных тегов";
+        setErrorMessage((previousState) => previousState ?? message);
+      }
+    })();
+  }, [loadBundledTagsMap, setErrorMessage, tagsMap, updateTagsMap]);
 
   const openViewer = useCallback(
     (imageUrlList: string[], startIndex: number) => {
@@ -684,6 +735,58 @@ const App = () => {
       threadTitle: string,
       options: BestDownloadOpenOptions = {},
     ) => {
+      const launcherGame = launcherGamesByThreadLink[threadLink] ?? null;
+      if (isLauncherAvailable) {
+        if (launcherGame?.status === "installed") {
+          try {
+            await launchGame(threadLink);
+          } catch (error) {
+            setErrorMessage(
+              error instanceof Error ? error.message : "Не удалось запустить игру",
+            );
+          }
+          return;
+        }
+
+        if (isLauncherGameBusy(launcherGame)) {
+          return;
+        }
+
+        try {
+          const downloadsData = await loadOrFetchThreadDownloads(threadLink);
+          const bestDownloadLink = findBestDownloadLink(
+            downloadsData,
+            preferredDownloadHosts,
+            disabledDownloadHosts,
+            hiddenDownloadHosts,
+          );
+
+          if (bestDownloadLink?.url) {
+            await downloadGame({
+              threadLink,
+              threadTitle,
+              downloadUrl: bestDownloadLink.url,
+              hostLabel: bestDownloadLink.label,
+            });
+            return;
+          }
+
+          showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+          return;
+        } catch (error) {
+          showDownloadModal(
+            threadLink,
+            threadTitle,
+            null,
+            false,
+            error instanceof Error
+              ? error.message
+              : "Не удалось подготовить загрузку",
+          );
+          return;
+        }
+      }
+
       const pendingBackgroundTarget = options.openInBackground
         ? openBackgroundTarget()
         : null;
@@ -723,8 +826,13 @@ const App = () => {
     },
     [
       disabledDownloadHosts,
+      downloadGame,
       hiddenDownloadHosts,
+      isLauncherAvailable,
+      launchGame,
+      launcherGamesByThreadLink,
       preferredDownloadHosts,
+      setErrorMessage,
       showDownloadModal,
     ],
   );
@@ -1190,9 +1298,14 @@ const App = () => {
                   className="button buttonPrimary"
                   type="button"
                   onClick={openCurrentBestDownload}
-                  disabled={!currentThreadLink}
+                  disabled={
+                    !currentThreadLink || isLauncherGameBusy(currentLauncherGame)
+                  }
                 >
-                  Скачать лучший
+                  {getLauncherPrimaryActionLabel(
+                    isLauncherAvailable,
+                    currentLauncherGame,
+                  )}
                 </button>
                 <button
                   className="button"
@@ -1202,6 +1315,24 @@ const App = () => {
                 >
                   Загрузки
                 </button>
+                {isLauncherAvailable && currentThreadLink && currentLauncherGame ? (
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => {
+                      void revealGame(currentThreadLink).catch((error) => {
+                        setErrorMessage(
+                          error instanceof Error
+                            ? error.message
+                            : "Не удалось открыть папку игры",
+                        );
+                      });
+                    }}
+                    disabled={currentLauncherGame.status !== "installed"}
+                  >
+                    Папка
+                  </button>
+                ) : null}
                 <button
                   className="button"
                   type="button"
@@ -1213,6 +1344,15 @@ const App = () => {
                   Открыть (Enter)
                 </button>
               </div>
+              {currentLauncherGame ? (
+                <div className="smallText" style={{ marginTop: 8 }}>
+                  {getLauncherStatusText(currentLauncherGame)}
+                </div>
+              ) : isLauncherAvailable && libraryRootPath ? (
+                <div className="smallText" style={{ marginTop: 8 }}>
+                  Локальная библиотека: {libraryRootPath}
+                </div>
+              ) : null}
             </div>
 
             <div className="coverImageBack">
@@ -1344,9 +1484,19 @@ const App = () => {
 
       <Dashboard
         sessionState={sessionState}
+        isLauncherAvailable={isLauncherAvailable}
+        launcherGamesByThreadLink={launcherGamesByThreadLink}
         openBestDownloadForThread={openBestDownloadForThread}
         tagsMap={tagsMap}
-        openDownloadsForThread={openDownloadModal}
+        onRevealInstalledGame={(threadLink) => {
+          void revealGame(threadLink).catch((error) => {
+            setErrorMessage(
+              error instanceof Error
+                ? error.message
+                : "Не удалось открыть папку игры",
+            );
+          });
+        }}
         moveLinkToList={handleMoveLinkToList}
         removeLinkFromList={removeLinkFromList}
         pickCoverForLink={pickCoverForLink}
@@ -1369,7 +1519,6 @@ const App = () => {
       onMoveDownloadHost={handleMoveDownloadHost}
       onDisableDownloadHostTemporarily={handleDisableDownloadHostTemporarily}
       onEnableDownloadHost={handleEnableDownloadHost}
-      onHideDownloadHost={handleHideDownloadHost}
       onShowDownloadHost={handleShowDownloadHost}
       onResetPreferredDownloadHosts={handleResetPreferredDownloadHosts}
       onClearDisabledDownloadHosts={handleClearDisabledDownloadHosts}
@@ -1463,6 +1612,17 @@ const App = () => {
         preferredDownloadHosts={preferredDownloadHosts}
         disabledDownloadHosts={disabledDownloadHosts}
         hiddenDownloadHosts={hiddenDownloadHosts}
+        primaryActionLabel={getLauncherPrimaryActionLabel(
+          isLauncherAvailable,
+          downloadModalState.threadLink
+            ? launcherGamesByThreadLink[downloadModalState.threadLink] ?? null
+            : null,
+        )}
+        isPrimaryActionDisabled={isLauncherGameBusy(
+          downloadModalState.threadLink
+            ? launcherGamesByThreadLink[downloadModalState.threadLink] ?? null
+            : null,
+        )}
         onClose={closeDownloadModal}
         onOpenBestDownload={(threadLink, threadTitle) => {
           void openBestDownloadForThread(threadLink, threadTitle);

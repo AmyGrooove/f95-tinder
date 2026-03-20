@@ -1,4 +1,5 @@
 import type { F95ApiResponse, F95ThreadItem } from './types'
+import { fetchLatestGamesPageViaLauncher } from '../launcher/runtime'
 
 const F95_COOKIE_REFRESH_ERROR_MESSAGE =
   'Не удалось проверить обновления: F95 вернул неожиданный ответ. Похоже, куки устарели или сломались. Обнови их во вкладке Куки.'
@@ -44,6 +45,11 @@ const buildLatestGamesEndpointUrl = (pageNumber: number) => {
 }
 
 const fetchLatestGamesPage = async (pageNumber: number, abortSignal: AbortSignal) => {
+  const launcherResult = await fetchLatestGamesPageViaLauncher(pageNumber)
+  if (launcherResult) {
+    return launcherResult
+  }
+
   const endpointUrl = buildLatestGamesEndpointUrl(pageNumber)
   const response = await fetch(endpointUrl, {
     method: 'GET',

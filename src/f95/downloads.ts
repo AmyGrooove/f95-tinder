@@ -1,4 +1,5 @@
 import type { DownloadGroup, ThreadDownloadsData } from './types'
+import { fetchThreadPageHtmlViaLauncher } from '../launcher/runtime'
 import { safeJsonParse } from './utils'
 
 const F95_ORIGIN = 'https://f95zone.to'
@@ -10,16 +11,13 @@ const DOWNLOAD_HOST_PREFERENCES_KEY = 'f95_tinder_download_host_preferences_v1'
 const DISABLED_DOWNLOAD_HOSTS_KEY = 'f95_tinder_disabled_download_hosts_v1'
 const HIDDEN_DOWNLOAD_HOSTS_KEY = 'f95_tinder_hidden_download_hosts_v1'
 const TEMPORARY_DISABLED_HOST_DURATION_MS = 1000 * 60 * 60
-const DEFAULT_PREFERRED_DOWNLOAD_HOSTS = [
+const SUPPORTED_DOWNLOAD_HOSTS = [
+  'DATANODES',
   'PIXELDRAIN',
   'GOFILE',
-  'MEGA',
-  'BUZZHEAVIER',
-  'WORKUPLOAD',
-  'DATANODES',
-  'VIKINGFILE',
-  'MEDIAFIRE',
 ] as const
+const DEFAULT_PREFERRED_DOWNLOAD_HOSTS = [...SUPPORTED_DOWNLOAD_HOSTS]
+const SUPPORTED_DOWNLOAD_HOST_SET = new Set<string>(SUPPORTED_DOWNLOAD_HOSTS)
 const HIDDEN_DOWNLOAD_GROUP_PATTERNS = [
   /\bmac(os)?\b/i,
   /\blinux\b/i,
@@ -53,6 +51,17 @@ const normalizeDownloadHostLabelList = (hostLabelList: string[]) => {
   return hostLabelList
     .map((item) => normalizeDownloadHostLabel(item))
     .filter((item, index, array) => item.length > 0 && array.indexOf(item) === index)
+}
+
+const isSupportedDownloadHost = (hostLabel: string) => {
+  const normalizedHostLabel = normalizeDownloadHostLabel(hostLabel)
+  return normalizedHostLabel.length > 0 && SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel)
+}
+
+const filterSupportedDownloadHostLabels = (hostLabelList: string[]) => {
+  return normalizeDownloadHostLabelList(hostLabelList).filter((item) =>
+    SUPPORTED_DOWNLOAD_HOST_SET.has(item),
+  )
 }
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -627,7 +636,7 @@ const loadPreferredDownloadHosts = () => {
       return [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS]
     }
 
-    const normalizedHostList = normalizeDownloadHostLabelList(
+    const normalizedHostList = filterSupportedDownloadHostLabels(
       parsedValue.filter((item): item is string => typeof item === 'string'),
     )
 
@@ -640,7 +649,7 @@ const loadPreferredDownloadHosts = () => {
 }
 
 const savePreferredDownloadHosts = (hostLabelList: string[]) => {
-  const normalizedHostList = normalizeDownloadHostLabelList(hostLabelList)
+  const normalizedHostList = filterSupportedDownloadHostLabels(hostLabelList)
 
   try {
     localStorage.setItem(
@@ -674,7 +683,7 @@ const loadHiddenDownloadHosts = () => {
       return []
     }
 
-    return normalizeDownloadHostLabelList(
+    return filterSupportedDownloadHostLabels(
       parsedValue.filter((item): item is string => typeof item === 'string'),
     )
   } catch {
@@ -683,7 +692,7 @@ const loadHiddenDownloadHosts = () => {
 }
 
 const saveHiddenDownloadHosts = (hostLabelList: string[]) => {
-  const normalizedHostList = normalizeDownloadHostLabelList(hostLabelList)
+  const normalizedHostList = filterSupportedDownloadHostLabels(hostLabelList)
 
   try {
     localStorage.setItem(
@@ -711,11 +720,11 @@ const isDownloadHostHidden = (
 
 const hideDownloadHost = (hostLabel: string) => {
   const normalizedHostLabel = normalizeDownloadHostLabel(hostLabel)
-  if (!normalizedHostLabel) {
+  if (!normalizedHostLabel || !isSupportedDownloadHost(normalizedHostLabel)) {
     return loadHiddenDownloadHosts()
   }
 
-  const nextHiddenHostList = normalizeDownloadHostLabelList([
+  const nextHiddenHostList = filterSupportedDownloadHostLabels([
     ...loadHiddenDownloadHosts(),
     normalizedHostLabel,
   ])
@@ -750,7 +759,12 @@ const pruneDisabledDownloadHosts = (disabledHostMap: Record<string, number>) => 
       continue
     }
 
-    nextDisabledHostMap[normalizeDownloadHostLabel(hostLabel)] = expiresAtUnixMs
+    const normalizedHostLabel = normalizeDownloadHostLabel(hostLabel)
+    if (!SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel)) {
+      continue
+    }
+
+    nextDisabledHostMap[normalizedHostLabel] = expiresAtUnixMs
   }
 
   return nextDisabledHostMap
@@ -814,7 +828,7 @@ const disableDownloadHostTemporarily = (
   durationMs = TEMPORARY_DISABLED_HOST_DURATION_MS,
 ) => {
   const normalizedHostLabel = normalizeDownloadHostLabel(hostLabel)
-  if (!normalizedHostLabel) {
+  if (!normalizedHostLabel || !isSupportedDownloadHost(normalizedHostLabel)) {
     return loadDisabledDownloadHosts()
   }
 
@@ -848,13 +862,13 @@ const promotePreferredDownloadHost = (
   nextPrimaryHostLabel: string,
 ) => {
   const normalizedPrimaryHostLabel = normalizeDownloadHostLabel(nextPrimaryHostLabel)
-  if (!normalizedPrimaryHostLabel) {
-    return currentHostLabelList
+  if (!normalizedPrimaryHostLabel || !isSupportedDownloadHost(normalizedPrimaryHostLabel)) {
+    return filterSupportedDownloadHostLabels(currentHostLabelList)
   }
 
-  const normalizedCurrentHostList = currentHostLabelList
-    .map((item) => normalizeDownloadHostLabel(item))
-    .filter((item, index, array) => item.length > 0 && array.indexOf(item) === index)
+  const normalizedCurrentHostList = filterSupportedDownloadHostLabels(
+    currentHostLabelList,
+  )
 
   return [
     normalizedPrimaryHostLabel,
@@ -868,7 +882,9 @@ const moveDownloadHostPreference = (
   targetIndex: number,
 ) => {
   const normalizedHostLabel = normalizeDownloadHostLabel(hostLabelToMove)
-  const normalizedCurrentHostList = normalizeDownloadHostLabelList(currentHostLabelList)
+  const normalizedCurrentHostList = filterSupportedDownloadHostLabels(
+    currentHostLabelList,
+  )
   const currentIndex = normalizedCurrentHostList.indexOf(normalizedHostLabel)
 
   if (currentIndex === -1) {
@@ -893,11 +909,11 @@ const sortDownloadHostsByPreference = (
   hostLabelList: string[],
   preferredHostLabelList: string[],
 ) => {
-  const normalizedPreferredHostList = preferredHostLabelList.map((item) =>
-    normalizeDownloadHostLabel(item),
+  const normalizedPreferredHostList = filterSupportedDownloadHostLabels(
+    preferredHostLabelList,
   )
 
-  return [...hostLabelList].sort((first, second) => {
+  return filterSupportedDownloadHostLabels(hostLabelList).sort((first, second) => {
     const firstIndex = normalizedPreferredHostList.indexOf(
       normalizeDownloadHostLabel(first),
     )
@@ -926,7 +942,11 @@ const collectDownloadHostLabels = (threadDownloadsData: ThreadDownloadsData) => 
 
     for (const link of group.links) {
       const normalizedHostLabel = normalizeDownloadHostLabel(link.label)
-      if (!normalizedHostLabel || hostLabelList.includes(normalizedHostLabel)) {
+      if (
+        !normalizedHostLabel ||
+        !SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel) ||
+        hostLabelList.includes(normalizedHostLabel)
+      ) {
         continue
       }
 
@@ -955,6 +975,7 @@ const findBestDownloadLink = (
     const availableLinkList = group.links.filter((link) => {
       return (
         typeof link.url === 'string' &&
+        isSupportedDownloadHost(link.label) &&
         !isDownloadHostTemporarilyDisabled(link.label, disabledHostMap) &&
         !isDownloadHostHidden(link.label, hiddenHostLabelList)
       )
@@ -989,6 +1010,11 @@ const fetchThreadDownloadsFromNetwork = async (
   threadLink: string,
   abortSignal?: AbortSignal,
 ) => {
+  const launcherHtmlText = await fetchThreadPageHtmlViaLauncher(threadLink)
+  if (launcherHtmlText !== null) {
+    return parseThreadDownloadsFromHtml(launcherHtmlText, threadLink)
+  }
+
   const response = await fetch(buildThreadPageProxyUrl(threadLink), {
     method: 'GET',
     signal: abortSignal,
@@ -1081,6 +1107,7 @@ export {
   findBestDownloadLink,
   hideDownloadHost,
   isDownloadHostHidden,
+  isSupportedDownloadHost,
   loadCachedThreadDownloads,
   loadDisabledDownloadHosts,
   loadHiddenDownloadHosts,
@@ -1095,6 +1122,7 @@ export {
   saveHiddenDownloadHosts,
   savePreferredDownloadHosts,
   showDownloadHost,
+  SUPPORTED_DOWNLOAD_HOSTS,
   shouldHideDownloadGroup,
   sortDownloadHostsByPreference,
   TEMPORARY_DISABLED_HOST_DURATION_MS,

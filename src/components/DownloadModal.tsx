@@ -1,6 +1,8 @@
 import {
   findBestDownloadLink,
   isDownloadHostHidden,
+  isSupportedDownloadHost,
+  SUPPORTED_DOWNLOAD_HOSTS,
   shouldHideDownloadGroup,
 } from "../f95/downloads";
 import type { ThreadDownloadsData } from "../f95/types";
@@ -40,7 +42,9 @@ const buildVisibleGroups = (
 
   for (const group of downloadsData?.groups ?? []) {
     const visibleLinks = group.links.filter(
-      (link) => !isDownloadHostHidden(link.label, hiddenDownloadHosts),
+      (link) =>
+        isSupportedDownloadHost(link.label) &&
+        !isDownloadHostHidden(link.label, hiddenDownloadHosts),
     );
     const hasLinks = visibleLinks.length > 0;
 
@@ -82,6 +86,8 @@ type DownloadModalProps = {
   preferredDownloadHosts: string[];
   disabledDownloadHosts: Record<string, number>;
   hiddenDownloadHosts: string[];
+  primaryActionLabel?: string;
+  isPrimaryActionDisabled?: boolean;
   onClose: () => void;
   onOpenBestDownload: (threadLink: string, threadTitle: string) => void;
   onOpenSettings: () => void;
@@ -114,6 +120,8 @@ const DownloadModal = ({
   preferredDownloadHosts,
   disabledDownloadHosts,
   hiddenDownloadHosts,
+  primaryActionLabel = "Скачать лучший",
+  isPrimaryActionDisabled = false,
   onClose,
   onOpenBestDownload,
   onOpenSettings,
@@ -123,6 +131,7 @@ const DownloadModal = ({
     return null;
   }
 
+  const supportedHostsLabel = SUPPORTED_DOWNLOAD_HOSTS.join(", ");
   const shouldShowLoginHint =
     downloadsData?.status === "login_required" ||
     (downloadsData?.requiresAuth ?? false);
@@ -167,8 +176,9 @@ const DownloadModal = ({
                 className="button buttonPrimary"
                 type="button"
                 onClick={() => onOpenBestDownload(threadLink, threadTitle)}
+                disabled={isPrimaryActionDisabled}
               >
-                Скачать лучший
+                {primaryActionLabel}
               </button>
             ) : null}
             {threadLink ? (
@@ -214,11 +224,11 @@ const DownloadModal = ({
               <div className="downloadQuickSummaryValue">
                 {bestAvailableDownloadLink?.label
                   ? `Сейчас выберет ${bestAvailableDownloadLink.label}`
-                  : "Сейчас нет доступного host'а, проверь настройки"}
+                  : `Сейчас нет поддерживаемого host'а. Доступны только ${supportedHostsLabel}`}
               </div>
               <div className="downloadQuickSummaryMeta">
-                Порядок host'ов и временная пауза теперь вынесены в отдельную
-                страницу настроек.
+                One-click работает только с {supportedHostsLabel}. Порядок и
+                временная пауза настраиваются отдельно.
               </div>
             </div>
           ) : null}
@@ -237,8 +247,8 @@ const DownloadModal = ({
           downloadsData.groups.length > 0 &&
           visibleGroups.length === 0 ? (
             <div className="downloadEmptyState">
-              Все найденные секции или host'ы скрыты текущими фильтрами и
-              настройками.
+              В этом треде не найдено поддерживаемых host'ов или они скрыты
+              настройками. Сейчас поддерживаются только {supportedHostsLabel}.
             </div>
           ) : null}
 

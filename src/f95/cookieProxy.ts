@@ -1,3 +1,9 @@
+import {
+  clearCookieInputViaLauncher,
+  getCookieStatusViaLauncher,
+  saveCookieInputViaLauncher,
+} from "../launcher/runtime";
+
 export type CookieProxyStatus = {
   configured: boolean;
   source: "settings" | "env" | "none";
@@ -58,6 +64,11 @@ const readErrorMessage = async (response: Response) => {
 };
 
 const fetchCookieProxyStatus = async () => {
+  const launcherStatus = await getCookieStatusViaLauncher();
+  if (launcherStatus) {
+    return assertCookieProxyStatus(launcherStatus);
+  }
+
   const response = await fetch(COOKIE_PROXY_STATUS_ENDPOINT, {
     method: "GET",
     headers: {
@@ -73,6 +84,11 @@ const fetchCookieProxyStatus = async () => {
 };
 
 const saveCookieProxyInput = async (text: string) => {
+  const launcherStatus = await saveCookieInputViaLauncher(text);
+  if (launcherStatus) {
+    return assertCookieProxyStatus(launcherStatus);
+  }
+
   const response = await fetch(COOKIE_PROXY_UPDATE_ENDPOINT, {
     method: "POST",
     headers: {
@@ -90,6 +106,11 @@ const saveCookieProxyInput = async (text: string) => {
 };
 
 const clearCookieProxyInput = async () => {
+  const launcherStatus = await clearCookieInputViaLauncher();
+  if (launcherStatus) {
+    return assertCookieProxyStatus(launcherStatus);
+  }
+
   const response = await fetch(COOKIE_PROXY_UPDATE_ENDPOINT, {
     method: "DELETE",
     headers: {

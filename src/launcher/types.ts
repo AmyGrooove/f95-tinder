@@ -1,0 +1,59 @@
+import type { F95ThreadItem } from '../f95/types'
+
+type LauncherGameStatus =
+  | 'queued'
+  | 'resolving'
+  | 'downloading'
+  | 'extracting'
+  | 'installed'
+  | 'error'
+
+type LauncherGameRecord = {
+  threadLink: string
+  threadTitle: string
+  status: LauncherGameStatus
+  progressPercent: number | null
+  message: string | null
+  archivePath: string | null
+  installDir: string | null
+  launchTargetPath: string | null
+  launchTargetName: string | null
+  lastHostLabel: string | null
+  errorMessage: string | null
+  updatedAtUnixMs: number
+}
+
+type LauncherLibrarySnapshot = {
+  libraryRootPath: string
+  gamesByThreadLink: Record<string, LauncherGameRecord>
+}
+
+type LauncherDownloadRequest = {
+  threadLink: string
+  threadTitle: string
+  downloadUrl: string
+  hostLabel: string | null
+}
+
+type LauncherCookieStatus = {
+  configured: boolean
+  source: 'settings' | 'env' | 'none'
+  cookieNames: string[]
+  missingRecommendedCookieNames: string[]
+  updatedAtUnixMs: number | null
+}
+
+type LauncherLatestGamesResult = {
+  threadItemList: F95ThreadItem[]
+  pageFromResponse: number
+  totalPages: number
+}
+
+export type {
+  LauncherCookieStatus,
+  LauncherDownloadRequest,
+  LauncherGameRecord,
+  LauncherGameStatus,
+  LauncherLatestGamesResult,
+  LauncherLibrarySnapshot,
+}

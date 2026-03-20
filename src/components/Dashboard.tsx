@@ -7,6 +7,12 @@ import {
   getProcessedThreadItemUpdateLabel,
   hasProcessedThreadItemUpdate,
 } from "../f95/updateTracking";
+import {
+  getLauncherPrimaryActionLabel,
+  getLauncherStatusText,
+  isLauncherGameBusy,
+} from "../launcher/ui";
+import type { LauncherGameRecord } from "../launcher/types";
 
 type DashboardCard = {
   threadLink: string;
@@ -30,6 +36,8 @@ type DashboardTabId = "bookmarks" | "trash" | "played";
 
 type DashboardProps = {
   sessionState: SessionState;
+  isLauncherAvailable: boolean;
+  launcherGamesByThreadLink: Record<string, LauncherGameRecord>;
   openBestDownloadForThread: (
     threadLink: string,
     threadTitle: string,
@@ -38,10 +46,7 @@ type DashboardProps = {
     },
   ) => void | Promise<void>;
   tagsMap: Record<string, string>;
-  openDownloadsForThread: (
-    threadLink: string,
-    threadTitle: string,
-  ) => void | Promise<void>;
+  onRevealInstalledGame: (threadLink: string) => void | Promise<void>;
   moveLinkToList: (link: string, listType: ListType) => void;
   removeLinkFromList: (link: string, listType: ListType) => void;
   pickCoverForLink: (
@@ -106,9 +111,11 @@ const sortCards = (
 
 export const Dashboard = ({
   sessionState,
+  isLauncherAvailable,
+  launcherGamesByThreadLink,
   openBestDownloadForThread,
   tagsMap,
-  openDownloadsForThread,
+  onRevealInstalledGame,
   moveLinkToList,
   removeLinkFromList,
   pickCoverForLink,
@@ -502,6 +509,9 @@ export const Dashboard = ({
     const isInFavorites = card.isInFavorites;
     const isInTrash = card.isInTrash;
     const isPlayed = card.isPlayed;
+    const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
+    const canRevealInstalledGame =
+      isLauncherAvailable && launcherGame?.status === "installed";
     const quickActionCount =
       Number(!isPlayed) + Number(!isInFavorites) + Number(!isInTrash) + 1;
 
@@ -545,21 +555,24 @@ export const Dashboard = ({
             type="button"
             onMouseDown={handleBestDownloadMiddleMouseDown}
             onAuxClick={handleBestDownloadAuxClick}
+            disabled={isLauncherGameBusy(launcherGame)}
             onClick={() => {
               void openBestDownloadForThread(card.threadLink, card.title);
             }}
           >
-            Лучший
+            {getLauncherPrimaryActionLabel(isLauncherAvailable, launcherGame)}
           </button>
-          <button
-            className="button listItemDownloadButton listItemAllDownloadsButton"
-            type="button"
-            onClick={() => {
-              void openDownloadsForThread(card.threadLink, card.title);
-            }}
-          >
-            Зеркала
-          </button>
+          {canRevealInstalledGame ? (
+            <button
+              className="button listItemDownloadButton"
+              type="button"
+              onClick={() => {
+                void onRevealInstalledGame(card.threadLink);
+              }}
+            >
+              Папка
+            </button>
+          ) : null}
         </div>
         <div
           className="listItemQuickActions"
@@ -658,53 +671,65 @@ export const Dashboard = ({
       <>
         <div className="listGrid" style={{ marginTop: 12 }}>
           {cards.map((card) => (
-            <div
-              key={card.threadLink}
-              className={`listItemCard ${
-                card.isUpdated ? "listItemCardUpdated" : ""
-              }`}
-            >
-              <a
-                className="listItemCoverLink"
-                href={card.threadLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {card.coverUrl ? (
-                  <img
-                    className="listItemCover"
-                    src={card.coverUrl}
-                    alt="cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="listItemCover" />
-                )}
-              </a>
-              <div className="listItemBody">
-                <div className="listItemTitleRow">
-                  {card.isUpdated ? (
-                    <span className="listItemStatusBadge listItemStatusBadgeUpdated">
-                      Обновилось
-                    </span>
-                  ) : null}
-                  <div className="listItemTitle">{card.title}</div>
-                </div>
-                <div className="listItemMeta">
-                  <span>{card.creator}</span>
-                  {card.version ? <span>Version: {card.version}</span> : null}
-                  <span>Rating: {card.rating}</span>
-                </div>
-                {card.isUpdated && card.updateLabel ? (
-                  <div className="listItemUpdateLine">
-                    Обновление: {card.updateLabel}
+            (() => {
+              const launcherGame =
+                launcherGamesByThreadLink[card.threadLink] ?? null;
+
+              return (
+                <div
+                  key={card.threadLink}
+                  className={`listItemCard ${
+                    card.isUpdated ? "listItemCardUpdated" : ""
+                  }`}
+                >
+                  <a
+                    className="listItemCoverLink"
+                    href={card.threadLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {card.coverUrl ? (
+                      <img
+                        className="listItemCover"
+                        src={card.coverUrl}
+                        alt="cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="listItemCover" />
+                    )}
+                  </a>
+                  <div className="listItemBody">
+                    <div className="listItemTitleRow">
+                      {card.isUpdated ? (
+                        <span className="listItemStatusBadge listItemStatusBadgeUpdated">
+                          Обновилось
+                        </span>
+                      ) : null}
+                      <div className="listItemTitle">{card.title}</div>
+                    </div>
+                    <div className="listItemMeta">
+                      <span>{card.creator}</span>
+                      {card.version ? <span>Version: {card.version}</span> : null}
+                      <span>Rating: {card.rating}</span>
+                    </div>
+                    {launcherGame ? (
+                      <div className="listItemUpdateLine">
+                        {getLauncherStatusText(launcherGame)}
+                      </div>
+                    ) : null}
+                    {card.isUpdated && card.updateLabel ? (
+                      <div className="listItemUpdateLine">
+                        Обновление: {card.updateLabel}
+                      </div>
+                    ) : null}
+                    <TagChips tags={card.tags} tagsMap={tagsMap} />
+                    {renderCardActions(card)}
                   </div>
-                ) : null}
-                <TagChips tags={card.tags} tagsMap={tagsMap} />
-                {renderCardActions(card)}
-              </div>
-            </div>
+                </div>
+              );
+            })()
           ))}
         </div>
         {remainingCardsCount > 0 ? (

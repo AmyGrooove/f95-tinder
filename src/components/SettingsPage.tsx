@@ -22,7 +22,6 @@ type SettingsPageProps = {
   onMoveDownloadHost: (hostLabel: string, direction: -1 | 1) => void;
   onDisableDownloadHostTemporarily: (hostLabel: string) => void;
   onEnableDownloadHost: (hostLabel: string) => void;
-  onHideDownloadHost: (hostLabel: string) => void;
   onShowDownloadHost: (hostLabel: string) => void;
   onResetPreferredDownloadHosts: () => void;
   onClearDisabledDownloadHosts: () => void;
@@ -57,7 +56,6 @@ export const SettingsPage = ({
   onMoveDownloadHost,
   onDisableDownloadHostTemporarily,
   onEnableDownloadHost,
-  onHideDownloadHost,
   onShowDownloadHost,
   onResetPreferredDownloadHosts,
   onClearDisabledDownloadHosts,
@@ -312,9 +310,9 @@ export const SettingsPage = ({
               </div>
 
               <div className="smallText settingsHint">
-                `Выше` и `Ниже` меняют место в общем списке. `Скрыть` убирает
-                host из one-click и из модалки зеркал. Скрытые host'ы собраны в
-                отдельном раскрывающемся блоке ниже.
+                `Выше` и `Ниже` меняют место в общем списке. `Пауза 1ч`
+                временно исключает host из one-click. Если раньше что-то было
+                скрыто, его можно вернуть через блок ниже.
               </div>
             </div>
 
@@ -400,13 +398,6 @@ export const SettingsPage = ({
                           </button>
                         </div>
                         <div className="settingsHostActionRow">
-                          <button
-                            className="button settingsHostActionButton settingsHostActionButtonHidden"
-                            type="button"
-                            onClick={() => onHideDownloadHost(hostLabel)}
-                          >
-                            Скрыть
-                          </button>
                           <button
                             className={`button settingsHostActionButton ${
                               isTemporarilyDisabled

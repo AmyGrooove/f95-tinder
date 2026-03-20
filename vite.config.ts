@@ -414,6 +414,7 @@ export default defineConfig(({ mode }) => {
   const f95CookieHeader = viteEnv.F95_COOKIE?.trim();
 
   return {
+    base: mode === "production" ? "./" : "/",
     plugins: [react(), createF95ProxyPlugin(f95CookieHeader)],
   };
 });
