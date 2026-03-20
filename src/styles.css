@@ -324,7 +324,8 @@ body {
   white-space: nowrap;
   justify-content: center;
   border-radius: 12px;
-  padding: 8px 12px;
+  min-height: 40px;
+  padding: 7px 12px;
   font-size: 14px;
   line-height: 1.15;
   font-weight: 800;
@@ -346,8 +347,19 @@ body {
 
 .listItemPrimaryActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.listItemPrimaryActionsSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.listItemPrimaryActionsWithHint {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.listItemPrimaryActionsInstalled {
+  grid-template-columns: minmax(0, 1fr) 46px;
 }
 
 .listItemBestDownloadButton {
@@ -357,11 +369,59 @@ body {
     rgba(26, 35, 52, 0.95);
 }
 
-.listItemAllDownloadsButton {
+.listItemPlayButton {
+  border-color: rgba(74, 176, 122, 0.96);
+  background:
+    linear-gradient(180deg, rgba(58, 145, 97, 0.34), rgba(16, 35, 27, 0.96)),
+    rgba(17, 40, 29, 0.96);
+}
+
+.listItemPlayButton:hover {
+  border-color: rgba(98, 196, 144, 0.98);
+  background:
+    linear-gradient(180deg, rgba(73, 164, 112, 0.38), rgba(18, 41, 32, 0.98)),
+    rgba(20, 48, 35, 0.98);
+}
+
+.listItemBusyButton:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  color: rgba(233, 237, 245, 0.92);
+}
+
+.listItemSettingsButton {
+  min-width: 46px;
+  min-height: 40px;
+  padding: 0;
   border-color: rgba(55, 72, 108, 0.95);
   background:
     linear-gradient(180deg, rgba(40, 54, 84, 0.26), rgba(17, 24, 38, 0.96)),
     rgba(26, 35, 52, 0.95);
+  font-size: 18px;
+}
+
+.listItemSettingsButton:hover {
+  border-color: rgba(86, 138, 255, 0.82);
+}
+
+.listItemStatusHintButton {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-color: rgba(255, 196, 87, 0.58);
+  background:
+    linear-gradient(180deg, rgba(255, 196, 87, 0.18), rgba(36, 28, 11, 0.96)),
+    rgba(34, 27, 13, 0.92);
+  color: #ffe3a1;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.listItemStatusHintButton:hover {
+  border-color: rgba(255, 214, 128, 0.8);
+  background:
+    linear-gradient(180deg, rgba(255, 214, 128, 0.24), rgba(41, 31, 13, 0.98)),
+    rgba(39, 30, 14, 0.96);
 }
 
 .cardArea {
@@ -690,6 +750,102 @@ body {
   display: grid;
   gap: 14px;
   align-content: start;
+}
+
+.gameSettingsModal {
+  width: min(760px, 100%);
+  max-height: min(820px, calc(100vh - 40px));
+}
+
+.gameSettingsTitleWrap {
+  width: 100%;
+}
+
+.gameSettingsHero {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.gameSettingsHeroCover {
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gameSettingsHeroText {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.gameSettingsInfoGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.gameSettingsInfoCard,
+.gameSettingsPathCard {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  background: rgba(13, 20, 33, 0.72);
+}
+
+.gameSettingsInfoLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.gameSettingsInfoValue {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.gameSettingsPaths {
+  display: grid;
+  gap: 10px;
+}
+
+.gameSettingsPathValue {
+  color: rgba(233, 237, 245, 0.86);
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+}
+
+.gameSettingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .gameSettingsHero {
+    grid-template-columns: 1fr;
+  }
+
+  .gameSettingsHeroCover {
+    width: 100%;
+  }
 }
 
 .downloadNotice,
@@ -1646,6 +1802,7 @@ body {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-items: stretch;
 }
 
 .listItemCard {
@@ -1654,12 +1811,13 @@ body {
   background: rgba(15, 21, 32, 0.78);
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
   content-visibility: auto;
-  contain-intrinsic-size: 360px;
+  contain-intrinsic-size: 280px;
+  height: 100%;
 }
 
 .listItemCardUpdated {
@@ -1683,7 +1841,9 @@ body {
 .listItemBody {
   padding: 10px 12px 12px 12px;
   display: grid;
-  gap: 8px;
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: 10px;
 }
 
 .listItemBadgeRow {
@@ -1693,10 +1853,10 @@ body {
 }
 
 .listItemTitleRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  align-content: start;
+  gap: 0;
+  min-height: calc(14px * 1.2 * 2);
 }
 
 .listItemStatusBadge {
@@ -1722,30 +1882,22 @@ body {
   font-weight: 900;
   font-size: 14px;
   line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(14px * 1.2 * 2);
 }
 
-.listItemMeta {
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.listItemUpdateLine {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #d9e7ff;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(86, 138, 255, 0.4);
-  background: rgba(47, 125, 255, 0.1);
+.listItemContent {
+  display: block;
+  min-height: 0;
 }
 
 .listItemActionsRow {
   display: grid;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .listItemQuickActions {
@@ -1756,8 +1908,8 @@ body {
 
 .listItemActionIconButton {
   width: 100%;
-  height: 44px;
-  min-height: 44px;
+  height: 46px;
+  min-height: 46px;
   border-radius: 12px;
   font-size: 18px;
   box-shadow:

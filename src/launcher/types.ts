@@ -19,8 +19,14 @@ type LauncherGameRecord = {
   launchTargetPath: string | null
   launchTargetName: string | null
   lastHostLabel: string | null
+  lastDownloadUrl: string | null
   errorMessage: string | null
   updatedAtUnixMs: number
+}
+
+type LauncherDownloadSource = {
+  downloadUrl: string
+  hostLabel: string | null
 }
 
 type LauncherLibrarySnapshot = {
@@ -33,6 +39,8 @@ type LauncherDownloadRequest = {
   threadTitle: string
   downloadUrl: string
   hostLabel: string | null
+  downloadSources?: LauncherDownloadSource[]
+  manualOnly?: boolean
 }
 
 type LauncherCookieStatus = {
@@ -52,6 +60,7 @@ type LauncherLatestGamesResult = {
 export type {
   LauncherCookieStatus,
   LauncherDownloadRequest,
+  LauncherDownloadSource,
   LauncherGameRecord,
   LauncherGameStatus,
   LauncherLatestGamesResult,

@@ -17,6 +17,14 @@ contextBridge.exposeInMainWorld('f95Launcher', {
   downloadGame: (request) => ipcRenderer.invoke('launcher:downloadGame', request),
   launchGame: (threadLink) => ipcRenderer.invoke('launcher:launchGame', threadLink),
   revealGame: (threadLink) => ipcRenderer.invoke('launcher:revealGame', threadLink),
+  deleteGameFiles: (threadLink) =>
+    ipcRenderer.invoke('launcher:deleteGameFiles', threadLink),
+  chooseLaunchTarget: (threadLink) =>
+    ipcRenderer.invoke('launcher:chooseLaunchTarget', threadLink),
+  openLibraryFolder: () => ipcRenderer.invoke('launcher:openLibraryFolder'),
+  openMirrorForGame: (threadLink) =>
+    ipcRenderer.invoke('launcher:openMirrorForGame', threadLink),
+  clearLibrary: () => ipcRenderer.invoke('launcher:clearLibrary'),
   onLibrarySnapshot: (listener) => {
     const handler = (_event, snapshot) => listener(snapshot)
     ipcRenderer.on('launcher:librarySnapshot', handler)

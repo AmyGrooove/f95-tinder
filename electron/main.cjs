@@ -1,7 +1,7 @@
 const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 let path7za = null
 
 try {
@@ -15,6 +15,7 @@ const F95_ORIGIN = 'https://f95zone.to'
 const RECOMMENDED_COOKIE_NAMES = ['xf_user', 'xf_session', 'xf_csrf']
 const DOWNLOAD_SESSION_PARTITION = 'persist:f95-tinder-downloads'
 const DOWNLOAD_TIMEOUT_MS = 120_000
+const MANUAL_DOWNLOAD_TIMEOUT_MS = 1000 * 60 * 15
 const DOWNLOAD_POLL_INTERVAL_MS = 1_250
 const SUPPORTED_ARCHIVE_EXTENSIONS = new Set(['.zip', '.7z', '.rar'])
 const LAUNCHABLE_FILE_EXTENSIONS = new Set([
@@ -26,6 +27,12 @@ const LAUNCHABLE_FILE_EXTENSIONS = new Set([
   '.htm',
   '.url',
 ])
+const LAUNCH_TARGET_DIALOG_FILTERS = [
+  {
+    name: 'Launch Targets',
+    extensions: ['exe', 'bat', 'cmd', 'lnk', 'html', 'htm', 'url'],
+  },
+]
 const NEGATIVE_LAUNCH_NAME_PATTERN =
   /(unins|uninstall|vc_redist|redist|directx|dxsetup|crashpad|updater|notification_helper|elevate|cleanup|launcherupdater)/i
 const NEGATIVE_LAUNCH_PATH_PATTERN =
@@ -124,6 +131,7 @@ const createDefaultGameRecord = (threadLink, threadTitle = '') => ({
   launchTargetPath: null,
   launchTargetName: null,
   lastHostLabel: null,
+  lastDownloadUrl: null,
   errorMessage: null,
   updatedAtUnixMs: Date.now(),
 })
@@ -168,6 +176,8 @@ const normalizeGameRecord = (threadLink, value) => {
       typeof record.launchTargetName === 'string' ? record.launchTargetName : null,
     lastHostLabel:
       typeof record.lastHostLabel === 'string' ? record.lastHostLabel : null,
+    lastDownloadUrl:
+      typeof record.lastDownloadUrl === 'string' ? record.lastDownloadUrl : null,
     errorMessage:
       typeof record.errorMessage === 'string' ? record.errorMessage : null,
     updatedAtUnixMs:
@@ -598,11 +608,12 @@ const safeDestroyWindow = (targetWindow) => {
   targetWindow.destroy()
 }
 
-const getHiddenDownloadWindow = () =>
+const createDownloadWindow = (show) =>
   new BrowserWindow({
-    show: false,
+    show,
     width: 1320,
     height: 900,
+    autoHideMenuBar: true,
     webPreferences: {
       partition: DOWNLOAD_SESSION_PARTITION,
       sandbox: false,
@@ -610,6 +621,10 @@ const getHiddenDownloadWindow = () =>
       nodeIntegration: false,
     },
   })
+
+const getHiddenDownloadWindow = () => createDownloadWindow(false)
+
+const getVisibleDownloadWindow = () => createDownloadWindow(true)
 
 const isSupportedArchiveFileName = (fileName) =>
   SUPPORTED_ARCHIVE_EXTENSIONS.has(path.extname(fileName).toLowerCase())
@@ -949,6 +964,7 @@ const driveBrowserWindowUntilDownloadStarts = async (
     message: 'Открываю зеркало и жду архив...',
     errorMessage: null,
     lastHostLabel: request.hostLabel ?? null,
+    lastDownloadUrl: request.downloadUrl,
   })
 
   browserWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -988,6 +1004,7 @@ const driveBrowserWindowUntilDownloadStarts = async (
           status: 'resolving',
           message: 'Пытаюсь нажать кнопку download на host...',
           lastHostLabel: request.hostLabel ?? null,
+          lastDownloadUrl: request.downloadUrl,
         })
       }
     } catch (error) {
@@ -1005,8 +1022,17 @@ const driveBrowserWindowUntilDownloadStarts = async (
   }
 }
 
-const waitForArchiveDownload = async (browserWindow, request, automationState) => {
+const waitForArchiveDownload = async (
+  browserWindow,
+  request,
+  automationState,
+  options = {},
+) => {
   const targetSession = browserWindow.webContents.session
+  const timeoutMs =
+    typeof options.timeoutMs === 'number' && options.timeoutMs > 0
+      ? options.timeoutMs
+      : DOWNLOAD_TIMEOUT_MS
   const gameRoot = path.join(
     libraryState.libraryRootPath,
     buildGameFolderName(request.threadLink, request.threadTitle),
@@ -1017,12 +1043,16 @@ const waitForArchiveDownload = async (browserWindow, request, automationState) =
   return new Promise((resolve, reject) => {
     let settled = false
     let timeoutId = null
+    const handleWindowClosed = () => {
+      finishReject(new Error('Окно зеркала закрыто до старта скачивания.'))
+    }
 
     const cleanup = () => {
       if (timeoutId !== null) {
         clearTimeout(timeoutId)
       }
       targetSession.removeListener('will-download', handleWillDownload)
+      browserWindow.removeListener('closed', handleWindowClosed)
     }
 
     const finishResolve = (value) => {
@@ -1072,6 +1102,7 @@ const waitForArchiveDownload = async (browserWindow, request, automationState) =
         message: 'Архив скачивается...',
         errorMessage: null,
         lastHostLabel: request.hostLabel ?? null,
+        lastDownloadUrl: request.downloadUrl,
       })
 
       item.on('updated', () => {
@@ -1086,6 +1117,7 @@ const waitForArchiveDownload = async (browserWindow, request, automationState) =
           message: 'Архив скачивается...',
           errorMessage: null,
           lastHostLabel: request.hostLabel ?? null,
+          lastDownloadUrl: request.downloadUrl,
         })
       })
 
@@ -1111,13 +1143,84 @@ const waitForArchiveDownload = async (browserWindow, request, automationState) =
           'Не удалось дождаться старта скачивания. Хост не отдал архив автоматически.',
         ),
       )
-    }, DOWNLOAD_TIMEOUT_MS)
+    }, timeoutMs)
 
     targetSession.on('will-download', handleWillDownload)
+    if (options.rejectOnWindowClose) {
+      browserWindow.once('closed', handleWindowClosed)
+    }
   })
 }
 
-const runDownloadJob = async (request) => {
+const normalizeDownloadSourceList = (request) => {
+  const normalizedSourceList = []
+  const seenSourceKeys = new Set()
+  const rawSourceList = Array.isArray(request.downloadSources)
+    ? request.downloadSources
+    : []
+
+  for (const rawSource of rawSourceList) {
+    if (!rawSource || typeof rawSource !== 'object') {
+      continue
+    }
+
+    const downloadUrl =
+      typeof rawSource.downloadUrl === 'string' ? rawSource.downloadUrl.trim() : ''
+    if (!downloadUrl) {
+      continue
+    }
+
+    const hostLabel =
+      typeof rawSource.hostLabel === 'string' && rawSource.hostLabel.trim().length > 0
+        ? rawSource.hostLabel
+        : null
+    const sourceKey = `${downloadUrl}::${hostLabel ?? ''}`
+    if (seenSourceKeys.has(sourceKey)) {
+      continue
+    }
+
+    seenSourceKeys.add(sourceKey)
+    normalizedSourceList.push({
+      downloadUrl,
+      hostLabel,
+    })
+  }
+
+  if (normalizedSourceList.length === 0 && typeof request.downloadUrl === 'string') {
+    const fallbackDownloadUrl = request.downloadUrl.trim()
+    if (fallbackDownloadUrl) {
+      normalizedSourceList.push({
+        downloadUrl: fallbackDownloadUrl,
+        hostLabel:
+          typeof request.hostLabel === 'string' && request.hostLabel.trim().length > 0
+            ? request.hostLabel
+            : null,
+      })
+    }
+  }
+
+  return normalizedSourceList
+}
+
+const createAttemptRequest = (request, downloadSource) => ({
+  ...request,
+  downloadUrl: downloadSource.downloadUrl,
+  hostLabel: downloadSource.hostLabel,
+})
+
+const isManualFallbackError = (error) => {
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return (
+    message.includes('captcha') ||
+    message.includes('human verification') ||
+    message.includes('ручное действие') ||
+    message.includes('автоматический download не стартовал') ||
+    message.includes('не удалось дождаться старта скачивания') ||
+    message.includes('не отдал архив автоматически')
+  )
+}
+
+const runAutomaticDownloadAttempt = async (request) => {
   const hiddenWindow = getHiddenDownloadWindow()
 
   try {
@@ -1140,55 +1243,209 @@ const runDownloadJob = async (request) => {
     )
 
     const [archivePath] = await Promise.all([archivePathPromise, drivePromise])
-
-    const gameRoot = path.join(
-      libraryState.libraryRootPath,
-      buildGameFolderName(request.threadLink, request.threadTitle),
-    )
-
-    updateGameRecord(request.threadLink, {
-      threadTitle: request.threadTitle,
-      status: 'extracting',
-      archivePath,
-      progressPercent: null,
-      message: 'Распаковываю архив...',
-      errorMessage: null,
-      lastHostLabel: request.hostLabel ?? null,
-    })
-
-    const installDir = await extractArchiveToInstallDir(archivePath, gameRoot)
-    const launchTargetPath = findBestLaunchTarget(installDir, request.threadTitle)
-    if (!launchTargetPath) {
-      throw new Error(
-        'Архив распакован, но не найден launch target. Поддерживаются только архивные PC-сборки.',
-      )
-    }
-
-    updateGameRecord(request.threadLink, {
-      threadTitle: request.threadTitle,
-      status: 'installed',
-      archivePath,
-      installDir,
-      launchTargetPath,
-      launchTargetName: path.basename(launchTargetPath),
-      progressPercent: 100,
-      message: 'Готово к запуску.',
-      errorMessage: null,
-      lastHostLabel: request.hostLabel ?? null,
-    })
-  } catch (error) {
-    updateGameRecord(request.threadLink, {
-      threadTitle: request.threadTitle,
-      status: 'error',
-      progressPercent: null,
-      message: null,
-      errorMessage:
-        error instanceof Error ? error.message : 'Не удалось скачать игру.',
-      lastHostLabel: request.hostLabel ?? null,
-    })
+    return archivePath
   } finally {
     safeDestroyWindow(hiddenWindow)
   }
+}
+
+const runManualDownloadAttempt = async (request) => {
+  const visibleWindow = getVisibleDownloadWindow()
+
+  try {
+    await applyF95CookiesToSession(visibleWindow.webContents.session)
+
+    visibleWindow.webContents.setWindowOpenHandler(({ url }) => {
+      void visibleWindow.loadURL(url).catch(() => {
+        // ignore
+      })
+
+      return { action: 'deny' }
+    })
+
+    updateGameRecord(request.threadLink, {
+      threadTitle: request.threadTitle,
+      status: 'resolving',
+      progressPercent: null,
+      message: 'Открыл зеркало. Пройди captcha и нажми download вручную.',
+      errorMessage: null,
+      lastHostLabel: request.hostLabel ?? null,
+      lastDownloadUrl: request.downloadUrl,
+    })
+
+    await visibleWindow.loadURL(request.downloadUrl)
+    if (visibleWindow.isMinimized()) {
+      visibleWindow.restore()
+    }
+    visibleWindow.show()
+    visibleWindow.focus()
+
+    const automationState = {
+      downloadStarted: false,
+    }
+
+    return await waitForArchiveDownload(visibleWindow, request, automationState, {
+      timeoutMs: MANUAL_DOWNLOAD_TIMEOUT_MS,
+      rejectOnWindowClose: true,
+    })
+  } finally {
+    safeDestroyWindow(visibleWindow)
+  }
+}
+
+const finalizeDownloadedArchive = async (request, archivePath) => {
+  const gameRoot = path.join(
+    libraryState.libraryRootPath,
+    buildGameFolderName(request.threadLink, request.threadTitle),
+  )
+
+  updateGameRecord(request.threadLink, {
+    threadTitle: request.threadTitle,
+    status: 'extracting',
+    archivePath,
+    progressPercent: null,
+    message: 'Распаковываю архив...',
+    errorMessage: null,
+    lastHostLabel: request.hostLabel ?? null,
+    lastDownloadUrl: request.downloadUrl,
+  })
+
+  const installDir = await extractArchiveToInstallDir(archivePath, gameRoot)
+  const launchTargetPath = findBestLaunchTarget(installDir, request.threadTitle)
+  if (!launchTargetPath) {
+    throw new Error(
+      'Архив распакован, но не найден launch target. Поддерживаются только архивные PC-сборки.',
+    )
+  }
+
+  updateGameRecord(request.threadLink, {
+    threadTitle: request.threadTitle,
+    status: 'installed',
+    archivePath,
+    installDir,
+    launchTargetPath,
+    launchTargetName: path.basename(launchTargetPath),
+    progressPercent: 100,
+    message: 'Готово к запуску.',
+    errorMessage: null,
+    lastHostLabel: request.hostLabel ?? null,
+    lastDownloadUrl: request.downloadUrl,
+  })
+}
+
+const markDownloadError = (request, error) => {
+  updateGameRecord(request.threadLink, {
+    threadTitle: request.threadTitle,
+    status: 'error',
+    progressPercent: null,
+    message: null,
+    errorMessage:
+      error instanceof Error ? error.message : 'Не удалось скачать игру.',
+    lastHostLabel: request.hostLabel ?? null,
+    lastDownloadUrl: request.downloadUrl,
+  })
+}
+
+const runDownloadJob = async (request) => {
+  const downloadSourceList = normalizeDownloadSourceList(request)
+  const fallbackAttemptRequest = createAttemptRequest(
+    request,
+    downloadSourceList[0] ?? {
+      downloadUrl: request.downloadUrl,
+      hostLabel: request.hostLabel ?? null,
+    },
+  )
+
+  if (downloadSourceList.length === 0) {
+    markDownloadError(
+      fallbackAttemptRequest,
+      new Error('Не найдено доступных зеркал для скачивания.'),
+    )
+    return
+  }
+
+  if (request.manualOnly) {
+    try {
+      const archivePath = await runManualDownloadAttempt(fallbackAttemptRequest)
+      await finalizeDownloadedArchive(fallbackAttemptRequest, archivePath)
+    } catch (error) {
+      markDownloadError(fallbackAttemptRequest, error)
+    }
+    return
+  }
+
+  let lastError = null
+  let manualFallbackSource = null
+
+  for (const downloadSource of downloadSourceList) {
+    const attemptRequest = createAttemptRequest(request, downloadSource)
+
+    try {
+      const archivePath = await runAutomaticDownloadAttempt(attemptRequest)
+      await finalizeDownloadedArchive(attemptRequest, archivePath)
+      return
+    } catch (error) {
+      lastError = error
+      if (!manualFallbackSource && isManualFallbackError(error)) {
+        manualFallbackSource = downloadSource
+      }
+    }
+  }
+
+  if (manualFallbackSource) {
+    const manualAttemptRequest = createAttemptRequest(request, manualFallbackSource)
+
+    updateGameRecord(request.threadLink, {
+      threadTitle: request.threadTitle,
+      status: 'resolving',
+      progressPercent: null,
+      message:
+        'Автоматика не сработала. Открываю зеркало для ручного продолжения...',
+      errorMessage: null,
+      lastHostLabel: manualAttemptRequest.hostLabel ?? null,
+      lastDownloadUrl: manualAttemptRequest.downloadUrl,
+    })
+
+    try {
+      const archivePath = await runManualDownloadAttempt(manualAttemptRequest)
+      await finalizeDownloadedArchive(manualAttemptRequest, archivePath)
+      return
+    } catch (error) {
+      lastError = error
+      markDownloadError(manualAttemptRequest, error)
+      return
+    }
+  }
+
+  markDownloadError(
+    createAttemptRequest(request, downloadSourceList[downloadSourceList.length - 1]),
+    lastError ?? new Error('Не удалось скачать игру.'),
+  )
+}
+
+const openMirrorForGame = async (threadLink) => {
+  const gameRecord = libraryState.gamesByThreadLink[threadLink]
+  if (!gameRecord?.lastDownloadUrl) {
+    throw new Error('Для этой игры еще не сохранено зеркало.')
+  }
+
+  if (activeDownloadJobs.has(threadLink)) {
+    throw new Error('Для этой игры уже выполняется загрузка.')
+  }
+
+  queueDownloadJob({
+    threadLink,
+    threadTitle: gameRecord.threadTitle || threadLink,
+    downloadUrl: gameRecord.lastDownloadUrl,
+    hostLabel: gameRecord.lastHostLabel ?? null,
+    downloadSources: [
+      {
+        downloadUrl: gameRecord.lastDownloadUrl,
+        hostLabel: gameRecord.lastHostLabel ?? null,
+      },
+    ],
+    manualOnly: true,
+  })
 }
 
 const queueDownloadJob = (request) => {
@@ -1203,6 +1460,8 @@ const queueDownloadJob = (request) => {
     message: 'Ставлю в очередь...',
     errorMessage: null,
     lastHostLabel: request.hostLabel ?? null,
+    lastDownloadUrl:
+      typeof request.downloadUrl === 'string' ? request.downloadUrl : null,
   })
 
   const nextJob = runDownloadJob(request).finally(() => {
@@ -1228,6 +1487,102 @@ const revealGame = async (threadLink) => {
   shell.showItemInFolder(targetPath)
 }
 
+const openLibraryFolder = async () => {
+  ensureDirectory(libraryState.libraryRootPath)
+  const shellErrorMessage = await shell.openPath(libraryState.libraryRootPath)
+  if (shellErrorMessage) {
+    throw new Error(shellErrorMessage)
+  }
+}
+
+const deleteGameFiles = async (threadLink) => {
+  if (activeDownloadJobs.has(threadLink)) {
+    throw new Error('Нельзя удалять игру, пока идет активная загрузка.')
+  }
+
+  const gameRecord = libraryState.gamesByThreadLink[threadLink]
+  if (!gameRecord) {
+    throw new Error('Игра не найдена в локальной библиотеке.')
+  }
+
+  const gameRoot = path.join(
+    libraryState.libraryRootPath,
+    buildGameFolderName(threadLink, gameRecord.threadTitle || threadLink),
+  )
+
+  try {
+    fs.rmSync(gameRoot, { recursive: true, force: true })
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Не удалось удалить файлы игры.',
+    )
+  }
+
+  const nextGamesByThreadLink = { ...libraryState.gamesByThreadLink }
+  delete nextGamesByThreadLink[threadLink]
+  libraryState = {
+    ...libraryState,
+    gamesByThreadLink: nextGamesByThreadLink,
+  }
+  persistLibraryState()
+
+  return toJsonClone(libraryState)
+}
+
+const chooseLaunchTarget = async (threadLink) => {
+  const gameRecord = libraryState.gamesByThreadLink[threadLink]
+  if (!gameRecord?.installDir) {
+    throw new Error('Для этой игры пока нет распакованной папки.')
+  }
+
+  if (!fs.existsSync(gameRecord.installDir)) {
+    throw new Error('Папка игры больше не существует. Попробуй скачать игру заново.')
+  }
+
+  const dialogWindow =
+    BrowserWindow.getFocusedWindow() ||
+    (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null)
+  const dialogResult = await dialog.showOpenDialog(dialogWindow ?? undefined, {
+    title: 'Выбери файл запуска игры',
+    defaultPath: gameRecord.installDir,
+    properties: ['openFile'],
+    filters: LAUNCH_TARGET_DIALOG_FILTERS,
+  })
+
+  if (dialogResult.canceled || dialogResult.filePaths.length === 0) {
+    return null
+  }
+
+  const selectedPath = path.resolve(dialogResult.filePaths[0])
+  const relativeToInstallDir = path.relative(gameRecord.installDir, selectedPath)
+  const isInsideInstallDir =
+    relativeToInstallDir === '' ||
+    (!relativeToInstallDir.startsWith('..') && !path.isAbsolute(relativeToInstallDir))
+
+  if (!isInsideInstallDir) {
+    throw new Error('Выбери launch target внутри папки игры.')
+  }
+
+  if (!fs.existsSync(selectedPath)) {
+    throw new Error('Выбранный файл больше не существует.')
+  }
+
+  if (!isLaunchableFileName(selectedPath)) {
+    throw new Error('Поддерживаются только .exe, .bat, .cmd, .lnk, .html, .htm и .url.')
+  }
+
+  updateGameRecord(threadLink, {
+    status: 'installed',
+    launchTargetPath: selectedPath,
+    launchTargetName: path.basename(selectedPath),
+    progressPercent: 100,
+    message: 'Готово к запуску.',
+    errorMessage: null,
+  })
+
+  return toJsonClone(libraryState)
+}
+
 const launchGame = async (threadLink) => {
   const gameRecord = libraryState.gamesByThreadLink[threadLink]
   if (!gameRecord?.launchTargetPath) {
@@ -1247,6 +1602,30 @@ const launchGame = async (threadLink) => {
   if (shellErrorMessage) {
     throw new Error(shellErrorMessage)
   }
+}
+
+const clearLauncherLibrary = async () => {
+  if (activeDownloadJobs.size > 0) {
+    throw new Error('Нельзя очищать папки игр, пока идет активная загрузка.')
+  }
+
+  try {
+    fs.rmSync(libraryState.libraryRootPath, { recursive: true, force: true })
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : 'Не удалось очистить папки с играми.',
+    )
+  }
+
+  ensureDirectory(libraryState.libraryRootPath)
+  libraryState = {
+    ...libraryState,
+    gamesByThreadLink: {},
+  }
+  persistLibraryState()
+  return toJsonClone(libraryState)
 }
 
 const resolveRendererUrl = async () => {
@@ -1372,6 +1751,10 @@ const registerIpcHandlers = () => {
       threadTitle: request.threadTitle,
       downloadUrl: request.downloadUrl,
       hostLabel: typeof request.hostLabel === 'string' ? request.hostLabel : null,
+      downloadSources: Array.isArray(request.downloadSources)
+        ? request.downloadSources
+        : undefined,
+      manualOnly: request.manualOnly === true,
     })
 
     return libraryState.gamesByThreadLink[request.threadLink] ?? null
@@ -1383,6 +1766,17 @@ const registerIpcHandlers = () => {
   ipcMain.handle('launcher:revealGame', async (_event, threadLink) =>
     revealGame(threadLink),
   )
+  ipcMain.handle('launcher:deleteGameFiles', async (_event, threadLink) =>
+    deleteGameFiles(threadLink),
+  )
+  ipcMain.handle('launcher:chooseLaunchTarget', async (_event, threadLink) =>
+    chooseLaunchTarget(threadLink),
+  )
+  ipcMain.handle('launcher:openLibraryFolder', async () => openLibraryFolder())
+  ipcMain.handle('launcher:openMirrorForGame', async (_event, threadLink) =>
+    openMirrorForGame(threadLink),
+  )
+  ipcMain.handle('launcher:clearLibrary', async () => clearLauncherLibrary())
 }
 
 app.whenReady().then(async () => {

@@ -8,6 +8,7 @@ import {
   clearHiddenDownloadHosts,
   clearDisabledDownloadHosts,
   clearAllCachedThreadDownloads,
+  collectPreferredDownloadLinks,
   disableDownloadHostTemporarily,
   enableDownloadHost,
   findBestDownloadLink,
@@ -307,7 +308,7 @@ const App = () => {
     undoLastAction,
     updateFilterState,
     resetFilterState,
-    clearAllData,
+    clearDashboardLists,
     setErrorMessage,
     tagsMap,
     updateTagsMap,
@@ -321,7 +322,12 @@ const App = () => {
     gamesByThreadLink: launcherGamesByThreadLink,
     libraryRootPath,
     downloadGame,
+    clearLibrary,
+    chooseLaunchTarget,
+    deleteGameFiles,
     launchGame,
+    openLibraryFolder,
+    openMirrorForGame,
     revealGame,
   } = useLauncherLibrary();
 
@@ -754,12 +760,13 @@ const App = () => {
 
         try {
           const downloadsData = await loadOrFetchThreadDownloads(threadLink);
-          const bestDownloadLink = findBestDownloadLink(
+          const preferredDownloadLinkList = collectPreferredDownloadLinks(
             downloadsData,
             preferredDownloadHosts,
             disabledDownloadHosts,
             hiddenDownloadHosts,
           );
+          const bestDownloadLink = preferredDownloadLinkList[0] ?? null;
 
           if (bestDownloadLink?.url) {
             await downloadGame({
@@ -767,6 +774,12 @@ const App = () => {
               threadTitle,
               downloadUrl: bestDownloadLink.url,
               hostLabel: bestDownloadLink.label,
+              downloadSources: preferredDownloadLinkList
+                .filter((link) => typeof link.url === "string")
+                .map((link) => ({
+                  downloadUrl: link.url as string,
+                  hostLabel: link.label,
+                })),
             });
             return;
           }
@@ -793,12 +806,20 @@ const App = () => {
 
       try {
         const downloadsData = await loadOrFetchThreadDownloads(threadLink);
-        const bestDownloadLink = findBestDownloadLink(
+        const preferredDownloadLinkList = collectPreferredDownloadLinks(
           downloadsData,
           preferredDownloadHosts,
           disabledDownloadHosts,
           hiddenDownloadHosts,
         );
+        const bestDownloadLink =
+          preferredDownloadLinkList[0] ??
+          findBestDownloadLink(
+            downloadsData,
+            preferredDownloadHosts,
+            disabledDownloadHosts,
+            hiddenDownloadHosts,
+          );
 
         if (bestDownloadLink?.url) {
           if (options.openInBackground) {
@@ -835,6 +856,73 @@ const App = () => {
       setErrorMessage,
       showDownloadModal,
     ],
+  );
+
+  const handleOpenErrorMirrorForThread = useCallback(
+    (threadLink: string, threadTitle: string) => {
+      const launcherGame = launcherGamesByThreadLink[threadLink] ?? null;
+
+      if (
+        isLauncherAvailable &&
+        launcherGame?.lastDownloadUrl &&
+        !isLauncherGameBusy(launcherGame)
+      ) {
+        void openMirrorForGame(threadLink).catch((error) => {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Не удалось открыть зеркало для ручной загрузки",
+          );
+        });
+        return;
+      }
+
+      void openBestDownloadForThread(threadLink, threadTitle);
+    },
+    [
+      isLauncherAvailable,
+      launcherGamesByThreadLink,
+      openBestDownloadForThread,
+      openMirrorForGame,
+      setErrorMessage,
+    ],
+  );
+
+  const handleDeleteGameFilesForThread = useCallback(
+    (threadLink: string, threadTitle: string) => {
+      const shouldDelete = window.confirm(
+        `Удалить локальные файлы игры "${threadTitle}"? Это удалит архив и распакованную папку, но не тронет списки в дашборде.`,
+      );
+      if (!shouldDelete) {
+        return Promise.resolve();
+      }
+
+      return deleteGameFiles(threadLink).catch((error) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Не удалось удалить файлы игры",
+        );
+        throw error;
+      }).then(() => undefined);
+    },
+    [deleteGameFiles, setErrorMessage],
+  );
+
+  const handleChooseLaunchTargetForThread = useCallback(
+    (threadLink: string) => {
+      return chooseLaunchTarget(threadLink)
+        .catch((error) => {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Не удалось выбрать запускатор игры",
+          );
+          throw error;
+        })
+        .then(() => undefined);
+    },
+    [chooseLaunchTarget, setErrorMessage],
   );
 
   const openCurrentBestDownload = useCallback(() => {
@@ -1068,30 +1156,10 @@ const App = () => {
     return getTagsForLink(currentThreadLink);
   }, [currentThreadLink, getTagsForLink]);
 
-  const averageFavoritesRating = useMemo(() => {
-    if (sessionState.favoritesLinks.length === 0) {
-      return 0;
-    }
-
-    const ratingSum = sessionState.favoritesLinks.reduce((sum, link) => {
-      return (
-        sum +
-        pickRatingForLink(
-          link,
-          sessionState.processedThreadItemsByLink,
-          sessionState.threadItemsByIdentifier,
-        )
-      );
-    }, 0);
-
-    return (
-      Math.round((ratingSum / sessionState.favoritesLinks.length) * 100) / 100
-    );
-  }, [
-    sessionState.favoritesLinks,
-    sessionState.processedThreadItemsByLink,
-    sessionState.threadItemsByIdentifier,
-  ]);
+  const dashboardTotalCount =
+    sessionState.favoritesLinks.length +
+    sessionState.trashLinks.length +
+    playedCount;
 
   const favoritesUpdatedCount = useMemo(() => {
     return countUpdatedTrackedItems(
@@ -1131,27 +1199,44 @@ const App = () => {
     [moveLinkToList, removeDownloadCacheForListType],
   );
 
-  const handleClearAllData = useCallback(() => {
-    clearHiddenDownloadHosts();
-    clearDisabledDownloadHosts();
-    clearAllCachedThreadDownloads();
-    setPreferredDownloadHosts(resetPreferredDownloadHosts());
-    downloadRequestIdRef.current += 1;
-    setDownloadModalState(createClosedDownloadModalState());
-    setViewerState(createClosedViewerState());
-    setHiddenDownloadHosts([]);
-    setDisabledDownloadHosts({});
-    clearAllData();
-  }, [clearAllData]);
+  const handleClearGameFolders = useCallback(() => {
+    if (!isLauncherAvailable) {
+      setErrorMessage("Очистка папок с играми доступна только в Electron-версии.");
+      return;
+    }
 
-  const handleConfirmClearAllData = useCallback(() => {
+    void clearLibrary().catch((error) => {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Не удалось очистить папки с играми",
+      );
+    });
+  }, [clearLibrary, isLauncherAvailable, setErrorMessage]);
+
+  const handleOpenGameFolders = useCallback(() => {
+    if (!isLauncherAvailable) {
+      setErrorMessage("Открытие папки с играми доступно только в Electron-версии.");
+      return;
+    }
+
+    void openLibraryFolder().catch((error) => {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Не удалось открыть папку с играми",
+      );
+    });
+  }, [isLauncherAvailable, openLibraryFolder, setErrorMessage]);
+
+  const handleConfirmClearDashboardLists = useCallback(() => {
     const shouldClear = window.confirm(
-      "Удалить все локальные данные (сессия + кэш страниц + download cache)?",
+      "Очистить списки в дашборде? Это удалит Закладки, Мусор и Играл, но не тронет папки с играми.",
     );
     if (shouldClear) {
-      handleClearAllData();
+      clearDashboardLists();
     }
-  }, [handleClearAllData]);
+  }, [clearDashboardLists]);
 
   const knownDownloadHosts = useMemo(() => {
     return sortDownloadHostsByPreference(
@@ -1443,16 +1528,13 @@ const App = () => {
         </div>
         <div className="dashboardCardsRow">
           <div className="metricCard">
-            <div className="metricLabel">Просмотрено</div>
-            <div className="metricValue">{sessionState.viewedCount}</div>
+            <div className="metricLabel">Всего</div>
+            <div className="metricValue">{dashboardTotalCount}</div>
           </div>
           <div className="metricCard">
             <div className="metricLabel">Закладки</div>
             <div className="metricValue">
               {sessionState.favoritesLinks.length}
-            </div>
-            <div className="smallText" style={{ marginTop: 6 }}>
-              Средний рейтинг: {averageFavoritesRating}
             </div>
             {favoritesUpdatedCount > 0 ? (
               <div className="smallText" style={{ marginTop: 4 }}>
@@ -1473,12 +1555,6 @@ const App = () => {
               </div>
             ) : null}
           </div>
-          <div className="metricCard">
-            <div className="metricLabel">В очереди</div>
-            <div className="metricValue">
-              {sessionState.remainingThreadIdentifiers.length}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1497,6 +1573,9 @@ const App = () => {
             );
           });
         }}
+        onDeleteGameFilesForThread={handleDeleteGameFilesForThread}
+        onChooseLaunchTargetForThread={handleChooseLaunchTargetForThread}
+        onOpenErrorMirrorForThread={handleOpenErrorMirrorForThread}
         moveLinkToList={handleMoveLinkToList}
         removeLinkFromList={removeLinkFromList}
         pickCoverForLink={pickCoverForLink}
@@ -1532,10 +1611,12 @@ const App = () => {
       }}
       onExportSessionState={handleExportSessionState}
       onOpenImportSessionState={() => importSessionStateInputRef.current?.click()}
-      onImportSessionStateChange={() => {
-        void handleImportSessionStateChange();
-      }}
-      onClearAllData={handleConfirmClearAllData}
+      onImportSessionStateChange={handleImportSessionStateChange}
+      onOpenGameFolders={handleOpenGameFolders}
+      onClearGameFolders={handleClearGameFolders}
+      onClearDashboardLists={handleConfirmClearDashboardLists}
+      isLauncherAvailable={isLauncherAvailable}
+      libraryRootPath={libraryRootPath}
       importSessionStateInputRef={importSessionStateInputRef}
       importTagsMapInputRef={importTagsMapInputRef}
       requestedTab={requestedSettingsTab}

@@ -7,14 +7,14 @@ const DOWNLOAD_CACHE_PREFIX = 'f95_tinder_downloads_v2_'
 const DOWNLOAD_CACHE_INDEX_KEY = 'f95_tinder_downloads_index_v2'
 const DOWNLOAD_CACHE_TTL_MS = 1000 * 60 * 60 * 6
 const DOWNLOAD_CACHE_MAX_ENTRIES = 60
-const DOWNLOAD_HOST_PREFERENCES_KEY = 'f95_tinder_download_host_preferences_v1'
+const DOWNLOAD_HOST_PREFERENCES_KEY = 'f95_tinder_download_host_preferences_v2'
 const DISABLED_DOWNLOAD_HOSTS_KEY = 'f95_tinder_disabled_download_hosts_v1'
 const HIDDEN_DOWNLOAD_HOSTS_KEY = 'f95_tinder_hidden_download_hosts_v1'
 const TEMPORARY_DISABLED_HOST_DURATION_MS = 1000 * 60 * 60
 const SUPPORTED_DOWNLOAD_HOSTS = [
-  'DATANODES',
-  'PIXELDRAIN',
   'GOFILE',
+  'PIXELDRAIN',
+  'DATANODES',
 ] as const
 const DEFAULT_PREFERRED_DOWNLOAD_HOSTS = [...SUPPORTED_DOWNLOAD_HOSTS]
 const SUPPORTED_DOWNLOAD_HOST_SET = new Set<string>(SUPPORTED_DOWNLOAD_HOSTS)
@@ -1006,6 +1006,58 @@ const findBestDownloadLink = (
   return null
 }
 
+const collectPreferredDownloadLinks = (
+  threadDownloadsData: ThreadDownloadsData,
+  preferredHostLabelList: string[],
+  disabledHostMap: Record<string, number> = {},
+  hiddenHostLabelList: string[] = [],
+) => {
+  const normalizedPreferredHostList = preferredHostLabelList.map((item) =>
+    normalizeDownloadHostLabel(item),
+  )
+  const linkByHostLabel = new Map<string, DownloadGroup['links'][number]>()
+
+  for (const group of threadDownloadsData.groups) {
+    if (shouldHideDownloadGroup(group.label)) {
+      continue
+    }
+
+    for (const link of group.links) {
+      if (
+        typeof link.url !== 'string' ||
+        !isSupportedDownloadHost(link.label) ||
+        isDownloadHostTemporarilyDisabled(link.label, disabledHostMap) ||
+        isDownloadHostHidden(link.label, hiddenHostLabelList)
+      ) {
+        continue
+      }
+
+      const normalizedHostLabel = normalizeDownloadHostLabel(link.label)
+      if (!linkByHostLabel.has(normalizedHostLabel)) {
+        linkByHostLabel.set(normalizedHostLabel, link)
+      }
+    }
+  }
+
+  return Array.from(linkByHostLabel.values()).sort((first, second) => {
+    const firstIndex = normalizedPreferredHostList.indexOf(
+      normalizeDownloadHostLabel(first.label),
+    )
+    const secondIndex = normalizedPreferredHostList.indexOf(
+      normalizeDownloadHostLabel(second.label),
+    )
+
+    const firstRank = firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex
+    const secondRank = secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex
+
+    if (firstRank !== secondRank) {
+      return firstRank - secondRank
+    }
+
+    return first.label.localeCompare(second.label)
+  })
+}
+
 const fetchThreadDownloadsFromNetwork = async (
   threadLink: string,
   abortSignal?: AbortSignal,
@@ -1100,6 +1152,7 @@ export {
   clearHiddenDownloadHosts,
   clearDisabledDownloadHosts,
   clearAllCachedThreadDownloads,
+  collectPreferredDownloadLinks,
   collectDownloadHostLabels,
   disableDownloadHostTemporarily,
   enableDownloadHost,

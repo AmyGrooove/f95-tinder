@@ -32,7 +32,11 @@ type SettingsPageProps = {
   onExportSessionState: () => void;
   onOpenImportSessionState: () => void;
   onImportSessionStateChange: () => void;
-  onClearAllData: () => void;
+  onOpenGameFolders: () => void;
+  onClearGameFolders: () => void;
+  onClearDashboardLists: () => void;
+  isLauncherAvailable: boolean;
+  libraryRootPath: string;
   importSessionStateInputRef: RefObject<HTMLInputElement | null>;
   importTagsMapInputRef: RefObject<HTMLInputElement | null>;
   requestedTab?: SettingsTab | null;
@@ -66,7 +70,11 @@ export const SettingsPage = ({
   onExportSessionState,
   onOpenImportSessionState,
   onImportSessionStateChange,
-  onClearAllData,
+  onOpenGameFolders,
+  onClearGameFolders,
+  onClearDashboardLists,
+  isLauncherAvailable,
+  libraryRootPath,
   importSessionStateInputRef,
   importTagsMapInputRef,
   requestedTab = null,
@@ -670,9 +678,53 @@ export const SettingsPage = ({
           <>
             <div className="panel">
               <div className="sectionTitleRow">
-                <div className="sectionTitle">Локальные данные</div>
+                <div className="sectionTitle">Библиотека игр</div>
                 <div className="sectionMeta">
-                  Экспорт, импорт и полная очистка
+                  Действия с локальной папкой launcher
+                </div>
+              </div>
+
+              <div className="settingsActions">
+                <button
+                  className="button"
+                  type="button"
+                  onClick={onOpenGameFolders}
+                  disabled={!isLauncherAvailable}
+                >
+                  Открыть папку с играми
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={onClearGameFolders}
+                  disabled={!isLauncherAvailable}
+                >
+                  Очистить папки с играми
+                </button>
+              </div>
+
+              <div className="settingsDataNote">
+                <div className="smallText">
+                  `Открыть папку с играми` открывает корневую папку локальной
+                  библиотеки launcher'а в проводнике.
+                </div>
+                <div className="smallText">
+                  `Очистить папки с играми` удаляет локальную библиотеку
+                  лаунчера вместе с архивами и распакованными играми.
+                </div>
+                <div className="smallText">
+                  {isLauncherAvailable && libraryRootPath
+                    ? `Папка библиотеки: ${libraryRootPath}`
+                    : "Действия с папкой игр доступны только в Electron-версии приложения."}
+                </div>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="sectionTitleRow">
+                <div className="sectionTitle">Сессия и списки</div>
+                <div className="sectionMeta">
+                  Импорт, экспорт и очистка дашборда
                 </div>
               </div>
 
@@ -682,21 +734,21 @@ export const SettingsPage = ({
                   type="button"
                   onClick={onExportSessionState}
                 >
-                  Экспортировать
+                  Экспорт session
                 </button>
                 <button
                   className="button"
                   type="button"
                   onClick={onOpenImportSessionState}
                 >
-                  Импорт
+                  Импорт session
                 </button>
                 <button
                   className="button buttonDanger"
                   type="button"
-                  onClick={onClearAllData}
+                  onClick={onClearDashboardLists}
                 >
-                  Очистить
+                  Очистить списки в дашборде
                 </button>
               </div>
 
@@ -705,21 +757,24 @@ export const SettingsPage = ({
                 type="file"
                 accept="application/json"
                 hidden
-                onChange={onImportSessionStateChange}
+                onChange={() => {
+                  void onImportSessionStateChange();
+                }}
               />
 
               <div className="settingsDataNote">
                 <div className="smallText">
-                  `Экспортировать` сохраняет локальную сессию и карты тегов в
-                  JSON.
+                  `Экспорт session` сохраняет текущие локальные списки,
+                  фильтры, метаданные сессии и `tagsMap` в один JSON-файл.
                 </div>
                 <div className="smallText">
-                  `Импорт` поднимает сохраненное состояние обратно в
-                  приложение.
+                  `Импорт session` восстанавливает эти данные из файла и
+                  перезагружает приложение.
                 </div>
                 <div className="smallText">
-                  `Очистить` удаляет сессию, кэш страниц, download cache и
-                  локальные настройки host'ов.
+                  `Очистить списки в дашборде` сбрасывает только `Закладки`,
+                  `Мусор` и `Играл` после подтверждения, не трогая библиотеку
+                  игр и остальные локальные данные.
                 </div>
               </div>
             </div>

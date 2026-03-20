@@ -20,6 +20,11 @@ type LauncherBridge = {
   downloadGame: (request: LauncherDownloadRequest) => Promise<unknown>
   launchGame: (threadLink: string) => Promise<void>
   revealGame: (threadLink: string) => Promise<void>
+  deleteGameFiles: (threadLink: string) => Promise<LauncherLibrarySnapshot>
+  chooseLaunchTarget: (threadLink: string) => Promise<LauncherLibrarySnapshot | null>
+  openLibraryFolder: () => Promise<void>
+  openMirrorForGame: (threadLink: string) => Promise<void>
+  clearLibrary: () => Promise<LauncherLibrarySnapshot>
   onLibrarySnapshot: (
     listener: (snapshot: LauncherLibrarySnapshot) => void,
   ) => () => void

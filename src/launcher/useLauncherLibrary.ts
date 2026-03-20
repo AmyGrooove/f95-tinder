@@ -3,7 +3,12 @@ import {
   getLauncherLibrarySnapshot,
   isLauncherBridgeAvailable,
   requestLauncherDownload,
+  requestLauncherGameDeletion,
   requestLauncherGameLaunch,
+  requestLauncherLibraryClear,
+  requestLauncherLibraryFolderOpen,
+  requestLauncherLaunchTargetChoice,
+  requestLauncherMirrorOpen,
   requestLauncherRevealGame,
   subscribeToLauncherLibrarySnapshot,
 } from './runtime'
@@ -51,7 +56,12 @@ const useLauncherLibrary = () => {
     gamesByThreadLink: librarySnapshot.gamesByThreadLink,
     libraryRootPath: librarySnapshot.libraryRootPath,
     downloadGame: requestLauncherDownload,
+    deleteGameFiles: requestLauncherGameDeletion,
     launchGame: requestLauncherGameLaunch,
+    clearLibrary: requestLauncherLibraryClear,
+    chooseLaunchTarget: requestLauncherLaunchTargetChoice,
+    openLibraryFolder: requestLauncherLibraryFolderOpen,
+    openMirrorForGame: requestLauncherMirrorOpen,
     revealGame: requestLauncherRevealGame,
   }
 }

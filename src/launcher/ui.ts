@@ -30,6 +30,15 @@ const getLauncherPrimaryActionLabel = (
   }
 
   if (launcherGame.status === 'resolving') {
+    const statusMessage = launcherGame.message?.toLowerCase() ?? ''
+    if (
+      statusMessage.includes('captcha') ||
+      statusMessage.includes('вручную') ||
+      statusMessage.includes('manual')
+    ) {
+      return 'Жду вручную'
+    }
+
     return 'Готовлю'
   }
 

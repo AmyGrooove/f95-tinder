@@ -523,6 +523,31 @@ const useF95Browser = () => {
     persistSessionState(nextState)
   }, [persistSessionState])
 
+  const clearDashboardLists = useCallback(() => {
+    const trackedLinkSet = new Set([
+      ...sessionState.favoritesLinks,
+      ...sessionState.trashLinks,
+      ...sessionState.playedLinks,
+    ])
+    const nextProcessedThreadItems = {
+      ...sessionState.processedThreadItemsByLink,
+    }
+
+    for (const threadLink of trackedLinkSet) {
+      delete nextProcessedThreadItems[threadLink]
+    }
+
+    setUndoSnapshot(null)
+    persistSessionState({
+      ...sessionState,
+      favoritesLinks: [],
+      trashLinks: [],
+      playedLinks: [],
+      playedByLink: {},
+      processedThreadItemsByLink: nextProcessedThreadItems,
+    })
+  }, [persistSessionState, sessionState])
+
   const moveLinkToList = useCallback(
     (threadLink: string, targetList: ListType) => {
       const favoritesLinks =
@@ -801,6 +826,7 @@ const useF95Browser = () => {
     updateFilterState,
     resetFilterState,
     clearAllData,
+    clearDashboardLists,
     tagsMap,
     updateTagsMap,
     metadataSyncState,

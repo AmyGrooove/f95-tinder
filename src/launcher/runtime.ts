@@ -139,6 +139,53 @@ const requestLauncherRevealGame = async (threadLink: string) => {
   return true
 }
 
+const requestLauncherGameDeletion = async (threadLink: string) => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.deleteGameFiles(threadLink)
+}
+
+const requestLauncherLaunchTargetChoice = async (threadLink: string) => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.chooseLaunchTarget(threadLink)
+}
+
+const requestLauncherLibraryFolderOpen = async () => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return false
+  }
+
+  await launcherBridge.openLibraryFolder()
+  return true
+}
+
+const requestLauncherMirrorOpen = async (threadLink: string) => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return false
+  }
+
+  await launcherBridge.openMirrorForGame(threadLink)
+  return true
+}
+
+const requestLauncherLibraryClear = async () => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.clearLibrary()
+}
+
 export {
   clearCookieInputViaLauncher,
   fetchLatestGamesPageViaLauncher,
@@ -150,7 +197,12 @@ export {
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
   requestLauncherDownload,
+  requestLauncherGameDeletion,
   requestLauncherGameLaunch,
+  requestLauncherLibraryClear,
+  requestLauncherLibraryFolderOpen,
+  requestLauncherLaunchTargetChoice,
+  requestLauncherMirrorOpen,
   requestLauncherRevealGame,
   saveCookieInputViaLauncher,
   subscribeToLauncherLibrarySnapshot,
