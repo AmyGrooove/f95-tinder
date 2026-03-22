@@ -63,6 +63,7 @@ type ProcessedThreadItem = {
   rating: number
   trackedVersion: string
   version: string
+  prefixes: number[]
   tags: number[]
   trackedTs?: number
   ts?: number
@@ -81,6 +82,7 @@ type SessionState = {
   trashLinks: string[]
   playedByLink: Record<string, boolean>
   playedLinks: string[]
+  playedFavoriteLinks: string[]
 
   processedThreadItemsByLink: Record<string, ProcessedThreadItem>
 

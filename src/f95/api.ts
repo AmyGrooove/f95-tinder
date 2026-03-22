@@ -1,5 +1,12 @@
-import type { F95ApiResponse, F95ThreadItem, LatestGamesSort } from './types'
+import type {
+  F95ApiResponse,
+  F95ThreadItem,
+  FilterState,
+  LatestGamesSort,
+} from './types'
 import { fetchLatestGamesPageViaLauncher } from '../launcher/runtime'
+
+const F95_ORIGIN = 'https://f95zone.to'
 
 const F95_COOKIE_REFRESH_ERROR_MESSAGE =
   'Не удалось проверить обновления: F95 вернул неожиданный ответ. Похоже, куки устарели или сломались. Обнови их во вкладке Куки.'
@@ -23,38 +30,128 @@ const isLikelyCookieRefreshErrorMessage = (
   )
 }
 
-const buildThreadLink = (threadIdentifier: number) => `https://f95zone.to/threads/${threadIdentifier}`
+const buildThreadLink = (threadIdentifier: number) =>
+  `${F95_ORIGIN}/threads/${threadIdentifier}`
+
+const hasLatestGamesServerFilters = (filterState?: FilterState | null) => {
+  if (!filterState) {
+    return false
+  }
+
+  return (
+    filterState.searchText.trim().length > 0 ||
+    filterState.includeTagIds.length > 0 ||
+    filterState.excludeTagIds.length > 0 ||
+    filterState.includePrefixIds.length > 0 ||
+    filterState.excludePrefixIds.length > 0
+  )
+}
+
+const encodeLatestGamesRequestKey = (value: string) =>
+  encodeURIComponent(value)
+    .replace(/%5B/g, '[')
+    .replace(/%5D/g, ']')
+
+const serializeLatestGamesRequestEntries = (entries: Array<[string, string]>) => {
+  return entries
+    .map(
+      ([key, value]) =>
+        `${encodeLatestGamesRequestKey(key)}=${encodeURIComponent(value)}`,
+    )
+    .join('&')
+}
+
+const buildLatestGamesRequestEntries = (
+  pageNumber: number,
+  latestGamesSort: LatestGamesSort,
+  filterState?: FilterState | null,
+  includeTimestamp = true,
+) => {
+  const entries: Array<[string, string]> = [
+    ['cmd', 'list'],
+    ['cat', 'games'],
+    ['page', String(pageNumber)],
+  ]
+
+  if (filterState && hasLatestGamesServerFilters(filterState)) {
+    const searchText = filterState.searchText.trim()
+
+    if (searchText.length > 0) {
+      entries.push(['search', searchText])
+    }
+
+    filterState.includePrefixIds.forEach((prefixId) => {
+      entries.push(['prefixes[]', String(prefixId)])
+    })
+    filterState.excludePrefixIds.forEach((prefixId) => {
+      entries.push(['noprefixes[]', String(prefixId)])
+    })
+    filterState.includeTagIds.forEach((tagId) => {
+      entries.push(['tags[]', String(tagId)])
+    })
+    filterState.excludeTagIds.forEach((tagId) => {
+      entries.push(['notags[]', String(tagId)])
+    })
+  }
+
+  entries.push(['sort', latestGamesSort])
+
+  if (includeTimestamp) {
+    entries.push(['_', String(Date.now())])
+  }
+
+  return entries
+}
 
 const buildLatestGamesEndpointUrl = (
   pageNumber: number,
   latestGamesSort: LatestGamesSort,
+  filterState?: FilterState | null,
 ) => {
-  const searchParameters = new URLSearchParams()
+  const requestEntries = buildLatestGamesRequestEntries(
+    pageNumber,
+    latestGamesSort,
+    filterState,
+  )
 
-  searchParameters.set('cmd', 'list')
-  searchParameters.set('cat', 'games')
-  searchParameters.set('page', String(pageNumber))
-  searchParameters.set('sort', latestGamesSort)
+  return `/f95/sam/latest_alpha/latest_data.php?${serializeLatestGamesRequestEntries(requestEntries)}`
+}
 
-  searchParameters.set('_', String(Date.now()))
+const buildLatestGamesDataRequestUrl = (
+  pageNumber: number,
+  latestGamesSort: LatestGamesSort,
+  filterState?: FilterState | null,
+) => {
+  const requestEntries = buildLatestGamesRequestEntries(
+    pageNumber,
+    latestGamesSort,
+    filterState,
+    false,
+  )
 
-  return `/f95/sam/latest_alpha/latest_data.php?${searchParameters.toString()}`
+  return `${F95_ORIGIN}/sam/latest_alpha/latest_data.php?${serializeLatestGamesRequestEntries(requestEntries)}`
 }
 
 const fetchLatestGamesPage = async (
   pageNumber: number,
   abortSignal: AbortSignal,
   latestGamesSort: LatestGamesSort,
+  filterState?: FilterState | null,
 ) => {
   const launcherResult = await fetchLatestGamesPageViaLauncher(
     pageNumber,
     latestGamesSort,
+    filterState,
   )
   if (launcherResult) {
     return launcherResult
   }
 
-  const endpointUrl = buildLatestGamesEndpointUrl(pageNumber, latestGamesSort)
+  const endpointUrl = buildLatestGamesEndpointUrl(
+    pageNumber,
+    latestGamesSort,
+    filterState,
+  )
   const response = await fetch(endpointUrl, {
     method: 'GET',
     signal: abortSignal,
@@ -96,8 +193,10 @@ const fetchLatestGamesPage = async (
 }
 
 export {
+  buildLatestGamesDataRequestUrl,
   buildThreadLink,
   fetchLatestGamesPage,
   F95_COOKIE_REFRESH_ERROR_MESSAGE,
+  hasLatestGamesServerFilters,
   isLikelyCookieRefreshErrorMessage,
 }

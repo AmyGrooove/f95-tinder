@@ -61,6 +61,11 @@ type SettingsPageProps = {
   onOpenImportListsBackup: () => void;
   onImportListsBackupChange: () => void;
   onOpenGameFolders: () => void;
+  localDataFiles: {
+    listsPath: string;
+    settingsPath: string;
+  } | null;
+  onOpenLocalDataFiles: () => void;
   onClearGameFolders: () => void;
   onClearAllLocalData: () => void;
   onResetLocalSettings: () => void;
@@ -133,6 +138,8 @@ export const SettingsPage = ({
   onOpenImportListsBackup,
   onImportListsBackupChange,
   onOpenGameFolders,
+  localDataFiles,
+  onOpenLocalDataFiles,
   onClearGameFolders,
   onClearAllLocalData,
   onResetLocalSettings,
@@ -1234,6 +1241,41 @@ export const SettingsPage = ({
             </div>
 
             <div className="settingsLocalActionGrid">
+              <div className="panel settingsLocalActionPanel">
+                <div className="sectionTitleRow">
+                  <div className="sectionTitle">Файлы</div>
+                  <div className="sectionMeta">Автосохранение Electron</div>
+                </div>
+
+                <div className="settingsActions">
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onOpenLocalDataFiles}
+                    disabled={!localDataFiles}
+                  >
+                    Открыть папку локальных файлов
+                  </button>
+                </div>
+
+                <div className="settingsDataNote">
+                  <div className="smallText">
+                    В Electron списки и настройки теперь подтягиваются из
+                    отдельных JSON-файлов, а не из `localStorage`.
+                  </div>
+                  <div className="smallText">
+                    {localDataFiles
+                      ? `Файл списков: ${localDataFiles.listsPath}`
+                      : "Файлы локального состояния доступны только в Electron-версии приложения."}
+                  </div>
+                  {localDataFiles ? (
+                    <div className="smallText">
+                      {`Файл настроек: ${localDataFiles.settingsPath}`}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
               <div className="panel settingsLocalActionPanel">
                 <div className="sectionTitleRow">
                   <div className="sectionTitle">Экспорт</div>

@@ -1,5 +1,17 @@
 import type { DownloadGroup, ThreadDownloadsData } from './types'
 import { fetchThreadPageHtmlViaLauncher } from '../launcher/runtime'
+import {
+  getLauncherLocalDataSnapshotSync,
+  saveLauncherLocalSettingsSync,
+} from '../launcher/runtime'
+import {
+  loadDefaultSwipeSettings,
+  loadPrefixesMap,
+  loadTagsMap,
+  normalizeDefaultSwipeSettings,
+  normalizePrefixesMap,
+  normalizeTagsMap,
+} from './storage'
 import { safeJsonParse } from './utils'
 
 const F95_ORIGIN = 'https://f95zone.to'
@@ -624,7 +636,61 @@ const clearAllCachedThreadDownloads = () => {
   }
 }
 
-const loadPreferredDownloadHosts = () => {
+const isLauncherLocalDataEnabled = () => getLauncherLocalDataSnapshotSync() !== null
+
+const normalizeImportedStringList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeImportedDisabledDownloadHosts = (value: unknown) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+
+  const normalizedMap: Record<string, number> = {}
+  for (const [hostLabel, expiresAtUnixMs] of Object.entries(value)) {
+    if (typeof hostLabel === 'string' && typeof expiresAtUnixMs === 'number') {
+      normalizedMap[hostLabel] = expiresAtUnixMs
+    }
+  }
+
+  return normalizedMap
+}
+
+const loadLauncherLocalSettingsBackup = () => {
+  const launcherSnapshot = getLauncherLocalDataSnapshotSync()
+  if (
+    !launcherSnapshot ||
+    !launcherSnapshot.settings ||
+    typeof launcherSnapshot.settings !== 'object' ||
+    Array.isArray(launcherSnapshot.settings) ||
+    !('defaultSwipeSettings' in launcherSnapshot.settings)
+  ) {
+    return null
+  }
+
+  const rawSettings = launcherSnapshot.settings as Record<string, unknown>
+
+  return {
+    defaultSwipeSettings: normalizeDefaultSwipeSettings(rawSettings.defaultSwipeSettings),
+    tagsMap: normalizeTagsMap(rawSettings.tagsMap),
+    prefixesMap: normalizePrefixesMap(rawSettings.prefixesMap),
+    preferredDownloadHosts: normalizeImportedStringList(
+      rawSettings.preferredDownloadHosts,
+    ),
+    disabledDownloadHosts: normalizeImportedDisabledDownloadHosts(
+      rawSettings.disabledDownloadHosts,
+    ),
+    hiddenDownloadHosts: normalizeImportedStringList(rawSettings.hiddenDownloadHosts),
+    cookieProxy: 'cookieProxy' in rawSettings ? rawSettings.cookieProxy : null,
+  }
+}
+
+const loadPreferredDownloadHostsFromLocalStorage = () => {
   try {
     const rawValue = localStorage.getItem(DOWNLOAD_HOST_PREFERENCES_KEY)
     if (!rawValue) {
@@ -648,30 +714,7 @@ const loadPreferredDownloadHosts = () => {
   }
 }
 
-const savePreferredDownloadHosts = (hostLabelList: string[]) => {
-  const normalizedHostList = filterSupportedDownloadHostLabels(hostLabelList)
-
-  try {
-    localStorage.setItem(
-      DOWNLOAD_HOST_PREFERENCES_KEY,
-      JSON.stringify(normalizedHostList),
-    )
-  } catch {
-    // ignore
-  }
-}
-
-const resetPreferredDownloadHosts = () => {
-  try {
-    localStorage.removeItem(DOWNLOAD_HOST_PREFERENCES_KEY)
-  } catch {
-    // ignore
-  }
-
-  return [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS]
-}
-
-const loadHiddenDownloadHosts = () => {
+const loadHiddenDownloadHostsFromLocalStorage = () => {
   try {
     const rawValue = localStorage.getItem(HIDDEN_DOWNLOAD_HOSTS_KEY)
     if (!rawValue) {
@@ -691,8 +734,124 @@ const loadHiddenDownloadHosts = () => {
   }
 }
 
+const loadDisabledDownloadHostsFromLocalStorage = () => {
+  try {
+    const rawValue = localStorage.getItem(DISABLED_DOWNLOAD_HOSTS_KEY)
+    if (!rawValue) {
+      return {}
+    }
+
+    const parsedValue = safeJsonParse<unknown>(rawValue)
+    if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
+      return {}
+    }
+
+    const nextDisabledHostMap: Record<string, number> = {}
+
+    for (const [hostLabel, expiresAtUnixMs] of Object.entries(parsedValue)) {
+      if (typeof expiresAtUnixMs !== 'number') {
+        continue
+      }
+
+      nextDisabledHostMap[normalizeDownloadHostLabel(hostLabel)] = expiresAtUnixMs
+    }
+
+    return pruneDisabledDownloadHosts(nextDisabledHostMap)
+  } catch {
+    return {}
+  }
+}
+
+const buildFallbackLocalSettingsBackup = () => ({
+  defaultSwipeSettings: loadDefaultSwipeSettings(),
+  tagsMap: loadTagsMap(),
+  prefixesMap: loadPrefixesMap(),
+  preferredDownloadHosts: loadPreferredDownloadHostsFromLocalStorage(),
+  disabledDownloadHosts: loadDisabledDownloadHostsFromLocalStorage(),
+  hiddenDownloadHosts: loadHiddenDownloadHostsFromLocalStorage(),
+  cookieProxy: null,
+})
+
+const saveLauncherLocalSettingsBackup = (
+  patch: Partial<ReturnType<typeof buildFallbackLocalSettingsBackup>>,
+) => {
+  const currentSettingsBackup =
+    loadLauncherLocalSettingsBackup() ?? buildFallbackLocalSettingsBackup()
+  saveLauncherLocalSettingsSync({
+    ...currentSettingsBackup,
+    ...patch,
+  })
+}
+
+const loadPreferredDownloadHosts = () => {
+  const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
+  if (launcherSettingsBackup) {
+    const normalizedHostList = filterSupportedDownloadHostLabels(
+      launcherSettingsBackup.preferredDownloadHosts,
+    )
+    return normalizedHostList.length > 0
+      ? normalizedHostList
+      : [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS]
+  }
+
+  return loadPreferredDownloadHostsFromLocalStorage()
+}
+
+const savePreferredDownloadHosts = (hostLabelList: string[]) => {
+  const normalizedHostList = filterSupportedDownloadHostLabels(hostLabelList)
+
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      preferredDownloadHosts: normalizedHostList,
+    })
+    return
+  }
+
+  try {
+    localStorage.setItem(
+      DOWNLOAD_HOST_PREFERENCES_KEY,
+      JSON.stringify(normalizedHostList),
+    )
+  } catch {
+    // ignore
+  }
+}
+
+const resetPreferredDownloadHosts = () => {
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      preferredDownloadHosts: [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS],
+    })
+    return [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS]
+  }
+
+  try {
+    localStorage.removeItem(DOWNLOAD_HOST_PREFERENCES_KEY)
+  } catch {
+    // ignore
+  }
+
+  return [...DEFAULT_PREFERRED_DOWNLOAD_HOSTS]
+}
+
+const loadHiddenDownloadHosts = () => {
+  const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
+  if (launcherSettingsBackup) {
+    return filterSupportedDownloadHostLabels(launcherSettingsBackup.hiddenDownloadHosts)
+  }
+
+  return loadHiddenDownloadHostsFromLocalStorage()
+}
+
 const saveHiddenDownloadHosts = (hostLabelList: string[]) => {
   const normalizedHostList = filterSupportedDownloadHostLabels(hostLabelList)
+
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      hiddenDownloadHosts: normalizedHostList,
+    })
+    return
+  }
 
   try {
     localStorage.setItem(
@@ -742,6 +901,13 @@ const showDownloadHost = (hostLabel: string) => {
 }
 
 const clearHiddenDownloadHosts = () => {
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      hiddenDownloadHosts: [],
+    })
+    return
+  }
+
   try {
     localStorage.removeItem(HIDDEN_DOWNLOAD_HOSTS_KEY)
   } catch {
@@ -771,10 +937,19 @@ const pruneDisabledDownloadHosts = (disabledHostMap: Record<string, number>) => 
 }
 
 const saveDisabledDownloadHosts = (disabledHostMap: Record<string, number>) => {
+  const prunedDisabledHostMap = pruneDisabledDownloadHosts(disabledHostMap)
+
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      disabledDownloadHosts: prunedDisabledHostMap,
+    })
+    return
+  }
+
   try {
     localStorage.setItem(
       DISABLED_DOWNLOAD_HOSTS_KEY,
-      JSON.stringify(pruneDisabledDownloadHosts(disabledHostMap)),
+      JSON.stringify(prunedDisabledHostMap),
     )
   } catch {
     // ignore
@@ -782,36 +957,22 @@ const saveDisabledDownloadHosts = (disabledHostMap: Record<string, number>) => {
 }
 
 const loadDisabledDownloadHosts = () => {
-  try {
-    const rawValue = localStorage.getItem(DISABLED_DOWNLOAD_HOSTS_KEY)
-    if (!rawValue) {
-      return {}
-    }
-
-    const parsedValue = safeJsonParse<unknown>(rawValue)
-    if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
-      return {}
-    }
-
-    const nextDisabledHostMap: Record<string, number> = {}
-
-    for (const [hostLabel, expiresAtUnixMs] of Object.entries(parsedValue)) {
-      if (typeof expiresAtUnixMs !== 'number') {
-        continue
-      }
-
-      nextDisabledHostMap[normalizeDownloadHostLabel(hostLabel)] = expiresAtUnixMs
-    }
-
-    const prunedDisabledHostMap = pruneDisabledDownloadHosts(nextDisabledHostMap)
-    if (Object.keys(prunedDisabledHostMap).length !== Object.keys(nextDisabledHostMap).length) {
+  const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
+  if (launcherSettingsBackup) {
+    const prunedDisabledHostMap = pruneDisabledDownloadHosts(
+      launcherSettingsBackup.disabledDownloadHosts,
+    )
+    if (
+      Object.keys(prunedDisabledHostMap).length !==
+      Object.keys(launcherSettingsBackup.disabledDownloadHosts).length
+    ) {
       saveDisabledDownloadHosts(prunedDisabledHostMap)
     }
 
     return prunedDisabledHostMap
-  } catch {
-    return {}
   }
+
+  return loadDisabledDownloadHostsFromLocalStorage()
 }
 
 const isDownloadHostTemporarilyDisabled = (
@@ -850,6 +1011,13 @@ const enableDownloadHost = (hostLabel: string) => {
 }
 
 const clearDisabledDownloadHosts = () => {
+  if (isLauncherLocalDataEnabled()) {
+    saveLauncherLocalSettingsBackup({
+      disabledDownloadHosts: {},
+    })
+    return
+  }
+
   try {
     localStorage.removeItem(DISABLED_DOWNLOAD_HOSTS_KEY)
   } catch {

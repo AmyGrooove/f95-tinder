@@ -4,11 +4,22 @@ contextBridge.exposeInMainWorld('f95Launcher', {
   runtime: {
     isElectron: true,
   },
+  getLocalDataSnapshotSync: () => ipcRenderer.sendSync('localData:getSnapshotSync'),
+  saveLocalListsSync: (value) => ipcRenderer.sendSync('localData:saveListsSync', value),
+  saveLocalSettingsSync: (value) => ipcRenderer.sendSync('localData:saveSettingsSync', value),
+  clearLocalListsSync: () => ipcRenderer.sendSync('localData:clearListsSync'),
+  clearLocalSettingsSync: () => ipcRenderer.sendSync('localData:clearSettingsSync'),
+  openLocalDataFolder: () => ipcRenderer.invoke('localData:openFolder'),
   openExternal: (targetUrl) => ipcRenderer.invoke('app:openExternal', targetUrl),
   loadBundledTagsMap: () => ipcRenderer.invoke('app:loadBundledTagsMap'),
   loadBundledPrefixesMap: () => ipcRenderer.invoke('app:loadBundledPrefixesMap'),
-  fetchLatestGamesPage: (pageNumber, latestGamesSort) =>
-    ipcRenderer.invoke('f95:fetchLatestGamesPage', pageNumber, latestGamesSort),
+  fetchLatestGamesPage: (pageNumber, latestGamesSort, filterState) =>
+    ipcRenderer.invoke(
+      'f95:fetchLatestGamesPage',
+      pageNumber,
+      latestGamesSort,
+      filterState,
+    ),
   fetchThreadPageHtml: (threadLink) =>
     ipcRenderer.invoke('f95:fetchThreadPageHtml', threadLink),
   getCookieStatus: () => ipcRenderer.invoke('f95:getCookieStatus'),

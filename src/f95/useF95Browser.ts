@@ -10,7 +10,11 @@ import type {
   ProcessedThreadItem,
   MetadataSyncState,
 } from './types'
-import { buildThreadLink, fetchLatestGamesPage } from './api'
+import {
+  buildThreadLink,
+  fetchLatestGamesPage,
+  hasLatestGamesServerFilters,
+} from './api'
 import {
   createDefaultSessionState,
   loadCachedPage,
@@ -49,6 +53,23 @@ const parseThreadIdentifierFromLink = (threadLink: string) => {
 }
 
 const toUnixSeconds = () => Math.floor(Date.now() / 1000)
+
+const resolveListTypeFromMembership = (
+  isInFavorites: boolean,
+  isInTrash: boolean,
+  isInPlayed: boolean,
+): ListType | null => {
+  if (isInFavorites) {
+    return 'favorite'
+  }
+  if (isInTrash) {
+    return 'trash'
+  }
+  if (isInPlayed) {
+    return 'played'
+  }
+  return null
+}
 
 const resolveTrackedSnapshot = (
   listType: ListType | null,
@@ -107,6 +128,12 @@ const buildProcessedThreadItem = (
       ? threadItem.rating
       : existingItem?.rating ?? 0
   const version = threadItem?.version ?? existingItem?.version ?? ''
+  const prefixes =
+    Array.isArray(threadItem?.prefixes)
+      ? threadItem.prefixes.filter((prefixId) => typeof prefixId === 'number')
+      : Array.isArray(existingItem?.prefixes)
+        ? existingItem.prefixes.filter((prefixId) => typeof prefixId === 'number')
+        : []
 
   const tags =
     Array.isArray(threadItem?.tags)
@@ -138,6 +165,7 @@ const buildProcessedThreadItem = (
     rating,
     trackedVersion,
     version,
+    prefixes,
     tags,
     trackedTs,
     ts,
@@ -148,6 +176,10 @@ const buildProcessedThreadItem = (
 
 const getPlayedLinks = (state: SessionState) => {
   return state.playedLinks ?? []
+}
+
+const getPlayedFavoriteLinks = (state: SessionState) => {
+  return state.playedFavoriteLinks ?? []
 }
 
 const isProcessedItemMissingMetadata = (
@@ -162,6 +194,7 @@ const isProcessedItemMissingMetadata = (
     hasFallbackTitle ||
     processedItem.creator === 'Unknown' ||
     !processedItem.cover ||
+    processedItem.prefixes.length === 0 ||
     processedItem.tags.length === 0
   )
 }
@@ -215,6 +248,12 @@ const sanitizeSwipeQueue = (sessionState: SessionState) => {
     ...sessionState.trashLinks,
     ...getPlayedLinks(sessionState),
   ])
+  const playedLinkSet = new Set(getPlayedLinks(sessionState))
+  const nextPlayedFavoriteLinks = getPlayedFavoriteLinks(sessionState).filter((threadLink) =>
+    playedLinkSet.has(threadLink),
+  )
+  const hasPlayedFavoritesChanged =
+    nextPlayedFavoriteLinks.length !== getPlayedFavoriteLinks(sessionState).length
 
   const nextRemainingThreadIdentifiers = sessionState.remainingThreadIdentifiers.filter(
     (threadIdentifier) => !trackedLinkSet.has(buildThreadLink(threadIdentifier)),
@@ -222,13 +261,15 @@ const sanitizeSwipeQueue = (sessionState: SessionState) => {
 
   if (
     nextRemainingThreadIdentifiers.length ===
-    sessionState.remainingThreadIdentifiers.length
+      sessionState.remainingThreadIdentifiers.length &&
+    !hasPlayedFavoritesChanged
   ) {
     return sessionState
   }
 
   return {
     ...sessionState,
+    playedFavoriteLinks: nextPlayedFavoriteLinks,
     remainingThreadIdentifiers: nextRemainingThreadIdentifiers,
   }
 }
@@ -314,6 +355,18 @@ const isAbortError = (unknownError: unknown) => {
   return possibleName === 'AbortError'
 }
 
+const buildSwipeRequestStateToken = (
+  pageNumber: number,
+  latestGamesSort: LatestGamesSort,
+  filterState: FilterState,
+) => {
+  return JSON.stringify({
+    pageNumber,
+    latestGamesSort,
+    filterState: normalizeFilterState(filterState),
+  })
+}
+
 const useF95Browser = () => {
   const sessionStateRef = useRef<SessionState | null>(null)
   const defaultSwipeSettingsRef = useRef<DefaultSwipeSettings>(
@@ -373,13 +426,43 @@ const useF95Browser = () => {
     saveDefaultSwipeSettings(sanitizedDefaultSwipeSettings)
   }, [])
 
+  const restartSwipeFeed = useCallback(
+    (nextLatestGamesSort: LatestGamesSort, nextFilterState: FilterState) => {
+      const liveSessionState = sessionStateRef.current
+      if (!liveSessionState) {
+        return
+      }
+
+      setUndoSnapshot(null)
+      setErrorMessage(null)
+      persistSessionState({
+        ...liveSessionState,
+        latestGamesSort: nextLatestGamesSort,
+        currentPageNumber: 1,
+        nextPageToFetchNumber: 1,
+        remainingThreadIdentifiers: [],
+        threadItemsByIdentifier: {},
+        filterState: normalizeFilterState(nextFilterState),
+      })
+    },
+    [persistSessionState],
+  )
+
   const loadPage = useCallback(
-    async (pageNumber: number, latestGamesSort: LatestGamesSort) => {
+    async (
+      pageNumber: number,
+      latestGamesSort: LatestGamesSort,
+      filterState: FilterState | null = null,
+    ) => {
       setErrorMessage(null)
 
-      const cachedThreadItemList = loadCachedPage(latestGamesSort, pageNumber)
-      if (cachedThreadItemList) {
-        return { threadItemList: cachedThreadItemList, totalPages: 0, pageFromResponse: pageNumber }
+      const shouldUseCache = !hasLatestGamesServerFilters(filterState)
+
+      if (shouldUseCache) {
+        const cachedThreadItemList = loadCachedPage(latestGamesSort, pageNumber)
+        if (cachedThreadItemList) {
+          return { threadItemList: cachedThreadItemList, totalPages: 0, pageFromResponse: pageNumber }
+        }
       }
 
       const abortController = new AbortController()
@@ -388,10 +471,14 @@ const useF95Browser = () => {
         pageNumber,
         abortController.signal,
         latestGamesSort,
+        filterState,
       )
-      saveCachedPage(latestGamesSort, pageNumber, result.threadItemList)
-      markPageAsCached(latestGamesSort, pageNumber)
-      pruneCachedPages(latestGamesSort, MAX_CACHED_PAGES_COUNT)
+
+      if (shouldUseCache) {
+        saveCachedPage(latestGamesSort, pageNumber, result.threadItemList)
+        markPageAsCached(latestGamesSort, pageNumber)
+        pruneCachedPages(latestGamesSort, MAX_CACHED_PAGES_COUNT)
+      }
 
       return result
     },
@@ -410,12 +497,26 @@ const useF95Browser = () => {
     try {
       const startPageNumber = 1
       const latestGamesSort = sessionState.latestGamesSort
-      const pageResult = await loadPage(startPageNumber, latestGamesSort)
+      const filterState = sessionState.filterState
+      const requestToken = buildSwipeRequestStateToken(
+        startPageNumber,
+        latestGamesSort,
+        filterState,
+      )
+      const pageResult = await loadPage(
+        startPageNumber,
+        latestGamesSort,
+        filterState,
+      )
       const liveSessionState = sessionStateRef.current
 
       if (
         !liveSessionState ||
-        liveSessionState.latestGamesSort !== latestGamesSort ||
+        buildSwipeRequestStateToken(
+          startPageNumber,
+          liveSessionState.latestGamesSort,
+          liveSessionState.filterState,
+        ) !== requestToken ||
         liveSessionState.nextPageToFetchNumber !== startPageNumber
       ) {
         return
@@ -465,12 +566,26 @@ const useF95Browser = () => {
     setIsLoadingPage(true)
     try {
       const latestGamesSort = sessionState.latestGamesSort
-      const pageResult = await loadPage(nextPageNumber, latestGamesSort)
+      const filterState = sessionState.filterState
+      const requestToken = buildSwipeRequestStateToken(
+        nextPageNumber,
+        latestGamesSort,
+        filterState,
+      )
+      const pageResult = await loadPage(
+        nextPageNumber,
+        latestGamesSort,
+        filterState,
+      )
       const liveSessionState = sessionStateRef.current
 
       if (
         !liveSessionState ||
-        liveSessionState.latestGamesSort !== latestGamesSort ||
+        buildSwipeRequestStateToken(
+          nextPageNumber,
+          liveSessionState.latestGamesSort,
+          liveSessionState.filterState,
+        ) !== requestToken ||
         liveSessionState.nextPageToFetchNumber !== nextPageNumber
       ) {
         return
@@ -535,6 +650,10 @@ const useF95Browser = () => {
         actionType === 'played'
           ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
           : removeStringFromArray(sessionState.playedLinks, threadLink)
+      const playedFavoriteLinksNext =
+        actionType === 'played'
+          ? sessionState.playedFavoriteLinks
+          : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
 
       const playedByLinkNext = { ...sessionState.playedByLink }
       if (actionType === 'played') {
@@ -562,6 +681,7 @@ const useF95Browser = () => {
         favoritesLinks: favoritesLinksNext,
         trashLinks: trashLinksNext,
         playedLinks: playedLinksNext,
+        playedFavoriteLinks: playedFavoriteLinksNext,
         playedByLink: playedByLinkNext,
         processedThreadItemsByLink: processedThreadItemsByLinkNext,
         viewedCount: sessionState.viewedCount + 1,
@@ -583,16 +703,22 @@ const useF95Browser = () => {
 
   const updateFilterState = useCallback(
     (partialFilterState: Partial<FilterState>) => {
-      const nextSessionState: SessionState = {
-        ...sessionState,
-        filterState: normalizeFilterState({
-          ...sessionState.filterState,
-          ...partialFilterState,
-        }),
+      const liveSessionState = sessionStateRef.current ?? sessionState
+      const nextFilterState = normalizeFilterState({
+        ...liveSessionState.filterState,
+        ...partialFilterState,
+      })
+
+      if (
+        JSON.stringify(nextFilterState) ===
+        JSON.stringify(liveSessionState.filterState)
+      ) {
+        return
       }
-      persistSessionState(nextSessionState)
+
+      restartSwipeFeed(liveSessionState.latestGamesSort, nextFilterState)
     },
-    [persistSessionState, sessionState],
+    [restartSwipeFeed, sessionState],
   )
 
   const setLatestGamesSort = useCallback(
@@ -605,28 +731,17 @@ const useF95Browser = () => {
         return
       }
 
-      setUndoSnapshot(null)
-      setErrorMessage(null)
-      persistSessionState({
-        ...liveSessionState,
-        latestGamesSort,
-        currentPageNumber: 1,
-        nextPageToFetchNumber: 1,
-        remainingThreadIdentifiers: [],
-        threadItemsByIdentifier: {},
-      })
+      restartSwipeFeed(latestGamesSort, liveSessionState.filterState)
     },
-    [persistSessionState],
+    [restartSwipeFeed],
   )
 
   const resetFilterState = useCallback(() => {
-    const nextSessionState: SessionState = {
-      ...sessionState,
-      latestGamesSort: defaultSwipeSettingsRef.current.latestGamesSort,
-      filterState: { ...defaultSwipeSettingsRef.current.filterState },
-    }
-    persistSessionState(nextSessionState)
-  }, [persistSessionState, sessionState])
+    restartSwipeFeed(
+      defaultSwipeSettingsRef.current.latestGamesSort,
+      defaultSwipeSettingsRef.current.filterState,
+    )
+  }, [restartSwipeFeed])
 
   const updateDefaultFilterState = useCallback(
     (partialFilterState: Partial<FilterState>) => {
@@ -673,13 +788,11 @@ const useF95Browser = () => {
   }, [persistDefaultSwipeSettings, sessionState.filterState, sessionState.latestGamesSort])
 
   const applyDefaultFilterStateToSwipe = useCallback(() => {
-    const nextSessionState: SessionState = {
-      ...sessionState,
-      latestGamesSort: defaultSwipeSettingsRef.current.latestGamesSort,
-      filterState: { ...defaultSwipeSettingsRef.current.filterState },
-    }
-    persistSessionState(nextSessionState)
-  }, [persistSessionState, sessionState])
+    restartSwipeFeed(
+      defaultSwipeSettingsRef.current.latestGamesSort,
+      defaultSwipeSettingsRef.current.filterState,
+    )
+  }, [restartSwipeFeed])
 
   const clearAllData = useCallback(() => {
     clearAllStoredData()
@@ -725,6 +838,7 @@ const useF95Browser = () => {
       favoritesLinks: [],
       trashLinks: [],
       playedLinks: [],
+      playedFavoriteLinks: [],
       playedByLink: {},
       processedThreadItemsByLink: nextProcessedThreadItems,
     })
@@ -746,6 +860,10 @@ const useF95Browser = () => {
         targetList === 'played'
           ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
           : removeStringFromArray(sessionState.playedLinks, threadLink)
+      const playedFavoriteLinks =
+        targetList === 'played'
+          ? sessionState.playedFavoriteLinks
+          : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
 
       const playedByLink = { ...sessionState.playedByLink }
       if (targetList === 'played') {
@@ -776,8 +894,28 @@ const useF95Browser = () => {
         favoritesLinks,
         trashLinks,
         playedLinks,
+        playedFavoriteLinks,
         playedByLink,
         processedThreadItemsByLink: nextProcessedThreadItems,
+      })
+    },
+    [sessionState, persistSessionState],
+  )
+
+  const togglePlayedFavoriteLink = useCallback(
+    (threadLink: string) => {
+      if (!sessionState.playedLinks.includes(threadLink)) {
+        return
+      }
+
+      const isInPlayedFavorites = sessionState.playedFavoriteLinks.includes(threadLink)
+      const playedFavoriteLinks = isInPlayedFavorites
+        ? removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
+        : mergeUniqueStringArrays(sessionState.playedFavoriteLinks, [threadLink])
+
+      persistSessionState({
+        ...sessionState,
+        playedFavoriteLinks,
       })
     },
     [sessionState, persistSessionState],
@@ -799,6 +937,10 @@ const useF95Browser = () => {
         listType === 'played'
           ? removeStringFromArray(sessionState.playedLinks, threadLink)
           : sessionState.playedLinks
+      const playedFavoriteLinks =
+        listType === 'played'
+          ? removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
+          : sessionState.playedFavoriteLinks
 
       const playedByLink = { ...sessionState.playedByLink }
       if (listType === 'played') {
@@ -807,12 +949,24 @@ const useF95Browser = () => {
 
       const nextProcessedThreadItems = { ...sessionState.processedThreadItemsByLink }
       const existingItem = nextProcessedThreadItems[threadLink]
+      const nextListType = resolveListTypeFromMembership(
+        favoritesLinks.includes(threadLink),
+        trashLinks.includes(threadLink),
+        playedLinks.includes(threadLink),
+      )
+      const threadIdentifier = parseThreadIdentifierFromLink(threadLink)
+      const threadItem =
+        threadIdentifier !== null
+          ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
+          : null
 
-      if (existingItem) {
-        nextProcessedThreadItems[threadLink] = {
-          ...existingItem,
-          listType: null,
-        }
+      if (existingItem || threadItem) {
+        nextProcessedThreadItems[threadLink] = buildProcessedThreadItem(
+          threadLink,
+          nextListType,
+          threadItem,
+          existingItem,
+        )
       }
 
       persistSessionState({
@@ -820,6 +974,7 @@ const useF95Browser = () => {
         favoritesLinks,
         trashLinks,
         playedLinks,
+        playedFavoriteLinks,
         playedByLink,
         processedThreadItemsByLink: nextProcessedThreadItems,
       })
@@ -881,6 +1036,7 @@ const useF95Browser = () => {
           const pageResult = await loadPage(
             pageNumber,
             activeState.latestGamesSort,
+            null,
           )
           let nextStateAfterPage = activeState
 
@@ -896,15 +1052,11 @@ const useF95Browser = () => {
                 continue
               }
 
-              const listType: ListType | null = activeState.favoritesLinks.includes(
-                threadLink,
+              const listType = resolveListTypeFromMembership(
+                activeState.favoritesLinks.includes(threadLink),
+                activeState.trashLinks.includes(threadLink),
+                activeState.playedLinks.includes(threadLink),
               )
-                ? 'favorite'
-                : activeState.trashLinks.includes(threadLink)
-                ? 'trash'
-                : activeState.playedLinks.includes(threadLink)
-                ? 'played'
-                : null
 
               nextProcessedThreadItems[threadLink] = buildProcessedThreadItem(
                 threadLink,
@@ -1034,6 +1186,7 @@ const useF95Browser = () => {
     metadataSyncState,
     startMetadataSync,
     moveLinkToList,
+    togglePlayedFavoriteLink,
     removeLinkFromList,
     setErrorMessage,
   }

@@ -41,10 +41,79 @@ const NEGATIVE_LAUNCH_PATH_PATTERN =
 let mainWindow = null
 let runtimeCookieState = null
 let libraryState = null
+let localDataFilesState = null
 const activeDownloadJobs = new Map()
 
 const ensureDirectory = (targetPath) => {
   fs.mkdirSync(targetPath, { recursive: true })
+}
+
+const getFileSizeBytes = (targetPath) => {
+  try {
+    return fs.statSync(targetPath).size
+  } catch {
+    return 0
+  }
+}
+
+const getDirectorySizeBytes = (targetPath) => {
+  if (!targetPath || !fs.existsSync(targetPath)) {
+    return 0
+  }
+
+  let totalSizeBytes = 0
+  const stack = [targetPath]
+
+  while (stack.length > 0) {
+    const currentDirectoryPath = stack.pop()
+    if (!currentDirectoryPath) {
+      continue
+    }
+
+    let directoryEntries = []
+    try {
+      directoryEntries = fs.readdirSync(currentDirectoryPath, {
+        withFileTypes: true,
+      })
+    } catch {
+      continue
+    }
+
+    for (const directoryEntry of directoryEntries) {
+      const absolutePath = path.join(currentDirectoryPath, directoryEntry.name)
+
+      if (directoryEntry.isDirectory()) {
+        stack.push(absolutePath)
+        continue
+      }
+
+      if (directoryEntry.isFile()) {
+        totalSizeBytes += getFileSizeBytes(absolutePath)
+      }
+    }
+  }
+
+  return totalSizeBytes
+}
+
+const resolveInstalledGameSizeBytes = (record) => {
+  if (
+    typeof record?.installDir === 'string' &&
+    record.installDir &&
+    fs.existsSync(record.installDir)
+  ) {
+    return getDirectorySizeBytes(record.installDir)
+  }
+
+  if (
+    typeof record?.archivePath === 'string' &&
+    record.archivePath &&
+    fs.existsSync(record.archivePath)
+  ) {
+    return getFileSizeBytes(record.archivePath)
+  }
+
+  return null
 }
 
 const delay = (durationMs) =>
@@ -59,6 +128,12 @@ const getCookieStorePath = () => path.resolve(process.cwd(), '.f95-cookie.local'
 const getLibraryStatePath = () =>
   path.join(app.getPath('userData'), 'launcher-library.json')
 
+const getLocalListsStatePath = () =>
+  path.join(app.getPath('userData'), 'local-lists.json')
+
+const getLocalSettingsStatePath = () =>
+  path.join(app.getPath('userData'), 'local-settings.json')
+
 const getDefaultLibraryRoot = () => path.join(app.getPath('userData'), 'games')
 
 const readJsonFile = (targetPath) => {
@@ -70,6 +145,40 @@ const readJsonFile = (targetPath) => {
     return JSON.parse(fs.readFileSync(targetPath, 'utf8'))
   } catch {
     return null
+  }
+}
+
+const readJsonFileWithMetadata = (targetPath) => {
+  try {
+    if (!fs.existsSync(targetPath)) {
+      return {
+        exists: false,
+        updatedAtUnixMs: null,
+        value: null,
+      }
+    }
+
+    const stat = fs.statSync(targetPath)
+    const fileText = fs.readFileSync(targetPath, 'utf8')
+    let parsedValue = null
+
+    try {
+      parsedValue = fileText.trim() ? JSON.parse(fileText) : null
+    } catch {
+      parsedValue = null
+    }
+
+    return {
+      exists: true,
+      updatedAtUnixMs: Math.round(stat.mtimeMs),
+      value: parsedValue,
+    }
+  } catch {
+    return {
+      exists: false,
+      updatedAtUnixMs: null,
+      value: null,
+    }
   }
 }
 
@@ -133,6 +242,7 @@ const createDefaultGameRecord = (threadLink, threadTitle = '') => ({
   lastHostLabel: null,
   lastDownloadUrl: null,
   errorMessage: null,
+  sizeBytes: null,
   updatedAtUnixMs: Date.now(),
 })
 
@@ -140,6 +250,75 @@ const createDefaultLibraryState = () => ({
   libraryRootPath: getDefaultLibraryRoot(),
   gamesByThreadLink: {},
 })
+
+const loadLocalDataFilesState = () => ({
+  lists: readJsonFileWithMetadata(getLocalListsStatePath()),
+  settings: readJsonFileWithMetadata(getLocalSettingsStatePath()),
+})
+
+const buildLocalDataFileDescriptor = (targetPath, entry) => ({
+  path: targetPath,
+  exists: Boolean(entry?.exists),
+  updatedAtUnixMs:
+    typeof entry?.updatedAtUnixMs === 'number' ? entry.updatedAtUnixMs : null,
+})
+
+const buildLocalDataFilesSnapshot = () => ({
+  listsFile: buildLocalDataFileDescriptor(getLocalListsStatePath(), localDataFilesState?.lists),
+  settingsFile: buildLocalDataFileDescriptor(
+    getLocalSettingsStatePath(),
+    localDataFilesState?.settings,
+  ),
+  lists: localDataFilesState?.lists?.value ? toJsonClone(localDataFilesState.lists.value) : null,
+  settings: localDataFilesState?.settings?.value
+    ? toJsonClone(localDataFilesState.settings.value)
+    : null,
+})
+
+const writeLocalDataFileValue = (fileKind, value) => {
+  const targetPath =
+    fileKind === 'lists' ? getLocalListsStatePath() : getLocalSettingsStatePath()
+
+  if (value === null || value === undefined) {
+    try {
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath)
+      }
+    } catch {
+      // ignore
+    }
+
+    localDataFilesState[fileKind] = {
+      exists: false,
+      updatedAtUnixMs: null,
+      value: null,
+    }
+
+    return buildLocalDataFilesSnapshot()
+  }
+
+  const nextValue = toJsonClone(value)
+  writeJsonFile(targetPath, nextValue)
+  localDataFilesState[fileKind] = {
+    exists: true,
+    updatedAtUnixMs: Date.now(),
+    value: nextValue,
+  }
+
+  return buildLocalDataFilesSnapshot()
+}
+
+const patchLocalSettingsFileValue = (patch) => {
+  const currentValue = localDataFilesState?.settings?.value
+  if (!currentValue || typeof currentValue !== 'object' || Array.isArray(currentValue)) {
+    return buildLocalDataFilesSnapshot()
+  }
+
+  return writeLocalDataFileValue('settings', {
+    ...currentValue,
+    ...patch,
+  })
+}
 
 const normalizeGameRecord = (threadLink, value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -180,6 +359,14 @@ const normalizeGameRecord = (threadLink, value) => {
       typeof record.lastDownloadUrl === 'string' ? record.lastDownloadUrl : null,
     errorMessage:
       typeof record.errorMessage === 'string' ? record.errorMessage : null,
+    sizeBytes:
+      typeof record.sizeBytes === 'number' &&
+      Number.isFinite(record.sizeBytes) &&
+      record.sizeBytes >= 0
+        ? record.sizeBytes
+        : statusValue === 'installed'
+        ? resolveInstalledGameSizeBytes(record)
+        : null,
     updatedAtUnixMs:
       typeof record.updatedAtUnixMs === 'number'
         ? record.updatedAtUnixMs
@@ -478,6 +665,9 @@ const saveCookieInput = (text) => {
     source: 'settings',
     updatedAtUnixMs: Date.now(),
   }
+  patchLocalSettingsFileValue({
+    cookieProxy: buildCookieBackup(runtimeCookieState),
+  })
 
   return buildCookieStatus(runtimeCookieState)
 }
@@ -493,6 +683,9 @@ const clearCookieInput = () => {
   }
 
   runtimeCookieState = loadRuntimeCookieState(process.env.F95_COOKIE?.trim())
+  patchLocalSettingsFileValue({
+    cookieProxy: buildCookieBackup(runtimeCookieState),
+  })
   return buildCookieStatus(runtimeCookieState)
 }
 
@@ -509,21 +702,141 @@ const normalizeLatestGamesSort = (value) => {
   return value === 'views' ? 'views' : 'date'
 }
 
-const buildLatestGamesEndpointUrl = (pageNumber, latestGamesSort = 'date') => {
-  const searchParameters = new URLSearchParams()
+const normalizeLatestGamesFilterIdList = (value, limit = Number.POSITIVE_INFINITY) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
 
-  searchParameters.set('cmd', 'list')
-  searchParameters.set('cat', 'games')
-  searchParameters.set('page', String(pageNumber))
-  searchParameters.set('sort', normalizeLatestGamesSort(latestGamesSort))
-  searchParameters.set('_', String(Date.now()))
+  const normalizedIdList = []
+  const seenIdSet = new Set()
 
-  return `/sam/latest_alpha/latest_data.php?${searchParameters.toString()}`
+  for (const item of value) {
+    const parsedValue =
+      typeof item === 'number'
+        ? item
+        : typeof item === 'string'
+          ? Number(item)
+          : Number.NaN
+
+    if (
+      !Number.isInteger(parsedValue) ||
+      seenIdSet.has(parsedValue) ||
+      normalizedIdList.length >= limit
+    ) {
+      continue
+    }
+
+    seenIdSet.add(parsedValue)
+    normalizedIdList.push(parsedValue)
+  }
+
+  return normalizedIdList
 }
 
-const fetchLatestGamesPage = async (pageNumber, latestGamesSort = 'date') => {
+const normalizeLatestGamesFilterState = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const includeTagIds = normalizeLatestGamesFilterIdList(value.includeTagIds, 10)
+  const excludeTagIds = normalizeLatestGamesFilterIdList(value.excludeTagIds, 10).filter(
+    (tagId) => !includeTagIds.includes(tagId),
+  )
+  const includePrefixIds = normalizeLatestGamesFilterIdList(value.includePrefixIds)
+  const excludePrefixIds = normalizeLatestGamesFilterIdList(value.excludePrefixIds).filter(
+    (prefixId) => !includePrefixIds.includes(prefixId),
+  )
+
+  return {
+    searchText: typeof value.searchText === 'string' ? value.searchText.trim() : '',
+    includeTagIds,
+    excludeTagIds,
+    includePrefixIds,
+    excludePrefixIds,
+  }
+}
+
+const hasLatestGamesServerFilters = (filterState) => {
+  return Boolean(
+    filterState &&
+      (
+        filterState.searchText.length > 0 ||
+        filterState.includeTagIds.length > 0 ||
+        filterState.excludeTagIds.length > 0 ||
+        filterState.includePrefixIds.length > 0 ||
+        filterState.excludePrefixIds.length > 0
+      ),
+  )
+}
+
+const encodeLatestGamesRequestKey = (value) =>
+  encodeURIComponent(value)
+    .replace(/%5B/g, '[')
+    .replace(/%5D/g, ']')
+
+const serializeLatestGamesRequestEntries = (entries) => {
+  return entries
+    .map(([key, value]) => `${encodeLatestGamesRequestKey(key)}=${encodeURIComponent(value)}`)
+    .join('&')
+}
+
+const buildLatestGamesRequestEntries = (
+  pageNumber,
+  latestGamesSort = 'date',
+  filterState,
+  includeTimestamp = true,
+) => {
+  const normalizedFilterState = normalizeLatestGamesFilterState(filterState)
+  const entries = [
+    ['cmd', 'list'],
+    ['cat', 'games'],
+    ['page', String(pageNumber)],
+  ]
+
+  if (hasLatestGamesServerFilters(normalizedFilterState)) {
+    if (normalizedFilterState.searchText.length > 0) {
+      entries.push(['search', normalizedFilterState.searchText])
+    }
+
+    normalizedFilterState.includePrefixIds.forEach((prefixId) => {
+      entries.push(['prefixes[]', String(prefixId)])
+    })
+    normalizedFilterState.excludePrefixIds.forEach((prefixId) => {
+      entries.push(['noprefixes[]', String(prefixId)])
+    })
+    normalizedFilterState.includeTagIds.forEach((tagId) => {
+      entries.push(['tags[]', String(tagId)])
+    })
+    normalizedFilterState.excludeTagIds.forEach((tagId) => {
+      entries.push(['notags[]', String(tagId)])
+    })
+  }
+
+  entries.push(['sort', normalizeLatestGamesSort(latestGamesSort)])
+
+  if (includeTimestamp) {
+    entries.push(['_', String(Date.now())])
+  }
+
+  return entries
+}
+
+const buildLatestGamesEndpointUrl = (pageNumber, latestGamesSort = 'date', filterState) => {
+  return `/sam/latest_alpha/latest_data.php?${serializeLatestGamesRequestEntries(
+    buildLatestGamesRequestEntries(pageNumber, latestGamesSort, filterState),
+  )}`
+}
+
+const fetchLatestGamesPage = async (
+  pageNumber,
+  latestGamesSort = 'date',
+  filterState,
+) => {
   const response = await fetch(
-    new URL(buildLatestGamesEndpointUrl(pageNumber, latestGamesSort), F95_ORIGIN),
+    new URL(
+      buildLatestGamesEndpointUrl(pageNumber, latestGamesSort, filterState),
+      F95_ORIGIN,
+    ),
     {
       method: 'GET',
       headers: createF95Headers('application/json'),
@@ -1339,6 +1652,7 @@ const finalizeDownloadedArchive = async (request, archivePath) => {
     progressPercent: 100,
     message: 'Готово к запуску.',
     errorMessage: null,
+    sizeBytes: getDirectorySizeBytes(installDir),
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl: request.downloadUrl,
   })
@@ -1726,6 +2040,30 @@ const createMainWindow = async () => {
 }
 
 const registerIpcHandlers = () => {
+  ipcMain.on('localData:getSnapshotSync', (event) => {
+    event.returnValue = buildLocalDataFilesSnapshot()
+  })
+  ipcMain.on('localData:saveListsSync', (event, value) => {
+    event.returnValue = writeLocalDataFileValue('lists', value)
+  })
+  ipcMain.on('localData:saveSettingsSync', (event, value) => {
+    event.returnValue = writeLocalDataFileValue('settings', value)
+  })
+  ipcMain.on('localData:clearListsSync', (event) => {
+    event.returnValue = writeLocalDataFileValue('lists', null)
+  })
+  ipcMain.on('localData:clearSettingsSync', (event) => {
+    event.returnValue = writeLocalDataFileValue('settings', null)
+  })
+  ipcMain.handle('localData:openFolder', async () => {
+    ensureDirectory(app.getPath('userData'))
+    const shellErrorMessage = await shell.openPath(app.getPath('userData'))
+    if (shellErrorMessage) {
+      throw new Error(shellErrorMessage)
+    }
+    return true
+  })
+
   ipcMain.handle('app:openExternal', async (_event, targetUrl) => {
     await shell.openExternal(targetUrl)
     return true
@@ -1742,8 +2080,10 @@ const registerIpcHandlers = () => {
   ipcMain.handle('f95:getCookieBackup', async () => buildCookieBackup(runtimeCookieState))
   ipcMain.handle('f95:saveCookieInput', async (_event, text) => saveCookieInput(text))
   ipcMain.handle('f95:clearCookieInput', async () => clearCookieInput())
-  ipcMain.handle('f95:fetchLatestGamesPage', async (_event, pageNumber, latestGamesSort) =>
-    fetchLatestGamesPage(pageNumber, latestGamesSort),
+  ipcMain.handle(
+    'f95:fetchLatestGamesPage',
+    async (_event, pageNumber, latestGamesSort, filterState) =>
+      fetchLatestGamesPage(pageNumber, latestGamesSort, filterState),
   )
   ipcMain.handle('f95:fetchThreadPageHtml', async (_event, threadLink) =>
     fetchThreadPageHtml(threadLink),
@@ -1797,6 +2137,7 @@ const registerIpcHandlers = () => {
 app.whenReady().then(async () => {
   runtimeCookieState = loadRuntimeCookieState(process.env.F95_COOKIE?.trim())
   libraryState = loadLibraryState()
+  localDataFilesState = loadLocalDataFilesState()
   ensureDirectory(libraryState.libraryRootPath)
 
   registerIpcHandlers()

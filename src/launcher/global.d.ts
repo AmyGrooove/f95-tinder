@@ -3,20 +3,28 @@ import type {
   LauncherCookieStatus,
   LauncherDownloadRequest,
   LauncherLatestGamesResult,
+  LauncherLocalDataSnapshot,
   LauncherLibrarySnapshot,
 } from './types'
-import type { LatestGamesSort } from '../f95/types'
+import type { FilterState, LatestGamesSort } from '../f95/types'
 
 type LauncherBridge = {
   runtime: {
     isElectron: boolean
   }
+  getLocalDataSnapshotSync: () => LauncherLocalDataSnapshot
+  saveLocalListsSync: (value: unknown) => LauncherLocalDataSnapshot
+  saveLocalSettingsSync: (value: unknown) => LauncherLocalDataSnapshot
+  clearLocalListsSync: () => LauncherLocalDataSnapshot
+  clearLocalSettingsSync: () => LauncherLocalDataSnapshot
+  openLocalDataFolder: () => Promise<boolean>
   openExternal: (targetUrl: string) => Promise<boolean>
   loadBundledTagsMap: () => Promise<Record<string, string>>
   loadBundledPrefixesMap: () => Promise<Record<string, string>>
   fetchLatestGamesPage: (
     pageNumber: number,
     latestGamesSort: LatestGamesSort,
+    filterState?: FilterState | null,
   ) => Promise<LauncherLatestGamesResult>
   fetchThreadPageHtml: (threadLink: string) => Promise<string>
   getCookieStatus: () => Promise<LauncherCookieStatus>

@@ -3,9 +3,10 @@ import type {
   LauncherCookieStatus,
   LauncherDownloadRequest,
   LauncherLatestGamesResult,
+  LauncherLocalDataSnapshot,
   LauncherLibrarySnapshot,
 } from './types'
-import type { LatestGamesSort } from '../f95/types'
+import type { FilterState, LatestGamesSort } from '../f95/types'
 
 const createEmptyLibrarySnapshot = (): LauncherLibrarySnapshot => ({
   libraryRootPath: '',
@@ -22,6 +23,63 @@ const getLauncherBridge = () => {
 
 const isLauncherBridgeAvailable = () => getLauncherBridge() !== null
 
+const getLauncherLocalDataSnapshotSync = (): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.getLocalDataSnapshotSync()
+}
+
+const saveLauncherLocalListsSync = (value: unknown): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.saveLocalListsSync(value)
+}
+
+const saveLauncherLocalSettingsSync = (
+  value: unknown,
+): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.saveLocalSettingsSync(value)
+}
+
+const clearLauncherLocalListsSync = (): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.clearLocalListsSync()
+}
+
+const clearLauncherLocalSettingsSync = (): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.clearLocalSettingsSync()
+}
+
+const openLauncherLocalDataFolder = async () => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return false
+  }
+
+  await launcherBridge.openLocalDataFolder()
+  return true
+}
+
 const openExternalUrl = async (targetUrl: string) => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
@@ -35,13 +93,18 @@ const openExternalUrl = async (targetUrl: string) => {
 const fetchLatestGamesPageViaLauncher = async (
   pageNumber: number,
   latestGamesSort: LatestGamesSort,
+  filterState?: FilterState | null,
 ): Promise<LauncherLatestGamesResult | null> => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
     return null
   }
 
-  return launcherBridge.fetchLatestGamesPage(pageNumber, latestGamesSort)
+  return launcherBridge.fetchLatestGamesPage(
+    pageNumber,
+    latestGamesSort,
+    filterState,
+  )
 }
 
 const fetchThreadPageHtmlViaLauncher = async (threadLink: string) => {
@@ -208,8 +271,11 @@ const requestLauncherLibraryClear = async () => {
 }
 
 export {
+  clearLauncherLocalListsSync,
+  clearLauncherLocalSettingsSync,
   clearCookieInputViaLauncher,
   getCookieBackupViaLauncher,
+  getLauncherLocalDataSnapshotSync,
   fetchLatestGamesPageViaLauncher,
   fetchThreadPageHtmlViaLauncher,
   getCookieStatusViaLauncher,
@@ -219,6 +285,7 @@ export {
   loadBundledPrefixesMapViaLauncher,
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
+  openLauncherLocalDataFolder,
   requestLauncherDownload,
   requestLauncherGameDeletion,
   requestLauncherGameLaunch,
@@ -227,6 +294,8 @@ export {
   requestLauncherLaunchTargetChoice,
   requestLauncherMirrorOpen,
   requestLauncherRevealGame,
+  saveLauncherLocalListsSync,
+  saveLauncherLocalSettingsSync,
   saveCookieInputViaLauncher,
   subscribeToLauncherLibrarySnapshot,
 }

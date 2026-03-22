@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useF95Browser } from "./f95/useF95Browser";
 import {
+  buildLatestGamesDataRequestUrl,
   buildThreadLink,
   isLikelyCookieRefreshErrorMessage,
 } from "./f95/api";
@@ -76,9 +77,11 @@ import {
   isLauncherGameBusy,
 } from "./launcher/ui";
 import {
+  getLauncherLocalDataSnapshotSync,
   loadBundledPrefixesMapViaLauncher,
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
+  openLauncherLocalDataFolder,
 } from "./launcher/runtime";
 import { useLauncherLibrary } from "./launcher/useLauncherLibrary";
 
@@ -657,6 +660,7 @@ const App = () => {
     metadataSyncState,
     startMetadataSync,
     moveLinkToList,
+    togglePlayedFavoriteLink,
     removeLinkFromList,
   } = useF95Browser();
   const {
@@ -672,6 +676,20 @@ const App = () => {
     openMirrorForGame,
     revealGame,
   } = useLauncherLibrary();
+  const launcherLocalDataSnapshot = useMemo(
+    () => getLauncherLocalDataSnapshotSync(),
+    [],
+  );
+  const localDataFiles = useMemo(() => {
+    if (!launcherLocalDataSnapshot) {
+      return null;
+    }
+
+    return {
+      listsPath: launcherLocalDataSnapshot.listsFile.path,
+      settingsPath: launcherLocalDataSnapshot.settingsFile.path,
+    };
+  }, [launcherLocalDataSnapshot]);
 
   const [viewerState, setViewerState] = useState<ViewerState>(() =>
     createClosedViewerState(),
@@ -2309,6 +2327,18 @@ const App = () => {
     return currentThreadItem.screens;
   }, [currentThreadItem]);
 
+  const swipeDataRequestUrl = useMemo(() => {
+    return buildLatestGamesDataRequestUrl(
+      sessionState.currentPageNumber,
+      sessionState.latestGamesSort,
+      sessionState.filterState,
+    );
+  }, [
+    sessionState.currentPageNumber,
+    sessionState.filterState,
+    sessionState.latestGamesSort,
+  ]);
+
   const swipeHudAction = useMemo(() => {
     return getSwipeActionCopy(
       resolveSwipeActionFromOffset(
@@ -2442,6 +2472,16 @@ const App = () => {
       );
     });
   }, [isLauncherAvailable, openLibraryFolder, setErrorMessage]);
+
+  const handleOpenLocalDataFiles = useCallback(() => {
+    void openLauncherLocalDataFolder().catch((error) => {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Не удалось открыть папку локальных файлов",
+      );
+    });
+  }, [setErrorMessage]);
 
   const handleConfirmClearDashboardLists = useCallback(() => {
     const shouldClear = window.confirm(
@@ -2788,6 +2828,20 @@ const App = () => {
                 ) : null}
               </div>
             ) : null}
+
+            {swipeDataRequestUrl ? (
+              <div className="swipeDataRequestBlock">
+                <button
+                  className="swipeDataRequestLabelButton"
+                  type="button"
+                  onClick={() => {
+                    openLinkInNewTab(swipeDataRequestUrl);
+                  }}
+                >
+                  Запрос latest_data.php
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -3033,6 +3087,7 @@ const App = () => {
         onChooseLaunchTargetForThread={handleChooseLaunchTargetForThread}
         onOpenErrorMirrorForThread={handleOpenErrorMirrorForThread}
         moveLinkToList={handleMoveLinkToList}
+        togglePlayedFavoriteLink={togglePlayedFavoriteLink}
         removeLinkFromList={removeLinkFromList}
         pickCoverForLink={pickCoverForLink}
         pickTitleForLink={pickTitleForLink}
@@ -3109,6 +3164,8 @@ const App = () => {
         void handleImportListsBackupChange();
       }}
       onOpenGameFolders={handleOpenGameFolders}
+      localDataFiles={localDataFiles}
+      onOpenLocalDataFiles={handleOpenLocalDataFiles}
       onClearGameFolders={handleClearGameFolders}
       onClearAllLocalData={handleConfirmClearAllLocalData}
       onResetLocalSettings={handleConfirmResetLocalSettings}

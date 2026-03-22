@@ -21,6 +21,7 @@ type LauncherGameRecord = {
   lastHostLabel: string | null
   lastDownloadUrl: string | null
   errorMessage: string | null
+  sizeBytes: number | null
   updatedAtUnixMs: number
 }
 
@@ -63,6 +64,19 @@ type LauncherLatestGamesResult = {
   totalPages: number
 }
 
+type LauncherLocalDataFile = {
+  path: string
+  exists: boolean
+  updatedAtUnixMs: number | null
+}
+
+type LauncherLocalDataSnapshot = {
+  listsFile: LauncherLocalDataFile
+  settingsFile: LauncherLocalDataFile
+  lists: unknown | null
+  settings: unknown | null
+}
+
 export type {
   LauncherCookieBackup,
   LauncherCookieStatus,
@@ -71,5 +85,7 @@ export type {
   LauncherGameRecord,
   LauncherGameStatus,
   LauncherLatestGamesResult,
+  LauncherLocalDataFile,
+  LauncherLocalDataSnapshot,
   LauncherLibrarySnapshot,
 }

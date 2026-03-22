@@ -1,4 +1,11 @@
 import { safeJsonParse } from './utils'
+import {
+  clearLauncherLocalListsSync,
+  clearLauncherLocalSettingsSync,
+  getLauncherLocalDataSnapshotSync,
+  saveLauncherLocalListsSync,
+  saveLauncherLocalSettingsSync,
+} from '../launcher/runtime'
 import type {
   DefaultSwipeSettings,
   F95ThreadItem,
@@ -166,6 +173,33 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
 const normalizeLatestGamesSort = (value: unknown): LatestGamesSort =>
   value === 'date' ? 'date' : 'views'
 
+const normalizeImportedStringList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeImportedDisabledDownloadHosts = (value: unknown) => {
+  if (!isPlainObject(value)) {
+    return {}
+  }
+
+  const normalizedMap: Record<string, number> = {}
+  for (const [hostLabel, expiresAtUnixMs] of Object.entries(value)) {
+    if (
+      typeof hostLabel === 'string' &&
+      typeof expiresAtUnixMs === 'number' &&
+      Number.isFinite(expiresAtUnixMs)
+    ) {
+      normalizedMap[hostLabel] = expiresAtUnixMs
+    }
+  }
+
+  return normalizedMap
+}
+
 const normalizeDefaultSwipeSettings = (
   value: unknown,
 ): DefaultSwipeSettings => {
@@ -230,6 +264,10 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     possibleSessionState.playedLinks,
     playedByLinkFallback,
   )
+  const playedFavoriteLinks = normalizePlayedFavoriteLinks(
+    possibleSessionState.playedFavoriteLinks,
+    playedLinks,
+  )
   const playedByLink: Record<string, boolean> = {}
   for (const link of playedLinks) {
     playedByLink[link] = true
@@ -251,6 +289,7 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     trashLinks: possibleSessionState.trashLinks as string[],
     playedByLink,
     playedLinks,
+    playedFavoriteLinks,
     processedThreadItemsByLink,
     viewedCount: possibleSessionState.viewedCount,
     filterState,
@@ -261,7 +300,7 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
   }
 }
 
-const loadSessionState = (): SessionState | null => {
+const loadSessionStateFromLocalStorage = (): SessionState | null => {
   const sessionText = readLocalStorageValue(STORAGE_KEYS.sessionState)
   if (!sessionText) {
     return null
@@ -275,7 +314,7 @@ const loadSessionState = (): SessionState | null => {
   return normalizeSessionState(sessionValue)
 }
 
-const loadDefaultSwipeSettings = () => {
+const loadDefaultSwipeSettingsFromLocalStorage = () => {
   const defaultFilterStateText = readLocalStorageValue(STORAGE_KEYS.defaultFilterState)
   if (!defaultFilterStateText) {
     return normalizeDefaultSwipeSettings(BUILT_IN_DEFAULT_SWIPE_SETTINGS)
@@ -287,13 +326,6 @@ const loadDefaultSwipeSettings = () => {
   }
 
   return normalizeDefaultSwipeSettings(defaultFilterStateValue)
-}
-
-const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
-  writeLocalStorageValue(
-    STORAGE_KEYS.defaultFilterState,
-    JSON.stringify(normalizeDefaultSwipeSettings(defaultSwipeSettings)),
-  )
 }
 
 const createDefaultSessionState = (
@@ -311,31 +343,12 @@ const createDefaultSessionState = (
     trashLinks: [],
     playedByLink: {},
     playedLinks: [],
+    playedFavoriteLinks: [],
     processedThreadItemsByLink: {},
     viewedCount: 0,
     filterState: normalizeFilterState(defaultSwipeSettings.filterState),
     lastMetadataSyncAtUnixMs: null,
   }
-}
-
-const saveSessionState = (sessionState: SessionState) => {
-  writeLocalStorageValue(STORAGE_KEYS.sessionState, JSON.stringify(sessionState))
-}
-
-const clearAllStoredData = () => {
-  for (const latestGamesSort of LATEST_GAMES_SORTS) {
-    const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
-    for (const pageNumber of cachedPageNumberList) {
-      removeLocalStorageValue(getCachedPageKey(latestGamesSort, pageNumber))
-    }
-
-    removeLocalStorageValue(getCachedPagesIndexKey(latestGamesSort))
-  }
-
-  removeLocalStorageValue(STORAGE_KEYS.sessionState)
-  removeLocalStorageValue(STORAGE_KEYS.defaultFilterState)
-  clearTagsMap()
-  clearPrefixesMap()
 }
 
 const normalizePlayedByLink = (value: unknown): Record<string, boolean> => {
@@ -409,6 +422,10 @@ const normalizeProcessedThreadItems = (
       Array.isArray(rawItem.tags) && rawItem.tags.length > 0
         ? rawItem.tags.filter((tag) => typeof tag === 'number')
         : []
+    const prefixes =
+      Array.isArray(rawItem.prefixes) && rawItem.prefixes.length > 0
+        ? rawItem.prefixes.filter((prefixId) => typeof prefixId === 'number')
+        : []
 
     normalized[threadLink] = {
       threadIdentifier,
@@ -428,6 +445,7 @@ const normalizeProcessedThreadItems = (
           ? rawItem.version
           : '',
       version: typeof rawItem.version === 'string' ? rawItem.version : '',
+      prefixes,
       tags,
       trackedTs:
         typeof rawItem.trackedTs === 'number'
@@ -471,6 +489,29 @@ const normalizePlayedLinks = (
   return fallbackLinks
 }
 
+const normalizePlayedFavoriteLinks = (
+  value: unknown,
+  playedLinks: string[],
+): string[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const playedLinkSet = new Set(playedLinks)
+  const normalized: string[] = []
+  for (const item of value) {
+    if (
+      typeof item === 'string' &&
+      item.trim().length > 0 &&
+      playedLinkSet.has(item)
+    ) {
+      normalized.push(item)
+    }
+  }
+
+  return Array.from(new Set(normalized))
+}
+
 const normalizeLookupMap = (value: unknown): Record<string, string> => {
   if (!isPlainObject(value)) {
     return {}
@@ -496,7 +537,7 @@ const normalizePrefixesMap = (value: unknown): Record<string, string> => {
   return normalizeLookupMap(value)
 }
 
-const loadTagsMap = (): Record<string, string> => {
+const loadTagsMapFromLocalStorage = (): Record<string, string> => {
   const tagsMapText = readLocalStorageValue(STORAGE_KEYS.tagsMap)
   if (!tagsMapText) {
     return {}
@@ -506,7 +547,7 @@ const loadTagsMap = (): Record<string, string> => {
   return normalizeTagsMap(parsedMap)
 }
 
-const loadPrefixesMap = (): Record<string, string> => {
+const loadPrefixesMapFromLocalStorage = (): Record<string, string> => {
   const prefixesMapText = readLocalStorageValue(STORAGE_KEYS.prefixesMap)
   if (!prefixesMapText) {
     return {}
@@ -516,41 +557,250 @@ const loadPrefixesMap = (): Record<string, string> => {
   return normalizePrefixesMap(parsedMap)
 }
 
-const saveTagsMap = (tagsMap: Record<string, string>) => {
+const cleanLookupMap = (lookupMap: Record<string, string>) => {
   const cleanedMap: Record<string, string> = {}
-  for (const key of Object.keys(tagsMap)) {
+  for (const key of Object.keys(lookupMap)) {
     if (typeof key !== 'string' || key.trim().length === 0) {
       continue
     }
-    const value = tagsMap[key]
+    const value = lookupMap[key]
     if (typeof value === 'string') {
       cleanedMap[key] = value
     }
+  }
+
+  return cleanedMap
+}
+
+const isLauncherLocalDataEnabled = () => getLauncherLocalDataSnapshotSync() !== null
+
+const loadLauncherLocalListsBackup = () => {
+  const launcherSnapshot = getLauncherLocalDataSnapshotSync()
+  if (!launcherSnapshot || !isPlainObject(launcherSnapshot.lists)) {
+    return null
+  }
+
+  const rawLists = launcherSnapshot.lists as Record<string, unknown>
+
+  const sessionState = normalizeSessionState(rawLists.sessionState)
+  if (!sessionState) {
+    return null
+  }
+
+  return {
+    sessionState,
+    tagsMap: normalizeTagsMap(rawLists.tagsMap),
+    prefixesMap: normalizePrefixesMap(rawLists.prefixesMap),
+  }
+}
+
+const loadLauncherLocalSettingsBackup = () => {
+  const launcherSnapshot = getLauncherLocalDataSnapshotSync()
+  if (!launcherSnapshot || !isPlainObject(launcherSnapshot.settings)) {
+    return null
+  }
+
+  const rawSettings = launcherSnapshot.settings as Record<string, unknown>
+  if (!('defaultSwipeSettings' in rawSettings)) {
+    return null
+  }
+
+  return {
+    defaultSwipeSettings: normalizeDefaultSwipeSettings(rawSettings.defaultSwipeSettings),
+    tagsMap: normalizeTagsMap(rawSettings.tagsMap),
+    prefixesMap: normalizePrefixesMap(rawSettings.prefixesMap),
+    preferredDownloadHosts: normalizeImportedStringList(
+      rawSettings.preferredDownloadHosts,
+    ),
+    disabledDownloadHosts: normalizeImportedDisabledDownloadHosts(
+      rawSettings.disabledDownloadHosts,
+    ),
+    hiddenDownloadHosts: normalizeImportedStringList(rawSettings.hiddenDownloadHosts),
+    cookieProxy: 'cookieProxy' in rawSettings ? rawSettings.cookieProxy : null,
+  }
+}
+
+const buildFallbackLocalListsBackup = () => ({
+  sessionState: loadSessionStateFromLocalStorage() ?? createDefaultSessionState(),
+  tagsMap:
+    loadLauncherLocalSettingsBackup()?.tagsMap ?? loadTagsMapFromLocalStorage(),
+  prefixesMap:
+    loadLauncherLocalSettingsBackup()?.prefixesMap ??
+    loadPrefixesMapFromLocalStorage(),
+})
+
+const buildFallbackLocalSettingsBackup = () => ({
+  defaultSwipeSettings: loadDefaultSwipeSettingsFromLocalStorage(),
+  tagsMap: loadLauncherLocalListsBackup()?.tagsMap ?? loadTagsMapFromLocalStorage(),
+  prefixesMap:
+    loadLauncherLocalListsBackup()?.prefixesMap ??
+    loadPrefixesMapFromLocalStorage(),
+  preferredDownloadHosts: [],
+  disabledDownloadHosts: {},
+  hiddenDownloadHosts: [],
+  cookieProxy: null,
+})
+
+const loadSessionState = (): SessionState | null => {
+  const launcherBackup = loadLauncherLocalListsBackup()
+  if (launcherBackup) {
+    return launcherBackup.sessionState
+  }
+
+  return loadSessionStateFromLocalStorage()
+}
+
+const loadDefaultSwipeSettings = () => {
+  const launcherBackup = loadLauncherLocalSettingsBackup()
+  if (launcherBackup) {
+    return launcherBackup.defaultSwipeSettings
+  }
+
+  return loadDefaultSwipeSettingsFromLocalStorage()
+}
+
+const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
+  const normalizedValue = normalizeDefaultSwipeSettings(defaultSwipeSettings)
+
+  if (isLauncherLocalDataEnabled()) {
+    const currentSettingsBackup =
+      loadLauncherLocalSettingsBackup() ?? buildFallbackLocalSettingsBackup()
+    saveLauncherLocalSettingsSync({
+      ...currentSettingsBackup,
+      defaultSwipeSettings: normalizedValue,
+    })
+    return
+  }
+
+  writeLocalStorageValue(
+    STORAGE_KEYS.defaultFilterState,
+    JSON.stringify(normalizedValue),
+  )
+}
+
+const saveSessionState = (sessionState: SessionState) => {
+  if (isLauncherLocalDataEnabled()) {
+    const currentListsBackup =
+      loadLauncherLocalListsBackup() ?? buildFallbackLocalListsBackup()
+    saveLauncherLocalListsSync({
+      ...currentListsBackup,
+      sessionState,
+    })
+    return
+  }
+
+  writeLocalStorageValue(STORAGE_KEYS.sessionState, JSON.stringify(sessionState))
+}
+
+const clearAllStoredData = () => {
+  for (const latestGamesSort of LATEST_GAMES_SORTS) {
+    const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
+    for (const pageNumber of cachedPageNumberList) {
+      removeLocalStorageValue(getCachedPageKey(latestGamesSort, pageNumber))
+    }
+
+    removeLocalStorageValue(getCachedPagesIndexKey(latestGamesSort))
+  }
+
+  if (isLauncherLocalDataEnabled()) {
+    clearLauncherLocalListsSync()
+    clearLauncherLocalSettingsSync()
+    return
+  }
+
+  removeLocalStorageValue(STORAGE_KEYS.sessionState)
+  removeLocalStorageValue(STORAGE_KEYS.defaultFilterState)
+  clearTagsMap()
+  clearPrefixesMap()
+}
+
+const loadTagsMap = (): Record<string, string> => {
+  const launcherListsBackup = loadLauncherLocalListsBackup()
+  if (launcherListsBackup) {
+    return launcherListsBackup.tagsMap
+  }
+
+  const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
+  if (launcherSettingsBackup) {
+    return launcherSettingsBackup.tagsMap
+  }
+
+  return loadTagsMapFromLocalStorage()
+}
+
+const loadPrefixesMap = (): Record<string, string> => {
+  const launcherListsBackup = loadLauncherLocalListsBackup()
+  if (launcherListsBackup) {
+    return launcherListsBackup.prefixesMap
+  }
+
+  const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
+  if (launcherSettingsBackup) {
+    return launcherSettingsBackup.prefixesMap
+  }
+
+  return loadPrefixesMapFromLocalStorage()
+}
+
+const saveTagsMap = (tagsMap: Record<string, string>) => {
+  const cleanedMap = cleanLookupMap(tagsMap)
+
+  if (isLauncherLocalDataEnabled()) {
+    const currentListsBackup =
+      loadLauncherLocalListsBackup() ?? buildFallbackLocalListsBackup()
+    const currentSettingsBackup =
+      loadLauncherLocalSettingsBackup() ?? buildFallbackLocalSettingsBackup()
+    saveLauncherLocalListsSync({
+      ...currentListsBackup,
+      tagsMap: cleanedMap,
+    })
+    saveLauncherLocalSettingsSync({
+      ...currentSettingsBackup,
+      tagsMap: cleanedMap,
+    })
+    return
   }
 
   writeLocalStorageValue(STORAGE_KEYS.tagsMap, JSON.stringify(cleanedMap))
 }
 
 const savePrefixesMap = (prefixesMap: Record<string, string>) => {
-  const cleanedMap: Record<string, string> = {}
-  for (const key of Object.keys(prefixesMap)) {
-    if (typeof key !== 'string' || key.trim().length === 0) {
-      continue
-    }
-    const value = prefixesMap[key]
-    if (typeof value === 'string') {
-      cleanedMap[key] = value
-    }
+  const cleanedMap = cleanLookupMap(prefixesMap)
+
+  if (isLauncherLocalDataEnabled()) {
+    const currentListsBackup =
+      loadLauncherLocalListsBackup() ?? buildFallbackLocalListsBackup()
+    const currentSettingsBackup =
+      loadLauncherLocalSettingsBackup() ?? buildFallbackLocalSettingsBackup()
+    saveLauncherLocalListsSync({
+      ...currentListsBackup,
+      prefixesMap: cleanedMap,
+    })
+    saveLauncherLocalSettingsSync({
+      ...currentSettingsBackup,
+      prefixesMap: cleanedMap,
+    })
+    return
   }
 
   writeLocalStorageValue(STORAGE_KEYS.prefixesMap, JSON.stringify(cleanedMap))
 }
 
 function clearTagsMap() {
+  if (isLauncherLocalDataEnabled()) {
+    saveTagsMap({})
+    return
+  }
+
   removeLocalStorageValue(STORAGE_KEYS.tagsMap)
 }
 
 function clearPrefixesMap() {
+  if (isLauncherLocalDataEnabled()) {
+    savePrefixesMap({})
+    return
+  }
+
   removeLocalStorageValue(STORAGE_KEYS.prefixesMap)
 }
 

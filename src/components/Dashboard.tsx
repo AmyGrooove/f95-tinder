@@ -1,11 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
-import type {
-  F95ThreadItem,
-  ListType,
-  ProcessedThreadItem,
-  SessionState,
-} from "../f95/types";
+import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
 import {
   countUpdatedTrackedItems,
   getProcessedThreadItemUpdateLabel,
@@ -23,6 +18,7 @@ type DashboardCard = {
   coverUrl: string;
   title: string;
   creator: string;
+  engineLabel: string;
   rating: number;
   version: string;
   isUpdated: boolean;
@@ -30,6 +26,7 @@ type DashboardCard = {
   addedAt: number;
   isPlayed: boolean;
   isInFavorites: boolean;
+  isPlayedFavorite: boolean;
   isInTrash: boolean;
   listType: ListType | null;
   sectionKey: "favorite" | "trash" | "played";
@@ -63,6 +60,7 @@ type DashboardProps = {
     threadTitle: string,
   ) => void | Promise<void>;
   moveLinkToList: (link: string, listType: ListType) => void;
+  togglePlayedFavoriteLink: (link: string) => void;
   removeLinkFromList: (link: string, listType: ListType) => void;
   pickCoverForLink: (
     threadLink: string,
@@ -207,6 +205,25 @@ const formatDateTimeLabel = (unixSeconds: number | undefined) => {
   return dateTimeFormatter.format(new Date(unixSeconds * 1000));
 };
 
+const formatStorageSizeLabel = (value: number | null | undefined) => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  const unitList = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
+  let nextValue = value;
+  let unitIndex = 0;
+
+  while (nextValue >= 1024 && unitIndex < unitList.length - 1) {
+    nextValue /= 1024;
+    unitIndex += 1;
+  }
+
+  const fractionDigits = nextValue >= 10 || unitIndex === 0 ? 0 : 1;
+  const formattedValue = nextValue.toFixed(fractionDigits).replace(/\.0$/, "");
+  return `${formattedValue} ${unitList[unitIndex]}`;
+};
+
 const formatListTypeLabel = (value: ListType | null) => {
   if (value === "favorite") {
     return "Закладки";
@@ -221,16 +238,16 @@ const formatListTypeLabel = (value: ListType | null) => {
 };
 
 const buildPrefixLabels = (
-  threadItem: F95ThreadItem | null,
+  prefixIdList: number[] | undefined,
   prefixesMap: Record<string, string>,
 ) => {
-  if (!threadItem || !Array.isArray(threadItem.prefixes)) {
+  if (!Array.isArray(prefixIdList)) {
     return [];
   }
 
   return Array.from(
     new Set(
-      threadItem.prefixes.filter(
+      prefixIdList.filter(
         (prefixId): prefixId is number => typeof prefixId === "number",
       ),
     ),
@@ -251,6 +268,7 @@ export const Dashboard = ({
   onChooseLaunchTargetForThread,
   onOpenErrorMirrorForThread,
   moveLinkToList,
+  togglePlayedFavoriteLink,
   removeLinkFromList,
   pickCoverForLink,
   pickTitleForLink,
@@ -265,6 +283,7 @@ export const Dashboard = ({
   const [isExcludeTagsOpen, setIsExcludeTagsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTabId>("bookmarks");
   const [onlyUpdatedTracked, setOnlyUpdatedTracked] = useState(false);
+  const [showOnlyPlayedFavorites, setShowOnlyPlayedFavorites] = useState(false);
   const [sortField, setSortField] = useState<"addedAt" | "rating" | "title">(
     "addedAt",
   );
@@ -286,6 +305,10 @@ export const Dashboard = ({
   const favoritesLinkSet = useMemo(
     () => new Set(sessionState.favoritesLinks),
     [sessionState.favoritesLinks],
+  );
+  const playedFavoriteLinkSet = useMemo(
+    () => new Set(sessionState.playedFavoriteLinks),
+    [sessionState.playedFavoriteLinks],
   );
   const trashLinkSet = useMemo(
     () => new Set(sessionState.trashLinks),
@@ -346,6 +369,7 @@ export const Dashboard = ({
     includeTagNumbers,
     excludeTagNumbers,
     onlyUpdatedTracked,
+    showOnlyPlayedFavorites,
     sortField,
     sortDirection,
   ]);
@@ -364,6 +388,7 @@ export const Dashboard = ({
     searchText.trim() ? `Поиск: ${searchText.trim()}` : null,
     `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`,
     onlyUpdatedTracked ? "только обновленные" : null,
+    activeTab === "played" && showOnlyPlayedFavorites ? "только любимые" : null,
   ]
     .filter(Boolean)
     .join(" • ");
@@ -440,14 +465,14 @@ export const Dashboard = ({
         continue;
       }
 
-      const membershipListType: ListType | null =
-        favoritesLinkSet.has(threadLink)
-          ? "favorite"
-          : trashLinkSet.has(threadLink)
-            ? "trash"
-            : playedLinkSet.has(threadLink)
-              ? "played"
-              : null;
+      const isInFavorites = favoritesLinkSet.has(threadLink);
+      const isPlayedFavorite = playedFavoriteLinkSet.has(threadLink);
+      const isInTrash = trashLinkSet.has(threadLink);
+      const isPlayed = playedLinkSet.has(threadLink);
+      if (sectionKey === "played" && showOnlyPlayedFavorites && !isPlayedFavorite) {
+        continue;
+      }
+
       const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
       const threadItem =
         threadIdentifier !== null
@@ -456,6 +481,12 @@ export const Dashboard = ({
       const version =
         processedItem?.version?.trim() ||
         (typeof threadItem?.version === "string" ? threadItem.version : "");
+      const engineLabel = buildPrefixLabels(
+        Array.isArray(threadItem?.prefixes)
+          ? threadItem.prefixes
+          : processedItem?.prefixes,
+        prefixesMap,
+      ).join(", ");
 
       filteredCards.push({
         threadLink,
@@ -466,6 +497,7 @@ export const Dashboard = ({
         ),
         title,
         creator,
+        engineLabel,
         rating: pickRatingForLink(
           threadLink,
           sessionState.processedThreadItemsByLink,
@@ -475,10 +507,11 @@ export const Dashboard = ({
         isUpdated,
         tags: cardTags,
         addedAt: processedItem?.addedAtUnixSeconds ?? 0,
-        isPlayed: playedLinkSet.has(threadLink),
-        isInFavorites: favoritesLinkSet.has(threadLink),
-        isInTrash: trashLinkSet.has(threadLink),
-        listType: membershipListType,
+        isPlayed,
+        isInFavorites,
+        isPlayedFavorite,
+        isInTrash,
+        listType: sectionKey,
         sectionKey,
       });
     }
@@ -502,6 +535,7 @@ export const Dashboard = ({
     sessionState.processedThreadItemsByLink,
     sessionState.threadItemsByIdentifier,
     favoritesLinkSet,
+    playedFavoriteLinkSet,
     trashLinkSet,
     playedLinkSet,
     sortField,
@@ -514,6 +548,7 @@ export const Dashboard = ({
     pickTitleForLink,
     pickCreatorForLink,
     pickRatingForLink,
+    showOnlyPlayedFavorites,
   ]);
 
   const visibleCardCount = visibleCardCountByTab[activeTab];
@@ -643,6 +678,14 @@ export const Dashboard = ({
 
   const activeTabItem =
     tabItems.find((item) => item.id === activeTab) ?? tabItems[0];
+  const activeCardsCountLabel =
+    activeTabItem.id === "played" && showOnlyPlayedFavorites
+      ? `${activeCards.length} из ${playedLinks.length} игр`
+      : `${activeCards.length} игр`;
+  const showActiveUpdatedCount =
+    activeTabItem.updatedCount > 0 &&
+    activeTabItem.id !== "trash" &&
+    !(activeTabItem.id === "played" && showOnlyPlayedFavorites);
 
   const activeGameThreadIdentifier = activeGameCard
     ? parseThreadIdentifierFromLink(activeGameCard.threadLink)
@@ -656,7 +699,9 @@ export const Dashboard = ({
     ? sessionState.processedThreadItemsByLink[activeGameCard.threadLink] ?? null
     : null;
   const activeGamePrefixLabels = buildPrefixLabels(
-    activeGameThreadItem,
+    Array.isArray(activeGameThreadItem?.prefixes)
+      ? activeGameThreadItem.prefixes
+      : activeGameProcessedItem?.prefixes,
     prefixesMap,
   );
   const activeGameFactPills = activeGameCard
@@ -766,6 +811,7 @@ export const Dashboard = ({
     const isInFavorites = card.isInFavorites;
     const isInTrash = card.isInTrash;
     const isPlayed = card.isPlayed;
+    const showFavoriteQuickAction = !isInFavorites;
     const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
     const canRevealInstalledGame =
       isLauncherAvailable && launcherGame?.status === "installed";
@@ -781,7 +827,7 @@ export const Dashboard = ({
       ? `${errorHint} Нажми, чтобы открыть зеркало.`
       : null;
     const quickActionCount =
-      Number(!isPlayed) + Number(!isInFavorites) + Number(!isInTrash) + 1;
+      Number(!isPlayed) + Number(showFavoriteQuickAction) + Number(!isInTrash) + 1;
 
     const handleDangerClick = () => {
       if (card.sectionKey === "played") {
@@ -890,17 +936,17 @@ export const Dashboard = ({
               <span className="srOnly">Перенести в Играл</span>
             </button>
           ) : null}
-          {!isInFavorites ? (
+          {showFavoriteQuickAction ? (
             <button
               className="iconButton listItemActionIconButton iconButtonStar"
               onClick={() => {
                 moveLinkToList(card.threadLink, "favorite");
               }}
-              title="Перенести в избранное"
-              aria-label="Перенести в избранное"
+              title="Добавить в закладки"
+              aria-label="Добавить в закладки"
             >
               <span aria-hidden>★</span>
-              <span className="srOnly">Перенести в избранное</span>
+              <span className="srOnly">Добавить в закладки</span>
             </button>
           ) : null}
           {!isInTrash ? (
@@ -954,7 +1000,9 @@ export const Dashboard = ({
             В этом списке пока ничего нет
           </div>
           <div className="mutedText">
-            {onlyUpdatedTracked && tabId !== "trash"
+            {tabId === "played" && showOnlyPlayedFavorites
+              ? "Во вкладке Играл пока нет игр, отмеченных как любимые."
+              : onlyUpdatedTracked && tabId !== "trash"
               ? "Сейчас нет карточек с апдейтом. Попробуй снять фильтр или дождаться следующей синхронизации."
               : "Попробуй сменить вкладку или ослабить фильтры поиска и тегов."}
           </div>
@@ -968,6 +1016,15 @@ export const Dashboard = ({
       <>
         <div className="listGrid" style={{ marginTop: 12 }}>
           {cards.map((card) => {
+            const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
+            const installedSizeLabel =
+              launcherGame?.status === "installed"
+                ? formatStorageSizeLabel(launcherGame.sizeBytes)
+                : null;
+            const showPlayedFavoriteButton = card.sectionKey === "played";
+            const playedFavoriteLabel = card.isPlayedFavorite
+              ? "Убрать из любимого"
+              : "Добавить в любимое";
             const handleCardMiddleMouseDown = (
               event: MouseEvent<HTMLButtonElement>,
             ) => {
@@ -997,6 +1054,24 @@ export const Dashboard = ({
                   card.isUpdated ? "listItemCardUpdated" : ""
                 }`}
               >
+                {showPlayedFavoriteButton ? (
+                  <button
+                    className={`iconButton listItemFavoriteFloatingButton ${
+                      card.isPlayedFavorite
+                        ? "listItemFavoriteFloatingButtonActive"
+                        : ""
+                    }`}
+                    type="button"
+                    onClick={() => {
+                      togglePlayedFavoriteLink(card.threadLink);
+                    }}
+                    title={playedFavoriteLabel}
+                    aria-label={playedFavoriteLabel}
+                  >
+                    <span aria-hidden>♥</span>
+                    <span className="srOnly">{playedFavoriteLabel}</span>
+                  </button>
+                ) : null}
                 <button
                   className="listItemOpenSurface"
                   type="button"
@@ -1020,18 +1095,13 @@ export const Dashboard = ({
 
                   <div className="listItemBody listItemPreviewBody">
                     <div className="listItemContent">
-                      <div className="listItemBadgeRow">
-                        {card.listType ? (
-                          <span className="listItemStatusBadge">
-                            {formatListTypeLabel(card.listType)}
-                          </span>
-                        ) : null}
-                        {card.isUpdated ? (
+                      {card.isUpdated ? (
+                        <div className="listItemBadgeRow">
                           <span className="listItemStatusBadge listItemStatusBadgeUpdated">
                             Апдейт
                           </span>
-                        ) : null}
-                      </div>
+                        </div>
+                      ) : null}
 
                       <div className="listItemTitleRow">
                         <div className="listItemTitle" title={card.title}>
@@ -1039,19 +1109,26 @@ export const Dashboard = ({
                         </div>
                       </div>
 
-                      {card.creator || card.version ? (
+                      {card.engineLabel || card.version || installedSizeLabel ? (
                         <div className="listItemPreviewMeta">
-                          {card.creator ? (
-                            <span
-                              className="listItemPreviewMetaItem"
-                              title={card.creator}
-                            >
-                              {card.creator}
-                            </span>
-                          ) : null}
-                          {card.version ? (
-                            <span className="listItemPreviewMetaItem">
-                              v{card.version}
+                          <div className="listItemPreviewMetaDetails">
+                            {card.engineLabel ? (
+                              <span
+                                className="listItemPreviewMetaItem"
+                                title={card.engineLabel}
+                              >
+                                {card.engineLabel}
+                              </span>
+                            ) : null}
+                            {card.version ? (
+                              <span className="listItemPreviewMetaItem">
+                                v{card.version}
+                              </span>
+                            ) : null}
+                          </div>
+                          {installedSizeLabel ? (
+                            <span className="listItemPreviewMetaSize">
+                              {installedSizeLabel}
                             </span>
                           ) : null}
                         </div>
@@ -1221,12 +1298,29 @@ export const Dashboard = ({
       <div className="panel">
         <div className="sectionTitleRow">
           <div className="sectionTitle">{activeTabItem.label}</div>
-          <div className="sectionMeta">
-            {activeCards.length} игр
-            {activeTabItem.updatedCount > 0 &&
-            activeTabItem.id !== "trash"
-              ? ` • обновились ${activeTabItem.updatedCount}`
-              : ""}
+          <div className="sectionTitleAside">
+            <div className="sectionMeta">
+              {activeCardsCountLabel}
+              {showActiveUpdatedCount
+                ? ` • обновились ${activeTabItem.updatedCount}`
+                : ""}
+            </div>
+            {activeTabItem.id === "played" ? (
+              <label className="dashboardPlayedFilterSwitch">
+                <input
+                  className="dashboardPlayedFilterSwitchInput"
+                  type="checkbox"
+                  checked={showOnlyPlayedFavorites}
+                  onChange={(event) =>
+                    setShowOnlyPlayedFavorites(event.target.checked)
+                  }
+                />
+                <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
+                  <span className="dashboardPlayedFilterSwitchThumb" />
+                </span>
+                <span>Только любимые</span>
+              </label>
+            ) : null}
           </div>
         </div>
         {renderCardsList(visibleCards, activeCards.length, activeTabItem.id)}
