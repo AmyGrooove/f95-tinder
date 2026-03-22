@@ -2,6 +2,12 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
 import {
+  assessThreadInterest,
+  buildInterestProfile,
+  type InterestCandidate,
+  type ThreadInterestAssessment,
+} from "../f95/recommendations";
+import {
   countUpdatedTrackedItems,
   getProcessedThreadItemUpdateLabel,
   hasProcessedThreadItemUpdate,
@@ -30,7 +36,11 @@ type DashboardCard = {
   isInTrash: boolean;
   listType: ListType | null;
   sectionKey: "favorite" | "trash" | "played";
+  interestAssessment: ThreadInterestAssessment | null;
+  interestScore: number;
 };
+
+type DashboardSortField = "addedAt" | "rating" | "title" | "interest";
 
 type DashboardTabId = "bookmarks" | "trash" | "played";
 
@@ -51,6 +61,10 @@ type DashboardProps = {
   prefixesMap: Record<string, string>;
   onRevealInstalledGame: (threadLink: string) => void | Promise<void>;
   onDeleteGameFilesForThread: (
+    threadLink: string,
+    threadTitle: string,
+  ) => void | Promise<void>;
+  onChooseInstallFolderForThread: (
     threadLink: string,
     threadTitle: string,
   ) => void | Promise<void>;
@@ -111,7 +125,7 @@ const createInitialVisibleCardCounts = (): Record<DashboardTabId, number> => ({
 
 const sortCards = (
   cards: DashboardCard[],
-  sortField: "addedAt" | "rating" | "title",
+  sortField: DashboardSortField,
   sortDirection: "desc" | "asc",
 ) => {
   const multiplier = sortDirection === "desc" ? -1 : 1;
@@ -121,9 +135,16 @@ const sortCards = (
       comparison = first.addedAt - second.addedAt;
     } else if (sortField === "rating") {
       comparison = first.rating - second.rating;
+    } else if (sortField === "interest") {
+      comparison = first.interestScore - second.interestScore;
     } else {
       comparison = first.title.localeCompare(second.title);
     }
+
+    if (comparison === 0) {
+      comparison = first.addedAt - second.addedAt;
+    }
+
     return comparison * multiplier;
   });
 };
@@ -254,6 +275,46 @@ const buildPrefixLabels = (
   ).map((prefixId) => prefixesMap[String(prefixId)] ?? `#${prefixId}`);
 };
 
+const buildInterestCandidate = (
+  processedItem: ProcessedThreadItem | null | undefined,
+  threadItem:
+    | {
+        tags?: number[];
+        prefixes?: number[];
+        creator?: string;
+        rating?: number;
+        new?: boolean;
+      }
+    | null
+    | undefined,
+): InterestCandidate => {
+  return {
+    tags: Array.isArray(threadItem?.tags)
+      ? threadItem.tags
+      : Array.isArray(processedItem?.tags)
+        ? processedItem.tags
+        : [],
+    prefixes: Array.isArray(threadItem?.prefixes)
+      ? threadItem.prefixes
+      : Array.isArray(processedItem?.prefixes)
+        ? processedItem.prefixes
+        : [],
+    creator:
+      typeof threadItem?.creator === "string"
+        ? threadItem.creator
+        : typeof processedItem?.creator === "string"
+          ? processedItem.creator
+          : "",
+    rating:
+      typeof threadItem?.rating === "number"
+        ? threadItem.rating
+        : typeof processedItem?.rating === "number"
+          ? processedItem.rating
+          : 0,
+    new: Boolean(threadItem?.new),
+  };
+};
+
 export const Dashboard = ({
   sessionState,
   isLauncherAvailable,
@@ -265,6 +326,7 @@ export const Dashboard = ({
   prefixesMap,
   onRevealInstalledGame,
   onDeleteGameFilesForThread,
+  onChooseInstallFolderForThread,
   onChooseLaunchTargetForThread,
   onOpenErrorMirrorForThread,
   moveLinkToList,
@@ -284,10 +346,9 @@ export const Dashboard = ({
   const [activeTab, setActiveTab] = useState<DashboardTabId>("bookmarks");
   const [onlyUpdatedTracked, setOnlyUpdatedTracked] = useState(false);
   const [showOnlyPlayedFavorites, setShowOnlyPlayedFavorites] = useState(false);
-  const [sortField, setSortField] = useState<"addedAt" | "rating" | "title">(
-    "addedAt",
-  );
+  const [sortField, setSortField] = useState<DashboardSortField>("addedAt");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("asc");
+  const [showInterestBadges, setShowInterestBadges] = useState(true);
   const [visibleCardCountByTab, setVisibleCardCountByTab] = useState(
     createInitialVisibleCardCounts,
   );
@@ -362,6 +423,17 @@ export const Dashboard = ({
     [deferredSearchText],
   );
 
+  const interestProfile = useMemo(
+    () => buildInterestProfile(sessionState),
+    [
+      sessionState.favoritesLinks,
+      sessionState.playedFavoriteLinks,
+      sessionState.playedLinks,
+      sessionState.processedThreadItemsByLink,
+      sessionState.trashLinks,
+    ],
+  );
+
   useEffect(() => {
     setVisibleCardCountByTab(createInitialVisibleCardCounts());
   }, [
@@ -379,6 +451,8 @@ export const Dashboard = ({
       ? "Дата добавления"
       : sortField === "rating"
         ? "Рейтинг"
+        : sortField === "interest"
+          ? "Вес"
         : "Название";
 
   const sortDirectionLabel =
@@ -389,6 +463,7 @@ export const Dashboard = ({
     `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`,
     onlyUpdatedTracked ? "только обновленные" : null,
     activeTab === "played" && showOnlyPlayedFavorites ? "только любимые" : null,
+    showInterestBadges ? null : "оценки скрыты",
   ]
     .filter(Boolean)
     .join(" • ");
@@ -478,6 +553,12 @@ export const Dashboard = ({
         threadIdentifier !== null
           ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
           : null;
+      const interestAssessment = assessThreadInterest(
+        buildInterestCandidate(processedItem, threadItem),
+        interestProfile,
+        tagsMap,
+        prefixesMap,
+      );
       const version =
         processedItem?.version?.trim() ||
         (typeof threadItem?.version === "string" ? threadItem.version : "");
@@ -513,6 +594,8 @@ export const Dashboard = ({
         isInTrash,
         listType: sectionKey,
         sectionKey,
+        interestAssessment,
+        interestScore: interestAssessment?.score ?? 50,
       });
     }
 
@@ -548,6 +631,9 @@ export const Dashboard = ({
     pickTitleForLink,
     pickCreatorForLink,
     pickRatingForLink,
+    interestProfile,
+    tagsMap,
+    prefixesMap,
     showOnlyPlayedFavorites,
   ]);
 
@@ -766,6 +852,10 @@ export const Dashboard = ({
       ]
     : [];
   const activeGameScreens = activeGameThreadItem?.screens ?? [];
+  const activeGameLauncherRecord = activeGameCard
+    ? launcherGamesByThreadLink[activeGameCard.threadLink] ?? null
+    : null;
+  const isActiveGameLauncherBusy = isLauncherGameBusy(activeGameLauncherRecord);
 
   const activeGameSettingsRecord = useMemo(() => {
     if (!gameSettingsModalState) {
@@ -774,6 +864,11 @@ export const Dashboard = ({
 
     return launcherGamesByThreadLink[gameSettingsModalState.threadLink] ?? null;
   }, [gameSettingsModalState, launcherGamesByThreadLink]);
+  const canRevealActiveGameSettingsRecord = Boolean(
+    activeGameSettingsRecord?.launchTargetPath ??
+      activeGameSettingsRecord?.installDir ??
+      activeGameSettingsRecord?.archivePath,
+  );
 
   useEffect(() => {
     if (
@@ -813,9 +908,11 @@ export const Dashboard = ({
     const isPlayed = card.isPlayed;
     const showFavoriteQuickAction = !isInFavorites;
     const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
-    const canRevealInstalledGame =
-      isLauncherAvailable && launcherGame?.status === "installed";
+    const canOpenGameSettings = isLauncherAvailable && Boolean(launcherGame);
+    const showInstallFolderButton = isLauncherAvailable;
     const isInstalled = launcherGame?.status === "installed";
+    const canLaunchInstalledGame =
+      isInstalled && Boolean(launcherGame?.launchTargetPath);
     const isBusy = isLauncherGameBusy(launcherGame);
     const isError = launcherGame?.status === "error";
     const errorHint =
@@ -826,6 +923,10 @@ export const Dashboard = ({
     const errorHintLabel = errorHint
       ? `${errorHint} Нажми, чтобы открыть зеркало.`
       : null;
+    const primaryActionSecondaryButtonCount =
+      Number(showInstallFolderButton) +
+      Number(canOpenGameSettings) +
+      Number(Boolean(errorHint));
     const quickActionCount =
       Number(!isPlayed) + Number(showFavoriteQuickAction) + Number(!isInTrash) + 1;
 
@@ -864,17 +965,17 @@ export const Dashboard = ({
     return (
       <div className="listItemActionsRow">
         <div
-          className={`listItemPrimaryActions ${
-            canRevealInstalledGame
-              ? "listItemPrimaryActionsInstalled"
-              : isError
-                ? "listItemPrimaryActionsWithHint"
-                : "listItemPrimaryActionsSingle"
-          }`}
+          className="listItemPrimaryActions"
+          style={{
+            gridTemplateColumns:
+              primaryActionSecondaryButtonCount > 0
+                ? `minmax(0, 1fr) repeat(${primaryActionSecondaryButtonCount}, 46px)`
+                : "minmax(0, 1fr)",
+          }}
         >
           <button
             className={`button listItemDownloadButton listItemBestDownloadButton ${
-              isInstalled ? "listItemPlayButton" : ""
+              canLaunchInstalledGame ? "listItemPlayButton" : ""
             } ${isBusy ? "listItemBusyButton" : ""}`}
             type="button"
             onMouseDown={handleBestDownloadMiddleMouseDown}
@@ -886,12 +987,28 @@ export const Dashboard = ({
           >
             {getLauncherPrimaryActionLabel(isLauncherAvailable, launcherGame)}
           </button>
-          {canRevealInstalledGame ? (
+          {showInstallFolderButton ? (
+            <button
+              className="button listItemDownloadButton listItemSettingsButton"
+              type="button"
+              title="Указать папку игры"
+              aria-label="Указать папку игры"
+              disabled={isBusy}
+              onClick={() => {
+                void onChooseInstallFolderForThread(card.threadLink, card.title);
+              }}
+            >
+              <span aria-hidden>📁</span>
+              <span className="srOnly">Указать папку игры</span>
+            </button>
+          ) : null}
+          {canOpenGameSettings ? (
             <button
               className="button listItemDownloadButton listItemSettingsButton"
               type="button"
               title="Настройки игры"
               aria-label="Настройки игры"
+              disabled={isBusy}
               onClick={() => {
                 setGameSettingsModalState({
                   threadLink: card.threadLink,
@@ -903,12 +1020,14 @@ export const Dashboard = ({
               <span aria-hidden>⚙</span>
               <span className="srOnly">Настройки игры</span>
             </button>
-          ) : errorHint ? (
+          ) : null}
+          {errorHint ? (
             <button
               className="button listItemStatusHintButton"
               type="button"
               title={errorHintLabel ?? undefined}
               aria-label={errorHintLabel ?? undefined}
+              disabled={isBusy}
               onClick={() => {
                 void onOpenErrorMirrorForThread(card.threadLink, card.title);
               }}
@@ -1054,6 +1173,14 @@ export const Dashboard = ({
                   card.isUpdated ? "listItemCardUpdated" : ""
                 }`}
               >
+                {showInterestBadges && card.interestAssessment ? (
+                  <div
+                    className={`dashboardInterestBadge swipeInterestBadge swipeInterestBadge${card.interestAssessment.level[0].toUpperCase()}${card.interestAssessment.level.slice(1)}`}
+                    title={`${card.interestAssessment.label} · ${card.interestScore}/100. ${card.interestAssessment.summary}`}
+                  >
+                    {card.interestAssessment.label}
+                  </div>
+                ) : null}
                 {showPlayedFavoriteButton ? (
                   <button
                     className={`iconButton listItemFavoriteFloatingButton ${
@@ -1238,36 +1365,78 @@ export const Dashboard = ({
                   <select
                     className="input"
                     value={sortField}
-                    onChange={(event) =>
-                      setSortField(
-                        event.target.value as "addedAt" | "rating" | "title",
-                      )
-                    }
+                    onChange={(event) => {
+                      const nextSortField = event.target.value as DashboardSortField;
+                      setSortField(nextSortField);
+                      if (nextSortField === "interest") {
+                        setSortDirection("desc");
+                      }
+                    }}
                   >
                     <option value="addedAt">По дате добавления</option>
                     <option value="rating">По рейтингу</option>
+                    <option value="interest">По весу</option>
                     <option value="title">По названию</option>
                   </select>
                 </div>
-                <button
-                  className="button dashboardSortDirectionButton"
-                  type="button"
-                  onClick={toggleSortDirection}
-                >
-                  {sortDirectionLabel}
-                </button>
+                <div className="formRow dashboardSortDirectionField">
+                  <div className="label">Направление</div>
+                  <button
+                    className="button dashboardSortDirectionButton"
+                    type="button"
+                    onClick={toggleSortDirection}
+                  >
+                    {sortDirectionLabel}
+                  </button>
+                </div>
               </div>
 
-              <label className="checkboxRow">
+              <label className="dashboardPlayedFilterSwitch">
                 <input
+                  className="dashboardPlayedFilterSwitchInput"
                   type="checkbox"
                   checked={onlyUpdatedTracked}
                   onChange={(event) =>
                     setOnlyUpdatedTracked(event.target.checked)
                   }
                 />
-                Только обновленные в закладках и Играл
+                <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
+                  <span className="dashboardPlayedFilterSwitchThumb" />
+                </span>
+                <span>Только обновленные в закладках и Играл</span>
               </label>
+
+              <label className="dashboardPlayedFilterSwitch">
+                <input
+                  className="dashboardPlayedFilterSwitchInput"
+                  type="checkbox"
+                  checked={showInterestBadges}
+                  onChange={(event) =>
+                    setShowInterestBadges(event.target.checked)
+                  }
+                />
+                <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
+                  <span className="dashboardPlayedFilterSwitchThumb" />
+                </span>
+                <span>Показывать оценки интереса на карточках</span>
+              </label>
+
+              {activeTab === "played" ? (
+                <label className="dashboardPlayedFilterSwitch">
+                  <input
+                    className="dashboardPlayedFilterSwitchInput"
+                    type="checkbox"
+                    checked={showOnlyPlayedFavorites}
+                    onChange={(event) =>
+                      setShowOnlyPlayedFavorites(event.target.checked)
+                    }
+                  />
+                  <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
+                    <span className="dashboardPlayedFilterSwitchThumb" />
+                  </span>
+                  <span>Только любимые</span>
+                </label>
+              ) : null}
 
               <div className="smallText">
                 Трекер сравнивает сохраненную `version/ts` с последней
@@ -1305,22 +1474,6 @@ export const Dashboard = ({
                 ? ` • обновились ${activeTabItem.updatedCount}`
                 : ""}
             </div>
-            {activeTabItem.id === "played" ? (
-              <label className="dashboardPlayedFilterSwitch">
-                <input
-                  className="dashboardPlayedFilterSwitchInput"
-                  type="checkbox"
-                  checked={showOnlyPlayedFavorites}
-                  onChange={(event) =>
-                    setShowOnlyPlayedFavorites(event.target.checked)
-                  }
-                />
-                <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
-                  <span className="dashboardPlayedFilterSwitchThumb" />
-                </span>
-                <span>Только любимые</span>
-              </label>
-            ) : null}
           </div>
         </div>
         {renderCardsList(visibleCards, activeCards.length, activeTabItem.id)}
@@ -1393,6 +1546,23 @@ export const Dashboard = ({
                 >
                   Открыть страницу
                 </button>
+                {isLauncherAvailable ? (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={isActiveGameLauncherBusy}
+                    onClick={() => {
+                      void onChooseInstallFolderForThread(
+                        activeGameCard.threadLink,
+                        activeGameCard.title,
+                      );
+                    }}
+                  >
+                    {activeGameLauncherRecord?.installDir
+                      ? "Сменить папку"
+                      : "Указать папку"}
+                  </button>
+                ) : null}
                 <button
                   className="button"
                   type="button"
@@ -1611,7 +1781,9 @@ export const Dashboard = ({
                 <button
                   className="button"
                   type="button"
-                  disabled={isGameSettingsBusy}
+                  disabled={
+                    isGameSettingsBusy || !canRevealActiveGameSettingsRecord
+                  }
                   onClick={() =>
                     runGameSettingsAction(() =>
                       onRevealInstalledGame(gameSettingsModalState.threadLink),
@@ -1619,6 +1791,21 @@ export const Dashboard = ({
                   }
                 >
                   Открыть папку
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  disabled={isGameSettingsBusy}
+                  onClick={() =>
+                    runGameSettingsAction(() =>
+                      onChooseInstallFolderForThread(
+                        gameSettingsModalState.threadLink,
+                        gameSettingsModalState.threadTitle,
+                      ),
+                    )
+                  }
+                >
+                  Сменить папку игры
                 </button>
                 <button
                   className="button"

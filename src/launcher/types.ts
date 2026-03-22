@@ -44,6 +44,11 @@ type LauncherDownloadRequest = {
   manualOnly?: boolean
 }
 
+type LauncherInstallFolderRequest = {
+  threadLink: string
+  threadTitle: string
+}
+
 type LauncherCookieStatus = {
   configured: boolean
   source: 'settings' | 'env' | 'none'
@@ -84,6 +89,7 @@ export type {
   LauncherDownloadSource,
   LauncherGameRecord,
   LauncherGameStatus,
+  LauncherInstallFolderRequest,
   LauncherLatestGamesResult,
   LauncherLocalDataFile,
   LauncherLocalDataSnapshot,

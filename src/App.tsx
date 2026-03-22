@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useF95Browser } from "./f95/useF95Browser";
@@ -55,6 +56,10 @@ import {
   normalizeText,
   threadMatchesFilter,
 } from "./f95/filtering";
+import {
+  assessThreadInterest,
+  buildInterestProfile,
+} from "./f95/recommendations";
 import type {
   DefaultSwipeSettings,
   ListType,
@@ -669,6 +674,7 @@ const App = () => {
     libraryRootPath,
     downloadGame,
     clearLibrary,
+    chooseInstallFolder,
     chooseLaunchTarget,
     deleteGameFiles,
     launchGame,
@@ -1034,6 +1040,32 @@ const App = () => {
     }
     applyActionToCurrentCard("played");
   }, [applyActionToCurrentCard, currentThreadLink]);
+
+  const handlePlayedFavorite = useCallback(() => {
+    if (currentThreadLink) {
+      removeCachedThreadDownloads(currentThreadLink);
+    }
+    applyActionToCurrentCard("playedFavorite");
+  }, [applyActionToCurrentCard, currentThreadLink]);
+
+  const handlePlayedButtonClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (event.shiftKey) {
+        handlePlayedFavorite();
+        return;
+      }
+      handlePlayed();
+    },
+    [handlePlayed, handlePlayedFavorite],
+  );
+
+  const handlePlayedButtonContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      handlePlayedFavorite();
+    },
+    [handlePlayedFavorite],
+  );
 
   const performSwipeAction = useCallback(
     (action: ListType) => {
@@ -1606,6 +1638,11 @@ const App = () => {
       if (isLauncherAvailable) {
         if (launcherGame?.status === "installed") {
           try {
+            if (!launcherGame.launchTargetPath) {
+              await chooseLaunchTarget(threadLink);
+              return;
+            }
+
             await launchGame(threadLink);
           } catch (error) {
             setErrorMessage(
@@ -1707,6 +1744,7 @@ const App = () => {
       }
     },
     [
+      chooseLaunchTarget,
       disabledDownloadHosts,
       downloadGame,
       hiddenDownloadHosts,
@@ -1784,6 +1822,22 @@ const App = () => {
         .then(() => undefined);
     },
     [chooseLaunchTarget, setErrorMessage],
+  );
+
+  const handleChooseInstallFolderForThread = useCallback(
+    (threadLink: string, threadTitle: string) => {
+      return chooseInstallFolder({ threadLink, threadTitle })
+        .catch((error) => {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Не удалось привязать папку игры",
+          );
+          throw error;
+        })
+        .then(() => undefined);
+    },
+    [chooseInstallFolder, setErrorMessage],
   );
 
   const handleSwipePointerDown = useCallback(
@@ -2055,6 +2109,10 @@ const App = () => {
 
         if (event.key === "ArrowUp") {
           event.preventDefault();
+          if (event.shiftKey) {
+            handlePlayedFavorite();
+            return;
+          }
           handlePlayed();
           return;
         }
@@ -2086,6 +2144,7 @@ const App = () => {
     downloadModalState.isOpen,
     handleFavorite,
     handlePlayed,
+    handlePlayedFavorite,
     handleTrash,
     isSwipeFilterModalOpen,
     pageType,
@@ -2126,6 +2185,23 @@ const App = () => {
     }
     return getTagsForLink(currentThreadLink);
   }, [currentThreadLink, getTagsForLink]);
+
+  const interestProfile = useMemo(
+    () => buildInterestProfile(sessionState),
+    [
+      sessionState.favoritesLinks,
+      sessionState.playedFavoriteLinks,
+      sessionState.playedLinks,
+      sessionState.processedThreadItemsByLink,
+      sessionState.trashLinks,
+    ],
+  );
+
+  const currentThreadInterestAssessment = useMemo(
+    () =>
+      assessThreadInterest(currentThreadItem, interestProfile, tagsMap, prefixesMap),
+    [currentThreadItem, interestProfile, prefixesMap, tagsMap],
+  );
 
   const toggleSwipeIncludeTag = useCallback(
     (tagId: number) => {
@@ -2305,19 +2381,19 @@ const App = () => {
     ).map((prefixId) => getSwipePrefixLabel(prefixId));
   }, [currentThreadItem, getSwipePrefixLabel, prefixesMap]);
 
-  const currentThreadPrimaryMeta = useMemo(() => {
+  const currentThreadInfoCards = useMemo(() => {
     if (!currentThreadItem) {
       return [];
     }
 
+    const creator = currentThreadItem.creator.trim();
+    const version = currentThreadItem.version.trim();
+
     return [
-      currentThreadItem.creator,
-      `v${currentThreadItem.version || "?"}`,
-      currentThreadPrefixLabels.length > 0
-        ? currentThreadPrefixLabels.join(", ")
-        : null,
-    ].filter((value): value is string => Boolean(value));
-  }, [currentThreadItem, currentThreadPrefixLabels]);
+      { label: "Автор", value: creator || "Не указан" },
+      { label: "Версия", value: version ? `v${version}` : "Не указана" },
+    ];
+  }, [currentThreadItem]);
 
   const currentThreadPreviewScreens = useMemo(() => {
     if (!currentThreadItem) {
@@ -2617,6 +2693,47 @@ const App = () => {
 
   const swipeMetaContent = currentThreadItem ? (
     <div className="swipeMetaBody">
+      {currentThreadInterestAssessment ? (
+        <div className="swipeInterestPanel">
+          <div className="swipeInterestHeader">
+            <div className="swipeMetaGroupLabel">Статус интереса</div>
+            <span
+              className={`swipeInterestBadge swipeInterestBadge${currentThreadInterestAssessment.level[0].toUpperCase()}${currentThreadInterestAssessment.level.slice(1)}`}
+            >
+              {currentThreadInterestAssessment.label}
+            </span>
+          </div>
+
+          <div className="swipeInterestSummary">
+            {currentThreadInterestAssessment.summary}
+          </div>
+
+          {currentThreadInterestAssessment.reasons.length > 0 ? (
+            <div className="swipeInterestReasonRow">
+              {currentThreadInterestAssessment.reasons.map((reason) => (
+                <span
+                  key={`${reason.tone}-${reason.text}`}
+                  className={`swipeInterestReasonChip swipeInterestReasonChip${reason.tone[0].toUpperCase()}${reason.tone.slice(1)}`}
+                >
+                  {reason.text}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="gameSettingsInfoGrid swipeMetaInfoGrid">
+        {currentThreadInfoCards.map((infoCard) => (
+          <div key={infoCard.label} className="gameSettingsInfoCard">
+            <div className="gameSettingsInfoLabel">{infoCard.label}</div>
+            <div className="gameSettingsInfoValue swipeMetaInfoValue">
+              {infoCard.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="cardFactRow">
         {currentThreadFactPills.map((fact) => (
           <span key={fact.label} className="cardFactPill">
@@ -2869,87 +2986,78 @@ const App = () => {
               <div className="swipeFocusCardHeader" data-no-swipe="true">
                 <div className="swipeFocusCardTitleBlock">
                   <div className="swipeFocusCardTitle">{currentThreadItem.title}</div>
-                  <div className="swipeFocusCardSubtitle">
-                    {currentThreadPrimaryMeta.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
                 </div>
               </div>
 
               <div className="swipeFocusCardBody">
-                <div className="swipeHeroPanel" data-no-swipe="true">
-                  <div className="swipeMediaSectionLabel">Лого</div>
-                  <div
-                    className="cardGestureSurface swipeCoverGestureSurface"
-                    onPointerDown={handleSwipePointerDown}
-                    onPointerMove={handleSwipePointerMove}
-                    onPointerUp={handleSwipePointerUp}
-                    onPointerCancel={handleSwipePointerCancel}
-                  >
-                    <div className="coverImageBack swipeHeroCover">
-                      {currentThreadItem.cover ? (
-                        <img
-                          className="coverImage swipeHeroImage"
-                          src={currentThreadItem.cover}
-                          alt="cover"
-                          loading="eager"
-                          onClick={() =>
-                            openViewer(
-                              [currentThreadItem.cover, ...currentThreadItem.screens],
-                              0,
-                            )
-                          }
-                        />
-                      ) : (
-                        <div className="coverImageFallback">Нет обложки</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="swipeHeroMeta">
-                    <button
-                      className="button buttonPrimary swipeOpenThreadButton"
-                      type="button"
-                      onClick={openCurrentThreadPage}
-                      disabled={!currentThreadLink}
+                <div className="swipeHeroPanel swipeScrollablePanel" data-no-swipe="true">
+                  <div className="swipeHeroScrollArea swipeHiddenScrollbar">
+                    <div
+                      className="cardGestureSurface swipeCoverGestureSurface"
+                      onPointerDown={handleSwipePointerDown}
+                      onPointerMove={handleSwipePointerMove}
+                      onPointerUp={handleSwipePointerUp}
+                      onPointerCancel={handleSwipePointerCancel}
                     >
-                      Открыть страницу
-                    </button>
+                      <div className="coverImageBack swipeHeroCover">
+                        {currentThreadItem.cover ? (
+                          <img
+                            className="coverImage swipeHeroImage"
+                            src={currentThreadItem.cover}
+                            alt="cover"
+                            loading="eager"
+                            onClick={() =>
+                              openViewer(
+                                [currentThreadItem.cover, ...currentThreadItem.screens],
+                                0,
+                              )
+                            }
+                          />
+                        ) : (
+                          <div className="coverImageFallback">Нет обложки</div>
+                        )}
+                      </div>
+                    </div>
 
-                    {swipeMetaContent}
+                    <div className="swipeHeroMeta">
+                      <button
+                        className="button buttonPrimary swipeOpenThreadButton"
+                        type="button"
+                        onClick={openCurrentThreadPage}
+                        disabled={!currentThreadLink}
+                      >
+                        Открыть страницу
+                      </button>
+
+                      {swipeMetaContent}
+                    </div>
                   </div>
                 </div>
 
-                <div className="swipeScreensPanel" data-no-swipe="true">
-                  <div className="swipeScreensPanelHeader">
-                    <div className="swipeMediaSectionLabel">Скриншоты</div>
-                    <div className="swipeScreensPanelMeta">
-                      {currentThreadPreviewScreens.length}
-                    </div>
+                <div className="swipeScreensPanel swipeScrollablePanel" data-no-swipe="true">
+                  <div className="swipeScreensScrollArea swipeHiddenScrollbar">
+                    {currentThreadPreviewScreens.length > 0 ? (
+                      <div className="swipeCompactScreens">
+                        {currentThreadPreviewScreens.map((screenUrl, index) => (
+                          <button
+                            key={screenUrl}
+                            type="button"
+                            className="swipeScreenTile"
+                            onClick={() => openViewer(currentThreadItem.screens, index)}
+                          >
+                            <img
+                              className="screenImage swipeCompactScreenImage"
+                              src={screenUrl}
+                              alt="screen"
+                              loading="lazy"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="swipeScreensEmpty">Нет скриншотов</div>
+                    )}
                   </div>
-
-                  {currentThreadPreviewScreens.length > 0 ? (
-                    <div className="swipeCompactScreens">
-                      {currentThreadPreviewScreens.map((screenUrl, index) => (
-                        <button
-                          key={screenUrl}
-                          type="button"
-                          className="swipeScreenTile"
-                          onClick={() => openViewer(currentThreadItem.screens, index)}
-                        >
-                          <img
-                            className="screenImage swipeCompactScreenImage"
-                            src={screenUrl}
-                            alt="screen"
-                            loading="lazy"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="swipeScreensEmpty">Нет скриншотов</div>
-                  )}
                 </div>
               </div>
             </div>
@@ -2981,14 +3089,17 @@ const App = () => {
               : ""
           }`}
           type="button"
-          onClick={handlePlayed}
+          onClick={handlePlayedButtonClick}
+          onContextMenu={handlePlayedButtonContextMenu}
           disabled={!currentThreadItem}
+          title="Клик: Играл. Shift + клик или правая кнопка мыши: Играл (любимое)"
+          aria-label="Играл. Shift + клик или правая кнопка мыши: Играл в любимое"
         >
           <span className="swipeActionIcon" aria-hidden>
             🎮
           </span>
           <span className="swipeActionLabel">Играл</span>
-          <span className="swipeActionHint">Up</span>
+          <span className="swipeActionHint">Up • Shift / ПКМ = ♥</span>
         </button>
         <button
           className={`button swipeSideActionButton swipeActionFavorite ${
@@ -3084,6 +3195,7 @@ const App = () => {
           });
         }}
         onDeleteGameFilesForThread={handleDeleteGameFilesForThread}
+        onChooseInstallFolderForThread={handleChooseInstallFolderForThread}
         onChooseLaunchTargetForThread={handleChooseLaunchTargetForThread}
         onOpenErrorMirrorForThread={handleOpenErrorMirrorForThread}
         moveLinkToList={handleMoveLinkToList}

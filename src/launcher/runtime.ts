@@ -2,6 +2,7 @@ import type {
   LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,
+  LauncherInstallFolderRequest,
   LauncherLatestGamesResult,
   LauncherLocalDataSnapshot,
   LauncherLibrarySnapshot,
@@ -203,6 +204,17 @@ const requestLauncherDownload = async (request: LauncherDownloadRequest) => {
   return launcherBridge.downloadGame(request)
 }
 
+const requestLauncherInstallFolderChoice = async (
+  request: LauncherInstallFolderRequest,
+) => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.chooseInstallFolder(request)
+}
+
 const requestLauncherGameLaunch = async (threadLink: string) => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
@@ -287,6 +299,7 @@ export {
   openExternalUrl,
   openLauncherLocalDataFolder,
   requestLauncherDownload,
+  requestLauncherInstallFolderChoice,
   requestLauncherGameDeletion,
   requestLauncherGameLaunch,
   requestLauncherLibraryClear,

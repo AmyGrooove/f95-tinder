@@ -48,6 +48,14 @@ const ensureDirectory = (targetPath) => {
   fs.mkdirSync(targetPath, { recursive: true })
 }
 
+const isPathInsideDirectory = (directoryPath, targetPath) => {
+  const relativePath = path.relative(directoryPath, targetPath)
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  )
+}
+
 const getFileSizeBytes = (targetPath) => {
   try {
     return fs.statSync(targetPath).size
@@ -1879,12 +1887,7 @@ const chooseLaunchTarget = async (threadLink) => {
   }
 
   const selectedPath = path.resolve(dialogResult.filePaths[0])
-  const relativeToInstallDir = path.relative(gameRecord.installDir, selectedPath)
-  const isInsideInstallDir =
-    relativeToInstallDir === '' ||
-    (!relativeToInstallDir.startsWith('..') && !path.isAbsolute(relativeToInstallDir))
-
-  if (!isInsideInstallDir) {
+  if (!isPathInsideDirectory(gameRecord.installDir, selectedPath)) {
     throw new Error('Выбери launch target внутри папки игры.')
   }
 
@@ -1908,9 +1911,89 @@ const chooseLaunchTarget = async (threadLink) => {
   return toJsonClone(libraryState)
 }
 
+const chooseInstallFolder = async (request) => {
+  if (
+    !request ||
+    typeof request !== 'object' ||
+    typeof request.threadLink !== 'string' ||
+    typeof request.threadTitle !== 'string'
+  ) {
+    throw new Error('Некорректный payload для chooseInstallFolder.')
+  }
+
+  if (activeDownloadJobs.has(request.threadLink)) {
+    throw new Error('Нельзя менять папку игры, пока идет активная загрузка.')
+  }
+
+  const currentRecord = libraryState.gamesByThreadLink[request.threadLink] ?? null
+  const defaultPath =
+    typeof currentRecord?.installDir === 'string' &&
+    currentRecord.installDir &&
+    fs.existsSync(currentRecord.installDir)
+      ? currentRecord.installDir
+      : libraryState.libraryRootPath
+
+  const dialogWindow =
+    BrowserWindow.getFocusedWindow() ||
+    (mainWindow && !mainWindow.isDestroyed() ? mainWindow : null)
+  const dialogResult = await dialog.showOpenDialog(dialogWindow ?? undefined, {
+    title: 'Выбери папку установленной игры',
+    defaultPath,
+    properties: ['openDirectory'],
+  })
+
+  if (dialogResult.canceled || dialogResult.filePaths.length === 0) {
+    return null
+  }
+
+  const selectedInstallDir = path.resolve(dialogResult.filePaths[0])
+  let selectedInstallDirStat = null
+  try {
+    selectedInstallDirStat = fs.statSync(selectedInstallDir)
+  } catch {
+    selectedInstallDirStat = null
+  }
+
+  if (!selectedInstallDirStat?.isDirectory()) {
+    throw new Error('Выбранная папка игры больше не существует.')
+  }
+
+  let launchTargetPath =
+    typeof currentRecord?.launchTargetPath === 'string' &&
+    currentRecord.launchTargetPath &&
+    fs.existsSync(currentRecord.launchTargetPath) &&
+    isPathInsideDirectory(selectedInstallDir, currentRecord.launchTargetPath)
+      ? currentRecord.launchTargetPath
+      : null
+
+  if (!launchTargetPath) {
+    launchTargetPath = findBestLaunchTarget(selectedInstallDir, request.threadTitle)
+  }
+
+  updateGameRecord(request.threadLink, {
+    threadTitle: request.threadTitle,
+    status: 'installed',
+    installDir: selectedInstallDir,
+    launchTargetPath,
+    launchTargetName: launchTargetPath ? path.basename(launchTargetPath) : null,
+    progressPercent: 100,
+    message: launchTargetPath
+      ? 'Папка игры привязана. Готово к запуску.'
+      : 'Папка игры привязана. Выбери запускатор вручную.',
+    errorMessage: null,
+    sizeBytes: getDirectorySizeBytes(selectedInstallDir),
+  })
+
+  return toJsonClone(libraryState)
+}
+
 const launchGame = async (threadLink) => {
   const gameRecord = libraryState.gamesByThreadLink[threadLink]
   if (!gameRecord?.launchTargetPath) {
+    if (gameRecord?.installDir) {
+      throw new Error('Для этой игры не выбран файл запуска. Укажи запускатор вручную.')
+    }
+
     throw new Error('Игра еще не установлена.')
   }
 
@@ -2115,6 +2198,9 @@ const registerIpcHandlers = () => {
     return libraryState.gamesByThreadLink[request.threadLink] ?? null
   })
 
+  ipcMain.handle('launcher:chooseInstallFolder', async (_event, request) =>
+    chooseInstallFolder(request),
+  )
   ipcMain.handle('launcher:launchGame', async (_event, threadLink) =>
     launchGame(threadLink),
   )

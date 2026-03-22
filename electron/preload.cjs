@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('f95Launcher', {
   clearCookieInput: () => ipcRenderer.invoke('f95:clearCookieInput'),
   getLibrarySnapshot: () => ipcRenderer.invoke('launcher:getLibrarySnapshot'),
   downloadGame: (request) => ipcRenderer.invoke('launcher:downloadGame', request),
+  chooseInstallFolder: (request) =>
+    ipcRenderer.invoke('launcher:chooseInstallFolder', request),
   launchGame: (threadLink) => ipcRenderer.invoke('launcher:launchGame', threadLink),
   revealGame: (threadLink) => ipcRenderer.invoke('launcher:revealGame', threadLink),
   deleteGameFiles: (threadLink) =>

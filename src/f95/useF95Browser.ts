@@ -42,7 +42,14 @@ const MAX_CACHED_PAGES_COUNT = 15
 const PREFETCH_THRESHOLD_REMAINING_COUNT = 5
 const AUTO_METADATA_SYNC_ENABLED = false
 
-type ActionType = ListType
+type ActionType = ListType | 'playedFavorite'
+
+const resolveListTypeFromAction = (actionType: ActionType): ListType => {
+  if (actionType === 'playedFavorite') {
+    return 'played'
+  }
+  return actionType
+}
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
   const match = /\/threads\/(\d+)/.exec(threadLink)
@@ -632,31 +639,34 @@ const useF95Browser = () => {
 
       const threadLink = buildThreadLink(currentThreadIdentifier)
       const threadItem = sessionState.threadItemsByIdentifier[String(currentThreadIdentifier)]
+      const resolvedListType = resolveListTypeFromAction(actionType)
 
       const remainingThreadIdentifiersAfterAction = [...sessionState.remainingThreadIdentifiers]
       remainingThreadIdentifiersAfterAction.splice(currentThreadIdentifierIndex, 1)
 
       const favoritesLinksNext =
-        actionType === 'favorite'
+        resolvedListType === 'favorite'
           ? mergeUniqueStringArrays(sessionState.favoritesLinks, [threadLink])
           : removeStringFromArray(sessionState.favoritesLinks, threadLink)
 
       const trashLinksNext =
-        actionType === 'trash'
+        resolvedListType === 'trash'
           ? mergeUniqueStringArrays(sessionState.trashLinks, [threadLink])
           : removeStringFromArray(sessionState.trashLinks, threadLink)
 
       const playedLinksNext =
-        actionType === 'played'
+        resolvedListType === 'played'
           ? mergeUniqueStringArrays(sessionState.playedLinks, [threadLink])
           : removeStringFromArray(sessionState.playedLinks, threadLink)
       const playedFavoriteLinksNext =
-        actionType === 'played'
+        actionType === 'playedFavorite'
+          ? mergeUniqueStringArrays(sessionState.playedFavoriteLinks, [threadLink])
+          : resolvedListType === 'played'
           ? sessionState.playedFavoriteLinks
           : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
 
       const playedByLinkNext = { ...sessionState.playedByLink }
-      if (actionType === 'played') {
+      if (resolvedListType === 'played') {
         playedByLinkNext[threadLink] = true
       } else {
         delete playedByLinkNext[threadLink]
@@ -668,7 +678,7 @@ const useF95Browser = () => {
 
       const processedItem = buildProcessedThreadItem(
         threadLink,
-        actionType,
+        resolvedListType,
         threadItem,
         processedThreadItemsByLinkNext[threadLink],
       )

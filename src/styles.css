@@ -24,12 +24,28 @@
 
   --primary: #2f7dff;
   --primaryHover: #418aff;
+
+  --scrollbarSize: 12px;
+  --scrollbarTrack: rgba(7, 11, 18, 0.96);
+  --scrollbarTrackEdge: rgba(56, 78, 119, 0.36);
+  --scrollbarThumbSolid: rgba(104, 152, 255, 0.92);
+  --scrollbarThumbGlow: rgba(47, 125, 255, 0.22);
+  --scrollbarThumb:
+    linear-gradient(180deg, rgba(150, 189, 255, 0.98), rgba(66, 118, 227, 0.94));
+  --scrollbarThumbHover:
+    linear-gradient(180deg, rgba(184, 213, 255, 1), rgba(88, 141, 244, 0.96));
+  --scrollbarThumbActive:
+    linear-gradient(180deg, rgba(214, 230, 255, 1), rgba(110, 162, 255, 0.98));
 }
 
 html,
 body,
 #root {
   height: 100%;
+}
+
+html {
+  scrollbar-color: var(--scrollbarThumbSolid) var(--scrollbarTrack);
 }
 
 body {
@@ -44,6 +60,42 @@ body {
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbarThumbSolid) var(--scrollbarTrack);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbarSize);
+  height: var(--scrollbarSize);
+}
+
+*::-webkit-scrollbar-track {
+  border: 1px solid var(--scrollbarTrackEdge);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(20, 29, 45, 0.94), rgba(7, 11, 18, 0.98)),
+    var(--scrollbarTrack);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(7, 11, 18, 0.92);
+  border-radius: 999px;
+  background: var(--scrollbarThumb);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 0 1px var(--scrollbarThumbGlow);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbarThumbHover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbarThumbActive);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbarTrack);
 }
 
 .appRoot {
@@ -408,15 +460,20 @@ body {
   min-width: 0;
   min-height: 0;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .swipeCardDeck {
   width: 100%;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .swipeFocusCard {
   height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -473,6 +530,17 @@ body {
   overflow: hidden;
 }
 
+.swipeScrollablePanel {
+  min-height: 0;
+  display: grid;
+  overflow: hidden;
+}
+
+.swipeHeroPanel.swipeScrollablePanel,
+.swipeScreensPanel.swipeScrollablePanel {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .swipeHeroPanel,
 .swipeScreensPanel {
   min-height: 0;
@@ -486,6 +554,57 @@ body {
 
 .swipeScreensPanel {
   grid-template-rows: auto minmax(0, 1fr);
+  container-type: inline-size;
+}
+
+.swipeHeroScrollArea,
+.swipeScreensScrollArea {
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.swipeHeroScrollArea {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.swipeScreensScrollArea {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  padding-right: 4px;
+}
+
+.swipeHiddenScrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.swipeHiddenScrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.swipeHeroScrollArea button,
+.swipeHeroScrollArea a,
+.swipeScreensScrollArea button,
+.swipeScreensScrollArea a {
+  touch-action: pan-y pinch-zoom;
+}
+
+.swipeMetaInfoGrid {
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.swipeMetaInfoValue {
+  word-break: break-word;
 }
 
 .swipeMediaSectionLabel {
@@ -537,11 +656,21 @@ body {
   min-height: 0;
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   align-items: start;
-  overflow: auto;
-  padding-right: 4px;
+}
+
+@container (min-width: 520px) {
+  .swipeCompactScreens {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 760px) {
+  .swipeCompactScreens {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .swipeScreenTile {
@@ -580,9 +709,118 @@ body {
   text-align: center;
 }
 
+.swipeScreensScrollArea > .swipeScreensEmpty {
+  min-height: 100%;
+}
+
 .swipeMetaBody {
   display: grid;
   gap: 12px;
+}
+
+.swipeInterestPanel {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(46, 62, 92, 0.95);
+  background:
+    linear-gradient(145deg, rgba(67, 86, 123, 0.18), rgba(10, 15, 25, 0.94)),
+    rgba(10, 15, 25, 0.84);
+}
+
+.swipeInterestHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.swipeInterestBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 112, 146, 0.58);
+  background: rgba(37, 46, 66, 0.88);
+  color: #eef3ff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.28px;
+}
+
+.swipeInterestBadgeTop {
+  border-color: rgba(57, 174, 112, 0.62);
+  background: rgba(23, 73, 51, 0.88);
+  color: #dcffe9;
+}
+
+.swipeInterestBadgeGood {
+  border-color: rgba(92, 154, 255, 0.62);
+  background: rgba(26, 56, 104, 0.88);
+  color: #dfebff;
+}
+
+.swipeInterestBadgeNeutral {
+  border-color: rgba(163, 176, 199, 0.4);
+  background: rgba(44, 52, 68, 0.88);
+  color: #eef1f8;
+}
+
+.swipeInterestBadgeBad {
+  border-color: rgba(217, 145, 73, 0.56);
+  background: rgba(92, 57, 21, 0.88);
+  color: #ffe7ca;
+}
+
+.swipeInterestBadgeTrash {
+  border-color: rgba(214, 94, 94, 0.58);
+  background: rgba(92, 26, 26, 0.9);
+  color: #ffe0e0;
+}
+
+.swipeInterestSummary {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(233, 237, 245, 0.82);
+}
+
+.swipeInterestReasonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swipeInterestReasonChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(86, 138, 255, 0.2);
+  background: rgba(11, 17, 28, 0.88);
+  color: rgba(233, 237, 245, 0.84);
+  font-size: 12px;
+}
+
+.swipeInterestReasonChipPositive {
+  border-color: rgba(72, 179, 124, 0.34);
+  background: rgba(16, 53, 36, 0.78);
+  color: #dcffe9;
+}
+
+.swipeInterestReasonChipNegative {
+  border-color: rgba(220, 108, 108, 0.32);
+  background: rgba(73, 23, 23, 0.8);
+  color: #ffe1e1;
+}
+
+.swipeInterestReasonChipNeutral {
+  border-color: rgba(164, 176, 198, 0.2);
+  background: rgba(34, 40, 52, 0.82);
+  color: rgba(233, 237, 245, 0.84);
 }
 
 .swipeMetaGroup {
@@ -1698,10 +1936,6 @@ body {
     grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
   }
 
-  .swipeCompactScreens {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .swipeFilterModalBody {
     grid-template-columns: 1fr;
   }
@@ -1709,28 +1943,37 @@ body {
 
 @media (max-width: 860px) {
   body {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .appRoot {
-    height: auto;
+    height: 100vh;
     min-height: 100vh;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .swipeScreen {
-    height: auto;
+    height: 100%;
+    min-height: 0;
     grid-template-columns: 1fr;
-    overflow: visible;
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr) auto;
+    overflow: hidden;
   }
 
-  .swipeFiltersPanel,
-  .swipeCenterColumn {
-    min-height: auto;
+  .swipeFiltersPanel {
+    min-height: 0;
+    max-height: min(34vh, 320px);
+  }
+
+  .swipeCenterColumn,
+  .swipeCardDeck,
+  .swipeFocusCard {
+    min-height: 0;
   }
 
   .swipeFocusCardBody {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .swipeCoverGestureSurface,
@@ -1739,9 +1982,14 @@ body {
     min-height: 200px;
   }
 
-  .swipeCompactScreens {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: 420px;
+  .swipeHeroScrollArea,
+  .swipeScreensScrollArea {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .swipeCoverGestureSurface {
+    touch-action: pan-y;
   }
 
   .swipeActionSidebar {
@@ -1776,10 +2024,6 @@ body {
 }
 
 @media (max-width: 540px) {
-  .swipeCompactScreens {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .swipeQueueStatsGrid {
     grid-template-columns: 1fr;
   }
@@ -2457,23 +2701,59 @@ body {
 }
 
 .dashboardSortControls {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: flex-end;
+  align-items: end;
+}
+
+.dashboardSortControls .formRow {
+  margin-bottom: 0;
 }
 
 .dashboardSortField {
-  flex: 1;
+  min-width: 0;
+}
+
+.dashboardSortField .input {
+  height: 40px;
+}
+
+.dashboardSortDirectionField {
+  min-width: 180px;
 }
 
 .dashboardSortDirectionButton {
+  width: 100%;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
+}
+
+.dashboardInterestBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  max-width: calc(100% - 70px);
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow:
+    0 10px 20px rgba(5, 8, 16, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 @media (max-width: 720px) {
   .dashboardSortControls {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardSortDirectionField {
+    min-width: 0;
   }
 }
 

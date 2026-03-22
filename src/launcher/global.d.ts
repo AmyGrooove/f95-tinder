@@ -2,6 +2,7 @@ import type {
   LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,
+  LauncherInstallFolderRequest,
   LauncherLatestGamesResult,
   LauncherLocalDataSnapshot,
   LauncherLibrarySnapshot,
@@ -33,6 +34,9 @@ type LauncherBridge = {
   clearCookieInput: () => Promise<LauncherCookieStatus>
   getLibrarySnapshot: () => Promise<LauncherLibrarySnapshot>
   downloadGame: (request: LauncherDownloadRequest) => Promise<unknown>
+  chooseInstallFolder: (
+    request: LauncherInstallFolderRequest,
+  ) => Promise<LauncherLibrarySnapshot | null>
   launchGame: (threadLink: string) => Promise<void>
   revealGame: (threadLink: string) => Promise<void>
   deleteGameFiles: (threadLink: string) => Promise<LauncherLibrarySnapshot>

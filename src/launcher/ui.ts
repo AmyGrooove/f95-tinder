@@ -22,6 +22,10 @@ const getLauncherPrimaryActionLabel = (
   }
 
   if (launcherGame.status === 'installed') {
+    if (!launcherGame.launchTargetPath) {
+      return 'Выбрать EXE'
+    }
+
     return 'Играть'
   }
 
@@ -63,6 +67,10 @@ const getLauncherStatusText = (
   }
 
   if (launcherGame.status === 'installed') {
+    if (!launcherGame.launchTargetName) {
+      return 'Папка игры привязана'
+    }
+
     return launcherGame.launchTargetName
       ? `Установлено: ${launcherGame.launchTargetName}`
       : 'Установлено'
