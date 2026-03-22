@@ -1172,6 +1172,7 @@ export {
   removeCachedThreadDownloads,
   resetPreferredDownloadHosts,
   saveCachedThreadDownloads,
+  saveDisabledDownloadHosts,
   saveHiddenDownloadHosts,
   savePreferredDownloadHosts,
   showDownloadHost,

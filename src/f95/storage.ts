@@ -1,22 +1,39 @@
 import { safeJsonParse } from './utils'
-import type { F95ThreadItem, ListType, ProcessedThreadItem, SessionState } from './types'
+import type {
+  DefaultSwipeSettings,
+  F95ThreadItem,
+  LatestGamesSort,
+  ListType,
+  ProcessedThreadItem,
+  SessionState,
+} from './types'
+import { DEFAULT_FILTER_STATE, normalizeFilterState } from './filtering'
 
 const STORAGE_KEYS = {
   sessionState: 'f95_tinder_session_v1',
-  cachedPagesIndex: 'f95_tinder_cached_pages_index_v1',
-  cachedPagePrefix: 'f95_tinder_cached_page_v1_',
+  defaultFilterState: 'f95_tinder_default_filter_state_v1',
+  cachedPagesIndexPrefix: 'f95_tinder_cached_pages_index_v2_',
+  cachedPagePrefix: 'f95_tinder_cached_page_v2_',
   tagsMap: 'f95_tinder_tags_map_v1',
+  prefixesMap: 'f95_tinder_prefixes_map_v1',
 }
 
-const DEFAULT_FILTER_STATE = {
-  searchText: '',
-  minimumRating: 0,
-  onlyNew: false,
-  hideWatched: false,
-  hideIgnored: false,
+const LATEST_GAMES_SORTS: LatestGamesSort[] = ['date', 'views']
+
+const BUILT_IN_DEFAULT_SWIPE_SETTINGS: DefaultSwipeSettings = {
+  latestGamesSort: 'views',
+  filterState: normalizeFilterState({
+    ...DEFAULT_FILTER_STATE,
+    excludePrefixIds: [4, 1, 7, 47],
+    excludeTagIds: [916],
+  }),
 }
 
-const getCachedPageKey = (pageNumber: number) => `${STORAGE_KEYS.cachedPagePrefix}${pageNumber}`
+const getCachedPagesIndexKey = (latestGamesSort: LatestGamesSort) =>
+  `${STORAGE_KEYS.cachedPagesIndexPrefix}${latestGamesSort}`
+
+const getCachedPageKey = (latestGamesSort: LatestGamesSort, pageNumber: number) =>
+  `${STORAGE_KEYS.cachedPagePrefix}${latestGamesSort}_${pageNumber}`
 
 const readLocalStorageValue = (key: string) => {
   try {
@@ -42,8 +59,10 @@ const removeLocalStorageValue = (key: string) => {
   }
 }
 
-const loadCachedPagesIndex = () => {
-  const cachedIndexText = readLocalStorageValue(STORAGE_KEYS.cachedPagesIndex)
+const loadCachedPagesIndex = (latestGamesSort: LatestGamesSort) => {
+  const cachedIndexText = readLocalStorageValue(
+    getCachedPagesIndexKey(latestGamesSort),
+  )
   if (!cachedIndexText) {
     return []
   }
@@ -63,12 +82,20 @@ const loadCachedPagesIndex = () => {
   return pageNumberList
 }
 
-const saveCachedPagesIndex = (pageNumberList: number[]) => {
-  writeLocalStorageValue(STORAGE_KEYS.cachedPagesIndex, JSON.stringify(pageNumberList))
+const saveCachedPagesIndex = (
+  latestGamesSort: LatestGamesSort,
+  pageNumberList: number[],
+) => {
+  writeLocalStorageValue(
+    getCachedPagesIndexKey(latestGamesSort),
+    JSON.stringify(pageNumberList),
+  )
 }
 
-const loadCachedPage = (pageNumber: number) => {
-  const cachedPageText = readLocalStorageValue(getCachedPageKey(pageNumber))
+const loadCachedPage = (latestGamesSort: LatestGamesSort, pageNumber: number) => {
+  const cachedPageText = readLocalStorageValue(
+    getCachedPageKey(latestGamesSort, pageNumber),
+  )
   if (!cachedPageText) {
     return null
   }
@@ -89,12 +116,22 @@ const loadCachedPage = (pageNumber: number) => {
   return threadItemList
 }
 
-const saveCachedPage = (pageNumber: number, threadItemList: F95ThreadItem[]) => {
-  writeLocalStorageValue(getCachedPageKey(pageNumber), JSON.stringify(threadItemList))
+const saveCachedPage = (
+  latestGamesSort: LatestGamesSort,
+  pageNumber: number,
+  threadItemList: F95ThreadItem[],
+) => {
+  writeLocalStorageValue(
+    getCachedPageKey(latestGamesSort, pageNumber),
+    JSON.stringify(threadItemList),
+  )
 }
 
-const pruneCachedPages = (maxCachedPagesCount: number) => {
-  const cachedPageNumberList = loadCachedPagesIndex()
+const pruneCachedPages = (
+  latestGamesSort: LatestGamesSort,
+  maxCachedPagesCount: number,
+) => {
+  const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
 
   if (cachedPageNumberList.length <= maxCachedPagesCount) {
     return
@@ -104,14 +141,14 @@ const pruneCachedPages = (maxCachedPagesCount: number) => {
   const pageNumberListToKeep = cachedPageNumberList.slice(cachedPageNumberList.length - maxCachedPagesCount)
 
   for (const pageNumber of pageNumberListToRemove) {
-    removeLocalStorageValue(getCachedPageKey(pageNumber))
+    removeLocalStorageValue(getCachedPageKey(latestGamesSort, pageNumber))
   }
 
-  saveCachedPagesIndex(pageNumberListToKeep)
+  saveCachedPagesIndex(latestGamesSort, pageNumberListToKeep)
 }
 
-const markPageAsCached = (pageNumber: number) => {
-  const cachedPageNumberList = loadCachedPagesIndex()
+const markPageAsCached = (latestGamesSort: LatestGamesSort, pageNumber: number) => {
+  const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
   const isAlreadyCached = cachedPageNumberList.includes(pageNumber)
 
   if (isAlreadyCached) {
@@ -119,11 +156,37 @@ const markPageAsCached = (pageNumber: number) => {
   }
 
   const updatedCachedPageNumberList = [...cachedPageNumberList, pageNumber]
-  saveCachedPagesIndex(updatedCachedPageNumberList)
+  saveCachedPagesIndex(latestGamesSort, updatedCachedPageNumberList)
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+const normalizeLatestGamesSort = (value: unknown): LatestGamesSort =>
+  value === 'date' ? 'date' : 'views'
+
+const normalizeDefaultSwipeSettings = (
+  value: unknown,
+): DefaultSwipeSettings => {
+  if (!isPlainObject(value)) {
+    return {
+      latestGamesSort: BUILT_IN_DEFAULT_SWIPE_SETTINGS.latestGamesSort,
+      filterState: normalizeFilterState(
+        BUILT_IN_DEFAULT_SWIPE_SETTINGS.filterState,
+      ),
+    }
+  }
+
+  const rawValue = value as Record<string, unknown>
+  const rawFilterState = isPlainObject(rawValue.filterState)
+    ? rawValue.filterState
+    : value
+
+  return {
+    latestGamesSort: normalizeLatestGamesSort(rawValue.latestGamesSort),
+    filterState: normalizeFilterState(rawFilterState),
+  }
 }
 
 const normalizeSessionState = (value: unknown): SessionState | null => {
@@ -161,7 +224,7 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     return null
   }
 
-  const filterState = possibleSessionState.filterState ?? DEFAULT_FILTER_STATE
+  const filterState = normalizeFilterState(possibleSessionState.filterState)
   const playedByLinkFallback = normalizePlayedByLink(possibleSessionState.playedByLink)
   const playedLinks = normalizePlayedLinks(
     possibleSessionState.playedLinks,
@@ -175,10 +238,13 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
   const processedThreadItemsByLink = normalizeProcessedThreadItems(
     possibleSessionState.processedThreadItemsByLink,
   )
+  const latestGamesSort: LatestGamesSort =
+    possibleSessionState.latestGamesSort === 'views' ? 'views' : 'date'
 
   return {
     currentPageNumber: possibleSessionState.currentPageNumber,
     nextPageToFetchNumber: possibleSessionState.nextPageToFetchNumber,
+    latestGamesSort,
     remainingThreadIdentifiers: possibleSessionState.remainingThreadIdentifiers as number[],
     threadItemsByIdentifier: possibleSessionState.threadItemsByIdentifier as Record<string, F95ThreadItem>,
     favoritesLinks: possibleSessionState.favoritesLinks as string[],
@@ -209,10 +275,36 @@ const loadSessionState = (): SessionState | null => {
   return normalizeSessionState(sessionValue)
 }
 
-const createDefaultSessionState = (): SessionState => {
+const loadDefaultSwipeSettings = () => {
+  const defaultFilterStateText = readLocalStorageValue(STORAGE_KEYS.defaultFilterState)
+  if (!defaultFilterStateText) {
+    return normalizeDefaultSwipeSettings(BUILT_IN_DEFAULT_SWIPE_SETTINGS)
+  }
+
+  const defaultFilterStateValue = safeJsonParse<unknown>(defaultFilterStateText)
+  if (!defaultFilterStateValue) {
+    return normalizeDefaultSwipeSettings(BUILT_IN_DEFAULT_SWIPE_SETTINGS)
+  }
+
+  return normalizeDefaultSwipeSettings(defaultFilterStateValue)
+}
+
+const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
+  writeLocalStorageValue(
+    STORAGE_KEYS.defaultFilterState,
+    JSON.stringify(normalizeDefaultSwipeSettings(defaultSwipeSettings)),
+  )
+}
+
+const createDefaultSessionState = (
+  defaultSwipeSettings: DefaultSwipeSettings = normalizeDefaultSwipeSettings(
+    BUILT_IN_DEFAULT_SWIPE_SETTINGS,
+  ),
+): SessionState => {
   return {
     currentPageNumber: 1,
     nextPageToFetchNumber: 1,
+    latestGamesSort: defaultSwipeSettings.latestGamesSort,
     remainingThreadIdentifiers: [],
     threadItemsByIdentifier: {},
     favoritesLinks: [],
@@ -221,7 +313,7 @@ const createDefaultSessionState = (): SessionState => {
     playedLinks: [],
     processedThreadItemsByLink: {},
     viewedCount: 0,
-    filterState: { ...DEFAULT_FILTER_STATE },
+    filterState: normalizeFilterState(defaultSwipeSettings.filterState),
     lastMetadataSyncAtUnixMs: null,
   }
 }
@@ -231,14 +323,19 @@ const saveSessionState = (sessionState: SessionState) => {
 }
 
 const clearAllStoredData = () => {
-  const cachedPageNumberList = loadCachedPagesIndex()
-  for (const pageNumber of cachedPageNumberList) {
-    removeLocalStorageValue(getCachedPageKey(pageNumber))
+  for (const latestGamesSort of LATEST_GAMES_SORTS) {
+    const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
+    for (const pageNumber of cachedPageNumberList) {
+      removeLocalStorageValue(getCachedPageKey(latestGamesSort, pageNumber))
+    }
+
+    removeLocalStorageValue(getCachedPagesIndexKey(latestGamesSort))
   }
 
-  removeLocalStorageValue(STORAGE_KEYS.cachedPagesIndex)
   removeLocalStorageValue(STORAGE_KEYS.sessionState)
+  removeLocalStorageValue(STORAGE_KEYS.defaultFilterState)
   clearTagsMap()
+  clearPrefixesMap()
 }
 
 const normalizePlayedByLink = (value: unknown): Record<string, boolean> => {
@@ -374,7 +471,7 @@ const normalizePlayedLinks = (
   return fallbackLinks
 }
 
-const normalizeTagsMap = (value: unknown): Record<string, string> => {
+const normalizeLookupMap = (value: unknown): Record<string, string> => {
   if (!isPlainObject(value)) {
     return {}
   }
@@ -391,6 +488,14 @@ const normalizeTagsMap = (value: unknown): Record<string, string> => {
   return normalized
 }
 
+const normalizeTagsMap = (value: unknown): Record<string, string> => {
+  return normalizeLookupMap(value)
+}
+
+const normalizePrefixesMap = (value: unknown): Record<string, string> => {
+  return normalizeLookupMap(value)
+}
+
 const loadTagsMap = (): Record<string, string> => {
   const tagsMapText = readLocalStorageValue(STORAGE_KEYS.tagsMap)
   if (!tagsMapText) {
@@ -399,6 +504,16 @@ const loadTagsMap = (): Record<string, string> => {
 
   const parsedMap = safeJsonParse<unknown>(tagsMapText)
   return normalizeTagsMap(parsedMap)
+}
+
+const loadPrefixesMap = (): Record<string, string> => {
+  const prefixesMapText = readLocalStorageValue(STORAGE_KEYS.prefixesMap)
+  if (!prefixesMapText) {
+    return {}
+  }
+
+  const parsedMap = safeJsonParse<unknown>(prefixesMapText)
+  return normalizePrefixesMap(parsedMap)
 }
 
 const saveTagsMap = (tagsMap: Record<string, string>) => {
@@ -416,8 +531,27 @@ const saveTagsMap = (tagsMap: Record<string, string>) => {
   writeLocalStorageValue(STORAGE_KEYS.tagsMap, JSON.stringify(cleanedMap))
 }
 
+const savePrefixesMap = (prefixesMap: Record<string, string>) => {
+  const cleanedMap: Record<string, string> = {}
+  for (const key of Object.keys(prefixesMap)) {
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      continue
+    }
+    const value = prefixesMap[key]
+    if (typeof value === 'string') {
+      cleanedMap[key] = value
+    }
+  }
+
+  writeLocalStorageValue(STORAGE_KEYS.prefixesMap, JSON.stringify(cleanedMap))
+}
+
 function clearTagsMap() {
   removeLocalStorageValue(STORAGE_KEYS.tagsMap)
+}
+
+function clearPrefixesMap() {
+  removeLocalStorageValue(STORAGE_KEYS.prefixesMap)
 }
 
 
@@ -430,9 +564,15 @@ export {
   loadSessionState,
   saveSessionState,
   createDefaultSessionState,
+  loadDefaultSwipeSettings,
+  saveDefaultSwipeSettings,
+  normalizeDefaultSwipeSettings,
   clearAllStoredData,
   loadTagsMap,
+  loadPrefixesMap,
   saveTagsMap,
+  savePrefixesMap,
   normalizeSessionState,
   normalizeTagsMap,
+  normalizePrefixesMap,
 }

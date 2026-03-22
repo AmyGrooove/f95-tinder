@@ -33,12 +33,23 @@ type F95ApiResponse = {
   msg: F95ApiMessage
 }
 
+type LatestGamesSort = 'date' | 'views'
+
 type FilterState = {
   searchText: string
   minimumRating: number
   onlyNew: boolean
   hideWatched: boolean
   hideIgnored: boolean
+  includeTagIds: number[]
+  excludeTagIds: number[]
+  includePrefixIds: number[]
+  excludePrefixIds: number[]
+}
+
+type DefaultSwipeSettings = {
+  latestGamesSort: LatestGamesSort
+  filterState: FilterState
 }
 
 type ListType = 'favorite' | 'trash' | 'played'
@@ -62,6 +73,7 @@ type ProcessedThreadItem = {
 type SessionState = {
   currentPageNumber: number
   nextPageToFetchNumber: number
+  latestGamesSort: LatestGamesSort
   remainingThreadIdentifiers: number[]
   threadItemsByIdentifier: Record<string, F95ThreadItem>
 
@@ -114,7 +126,9 @@ type ThreadDownloadsData = {
 export type {
   F95ThreadItem,
   F95ApiResponse,
+  LatestGamesSort,
   FilterState,
+  DefaultSwipeSettings,
   ListType,
   ProcessedThreadItem,
   SessionState,

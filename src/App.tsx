@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useF95Browser } from "./f95/useF95Browser";
 import {
   buildThreadLink,
@@ -21,24 +29,57 @@ import {
   moveDownloadHostPreference,
   removeCachedThreadDownloads,
   resetPreferredDownloadHosts,
+  saveDisabledDownloadHosts,
+  saveHiddenDownloadHosts,
   savePreferredDownloadHosts,
   sortDownloadHostsByPreference,
   showDownloadHost,
 } from "./f95/downloads";
 import { countUpdatedTrackedItems } from "./f95/updateTracking";
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "./f95/utils";
-import { normalizeSessionState, normalizeTagsMap, saveSessionState, saveTagsMap } from "./f95/storage";
-import type { ListType, ProcessedThreadItem, ThreadDownloadsData } from "./f95/types";
+import {
+  clearAllStoredData,
+  normalizeDefaultSwipeSettings,
+  normalizePrefixesMap,
+  normalizeSessionState,
+  normalizeTagsMap,
+  saveDefaultSwipeSettings,
+  savePrefixesMap,
+  saveSessionState,
+  saveTagsMap,
+} from "./f95/storage";
+import {
+  MAX_TAG_FILTERS_PER_GROUP,
+  normalizeFilterState,
+  normalizeText,
+  threadMatchesFilter,
+} from "./f95/filtering";
+import type {
+  DefaultSwipeSettings,
+  ListType,
+  ProcessedThreadItem,
+  SessionState,
+  ThreadDownloadsData,
+} from "./f95/types";
 import { Dashboard } from "./components/Dashboard";
 import { DownloadModal } from "./components/DownloadModal";
 import { SettingsPage, type SettingsTab } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
 import {
+  clearCookieProxyInput,
+  fetchCookieProxyBackup,
+  saveCookieProxyInput,
+  type CookieProxyBackup,
+} from "./f95/cookieProxy";
+import {
   getLauncherPrimaryActionLabel,
-  getLauncherStatusText,
   isLauncherGameBusy,
 } from "./launcher/ui";
-import { loadBundledTagsMapViaLauncher, openExternalUrl } from "./launcher/runtime";
+import {
+  loadBundledPrefixesMapViaLauncher,
+  loadBundledTagsMapViaLauncher,
+  openExternalUrl,
+} from "./launcher/runtime";
 import { useLauncherLibrary } from "./launcher/useLauncherLibrary";
 
 const openLinkInNewTab = (link: string) => {
@@ -178,6 +219,7 @@ const isSettingsTab = (value: string | null): value is SettingsTab => {
   return (
     value === "hosts" ||
     value === "cookies" ||
+    value === "filters" ||
     value === "tags" ||
     value === "data"
   );
@@ -296,6 +338,295 @@ const pickRatingForLink = (
   return typeof threadItem?.rating === "number" ? threadItem.rating : 0;
 };
 
+const SWIPE_HORIZONTAL_THRESHOLD_PX = 120;
+const SWIPE_VERTICAL_THRESHOLD_PX = 110;
+const SWIPE_MAX_TILT_DEG = 12;
+
+type SwipeGestureState = {
+  isDragging: boolean;
+  offsetX: number;
+  offsetY: number;
+};
+
+type SwipePointerState = {
+  pointerId: number | null;
+  startX: number;
+  startY: number;
+};
+
+type SwipeFilterOption = {
+  id: number;
+  label: string;
+  count: number;
+};
+
+const createIdleSwipeGestureState = (): SwipeGestureState => ({
+  isDragging: false,
+  offsetX: 0,
+  offsetY: 0,
+});
+
+const createIdleSwipePointerState = (): SwipePointerState => ({
+  pointerId: null,
+  startX: 0,
+  startY: 0,
+});
+
+const compactNumberFormatter = new Intl.NumberFormat("ru-RU", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const shortDateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+const clamp = (value: number, min: number, max: number) => {
+  return Math.min(max, Math.max(min, value));
+};
+
+const resolveSwipeActionFromOffset = (
+  offsetX: number,
+  offsetY: number,
+): ListType | null => {
+  const absoluteX = Math.abs(offsetX);
+  const upwardOffset = -offsetY;
+
+  if (
+    upwardOffset >= SWIPE_VERTICAL_THRESHOLD_PX &&
+    upwardOffset >= absoluteX * 0.85
+  ) {
+    return "played";
+  }
+
+  if (absoluteX >= SWIPE_HORIZONTAL_THRESHOLD_PX) {
+    return offsetX > 0 ? "favorite" : "trash";
+  }
+
+  return null;
+};
+
+const formatCompactNumber = (value: number | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "0";
+  }
+
+  return compactNumberFormatter.format(value);
+};
+
+const formatThreadDateLabel = (value: string | undefined) => {
+  if (!value) {
+    return "Не указана";
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return shortDateFormatter.format(parsedDate);
+};
+
+const SWIPE_SORT_OPTIONS = [
+  { value: "date", label: "По дате" },
+  { value: "views", label: "По просмотрам" },
+] as const;
+
+const serializeDefaultSwipeSettings = (settings: DefaultSwipeSettings) => {
+  return JSON.stringify({
+    latestGamesSort: settings.latestGamesSort,
+    filterState: {
+      searchText: settings.filterState.searchText,
+      minimumRating: settings.filterState.minimumRating,
+      onlyNew: settings.filterState.onlyNew,
+      hideWatched: settings.filterState.hideWatched,
+      hideIgnored: settings.filterState.hideIgnored,
+      includeTagIds: [...settings.filterState.includeTagIds].sort((a, b) => a - b),
+      excludeTagIds: [...settings.filterState.excludeTagIds].sort((a, b) => a - b),
+      includePrefixIds: [...settings.filterState.includePrefixIds].sort(
+        (a, b) => a - b,
+      ),
+      excludePrefixIds: [...settings.filterState.excludePrefixIds].sort(
+        (a, b) => a - b,
+      ),
+    },
+  });
+};
+
+type LocalListsBackup = {
+  sessionState: SessionState;
+  tagsMap: Record<string, string>;
+  prefixesMap: Record<string, string>;
+};
+
+type LocalSettingsBackup = {
+  defaultSwipeSettings: DefaultSwipeSettings;
+  tagsMap: Record<string, string>;
+  prefixesMap: Record<string, string>;
+  preferredDownloadHosts: string[];
+  disabledDownloadHosts: Record<string, number>;
+  hiddenDownloadHosts: string[];
+  cookieProxy: CookieProxyBackup | null;
+};
+
+type LocalBackupFile = {
+  format: "f95-tinder-local-backup-v1";
+  exportType: "all" | "settings" | "lists";
+  exportedAtUnixMs: number;
+  lists?: LocalListsBackup;
+  settings?: LocalSettingsBackup;
+};
+
+const LOCAL_BACKUP_FORMAT = "f95-tinder-local-backup-v1";
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+};
+
+const isLocalBackupFile = (value: unknown): value is LocalBackupFile => {
+  return (
+    isRecord(value) &&
+    value.format === LOCAL_BACKUP_FORMAT &&
+    (value.exportType === "all" ||
+      value.exportType === "settings" ||
+      value.exportType === "lists")
+  );
+};
+
+const normalizeImportedStringList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
+};
+
+const normalizeImportedDisabledDownloadHosts = (value: unknown) => {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const normalizedMap: Record<string, number> = {};
+  for (const [hostLabel, expiresAtUnixMs] of Object.entries(value)) {
+    if (
+      typeof hostLabel === "string" &&
+      typeof expiresAtUnixMs === "number" &&
+      Number.isFinite(expiresAtUnixMs)
+    ) {
+      normalizedMap[hostLabel] = expiresAtUnixMs;
+    }
+  }
+
+  return normalizedMap;
+};
+
+const normalizeCookieProxyBackup = (value: unknown): CookieProxyBackup => {
+  if (!isRecord(value)) {
+    return {
+      source: "none",
+      text: null,
+      updatedAtUnixMs: null,
+    };
+  }
+
+  const source =
+    value.source === "settings" || value.source === "env" || value.source === "none"
+      ? value.source
+      : "none";
+
+  return {
+    source,
+    text: typeof value.text === "string" ? value.text : null,
+    updatedAtUnixMs:
+      typeof value.updatedAtUnixMs === "number" ? value.updatedAtUnixMs : null,
+  };
+};
+
+const extractLocalListsBackup = (value: unknown): LocalListsBackup => {
+  const rawValue = isLocalBackupFile(value) ? value.lists : value;
+  if (!isRecord(rawValue)) {
+    throw new Error("Импорт списков: ожидается объект с данными списков");
+  }
+
+  const nextSessionState = normalizeSessionState(rawValue.sessionState);
+  if (!nextSessionState) {
+    throw new Error("Импорт списков: sessionState имеет неверный формат");
+  }
+
+  return {
+    sessionState: nextSessionState,
+    tagsMap: normalizeTagsMap(rawValue.tagsMap),
+    prefixesMap: normalizePrefixesMap(rawValue.prefixesMap),
+  };
+};
+
+const extractLocalSettingsBackup = (value: unknown): LocalSettingsBackup => {
+  const rawValue = isLocalBackupFile(value) ? value.settings : value;
+  if (!isRecord(rawValue)) {
+    throw new Error("Импорт настроек: ожидается объект с данными настроек");
+  }
+  if (!("defaultSwipeSettings" in rawValue)) {
+    throw new Error(
+      "Импорт настроек: в файле нет defaultSwipeSettings для восстановления настроек",
+    );
+  }
+
+  return {
+    defaultSwipeSettings: normalizeDefaultSwipeSettings(rawValue.defaultSwipeSettings),
+    tagsMap: normalizeTagsMap(rawValue.tagsMap),
+    prefixesMap: normalizePrefixesMap(rawValue.prefixesMap),
+    preferredDownloadHosts: normalizeImportedStringList(
+      rawValue.preferredDownloadHosts,
+    ),
+    disabledDownloadHosts: normalizeImportedDisabledDownloadHosts(
+      rawValue.disabledDownloadHosts,
+    ),
+    hiddenDownloadHosts: normalizeImportedStringList(rawValue.hiddenDownloadHosts),
+    cookieProxy:
+      "cookieProxy" in rawValue ? normalizeCookieProxyBackup(rawValue.cookieProxy) : null,
+  };
+};
+
+const extractLocalAllBackup = (
+  value: unknown,
+): { lists: LocalListsBackup; settings: LocalSettingsBackup } => {
+  if (!isLocalBackupFile(value) || !value.lists || !value.settings) {
+    throw new Error(
+      "Импорт всего: ожидается backup-файл, в котором есть и lists, и settings",
+    );
+  }
+
+  return {
+    lists: extractLocalListsBackup(value),
+    settings: extractLocalSettingsBackup(value),
+  };
+};
+
+const isInteractiveSwipeTarget = (target: EventTarget | null) => {
+  return target instanceof HTMLElement
+    ? Boolean(
+        target.closest(
+          "button, a, input, textarea, select, label, [data-no-swipe='true']",
+        ),
+      )
+    : false;
+};
+
+const getSwipeActionCopy = (action: ListType | null) => {
+  switch (action) {
+    case "favorite":
+      return { label: "В закладки", hint: "→ Right", className: "favorite" };
+    case "trash":
+      return { label: "В мусор", hint: "← Left", className: "trash" };
+    case "played":
+      return { label: "Играл", hint: "↑ Up", className: "played" };
+    default:
+      return null;
+  }
+};
+
 const App = () => {
   const {
     sessionState,
@@ -307,11 +638,22 @@ const App = () => {
     applyActionToCurrentCard,
     undoLastAction,
     updateFilterState,
+    setLatestGamesSort,
     resetFilterState,
+    defaultFilterState,
+    defaultLatestGamesSort,
+    updateDefaultFilterState,
+    updateDefaultLatestGamesSort,
+    replaceDefaultSwipeSettings,
+    resetDefaultFilterState,
+    saveCurrentFilterStateAsDefault,
+    applyDefaultFilterStateToSwipe,
     clearDashboardLists,
     setErrorMessage,
     tagsMap,
+    prefixesMap,
     updateTagsMap,
+    updatePrefixesMap,
     metadataSyncState,
     startMetadataSync,
     moveLinkToList,
@@ -348,11 +690,31 @@ const App = () => {
   const [hiddenDownloadHosts, setHiddenDownloadHosts] = useState<string[]>(
     () => loadHiddenDownloadHosts(),
   );
+  const [swipeGestureState, setSwipeGestureState] = useState<SwipeGestureState>(
+    () => createIdleSwipeGestureState(),
+  );
+  const [isSwipeFilterModalOpen, setIsSwipeFilterModalOpen] = useState(false);
+  const [swipeTagSearchText, setSwipeTagSearchText] = useState("");
+  const [swipePrefixSearchText, setSwipePrefixSearchText] = useState("");
+  const [bundledDefaultSwipeSettings, setBundledDefaultSwipeSettings] =
+    useState<DefaultSwipeSettings | null>(null);
+  const [isBundledDefaultSwipeSettingsChecking, setIsBundledDefaultSwipeSettingsChecking] =
+    useState(true);
 
-  const importSessionStateInputRef = useRef<HTMLInputElement | null>(null);
+  const importAllBackupInputRef = useRef<HTMLInputElement | null>(null);
+  const importSettingsBackupInputRef = useRef<HTMLInputElement | null>(null);
+  const importListsBackupInputRef = useRef<HTMLInputElement | null>(null);
   const importTagsMapInputRef = useRef<HTMLInputElement | null>(null);
+  const importPrefixesMapInputRef = useRef<HTMLInputElement | null>(null);
   const downloadRequestIdRef = useRef(0);
   const hasAttemptedBundledTagsBootstrapRef = useRef(false);
+  const hasAttemptedBundledPrefixesBootstrapRef = useRef(false);
+  const swipeGestureStateRef = useRef<SwipeGestureState>(
+    createIdleSwipeGestureState(),
+  );
+  const swipePointerStateRef = useRef<SwipePointerState>(
+    createIdleSwipePointerState(),
+  );
 
   const currentThreadLink = useMemo(() => {
     if (currentThreadIdentifier === null) {
@@ -360,13 +722,6 @@ const App = () => {
     }
     return buildThreadLink(currentThreadIdentifier);
   }, [currentThreadIdentifier]);
-  const currentLauncherGame = useMemo(() => {
-    if (!currentThreadLink) {
-      return null;
-    }
-
-    return launcherGamesByThreadLink[currentThreadLink] ?? null;
-  }, [currentThreadLink, launcherGamesByThreadLink]);
 
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
@@ -378,20 +733,198 @@ const App = () => {
     [playedLinks],
   );
 
+  const visibleSwipeThreadIdentifiers = useMemo(() => {
+    return sessionState.remainingThreadIdentifiers.filter((threadIdentifier) => {
+      const threadItem =
+        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
+      return threadItem
+        ? threadMatchesFilter(threadItem, sessionState.filterState)
+        : false;
+    });
+  }, [
+    sessionState.filterState,
+    sessionState.remainingThreadIdentifiers,
+    sessionState.threadItemsByIdentifier,
+  ]);
+
+  const visibleSwipeQueueCount = visibleSwipeThreadIdentifiers.length;
+
   const swipeProgressPills = useMemo(() => {
     return [
       { label: "Страница", value: sessionState.currentPageNumber },
-      {
-        label: "В очереди",
-        value: sessionState.remainingThreadIdentifiers.length,
-      },
+      { label: "В очереди", value: visibleSwipeQueueCount },
       { label: "Просмотрено", value: sessionState.viewedCount },
     ];
   }, [
     sessionState.currentPageNumber,
-    sessionState.remainingThreadIdentifiers.length,
     sessionState.viewedCount,
+    visibleSwipeQueueCount,
   ]);
+
+  const availableSwipeTagOptions = useMemo<SwipeFilterOption[]>(() => {
+    const tagCounts = new Map<number, number>();
+
+    for (const threadIdentifier of visibleSwipeThreadIdentifiers) {
+      const threadItem =
+        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
+      if (!threadItem || !Array.isArray(threadItem.tags)) {
+        continue;
+      }
+
+      const uniqueTagIds = Array.from(
+        new Set(threadItem.tags.filter((tagId) => typeof tagId === "number")),
+      );
+
+      for (const tagId of uniqueTagIds) {
+        tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
+      }
+    }
+
+    for (const tagId of sessionState.filterState.includeTagIds) {
+      if (!tagCounts.has(tagId)) {
+        tagCounts.set(tagId, 0);
+      }
+    }
+
+    for (const tagId of sessionState.filterState.excludeTagIds) {
+      if (!tagCounts.has(tagId)) {
+        tagCounts.set(tagId, 0);
+      }
+    }
+
+    return Array.from(tagCounts.entries())
+      .map(([tagId, count]) => ({
+        id: tagId,
+        label: tagsMap[String(tagId)] ?? `#${tagId}`,
+        count,
+      }))
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
+  }, [
+    sessionState.filterState.excludeTagIds,
+    sessionState.filterState.includeTagIds,
+    sessionState.threadItemsByIdentifier,
+    tagsMap,
+    visibleSwipeThreadIdentifiers,
+  ]);
+
+  const availableSwipePrefixOptions = useMemo<SwipeFilterOption[]>(() => {
+    const prefixCounts = new Map<number, number>();
+
+    for (const [prefixIdText] of Object.entries(prefixesMap)) {
+      const prefixId = Number(prefixIdText);
+      if (Number.isInteger(prefixId)) {
+        prefixCounts.set(prefixId, 0);
+      }
+    }
+
+    for (const threadIdentifier of visibleSwipeThreadIdentifiers) {
+      const threadItem =
+        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
+      if (!threadItem || !Array.isArray(threadItem.prefixes)) {
+        continue;
+      }
+
+      const uniquePrefixIds = Array.from(
+        new Set(
+          threadItem.prefixes.filter(
+            (prefixId) =>
+              typeof prefixId === "number" &&
+              typeof prefixesMap[String(prefixId)] === "string",
+          ),
+        ),
+      );
+
+      for (const prefixId of uniquePrefixIds) {
+        prefixCounts.set(prefixId, (prefixCounts.get(prefixId) ?? 0) + 1);
+      }
+    }
+
+    for (const prefixId of sessionState.filterState.includePrefixIds) {
+      if (!prefixCounts.has(prefixId)) {
+        prefixCounts.set(prefixId, 0);
+      }
+    }
+
+    for (const prefixId of sessionState.filterState.excludePrefixIds) {
+      if (!prefixCounts.has(prefixId)) {
+        prefixCounts.set(prefixId, 0);
+      }
+    }
+
+    return Array.from(prefixCounts.entries())
+      .map(([prefixId, count]) => ({
+        id: prefixId,
+        label: prefixesMap[String(prefixId)] ?? `#${prefixId}`,
+        count,
+      }))
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
+  }, [
+    prefixesMap,
+    sessionState.filterState.excludePrefixIds,
+    sessionState.filterState.includePrefixIds,
+    sessionState.threadItemsByIdentifier,
+    visibleSwipeThreadIdentifiers,
+  ]);
+
+  const normalizedSwipeTagSearchText = useMemo(
+    () => normalizeText(swipeTagSearchText),
+    [swipeTagSearchText],
+  );
+
+  const normalizedSwipePrefixSearchText = useMemo(
+    () => normalizeText(swipePrefixSearchText),
+    [swipePrefixSearchText],
+  );
+
+  const filteredSwipeTagOptions = useMemo(() => {
+    if (!normalizedSwipeTagSearchText) {
+      return availableSwipeTagOptions;
+    }
+
+    return availableSwipeTagOptions.filter((option) => {
+      return (
+        normalizeText(option.label).includes(normalizedSwipeTagSearchText) ||
+        String(option.id).includes(normalizedSwipeTagSearchText)
+      );
+    });
+  }, [availableSwipeTagOptions, normalizedSwipeTagSearchText]);
+
+  const filteredSwipePrefixOptions = useMemo(() => {
+    if (!normalizedSwipePrefixSearchText) {
+      return availableSwipePrefixOptions;
+    }
+
+    return availableSwipePrefixOptions.filter((option) => {
+      return (
+        normalizeText(option.label).includes(normalizedSwipePrefixSearchText) ||
+        String(option.id).includes(normalizedSwipePrefixSearchText)
+      );
+    });
+  }, [availableSwipePrefixOptions, normalizedSwipePrefixSearchText]);
+
+  const hasActiveSwipeFilterSelections =
+    sessionState.filterState.includeTagIds.length > 0 ||
+    sessionState.filterState.excludeTagIds.length > 0 ||
+    sessionState.filterState.includePrefixIds.length > 0 ||
+    sessionState.filterState.excludePrefixIds.length > 0;
+  const selectedSwipeFilterCount =
+    sessionState.filterState.includeTagIds.length +
+    sessionState.filterState.excludeTagIds.length +
+    sessionState.filterState.includePrefixIds.length +
+    sessionState.filterState.excludePrefixIds.length;
+  const selectedSwipePrefixCount =
+    sessionState.filterState.includePrefixIds.length +
+    sessionState.filterState.excludePrefixIds.length;
+
+  const updateSwipeGestureState = useCallback((nextState: SwipeGestureState) => {
+    swipeGestureStateRef.current = nextState;
+    setSwipeGestureState(nextState);
+  }, []);
+
+  const resetSwipeGesture = useCallback(() => {
+    swipePointerStateRef.current = createIdleSwipePointerState();
+    updateSwipeGestureState(createIdleSwipeGestureState());
+  }, [updateSwipeGestureState]);
 
   const handleMoveDownloadHost = useCallback(
     (hostLabel: string, direction: -1 | 1) => {
@@ -484,15 +1017,212 @@ const App = () => {
     applyActionToCurrentCard("played");
   }, [applyActionToCurrentCard, currentThreadLink]);
 
-  const handleExportSessionState = useCallback(() => {
-    downloadJsonFile("f95-tinder-session.json", {
+  const performSwipeAction = useCallback(
+    (action: ListType) => {
+      if (action === "favorite") {
+        handleFavorite();
+        return;
+      }
+
+      if (action === "trash") {
+        handleTrash();
+        return;
+      }
+
+      handlePlayed();
+    },
+    [handleFavorite, handlePlayed, handleTrash],
+  );
+
+  const createListsBackup = useCallback(
+    (): LocalListsBackup => ({
       sessionState,
       tagsMap,
-    });
-  }, [sessionState, tagsMap]);
+      prefixesMap,
+    }),
+    [prefixesMap, sessionState, tagsMap],
+  );
 
-  const handleImportSessionStateChange = useCallback(async () => {
-    const inputElement = importSessionStateInputRef.current;
+  const createSettingsBackup = useCallback(async (): Promise<LocalSettingsBackup> => {
+    return {
+      defaultSwipeSettings: normalizeDefaultSwipeSettings({
+        latestGamesSort: defaultLatestGamesSort,
+        filterState: defaultFilterState,
+      }),
+      tagsMap,
+      prefixesMap,
+      preferredDownloadHosts,
+      disabledDownloadHosts,
+      hiddenDownloadHosts,
+      cookieProxy: await fetchCookieProxyBackup(),
+    };
+  }, [
+    defaultFilterState,
+    defaultLatestGamesSort,
+    disabledDownloadHosts,
+    hiddenDownloadHosts,
+    prefixesMap,
+    preferredDownloadHosts,
+    tagsMap,
+  ]);
+
+  const applyImportedListsBackup = useCallback((backup: LocalListsBackup) => {
+    saveSessionState(backup.sessionState);
+    saveTagsMap(backup.tagsMap);
+    savePrefixesMap(backup.prefixesMap);
+  }, []);
+
+  const applyImportedSettingsBackup = useCallback(
+    async (backup: LocalSettingsBackup) => {
+      if (backup.cookieProxy) {
+        if (backup.cookieProxy.source === "settings" && backup.cookieProxy.text) {
+          await saveCookieProxyInput(backup.cookieProxy.text);
+        } else if (backup.cookieProxy.source === "settings") {
+          throw new Error(
+            "Импорт настроек: cookieProxy.source=settings, но текст кук отсутствует",
+          );
+        } else {
+          await clearCookieProxyInput();
+        }
+      }
+
+      saveDefaultSwipeSettings(backup.defaultSwipeSettings);
+      saveTagsMap(backup.tagsMap);
+      savePrefixesMap(backup.prefixesMap);
+      savePreferredDownloadHosts(backup.preferredDownloadHosts);
+      saveDisabledDownloadHosts(backup.disabledDownloadHosts);
+      saveHiddenDownloadHosts(backup.hiddenDownloadHosts);
+    },
+    [],
+  );
+
+  const handleExportAllBackup = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+      const payload: LocalBackupFile = {
+        format: LOCAL_BACKUP_FORMAT,
+        exportType: "all",
+        exportedAtUnixMs: Date.now(),
+        lists: createListsBackup(),
+        settings: await createSettingsBackup(),
+      };
+      downloadJsonFile("f95-tinder-all.json", payload);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка экспорта локальных данных",
+      );
+    }
+  }, [createListsBackup, createSettingsBackup, setErrorMessage]);
+
+  const handleExportSettingsBackup = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+      const payload: LocalBackupFile = {
+        format: LOCAL_BACKUP_FORMAT,
+        exportType: "settings",
+        exportedAtUnixMs: Date.now(),
+        settings: await createSettingsBackup(),
+      };
+      downloadJsonFile("f95-tinder-settings.json", payload);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка экспорта настроек",
+      );
+    }
+  }, [createSettingsBackup, setErrorMessage]);
+
+  const handleExportListsBackup = useCallback(() => {
+    setErrorMessage(null);
+    const payload: LocalBackupFile = {
+      format: LOCAL_BACKUP_FORMAT,
+      exportType: "lists",
+      exportedAtUnixMs: Date.now(),
+      lists: createListsBackup(),
+    };
+    downloadJsonFile("f95-tinder-lists.json", payload);
+  }, [createListsBackup, setErrorMessage]);
+
+  const handleImportAllBackupChange = useCallback(async () => {
+    const inputElement = importAllBackupInputRef.current;
+    const file = inputElement?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      setErrorMessage(null);
+      const fileText = await readFileAsText(file);
+      const parsedJson = safeJsonParse<unknown>(fileText);
+      const backup = extractLocalAllBackup(parsedJson);
+
+      await applyImportedSettingsBackup(backup.settings);
+      applyImportedListsBackup(backup.lists);
+      window.location.reload();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка импорта локальных данных",
+      );
+    } finally {
+      if (inputElement) {
+        inputElement.value = "";
+      }
+    }
+  }, [applyImportedListsBackup, applyImportedSettingsBackup, setErrorMessage]);
+
+  const handleImportSettingsBackupChange = useCallback(async () => {
+    const inputElement = importSettingsBackupInputRef.current;
+    const file = inputElement?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      setErrorMessage(null);
+      const fileText = await readFileAsText(file);
+      const parsedJson = safeJsonParse<unknown>(fileText);
+      const backup = extractLocalSettingsBackup(parsedJson);
+
+      await applyImportedSettingsBackup(backup);
+      window.location.reload();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка импорта настроек",
+      );
+    } finally {
+      if (inputElement) {
+        inputElement.value = "";
+      }
+    }
+  }, [applyImportedSettingsBackup, setErrorMessage]);
+
+  const handleImportListsBackupChange = useCallback(async () => {
+    const inputElement = importListsBackupInputRef.current;
+    const file = inputElement?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      setErrorMessage(null);
+      const fileText = await readFileAsText(file);
+      const parsedJson = safeJsonParse<unknown>(fileText);
+      const backup = extractLocalListsBackup(parsedJson);
+
+      applyImportedListsBackup(backup);
+      window.location.reload();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка импорта списков",
+      );
+    } finally {
+      if (inputElement) {
+        inputElement.value = "";
+      }
+    }
+  }, [applyImportedListsBackup, setErrorMessage]);
+
+  const handleImportTagsMapChange = useCallback(async () => {
+    const inputElement = importTagsMapInputRef.current;
     const file = inputElement?.files?.[0];
     if (!file) {
       return;
@@ -508,65 +1238,10 @@ const App = () => {
         typeof parsedJson !== "object" ||
         Array.isArray(parsedJson)
       ) {
-        throw new Error("Импорт: ожидается объект с данными сессии");
-      }
-
-      const parsedValue = parsedJson as Record<string, unknown>;
-      const nextSessionState = normalizeSessionState(parsedValue.sessionState);
-      if (!nextSessionState) {
-        throw new Error("Импорт: sessionState имеет неверный формат");
-      }
-
-      const nextTagsMap = normalizeTagsMap(parsedValue.tagsMap);
-
-      saveSessionState(nextSessionState);
-      saveTagsMap(nextTagsMap);
-      window.location.reload();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Ошибка импорта",
-      );
-    } finally {
-      if (inputElement) {
-        inputElement.value = "";
-      }
-    }
-  }, [
-    normalizeSessionState,
-    normalizeTagsMap,
-    saveSessionState,
-    saveTagsMap,
-    setErrorMessage,
-  ]);
-
-  const handleImportTagsMapChange = useCallback(async () => {
-    const inputElement = importTagsMapInputRef.current;
-    const file = inputElement?.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      const fileText = await readFileAsText(file);
-      const parsedJson = safeJsonParse<unknown>(fileText);
-
-      if (
-        !parsedJson ||
-        typeof parsedJson !== "object" ||
-        Array.isArray(parsedJson)
-      ) {
         throw new Error("Импорт: ожидается объект тегов");
       }
 
-      const normalized: Record<string, string> = {};
-      for (const key of Object.keys(parsedJson)) {
-        const value = (parsedJson as Record<string, unknown>)[key];
-        if (typeof value === "string") {
-          normalized[key] = value;
-        }
-      }
-
-      updateTagsMap(normalized);
+      updateTagsMap(normalizeTagsMap(parsedJson));
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Ошибка импорта тегов",
@@ -576,7 +1251,39 @@ const App = () => {
         inputElement.value = "";
       }
     }
-  }, [setErrorMessage, updateTagsMap]);
+  }, [normalizeTagsMap, setErrorMessage, updateTagsMap]);
+
+  const handleImportPrefixesMapChange = useCallback(async () => {
+    const inputElement = importPrefixesMapInputRef.current;
+    const file = inputElement?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      setErrorMessage(null);
+      const fileText = await readFileAsText(file);
+      const parsedJson = safeJsonParse<unknown>(fileText);
+
+      if (
+        !parsedJson ||
+        typeof parsedJson !== "object" ||
+        Array.isArray(parsedJson)
+      ) {
+        throw new Error("Импорт: ожидается объект префиксов");
+      }
+
+      updatePrefixesMap(normalizePrefixesMap(parsedJson));
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Ошибка импорта префиксов",
+      );
+    } finally {
+      if (inputElement) {
+        inputElement.value = "";
+      }
+    }
+  }, [normalizePrefixesMap, setErrorMessage, updatePrefixesMap]);
 
   const loadBundledTagsMap = useCallback(async () => {
     const launcherTagsMap = await loadBundledTagsMapViaLauncher();
@@ -607,6 +1314,62 @@ const App = () => {
     return normalizedTagsMap;
   }, [normalizeTagsMap]);
 
+  const loadBundledPrefixesMap = useCallback(async () => {
+    const launcherPrefixesMap = await loadBundledPrefixesMapViaLauncher();
+    const parsedJson = launcherPrefixesMap
+      ? (launcherPrefixesMap as unknown)
+      : ((await (async () => {
+          const response = await fetch("/prefixes.json", {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Не удалось загрузить встроенные префиксы: ${response.status}`,
+            );
+          }
+
+          return response.json();
+        })()) as unknown);
+    const normalizedPrefixesMap = normalizePrefixesMap(parsedJson);
+
+    if (Object.keys(normalizedPrefixesMap).length === 0) {
+      throw new Error(
+        "Встроенный prefixes.json пустой или имеет неверный формат",
+      );
+    }
+
+    return normalizedPrefixesMap;
+  }, [normalizePrefixesMap]);
+
+  const loadBundledDefaultSwipeSettings = useCallback(async () => {
+    const response = await fetch("/default-filters.json", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Не удалось загрузить встроенные дефолтные фильтры: ${response.status}`,
+      );
+    }
+
+    const parsedJson = (await response.json()) as unknown;
+
+    if (!parsedJson || typeof parsedJson !== "object" || Array.isArray(parsedJson)) {
+      throw new Error(
+        "Встроенный default-filters.json пустой или имеет неверный формат",
+      );
+    }
+
+    return normalizeDefaultSwipeSettings(parsedJson);
+  }, [normalizeDefaultSwipeSettings]);
+
   const handleImportBundledTagsMap = useCallback(async () => {
     try {
       setErrorMessage(null);
@@ -619,6 +1382,64 @@ const App = () => {
       );
     }
   }, [loadBundledTagsMap, setErrorMessage, updateTagsMap]);
+
+  const handleImportBundledPrefixesMap = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+      updatePrefixesMap(await loadBundledPrefixesMap());
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Ошибка загрузки встроенных префиксов",
+      );
+    }
+  }, [loadBundledPrefixesMap, setErrorMessage, updatePrefixesMap]);
+
+  const handleImportBundledDefaultFilterState = useCallback(async () => {
+    try {
+      setErrorMessage(null);
+      replaceDefaultSwipeSettings(await loadBundledDefaultSwipeSettings());
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Ошибка загрузки встроенных дефолтных фильтров",
+      );
+    }
+  }, [
+    loadBundledDefaultSwipeSettings,
+    replaceDefaultSwipeSettings,
+    setErrorMessage,
+  ]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    setIsBundledDefaultSwipeSettingsChecking(true);
+
+    void (async () => {
+      try {
+        const nextBundledDefaultSwipeSettings =
+          await loadBundledDefaultSwipeSettings();
+        if (!isCancelled) {
+          setBundledDefaultSwipeSettings(nextBundledDefaultSwipeSettings);
+        }
+      } catch {
+        if (!isCancelled) {
+          setBundledDefaultSwipeSettings(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsBundledDefaultSwipeSettingsChecking(false);
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [loadBundledDefaultSwipeSettings]);
 
   useEffect(() => {
     if (Object.keys(tagsMap).length > 0) {
@@ -644,6 +1465,36 @@ const App = () => {
       }
     })();
   }, [loadBundledTagsMap, setErrorMessage, tagsMap, updateTagsMap]);
+
+  useEffect(() => {
+    if (Object.keys(prefixesMap).length > 0) {
+      hasAttemptedBundledPrefixesBootstrapRef.current = false;
+      return;
+    }
+
+    if (hasAttemptedBundledPrefixesBootstrapRef.current) {
+      return;
+    }
+
+    hasAttemptedBundledPrefixesBootstrapRef.current = true;
+
+    void (async () => {
+      try {
+        updatePrefixesMap(await loadBundledPrefixesMap());
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Ошибка загрузки встроенных префиксов";
+        setErrorMessage((previousState) => previousState ?? message);
+      }
+    })();
+  }, [
+    loadBundledPrefixesMap,
+    prefixesMap,
+    setErrorMessage,
+    updatePrefixesMap,
+  ]);
 
   const openViewer = useCallback(
     (imageUrlList: string[], startIndex: number) => {
@@ -726,14 +1577,6 @@ const App = () => {
     },
     [showDownloadModal],
   );
-
-  const openCurrentThreadDownloads = useCallback(() => {
-    if (!currentThreadLink || !currentThreadItem) {
-      return;
-    }
-
-    void openDownloadModal(currentThreadLink, currentThreadItem.title);
-  }, [currentThreadItem, currentThreadLink, openDownloadModal]);
 
   const openBestDownloadForThread = useCallback(
     async (
@@ -925,13 +1768,109 @@ const App = () => {
     [chooseLaunchTarget, setErrorMessage],
   );
 
-  const openCurrentBestDownload = useCallback(() => {
-    if (!currentThreadLink || !currentThreadItem) {
-      return;
-    }
+  const handleSwipePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (
+        !currentThreadItem ||
+        downloadModalState.isOpen ||
+        viewerState.isOpen ||
+        isSwipeFilterModalOpen
+      ) {
+        return;
+      }
 
-    void openBestDownloadForThread(currentThreadLink, currentThreadItem.title);
-  }, [currentThreadItem, currentThreadLink, openBestDownloadForThread]);
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+
+      if (isInteractiveSwipeTarget(event.target)) {
+        return;
+      }
+
+      swipePointerStateRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
+
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateSwipeGestureState({
+        isDragging: true,
+        offsetX: 0,
+        offsetY: 0,
+      });
+    },
+    [
+      currentThreadItem,
+      downloadModalState.isOpen,
+      isSwipeFilterModalOpen,
+      updateSwipeGestureState,
+      viewerState.isOpen,
+    ],
+  );
+
+  const handleSwipePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const activePointerId = swipePointerStateRef.current.pointerId;
+      if (activePointerId !== event.pointerId) {
+        return;
+      }
+
+      const offsetX = event.clientX - swipePointerStateRef.current.startX;
+      const rawOffsetY = event.clientY - swipePointerStateRef.current.startY;
+      const offsetY = rawOffsetY > 0 ? rawOffsetY * 0.18 : rawOffsetY;
+
+      updateSwipeGestureState({
+        isDragging: true,
+        offsetX,
+        offsetY,
+      });
+    },
+    [updateSwipeGestureState],
+  );
+
+  const releaseSwipePointer = useCallback(
+    (
+      event: ReactPointerEvent<HTMLDivElement>,
+      shouldApplyAction: boolean,
+    ) => {
+      if (swipePointerStateRef.current.pointerId !== event.pointerId) {
+        return;
+      }
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      const resolvedAction = shouldApplyAction
+        ? resolveSwipeActionFromOffset(
+            swipeGestureStateRef.current.offsetX,
+            swipeGestureStateRef.current.offsetY,
+          )
+        : null;
+
+      resetSwipeGesture();
+
+      if (resolvedAction) {
+        performSwipeAction(resolvedAction);
+      }
+    },
+    [performSwipeAction, resetSwipeGesture],
+  );
+
+  const handleSwipePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      releaseSwipePointer(event, true);
+    },
+    [releaseSwipePointer],
+  );
+
+  const handleSwipePointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      releaseSwipePointer(event, false);
+    },
+    [releaseSwipePointer],
+  );
 
   const showPreviousViewerImage = useCallback(() => {
     setViewerState((previousState) => {
@@ -1041,6 +1980,14 @@ const App = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isSwipeFilterModalOpen) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setIsSwipeFilterModalOpen(false);
+        }
+        return;
+      }
+
       if (downloadModalState.isOpen) {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -1122,12 +2069,18 @@ const App = () => {
     handleFavorite,
     handlePlayed,
     handleTrash,
+    isSwipeFilterModalOpen,
     pageType,
     showNextViewerImage,
     showPreviousViewerImage,
+    setIsSwipeFilterModalOpen,
     undoLastAction,
     viewerState.isOpen,
   ]);
+
+  useEffect(() => {
+    resetSwipeGesture();
+  }, [currentThreadIdentifier, pageType, resetSwipeGesture]);
 
 
   const getTagsForLink = useCallback(
@@ -1156,6 +2109,239 @@ const App = () => {
     return getTagsForLink(currentThreadLink);
   }, [currentThreadLink, getTagsForLink]);
 
+  const toggleSwipeIncludeTag = useCallback(
+    (tagId: number) => {
+      const hasTag = sessionState.filterState.includeTagIds.includes(tagId);
+      const isAtLimit =
+        !hasTag &&
+        sessionState.filterState.includeTagIds.length >=
+          MAX_TAG_FILTERS_PER_GROUP;
+
+      if (isAtLimit) {
+        setErrorMessage(
+          `Для tags[] можно выбрать максимум ${MAX_TAG_FILTERS_PER_GROUP} тегов.`,
+        );
+        return;
+      }
+
+      const nextIncludeTagIds = hasTag
+        ? sessionState.filterState.includeTagIds.filter(
+            (value) => value !== tagId,
+          )
+        : [...sessionState.filterState.includeTagIds, tagId];
+
+      updateFilterState({
+        includeTagIds: nextIncludeTagIds,
+        excludeTagIds: sessionState.filterState.excludeTagIds.filter(
+          (value) => value !== tagId,
+        ),
+      });
+    },
+    [
+      sessionState.filterState.excludeTagIds,
+      sessionState.filterState.includeTagIds,
+      setErrorMessage,
+      updateFilterState,
+    ],
+  );
+
+  const toggleSwipeExcludeTag = useCallback(
+    (tagId: number) => {
+      const hasTag = sessionState.filterState.excludeTagIds.includes(tagId);
+      const isAtLimit =
+        !hasTag &&
+        sessionState.filterState.excludeTagIds.length >=
+          MAX_TAG_FILTERS_PER_GROUP;
+
+      if (isAtLimit) {
+        setErrorMessage(
+          `Для notags[] можно выбрать максимум ${MAX_TAG_FILTERS_PER_GROUP} тегов.`,
+        );
+        return;
+      }
+
+      const nextExcludeTagIds = hasTag
+        ? sessionState.filterState.excludeTagIds.filter(
+            (value) => value !== tagId,
+          )
+        : [...sessionState.filterState.excludeTagIds, tagId];
+
+      updateFilterState({
+        includeTagIds: sessionState.filterState.includeTagIds.filter(
+          (value) => value !== tagId,
+        ),
+        excludeTagIds: nextExcludeTagIds,
+      });
+    },
+    [
+      sessionState.filterState.excludeTagIds,
+      sessionState.filterState.includeTagIds,
+      setErrorMessage,
+      updateFilterState,
+    ],
+  );
+
+  const toggleSwipeIncludePrefix = useCallback(
+    (prefixId: number) => {
+      const hasPrefix = sessionState.filterState.includePrefixIds.includes(prefixId);
+      const nextIncludePrefixIds = hasPrefix
+        ? sessionState.filterState.includePrefixIds.filter(
+            (value) => value !== prefixId,
+          )
+        : [...sessionState.filterState.includePrefixIds, prefixId];
+
+      updateFilterState({
+        includePrefixIds: nextIncludePrefixIds,
+        excludePrefixIds: sessionState.filterState.excludePrefixIds.filter(
+          (value) => value !== prefixId,
+        ),
+      });
+    },
+    [
+      sessionState.filterState.excludePrefixIds,
+      sessionState.filterState.includePrefixIds,
+      updateFilterState,
+    ],
+  );
+
+  const toggleSwipeExcludePrefix = useCallback(
+    (prefixId: number) => {
+      const hasPrefix = sessionState.filterState.excludePrefixIds.includes(prefixId);
+      const nextExcludePrefixIds = hasPrefix
+        ? sessionState.filterState.excludePrefixIds.filter(
+            (value) => value !== prefixId,
+          )
+        : [...sessionState.filterState.excludePrefixIds, prefixId];
+
+      updateFilterState({
+        includePrefixIds: sessionState.filterState.includePrefixIds.filter(
+          (value) => value !== prefixId,
+        ),
+        excludePrefixIds: nextExcludePrefixIds,
+      });
+    },
+    [
+      sessionState.filterState.excludePrefixIds,
+      sessionState.filterState.includePrefixIds,
+      updateFilterState,
+    ],
+  );
+
+  const clearSwipeTagFilters = useCallback(() => {
+    updateFilterState({
+      includeTagIds: [],
+      excludeTagIds: [],
+      includePrefixIds: [],
+      excludePrefixIds: [],
+    });
+  }, [updateFilterState]);
+
+  const currentThreadFactPills = useMemo(() => {
+    if (!currentThreadItem) {
+      return [];
+    }
+
+    return [
+      { label: "Рейтинг", value: String(currentThreadItem.rating ?? 0) },
+      { label: "Лайки", value: formatCompactNumber(currentThreadItem.likes) },
+      { label: "Просмотры", value: formatCompactNumber(currentThreadItem.views) },
+      { label: "Дата", value: formatThreadDateLabel(currentThreadItem.date) },
+    ];
+  }, [currentThreadItem]);
+
+  const currentThreadStateBadges = useMemo(() => {
+    if (!currentThreadItem) {
+      return [];
+    }
+
+    return [
+      currentThreadItem.new ? "New" : null,
+      currentThreadItem.watched ? "Watched" : null,
+      currentThreadItem.ignored ? "Ignored" : null,
+    ].filter((value): value is string => Boolean(value));
+  }, [currentThreadItem]);
+
+  const getSwipeTagLabel = useCallback(
+    (tagId: number) => tagsMap[String(tagId)] ?? `#${tagId}`,
+    [tagsMap],
+  );
+
+  const getSwipePrefixLabel = useCallback(
+    (prefixId: number) => prefixesMap[String(prefixId)] ?? `#${prefixId}`,
+    [prefixesMap],
+  );
+
+  const currentThreadPrefixLabels = useMemo(() => {
+    if (!currentThreadItem || !Array.isArray(currentThreadItem.prefixes)) {
+      return [];
+    }
+
+    return Array.from(
+      new Set(
+        currentThreadItem.prefixes.filter(
+          (prefixId): prefixId is number =>
+            typeof prefixId === "number" &&
+            typeof prefixesMap[String(prefixId)] === "string",
+        ),
+      ),
+    ).map((prefixId) => getSwipePrefixLabel(prefixId));
+  }, [currentThreadItem, getSwipePrefixLabel, prefixesMap]);
+
+  const currentThreadPrimaryMeta = useMemo(() => {
+    if (!currentThreadItem) {
+      return [];
+    }
+
+    return [
+      currentThreadItem.creator,
+      `v${currentThreadItem.version || "?"}`,
+      currentThreadPrefixLabels.length > 0
+        ? currentThreadPrefixLabels.join(", ")
+        : null,
+    ].filter((value): value is string => Boolean(value));
+  }, [currentThreadItem, currentThreadPrefixLabels]);
+
+  const currentThreadPreviewScreens = useMemo(() => {
+    if (!currentThreadItem) {
+      return [];
+    }
+
+    return currentThreadItem.screens;
+  }, [currentThreadItem]);
+
+  const swipeHudAction = useMemo(() => {
+    return getSwipeActionCopy(
+      resolveSwipeActionFromOffset(
+        swipeGestureState.offsetX,
+        swipeGestureState.offsetY,
+      ),
+    );
+  }, [swipeGestureState.offsetX, swipeGestureState.offsetY]);
+
+  const swipeCardStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!currentThreadItem) {
+      return undefined;
+    }
+
+    const tilt = clamp(
+      swipeGestureState.offsetX / 26,
+      -SWIPE_MAX_TILT_DEG,
+      SWIPE_MAX_TILT_DEG,
+    );
+
+    return {
+      transform: `translate3d(${swipeGestureState.offsetX}px, ${swipeGestureState.offsetY}px, 0) rotate(${tilt}deg)`,
+      transition: swipeGestureState.isDragging
+        ? "none"
+        : "transform 180ms ease, box-shadow 180ms ease",
+    };
+  }, [
+    currentThreadItem,
+    swipeGestureState.isDragging,
+    swipeGestureState.offsetX,
+    swipeGestureState.offsetY,
+  ]);
+
   const dashboardTotalCount =
     sessionState.favoritesLinks.length +
     sessionState.trashLinks.length +
@@ -1182,6 +2368,34 @@ const App = () => {
 
     return "Не удалось проверить обновления. Похоже, F95 не принял текущие куки. Обнови их во вкладке Куки.";
   }, [metadataSyncState.error]);
+
+  const currentDefaultSwipeSettings = useMemo(
+    () =>
+      normalizeDefaultSwipeSettings({
+        latestGamesSort: defaultLatestGamesSort,
+        filterState: defaultFilterState,
+      }),
+    [defaultFilterState, defaultLatestGamesSort],
+  );
+
+  const bundledDefaultFiltersStatus = useMemo(() => {
+    if (isBundledDefaultSwipeSettingsChecking) {
+      return "checking" as const;
+    }
+
+    if (!bundledDefaultSwipeSettings) {
+      return "unavailable" as const;
+    }
+
+    return serializeDefaultSwipeSettings(currentDefaultSwipeSettings) ===
+      serializeDefaultSwipeSettings(bundledDefaultSwipeSettings)
+      ? ("loaded" as const)
+      : ("not_loaded" as const);
+  }, [
+    bundledDefaultSwipeSettings,
+    currentDefaultSwipeSettings,
+    isBundledDefaultSwipeSettingsChecking,
+  ]);
 
   const handleManualMetadataSync = useCallback(() => {
     const pageLimit = Math.max(
@@ -1238,6 +2452,61 @@ const App = () => {
     }
   }, [clearDashboardLists]);
 
+  const handleConfirmResetLocalSettings = useCallback(() => {
+    const shouldReset = window.confirm(
+      "Сбросить локальные настройки? Это вернет дефолтные фильтры, очистит tags/prefixes map, сбросит настройки хостов и локально сохраненные куки proxy.",
+    );
+    if (!shouldReset) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        setErrorMessage(null);
+        saveDefaultSwipeSettings(undefined);
+        saveTagsMap({});
+        savePrefixesMap({});
+        resetPreferredDownloadHosts();
+        clearDisabledDownloadHosts();
+        clearHiddenDownloadHosts();
+        await clearCookieProxyInput();
+        window.location.reload();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Не удалось сбросить настройки",
+        );
+      }
+    })();
+  }, [setErrorMessage]);
+
+  const handleConfirmClearAllLocalData = useCallback(() => {
+    const shouldClear = window.confirm(
+      "Очистить все локальные данные? Это удалит списки, фильтры, карты tags/prefixes, настройки хостов, локальные куки proxy и кэш. Папка игр launcher'а не будет затронута.",
+    );
+    if (!shouldClear) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        setErrorMessage(null);
+        clearAllStoredData();
+        clearAllCachedThreadDownloads();
+        resetPreferredDownloadHosts();
+        clearDisabledDownloadHosts();
+        clearHiddenDownloadHosts();
+        await clearCookieProxyInput();
+        window.location.reload();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Не удалось очистить локальные данные",
+        );
+      }
+    })();
+  }, [setErrorMessage]);
+
   const knownDownloadHosts = useMemo(() => {
     return sortDownloadHostsByPreference(
       loadKnownDownloadHosts(),
@@ -1250,111 +2519,280 @@ const App = () => {
     downloadModalState.downloadsData,
   ]);
 
-  const swipeView = (
-    <div className="mainGrid">
-      <div className="panel">
-        <h3 className="panelTitle">Фильтры</h3>
+  const openCurrentThreadPage = useCallback(() => {
+    if (currentThreadLink) {
+      openLinkInNewTab(currentThreadLink);
+    }
+  }, [currentThreadLink]);
 
-        <div className="swipeSessionBlock">
-          <div className="label">Сессия свайпа</div>
-          <div className="swipeSessionRow">
-            {swipeProgressPills.map((pill) => (
-              <span key={pill.label} className="pill">
-                {pill.label}: <strong>{pill.value}</strong>
+  const renderSwipeFilterOptionGroup = (
+    title: string,
+    fieldName: string,
+    options: SwipeFilterOption[],
+    selectedIds: number[],
+    onToggle: (id: number) => void,
+    variant: "include" | "exclude",
+    countMeta?: string,
+  ) => {
+    return (
+      <div className="swipeFilterModalGroup">
+        <div className="swipeFilterModalGroupHeader">
+          <div>
+            <div className="swipeFilterModalGroupTitle">{title}</div>
+            <div className="swipeFilterModalGroupField">{fieldName}</div>
+          </div>
+          <div className="swipeFilterModalGroupMeta">
+            {countMeta ?? `Выбрано: ${selectedIds.length}`}
+          </div>
+        </div>
+
+        <div className="tagFilterChips swipeFilterModalChipGrid">
+          {options.length > 0 ? (
+            options.map((option) => {
+              const isActive = selectedIds.includes(option.id);
+              const activeClassName = isActive
+                ? variant === "exclude"
+                  ? "tagFilterChipExcludeActive"
+                  : "tagFilterChipActive"
+                : "";
+
+              return (
+                <button
+                  key={`${title}-${option.id}`}
+                  type="button"
+                  className={`tagFilterChip ${activeClassName}`}
+                  onClick={() => onToggle(option.id)}
+                >
+                  {option.label}
+                </button>
+              );
+            })
+          ) : (
+            <span className="smallText">Ничего не найдено</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const swipeMetaContent = currentThreadItem ? (
+    <div className="swipeMetaBody">
+      <div className="cardFactRow">
+        {currentThreadFactPills.map((fact) => (
+          <span key={fact.label} className="cardFactPill">
+            {fact.label}: <strong>{fact.value}</strong>
+          </span>
+        ))}
+      </div>
+
+      {currentThreadStateBadges.length > 0 ? (
+        <div className="cardStateBadgeRow">
+          {currentThreadStateBadges.map((badge) => (
+            <span key={badge} className="cardStateBadge">
+              {badge}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {currentThreadPrefixLabels.length > 0 ? (
+        <div className="swipeMetaGroup">
+          <div className="swipeMetaGroupLabel">Движок</div>
+          <div className="tagChips">
+            {currentThreadPrefixLabels.map((prefixLabel) => (
+              <span key={prefixLabel} className="tagChip">
+                {prefixLabel}
               </span>
             ))}
           </div>
-          <div className="swipeSessionActions">
-            <button
-              className="button"
-              type="button"
-              onClick={undoLastAction}
-              disabled={!canUndo}
-            >
-              Undo
-            </button>
+        </div>
+      ) : null}
+
+      {currentThreadTags.length > 0 ? (
+        <div className="swipeMetaGroup">
+          <div className="swipeMetaGroupLabel">Теги</div>
+          <TagChips
+            tags={currentThreadTags}
+            tagsMap={tagsMap}
+            maxVisible={12}
+          />
+        </div>
+      ) : null}
+
+      {currentThreadLink ? (
+        <div className="swipeMetaLink">{currentThreadLink}</div>
+      ) : null}
+    </div>
+  ) : null;
+
+  const swipeView = (
+    <div className="swipeScreen">
+      <div className="swipeSidebar swipeFiltersPanel">
+        <div className="swipeSidebarContent">
+          <div className="panel swipeSidebarSectionPanel">
+            <div className="sectionTitleRow">
+              <div className="sectionTitle">Инфо</div>
+            </div>
+
+            <div className="swipeSidebarPills">
+              {swipeProgressPills.map((pill) => (
+                <span key={pill.label} className="pill">
+                  {pill.label}: <strong>{pill.value}</strong>
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="formRow">
-          <div className="label">Поиск по title/creator</div>
-          <input
-            className="input"
-            value={sessionState.filterState.searchText}
-            onChange={(event) =>
-              updateFilterState({ searchText: event.target.value })
-            }
-            placeholder="например: team18"
-          />
-        </div>
+          <div className="panel swipeSidebarSectionPanel swipeFilterSection">
+            <div className="sectionTitleRow">
+              <div className="sectionTitle">Поиск и фильтры</div>
+              <button className="button" type="button" onClick={resetFilterState}>
+                Сбросить
+              </button>
+            </div>
 
-        <div className="formRow">
-          <div className="label">Минимальный рейтинг</div>
-          <input
-            className="input"
-            type="number"
-            min={0}
-            step={0.1}
-            value={sessionState.filterState.minimumRating}
-            onChange={(event) =>
-              updateFilterState({ minimumRating: Number(event.target.value) })
-            }
-          />
-        </div>
+            <div className="formRow" style={{ marginBottom: 0 }}>
+              <div className="label">Поиск по title/creator</div>
+              <input
+                className="input"
+                value={sessionState.filterState.searchText}
+                onChange={(event) =>
+                  updateFilterState({ searchText: event.target.value })
+                }
+                placeholder="например: team18"
+              />
+            </div>
 
-        <label className="checkboxRow">
-          <input
-            type="checkbox"
-            checked={sessionState.filterState.onlyNew}
-            onChange={(event) =>
-              updateFilterState({ onlyNew: event.target.checked })
-            }
-          />
-          Только new=true
-        </label>
+            <div className="formRow" style={{ marginBottom: 0 }}>
+              <div className="label">Сортировка</div>
+              <select
+                className="input"
+                value={sessionState.latestGamesSort}
+                onChange={(event) =>
+                  setLatestGamesSort(
+                    event.target.value === "views" ? "views" : "date",
+                  )
+                }
+              >
+                {SWIPE_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <label className="checkboxRow">
-          <input
-            type="checkbox"
-            checked={sessionState.filterState.hideWatched}
-            onChange={(event) =>
-              updateFilterState({ hideWatched: event.target.checked })
-            }
-          />
-          Скрыть watched=true
-        </label>
+            <div className="sectionTitleRow">
+              <div className="sectionTitle">Фильтры</div>
+              <div className="sectionMeta">Выбрано: {selectedSwipeFilterCount}</div>
+            </div>
 
-        <label className="checkboxRow">
-          <input
-            type="checkbox"
-            checked={sessionState.filterState.hideIgnored}
-            onChange={(event) =>
-              updateFilterState({ hideIgnored: event.target.checked })
-            }
-          />
-          Скрыть ignored=true
-        </label>
+            <div className="swipeFilterTriggerRow">
+              <button
+                className="button buttonPrimary"
+                type="button"
+                onClick={() => setIsSwipeFilterModalOpen(true)}
+              >
+                Открыть фильтры
+              </button>
 
-        <div
-          style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}
-        >
-          <button className="button" onClick={resetFilterState}>
-            Сбросить фильтры
-          </button>
-        </div>
+              {hasActiveSwipeFilterSelections ? (
+                <button
+                  className="button"
+                  type="button"
+                  onClick={clearSwipeTagFilters}
+                >
+                  Очистить
+                </button>
+              ) : null}
+            </div>
 
-        <div className="smallText" style={{ marginTop: 12 }}>
-          Хоткеи: Left - мусор, Up - играл, Right - закладки, Enter - открыть,
-          Backspace/Z - undo
-        </div>
+            {hasActiveSwipeFilterSelections ? (
+              <div className="swipeTagSelectionSummary">
+                {sessionState.filterState.includePrefixIds.length > 0 ? (
+                  <div className="swipeTagSelectionGroup">
+                    <div className="swipeTagSelectionLabel">prefixes[]</div>
+                    <div className="tagFilterChips">
+                      {sessionState.filterState.includePrefixIds.map((prefixId) => (
+                        <button
+                          key={`selected-prefix-include-${prefixId}`}
+                          type="button"
+                          className="tagFilterChip tagFilterChipActive"
+                          onClick={() => toggleSwipeIncludePrefix(prefixId)}
+                        >
+                          {getSwipePrefixLabel(prefixId)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
-        <div className="smallText" style={{ marginTop: 8 }}>
-          Просмотр скринов: клик по скрину - fullscreen, Esc - закрыть,
-          Left/Right - перелистывание
+                {sessionState.filterState.excludePrefixIds.length > 0 ? (
+                  <div className="swipeTagSelectionGroup">
+                    <div className="swipeTagSelectionLabel">noprefixes[]</div>
+                    <div className="tagFilterChips">
+                      {sessionState.filterState.excludePrefixIds.map((prefixId) => (
+                        <button
+                          key={`selected-prefix-exclude-${prefixId}`}
+                          type="button"
+                          className="tagFilterChip tagFilterChipExcludeActive"
+                          onClick={() => toggleSwipeExcludePrefix(prefixId)}
+                        >
+                          {getSwipePrefixLabel(prefixId)}
+                        </button>
+                      ))} 
+                    </div>
+                  </div>
+                ) : null}
+
+                {sessionState.filterState.includeTagIds.length > 0 ? (
+                  <div className="swipeTagSelectionGroup">
+                    <div className="swipeTagSelectionLabel">
+                      tags[] {sessionState.filterState.includeTagIds.length}/
+                      {MAX_TAG_FILTERS_PER_GROUP}
+                    </div>
+                    <div className="tagFilterChips">
+                      {sessionState.filterState.includeTagIds.map((tagId) => (
+                        <button
+                          key={`selected-include-${tagId}`}
+                          type="button"
+                          className="tagFilterChip tagFilterChipActive"
+                          onClick={() => toggleSwipeIncludeTag(tagId)}
+                        >
+                          {getSwipeTagLabel(tagId)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {sessionState.filterState.excludeTagIds.length > 0 ? (
+                  <div className="swipeTagSelectionGroup">
+                    <div className="swipeTagSelectionLabel">
+                      notags[] {sessionState.filterState.excludeTagIds.length}/
+                      {MAX_TAG_FILTERS_PER_GROUP}
+                    </div>
+                    <div className="tagFilterChips">
+                      {sessionState.filterState.excludeTagIds.map((tagId) => (
+                        <button
+                          key={`selected-exclude-${tagId}`}
+                          type="button"
+                          className="tagFilterChip tagFilterChipExcludeActive"
+                          onClick={() => toggleSwipeExcludeTag(tagId)}
+                        >
+                          {getSwipeTagLabel(tagId)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="cardArea">
+      <div className="swipeCenterColumn">
         {!currentThreadItem ? (
           <div className="statusBox">
             <div style={{ fontWeight: 900, fontSize: 20 }}>
@@ -1366,151 +2804,166 @@ const App = () => {
             </div>
           </div>
         ) : (
-          <div className="card">
-            <div className="cardHeader">
-              <div className="cardTitle">{currentThreadItem.title}</div>
-              <div className="cardSubtitle">
-                <div>Creator: {currentThreadItem.creator}</div>
-                <div>Version: {currentThreadItem.version}</div>
-                <div>Rating: {currentThreadItem.rating ?? 0}</div>
-                <div>New: {String(Boolean(currentThreadItem.new))}</div>
+          <div className="cardDeck swipeCardDeck">
+            <div
+              className={`card cardCurrent swipeFocusCard ${
+                swipeGestureState.isDragging ? "cardCurrentDragging" : ""
+              }`}
+              data-swipe-action={swipeHudAction?.className ?? ""}
+              style={swipeCardStyle}
+            >
+              <div className="swipeFocusCardHeader" data-no-swipe="true">
+                <div className="swipeFocusCardTitleBlock">
+                  <div className="swipeFocusCardTitle">{currentThreadItem.title}</div>
+                  <div className="swipeFocusCardSubtitle">
+                    {currentThreadPrimaryMeta.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <TagChips tags={currentThreadTags} tagsMap={tagsMap} />
 
-              <div className="cardLinkRow">
-                <div className="cardLink">{currentThreadLink}</div>
-                <button
-                  className="button buttonPrimary"
-                  type="button"
-                  onClick={openCurrentBestDownload}
-                  disabled={
-                    !currentThreadLink || isLauncherGameBusy(currentLauncherGame)
-                  }
-                >
-                  {getLauncherPrimaryActionLabel(
-                    isLauncherAvailable,
-                    currentLauncherGame,
-                  )}
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  onClick={openCurrentThreadDownloads}
-                  disabled={!currentThreadLink}
-                >
-                  Загрузки
-                </button>
-                {isLauncherAvailable && currentThreadLink && currentLauncherGame ? (
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => {
-                      void revealGame(currentThreadLink).catch((error) => {
-                        setErrorMessage(
-                          error instanceof Error
-                            ? error.message
-                            : "Не удалось открыть папку игры",
-                        );
-                      });
-                    }}
-                    disabled={currentLauncherGame.status !== "installed"}
+              <div className="swipeFocusCardBody">
+                <div className="swipeHeroPanel" data-no-swipe="true">
+                  <div className="swipeMediaSectionLabel">Лого</div>
+                  <div
+                    className="cardGestureSurface swipeCoverGestureSurface"
+                    onPointerDown={handleSwipePointerDown}
+                    onPointerMove={handleSwipePointerMove}
+                    onPointerUp={handleSwipePointerUp}
+                    onPointerCancel={handleSwipePointerCancel}
                   >
-                    Папка
-                  </button>
-                ) : null}
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() =>
-                    currentThreadLink && openLinkInNewTab(currentThreadLink)
-                  }
-                  disabled={!currentThreadLink}
-                >
-                  Открыть (Enter)
-                </button>
-              </div>
-              {currentLauncherGame ? (
-                <div className="smallText" style={{ marginTop: 8 }}>
-                  {getLauncherStatusText(currentLauncherGame)}
+                    <div className="coverImageBack swipeHeroCover">
+                      {currentThreadItem.cover ? (
+                        <img
+                          className="coverImage swipeHeroImage"
+                          src={currentThreadItem.cover}
+                          alt="cover"
+                          loading="eager"
+                          onClick={() =>
+                            openViewer(
+                              [currentThreadItem.cover, ...currentThreadItem.screens],
+                              0,
+                            )
+                          }
+                        />
+                      ) : (
+                        <div className="coverImageFallback">Нет обложки</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="swipeHeroMeta">
+                    <button
+                      className="button buttonPrimary swipeOpenThreadButton"
+                      type="button"
+                      onClick={openCurrentThreadPage}
+                      disabled={!currentThreadLink}
+                    >
+                      Открыть страницу
+                    </button>
+
+                    {swipeMetaContent}
+                  </div>
                 </div>
-              ) : isLauncherAvailable && libraryRootPath ? (
-                <div className="smallText" style={{ marginTop: 8 }}>
-                  Локальная библиотека: {libraryRootPath}
-                </div>
-              ) : null}
-            </div>
 
-            <div className="coverImageBack">
-              <img
-                className="coverImage"
-                src={currentThreadItem.cover}
-                alt="cover"
-                loading="eager"
-                onClick={() =>
-                  openViewer(
-                    [currentThreadItem.cover, ...currentThreadItem.screens],
-                    0,
-                  )
-                }
-              />
-            </div>
+                <div className="swipeScreensPanel" data-no-swipe="true">
+                  <div className="swipeScreensPanelHeader">
+                    <div className="swipeMediaSectionLabel">Скриншоты</div>
+                    <div className="swipeScreensPanelMeta">
+                      {currentThreadPreviewScreens.length}
+                    </div>
+                  </div>
 
-            <div className="screensSection">
-              <div className="screensHeaderRow">
-                <div className="screensHeaderTitle">Screens</div>
-                <div className="screensHeaderMeta">
-                  {currentThreadItem.screens.length} шт. (клик - fullscreen)
+                  {currentThreadPreviewScreens.length > 0 ? (
+                    <div className="swipeCompactScreens">
+                      {currentThreadPreviewScreens.map((screenUrl, index) => (
+                        <button
+                          key={screenUrl}
+                          type="button"
+                          className="swipeScreenTile"
+                          onClick={() => openViewer(currentThreadItem.screens, index)}
+                        >
+                          <img
+                            className="screenImage swipeCompactScreenImage"
+                            src={screenUrl}
+                            alt="screen"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="swipeScreensEmpty">Нет скриншотов</div>
+                  )}
                 </div>
               </div>
-
-              <div className="screensGrid">
-                {currentThreadItem.screens.map((screenUrl, index) => (
-                  <img
-                    key={screenUrl}
-                    className="screenImage"
-                    src={screenUrl}
-                    alt="screen"
-                    loading="lazy"
-                    onClick={() => openViewer(currentThreadItem.screens, index)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="cardActions">
-              <button
-                className="button swipeActionButton swipeActionTrash cardActionTrash"
-                onClick={handleTrash}
-              >
-                <span className="swipeActionIcon" aria-hidden>
-                  🗑
-                </span>
-                <span className="swipeActionLabel">В мусор</span>
-                <span className="swipeActionHint">Left</span>
-              </button>
-              <button
-                className="button swipeActionButton swipeActionPlayed cardActionPlayed"
-                onClick={handlePlayed}
-              >
-                <span className="swipeActionIcon" aria-hidden>
-                  🎮
-                </span>
-                <span className="swipeActionLabel">Играл</span>
-                <span className="swipeActionHint">↑</span>
-              </button>
-              <button
-                className="button swipeActionButton swipeActionFavorite cardActionFavorite"
-                onClick={handleFavorite}
-              >
-                <span className="swipeActionIcon" aria-hidden>
-                  ★
-                </span>
-                <span className="swipeActionLabel">В закладки</span>
-                <span className="swipeActionHint">Right</span>
-              </button>
             </div>
           </div>
         )}
+      </div>
+
+      <div className="panel swipeActionSidebar">
+        <button
+          className={`button swipeSideActionButton swipeActionTrash ${
+            swipeHudAction?.className === "trash"
+              ? "swipeSideActionButtonActive"
+              : ""
+          }`}
+          type="button"
+          onClick={handleTrash}
+          disabled={!currentThreadItem}
+        >
+          <span className="swipeActionIcon" aria-hidden>
+            🗑
+          </span>
+          <span className="swipeActionLabel">В мусор</span>
+          <span className="swipeActionHint">Left</span>
+        </button>
+        <button
+          className={`button swipeSideActionButton swipeActionPlayed ${
+            swipeHudAction?.className === "played"
+              ? "swipeSideActionButtonActive"
+              : ""
+          }`}
+          type="button"
+          onClick={handlePlayed}
+          disabled={!currentThreadItem}
+        >
+          <span className="swipeActionIcon" aria-hidden>
+            🎮
+          </span>
+          <span className="swipeActionLabel">Играл</span>
+          <span className="swipeActionHint">Up</span>
+        </button>
+        <button
+          className={`button swipeSideActionButton swipeActionFavorite ${
+            swipeHudAction?.className === "favorite"
+              ? "swipeSideActionButtonActive"
+              : ""
+          }`}
+          type="button"
+          onClick={handleFavorite}
+          disabled={!currentThreadItem}
+        >
+          <span className="swipeActionIcon" aria-hidden>
+            ★
+          </span>
+          <span className="swipeActionLabel">В закладки</span>
+          <span className="swipeActionHint">Right</span>
+        </button>
+        <button
+          className="button swipeSideActionButton swipeActionUndo"
+          type="button"
+          onClick={undoLastAction}
+          disabled={!canUndo}
+        >
+          <span className="swipeActionIcon" aria-hidden>
+            ↶
+          </span>
+          <span className="swipeActionLabel">Назад</span>
+          <span className="swipeActionHint">Backspace / Z</span>
+        </button>
       </div>
     </div>
   );
@@ -1563,7 +3016,10 @@ const App = () => {
         isLauncherAvailable={isLauncherAvailable}
         launcherGamesByThreadLink={launcherGamesByThreadLink}
         openBestDownloadForThread={openBestDownloadForThread}
+        onOpenThread={openLinkInNewTab}
+        onOpenImageViewer={openViewer}
         tagsMap={tagsMap}
+        prefixesMap={prefixesMap}
         onRevealInstalledGame={(threadLink) => {
           void revealGame(threadLink).catch((error) => {
             setErrorMessage(
@@ -1593,8 +3049,23 @@ const App = () => {
       hiddenDownloadHosts={hiddenDownloadHosts}
       knownDownloadHosts={knownDownloadHosts}
       tagsCount={Object.keys(tagsMap).length}
+      prefixesCount={Object.keys(prefixesMap).length}
       metadataSyncState={metadataSyncState}
+      bundledDefaultFiltersStatus={bundledDefaultFiltersStatus}
+      currentFilterState={sessionState.filterState}
+      defaultFilterState={defaultFilterState}
+      defaultLatestGamesSort={defaultLatestGamesSort}
+      tagsMap={tagsMap}
+      prefixesMap={prefixesMap}
       onStartMetadataSync={handleManualMetadataSync}
+      onUpdateDefaultFilterState={updateDefaultFilterState}
+      onUpdateDefaultLatestGamesSort={updateDefaultLatestGamesSort}
+      onResetDefaultFilterState={resetDefaultFilterState}
+      onImportBundledDefaultFilterState={() => {
+        void handleImportBundledDefaultFilterState();
+      }}
+      onSaveCurrentFiltersAsDefault={saveCurrentFilterStateAsDefault}
+      onApplyDefaultFiltersToSwipe={applyDefaultFilterStateToSwipe}
       onMoveDownloadHost={handleMoveDownloadHost}
       onDisableDownloadHostTemporarily={handleDisableDownloadHostTemporarily}
       onEnableDownloadHost={handleEnableDownloadHost}
@@ -1609,16 +3080,46 @@ const App = () => {
       onImportTagsMapChange={() => {
         void handleImportTagsMapChange();
       }}
-      onExportSessionState={handleExportSessionState}
-      onOpenImportSessionState={() => importSessionStateInputRef.current?.click()}
-      onImportSessionStateChange={handleImportSessionStateChange}
+      onImportBundledPrefixesMap={() => {
+        void handleImportBundledPrefixesMap();
+      }}
+      onOpenImportPrefixesMap={() => importPrefixesMapInputRef.current?.click()}
+      onImportPrefixesMapChange={() => {
+        void handleImportPrefixesMapChange();
+      }}
+      onExportAllBackup={() => {
+        void handleExportAllBackup();
+      }}
+      onExportSettingsBackup={() => {
+        void handleExportSettingsBackup();
+      }}
+      onExportListsBackup={handleExportListsBackup}
+      onOpenImportAllBackup={() => importAllBackupInputRef.current?.click()}
+      onImportAllBackupChange={() => {
+        void handleImportAllBackupChange();
+      }}
+      onOpenImportSettingsBackup={() =>
+        importSettingsBackupInputRef.current?.click()
+      }
+      onImportSettingsBackupChange={() => {
+        void handleImportSettingsBackupChange();
+      }}
+      onOpenImportListsBackup={() => importListsBackupInputRef.current?.click()}
+      onImportListsBackupChange={() => {
+        void handleImportListsBackupChange();
+      }}
       onOpenGameFolders={handleOpenGameFolders}
       onClearGameFolders={handleClearGameFolders}
+      onClearAllLocalData={handleConfirmClearAllLocalData}
+      onResetLocalSettings={handleConfirmResetLocalSettings}
       onClearDashboardLists={handleConfirmClearDashboardLists}
       isLauncherAvailable={isLauncherAvailable}
       libraryRootPath={libraryRootPath}
-      importSessionStateInputRef={importSessionStateInputRef}
+      importAllBackupInputRef={importAllBackupInputRef}
+      importSettingsBackupInputRef={importSettingsBackupInputRef}
+      importListsBackupInputRef={importListsBackupInputRef}
       importTagsMapInputRef={importTagsMapInputRef}
+      importPrefixesMapInputRef={importPrefixesMapInputRef}
       requestedTab={requestedSettingsTab}
     />
   );
@@ -1682,6 +3183,131 @@ const App = () => {
       </div>
 
       {pageView}
+
+      {isSwipeFilterModalOpen ? (
+        <div
+          className="swipeFilterModalOverlay"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) {
+              setIsSwipeFilterModalOpen(false);
+            }
+          }}
+        >
+          <div className="swipeFilterModal">
+            <div className="swipeFilterModalTopBar">
+              <div className="swipeFilterModalIntro">
+                <div className="swipeFilterModalTitle">Фильтры свайпа</div>
+                <div className="swipeFilterModalMeta">
+                  `prefixes[]` и `noprefixes[]` без лимита. `tags[]` и `notags[]`
+                  до {MAX_TAG_FILTERS_PER_GROUP}.
+                </div>
+              </div>
+
+              <div className="swipeFilterModalActions">
+                <button
+                  className="button"
+                  type="button"
+                  onClick={clearSwipeTagFilters}
+                >
+                  Очистить
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => setIsSwipeFilterModalOpen(false)}
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+
+            <div className="swipeFilterModalBody">
+              <div className="swipeFilterModalSection">
+                <div className="swipeFilterModalSectionHeader">
+                  <div className="swipeFilterModalSectionTitle">Префиксы</div>
+                  <div className="swipeFilterModalSectionMeta">
+                    Выбрано: {selectedSwipePrefixCount}
+                  </div>
+                </div>
+
+                <div className="formRow" style={{ marginBottom: 0 }}>
+                  <div className="label">Поиск по префиксам</div>
+                  <input
+                    className="input"
+                    value={swipePrefixSearchText}
+                    onChange={(event) =>
+                      setSwipePrefixSearchText(event.target.value)
+                    }
+                    placeholder="например: ren'py, unity"
+                  />
+                </div>
+
+                <div className="swipeFilterModalGroupGrid">
+                  {renderSwipeFilterOptionGroup(
+                    "Включить",
+                    "prefixes[]",
+                    filteredSwipePrefixOptions,
+                    sessionState.filterState.includePrefixIds,
+                    toggleSwipeIncludePrefix,
+                    "include",
+                  )}
+                  {renderSwipeFilterOptionGroup(
+                    "Выключить",
+                    "noprefixes[]",
+                    filteredSwipePrefixOptions,
+                    sessionState.filterState.excludePrefixIds,
+                    toggleSwipeExcludePrefix,
+                    "exclude",
+                  )}
+                </div>
+              </div>
+
+              <div className="swipeFilterModalSection">
+                <div className="swipeFilterModalSectionHeader">
+                  <div className="swipeFilterModalSectionTitle">Теги</div>
+                  <div className="swipeFilterModalSectionMeta">
+                    Включить: {sessionState.filterState.includeTagIds.length}/
+                    {MAX_TAG_FILTERS_PER_GROUP} • Выключить:{" "}
+                    {sessionState.filterState.excludeTagIds.length}/
+                    {MAX_TAG_FILTERS_PER_GROUP}
+                  </div>
+                </div>
+
+                <div className="formRow" style={{ marginBottom: 0 }}>
+                  <div className="label">Поиск по тегам</div>
+                  <input
+                    className="input"
+                    value={swipeTagSearchText}
+                    onChange={(event) => setSwipeTagSearchText(event.target.value)}
+                    placeholder="например: sandbox, corruption"
+                  />
+                </div>
+
+                <div className="swipeFilterModalGroupGrid">
+                  {renderSwipeFilterOptionGroup(
+                    "Включить",
+                    "tags[]",
+                    filteredSwipeTagOptions,
+                    sessionState.filterState.includeTagIds,
+                    toggleSwipeIncludeTag,
+                    "include",
+                    `${sessionState.filterState.includeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
+                  )}
+                  {renderSwipeFilterOptionGroup(
+                    "Выключить",
+                    "notags[]",
+                    filteredSwipeTagOptions,
+                    sessionState.filterState.excludeTagIds,
+                    toggleSwipeExcludeTag,
+                    "exclude",
+                    `${sessionState.filterState.excludeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <DownloadModal
         isOpen={downloadModalState.isOpen}

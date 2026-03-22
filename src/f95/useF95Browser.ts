@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  DefaultSwipeSettings,
   F95ThreadItem,
   FilterState,
+  LatestGamesSort,
   SessionState,
   UndoSnapshot,
   ListType,
@@ -12,16 +14,21 @@ import { buildThreadLink, fetchLatestGamesPage } from './api'
 import {
   createDefaultSessionState,
   loadCachedPage,
+  loadDefaultSwipeSettings,
   loadSessionState,
   markPageAsCached,
   pruneCachedPages,
   saveCachedPage,
+  saveDefaultSwipeSettings,
   saveSessionState,
   clearAllStoredData,
   DEFAULT_FILTER_STATE,
+  loadPrefixesMap,
   loadTagsMap,
+  savePrefixesMap,
   saveTagsMap,
 } from './storage'
+import { normalizeFilterState, threadMatchesFilter } from './filtering'
 import {
   isUpdateTrackedListType,
 } from './updateTracking'
@@ -143,8 +150,6 @@ const getPlayedLinks = (state: SessionState) => {
   return state.playedLinks ?? []
 }
 
-const normalizeText = (textValue: string) => textValue.trim().toLowerCase()
-
 const isProcessedItemMissingMetadata = (
   processedItem: ProcessedThreadItem | undefined,
 ) => {
@@ -193,26 +198,63 @@ const collectSyncCandidateLinks = (sessionState: SessionState) => {
   )
 }
 
-const threadMatchesFilter = (threadItem: F95ThreadItem, filterState: FilterState) => {
-  const searchText = normalizeText(filterState.searchText)
+const isThreadLinkTrackedInDashboard = (
+  sessionState: SessionState,
+  threadLink: string,
+) => {
+  return (
+    sessionState.favoritesLinks.includes(threadLink) ||
+    sessionState.trashLinks.includes(threadLink) ||
+    getPlayedLinks(sessionState).includes(threadLink)
+  )
+}
 
-  const matchesSearchText =
-    searchText.length === 0 ||
-    normalizeText(threadItem.title).includes(searchText) ||
-    normalizeText(threadItem.creator).includes(searchText)
+const sanitizeSwipeQueue = (sessionState: SessionState) => {
+  const trackedLinkSet = new Set<string>([
+    ...sessionState.favoritesLinks,
+    ...sessionState.trashLinks,
+    ...getPlayedLinks(sessionState),
+  ])
 
-  const matchesRating = (threadItem.rating ?? 0) >= (filterState.minimumRating ?? 0)
-  const matchesOnlyNew = !filterState.onlyNew || Boolean(threadItem.new)
-  const matchesHideWatched = !filterState.hideWatched || !Boolean(threadItem.watched)
-  const matchesHideIgnored = !filterState.hideIgnored || !Boolean(threadItem.ignored)
+  const nextRemainingThreadIdentifiers = sessionState.remainingThreadIdentifiers.filter(
+    (threadIdentifier) => !trackedLinkSet.has(buildThreadLink(threadIdentifier)),
+  )
 
-  return matchesSearchText && matchesRating && matchesOnlyNew && matchesHideWatched && matchesHideIgnored
+  if (
+    nextRemainingThreadIdentifiers.length ===
+    sessionState.remainingThreadIdentifiers.length
+  ) {
+    return sessionState
+  }
+
+  return {
+    ...sessionState,
+    remainingThreadIdentifiers: nextRemainingThreadIdentifiers,
+  }
+}
+
+const createSavedDefaultSwipeSettings = (
+  defaultSwipeSettings: DefaultSwipeSettings,
+): DefaultSwipeSettings => {
+  return {
+    latestGamesSort:
+      defaultSwipeSettings.latestGamesSort === 'views' ? 'views' : 'date',
+    filterState: normalizeFilterState({
+      ...DEFAULT_FILTER_STATE,
+      ...defaultSwipeSettings.filterState,
+    }),
+  }
 }
 
 const pickCurrentThreadIdentifier = (sessionState: SessionState) => {
   for (const threadIdentifier of sessionState.remainingThreadIdentifiers) {
     const threadItem = sessionState.threadItemsByIdentifier[String(threadIdentifier)]
     if (!threadItem) {
+      continue
+    }
+
+    const threadLink = buildThreadLink(threadIdentifier)
+    if (isThreadLinkTrackedInDashboard(sessionState, threadLink)) {
       continue
     }
 
@@ -274,9 +316,19 @@ const isAbortError = (unknownError: unknown) => {
 
 const useF95Browser = () => {
   const sessionStateRef = useRef<SessionState | null>(null)
+  const defaultSwipeSettingsRef = useRef<DefaultSwipeSettings>(
+    createSavedDefaultSwipeSettings(loadDefaultSwipeSettings()),
+  )
+  const [defaultSwipeSettings, setDefaultSwipeSettings] =
+    useState<DefaultSwipeSettings>(() => defaultSwipeSettingsRef.current)
+  const defaultFilterState = defaultSwipeSettings.filterState
+  const defaultLatestGamesSort = defaultSwipeSettings.latestGamesSort
   const [sessionState, setSessionState] = useState<SessionState>(() => {
     const loadedSessionState = loadSessionState()
-    const initialState = loadedSessionState ?? createDefaultSessionState()
+    const initialState = sanitizeSwipeQueue(
+      loadedSessionState ??
+        createDefaultSessionState(defaultSwipeSettingsRef.current),
+    )
     sessionStateRef.current = initialState
     return initialState
   })
@@ -285,6 +337,9 @@ const useF95Browser = () => {
   const [isLoadingPage, setIsLoadingPage] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [tagsMap, setTagsMapState] = useState<Record<string, string>>(() => loadTagsMap())
+  const [prefixesMap, setPrefixesMapState] = useState<Record<string, string>>(() =>
+    loadPrefixesMap(),
+  )
   const [metadataSyncState, setMetadataSyncState] = useState<MetadataSyncState>({
     isRunning: false,
     currentPage: 0,
@@ -304,28 +359,44 @@ const useF95Browser = () => {
   }, [currentThreadIdentifier, sessionState.threadItemsByIdentifier])
 
   const persistSessionState = useCallback((nextSessionState: SessionState) => {
-    sessionStateRef.current = nextSessionState
-    setSessionState(nextSessionState)
-    saveSessionState(nextSessionState)
+    const sanitizedSessionState = sanitizeSwipeQueue(nextSessionState)
+    sessionStateRef.current = sanitizedSessionState
+    setSessionState(sanitizedSessionState)
+    saveSessionState(sanitizedSessionState)
   }, [])
 
-  const loadPage = useCallback(async (pageNumber: number) => {
-    setErrorMessage(null)
-
-    const cachedThreadItemList = loadCachedPage(pageNumber)
-    if (cachedThreadItemList) {
-      return { threadItemList: cachedThreadItemList, totalPages: 0, pageFromResponse: pageNumber }
-    }
-
-    const abortController = new AbortController()
-
-    const result = await fetchLatestGamesPage(pageNumber, abortController.signal)
-    saveCachedPage(pageNumber, result.threadItemList)
-    markPageAsCached(pageNumber)
-    pruneCachedPages(MAX_CACHED_PAGES_COUNT)
-
-    return result
+  const persistDefaultSwipeSettings = useCallback((nextDefaultSwipeSettings: DefaultSwipeSettings) => {
+    const sanitizedDefaultSwipeSettings =
+      createSavedDefaultSwipeSettings(nextDefaultSwipeSettings)
+    defaultSwipeSettingsRef.current = sanitizedDefaultSwipeSettings
+    setDefaultSwipeSettings(sanitizedDefaultSwipeSettings)
+    saveDefaultSwipeSettings(sanitizedDefaultSwipeSettings)
   }, [])
+
+  const loadPage = useCallback(
+    async (pageNumber: number, latestGamesSort: LatestGamesSort) => {
+      setErrorMessage(null)
+
+      const cachedThreadItemList = loadCachedPage(latestGamesSort, pageNumber)
+      if (cachedThreadItemList) {
+        return { threadItemList: cachedThreadItemList, totalPages: 0, pageFromResponse: pageNumber }
+      }
+
+      const abortController = new AbortController()
+
+      const result = await fetchLatestGamesPage(
+        pageNumber,
+        abortController.signal,
+        latestGamesSort,
+      )
+      saveCachedPage(latestGamesSort, pageNumber, result.threadItemList)
+      markPageAsCached(latestGamesSort, pageNumber)
+      pruneCachedPages(latestGamesSort, MAX_CACHED_PAGES_COUNT)
+
+      return result
+    },
+    [],
+  )
 
   const ensureInitialData = useCallback(async () => {
     const hasAnyData =
@@ -338,11 +409,21 @@ const useF95Browser = () => {
     setIsLoadingPage(true)
     try {
       const startPageNumber = 1
-      const pageResult = await loadPage(startPageNumber)
+      const latestGamesSort = sessionState.latestGamesSort
+      const pageResult = await loadPage(startPageNumber, latestGamesSort)
+      const liveSessionState = sessionStateRef.current
+
+      if (
+        !liveSessionState ||
+        liveSessionState.latestGamesSort !== latestGamesSort ||
+        liveSessionState.nextPageToFetchNumber !== startPageNumber
+      ) {
+        return
+      }
 
       const nextSessionStateAfterPage = appendPageToSessionState(
         {
-          ...sessionState,
+          ...liveSessionState,
           currentPageNumber: startPageNumber,
           nextPageToFetchNumber: startPageNumber + 1,
         },
@@ -368,6 +449,10 @@ const useF95Browser = () => {
       return
     }
 
+    if (Object.keys(sessionState.threadItemsByIdentifier).length === 0) {
+      return
+    }
+
     if (sessionState.remainingThreadIdentifiers.length > PREFETCH_THRESHOLD_REMAINING_COUNT) {
       return
     }
@@ -379,11 +464,21 @@ const useF95Browser = () => {
 
     setIsLoadingPage(true)
     try {
-      const pageResult = await loadPage(nextPageNumber)
+      const latestGamesSort = sessionState.latestGamesSort
+      const pageResult = await loadPage(nextPageNumber, latestGamesSort)
+      const liveSessionState = sessionStateRef.current
+
+      if (
+        !liveSessionState ||
+        liveSessionState.latestGamesSort !== latestGamesSort ||
+        liveSessionState.nextPageToFetchNumber !== nextPageNumber
+      ) {
+        return
+      }
 
       const nextSessionStateAfterPage = appendPageToSessionState(
         {
-          ...sessionState,
+          ...liveSessionState,
           currentPageNumber: nextPageNumber,
           nextPageToFetchNumber: nextPageNumber + 1,
         },
@@ -490,17 +585,98 @@ const useF95Browser = () => {
     (partialFilterState: Partial<FilterState>) => {
       const nextSessionState: SessionState = {
         ...sessionState,
-        filterState: { ...sessionState.filterState, ...partialFilterState },
+        filterState: normalizeFilterState({
+          ...sessionState.filterState,
+          ...partialFilterState,
+        }),
       }
       persistSessionState(nextSessionState)
     },
     [persistSessionState, sessionState],
   )
 
+  const setLatestGamesSort = useCallback(
+    (latestGamesSort: LatestGamesSort) => {
+      const liveSessionState = sessionStateRef.current
+      if (
+        !liveSessionState ||
+        liveSessionState.latestGamesSort === latestGamesSort
+      ) {
+        return
+      }
+
+      setUndoSnapshot(null)
+      setErrorMessage(null)
+      persistSessionState({
+        ...liveSessionState,
+        latestGamesSort,
+        currentPageNumber: 1,
+        nextPageToFetchNumber: 1,
+        remainingThreadIdentifiers: [],
+        threadItemsByIdentifier: {},
+      })
+    },
+    [persistSessionState],
+  )
+
   const resetFilterState = useCallback(() => {
     const nextSessionState: SessionState = {
       ...sessionState,
+      latestGamesSort: defaultSwipeSettingsRef.current.latestGamesSort,
+      filterState: { ...defaultSwipeSettingsRef.current.filterState },
+    }
+    persistSessionState(nextSessionState)
+  }, [persistSessionState, sessionState])
+
+  const updateDefaultFilterState = useCallback(
+    (partialFilterState: Partial<FilterState>) => {
+      persistDefaultSwipeSettings({
+        ...defaultSwipeSettingsRef.current,
+        filterState: {
+          ...defaultSwipeSettingsRef.current.filterState,
+          ...partialFilterState,
+        },
+      })
+    },
+    [persistDefaultSwipeSettings],
+  )
+
+  const updateDefaultLatestGamesSort = useCallback(
+    (latestGamesSort: LatestGamesSort) => {
+      persistDefaultSwipeSettings({
+        ...defaultSwipeSettingsRef.current,
+        latestGamesSort,
+      })
+    },
+    [persistDefaultSwipeSettings],
+  )
+
+  const replaceDefaultSwipeSettings = useCallback(
+    (nextDefaultSwipeSettings: DefaultSwipeSettings) => {
+      persistDefaultSwipeSettings(nextDefaultSwipeSettings)
+    },
+    [persistDefaultSwipeSettings],
+  )
+
+  const resetDefaultFilterState = useCallback(() => {
+    persistDefaultSwipeSettings({
+      latestGamesSort: 'date',
       filterState: { ...DEFAULT_FILTER_STATE },
+    })
+  }, [persistDefaultSwipeSettings])
+
+  const saveCurrentFilterStateAsDefault = useCallback(() => {
+    persistDefaultSwipeSettings({
+      latestGamesSort: sessionState.latestGamesSort,
+      filterState: sessionState.filterState,
+    })
+  }, [persistDefaultSwipeSettings, sessionState.filterState, sessionState.latestGamesSort])
+
+  const applyDefaultFilterStateToSwipe = useCallback(() => {
+    const nextSessionState: SessionState = {
+      ...sessionState,
+      latestGamesSort: defaultSwipeSettingsRef.current.latestGamesSort,
+      filterState: { ...defaultSwipeSettingsRef.current.filterState },
     }
     persistSessionState(nextSessionState)
   }, [persistSessionState, sessionState])
@@ -511,6 +687,7 @@ const useF95Browser = () => {
     setErrorMessage(null)
     setIsLoadingPage(false)
     setTagsMapState({})
+    setPrefixesMapState({})
     setMetadataSyncState({
       isRunning: false,
       currentPage: 0,
@@ -519,7 +696,12 @@ const useF95Browser = () => {
       trackedCount: 0,
       error: null,
     })
-    const nextState = createDefaultSessionState()
+    const nextBuiltInDefaultSwipeSettings = createSavedDefaultSwipeSettings(
+      loadDefaultSwipeSettings(),
+    )
+    const nextState = createDefaultSessionState(nextBuiltInDefaultSwipeSettings)
+    defaultSwipeSettingsRef.current = nextBuiltInDefaultSwipeSettings
+    setDefaultSwipeSettings(nextBuiltInDefaultSwipeSettings)
     persistSessionState(nextState)
   }, [persistSessionState])
 
@@ -651,6 +833,12 @@ const useF95Browser = () => {
     saveTagsMap(normalizedMap)
   }, [])
 
+  const updatePrefixesMap = useCallback((nextMap: Record<string, string>) => {
+    const normalizedMap = { ...nextMap }
+    setPrefixesMapState(normalizedMap)
+    savePrefixesMap(normalizedMap)
+  }, [])
+
   const startMetadataSync = useCallback(
     async (requestedPageLimit: number, explicitCandidateLinkList?: string[]) => {
       const pageLimit = Math.max(1, Math.floor(requestedPageLimit))
@@ -690,7 +878,10 @@ const useF95Browser = () => {
         const activeState = sessionStateRef.current ?? currentState
 
         try {
-          const pageResult = await loadPage(pageNumber)
+          const pageResult = await loadPage(
+            pageNumber,
+            activeState.latestGamesSort,
+          )
           let nextStateAfterPage = activeState
 
           if (candidateLinkSet.size > 0 && pageResult.threadItemList.length > 0) {
@@ -824,11 +1015,22 @@ const useF95Browser = () => {
     applyActionToCurrentCard,
     undoLastAction,
     updateFilterState,
+    setLatestGamesSort,
     resetFilterState,
+    defaultFilterState,
+    defaultLatestGamesSort,
+    updateDefaultFilterState,
+    updateDefaultLatestGamesSort,
+    replaceDefaultSwipeSettings,
+    resetDefaultFilterState,
+    saveCurrentFilterStateAsDefault,
+    applyDefaultFilterStateToSwipe,
     clearAllData,
     clearDashboardLists,
     tagsMap,
+    prefixesMap,
     updateTagsMap,
+    updatePrefixesMap,
     metadataSyncState,
     startMetadataSync,
     moveLinkToList,

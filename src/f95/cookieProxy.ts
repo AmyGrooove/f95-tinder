@@ -1,5 +1,6 @@
 import {
   clearCookieInputViaLauncher,
+  getCookieBackupViaLauncher,
   getCookieStatusViaLauncher,
   saveCookieInputViaLauncher,
 } from "../launcher/runtime";
@@ -9,6 +10,12 @@ export type CookieProxyStatus = {
   source: "settings" | "env" | "none";
   cookieNames: string[];
   missingRecommendedCookieNames: string[];
+  updatedAtUnixMs: number | null;
+};
+
+export type CookieProxyBackup = {
+  source: "settings" | "env" | "none";
+  text: string | null;
   updatedAtUnixMs: number | null;
 };
 
@@ -63,6 +70,29 @@ const readErrorMessage = async (response: Response) => {
   return `Proxy error: ${response.status}`;
 };
 
+const assertCookieProxyBackup = (value: unknown): CookieProxyBackup => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Некорректный ответ proxy");
+  }
+
+  const record = value as Record<string, unknown>;
+  const sourceValue = record.source;
+  if (
+    sourceValue !== "settings" &&
+    sourceValue !== "env" &&
+    sourceValue !== "none"
+  ) {
+    throw new Error("Некорректный source у proxy");
+  }
+
+  return {
+    source: sourceValue,
+    text: typeof record.text === "string" ? record.text : null,
+    updatedAtUnixMs:
+      typeof record.updatedAtUnixMs === "number" ? record.updatedAtUnixMs : null,
+  };
+};
+
 const fetchCookieProxyStatus = async () => {
   const launcherStatus = await getCookieStatusViaLauncher();
   if (launcherStatus) {
@@ -81,6 +111,26 @@ const fetchCookieProxyStatus = async () => {
   }
 
   return assertCookieProxyStatus(await response.json());
+};
+
+const fetchCookieProxyBackup = async () => {
+  const launcherBackup = await getCookieBackupViaLauncher();
+  if (launcherBackup) {
+    return assertCookieProxyBackup(launcherBackup);
+  }
+
+  const response = await fetch(COOKIE_PROXY_UPDATE_ENDPOINT, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  return assertCookieProxyBackup(await response.json());
 };
 
 const saveCookieProxyInput = async (text: string) => {
@@ -127,6 +177,7 @@ const clearCookieProxyInput = async () => {
 
 export {
   clearCookieProxyInput,
+  fetchCookieProxyBackup,
   fetchCookieProxyStatus,
   saveCookieProxyInput,
 };

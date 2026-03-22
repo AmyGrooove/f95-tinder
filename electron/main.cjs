@@ -457,6 +457,12 @@ const buildCookieStatus = (cookieState) => {
   }
 }
 
+const buildCookieBackup = (cookieState) => ({
+  source: cookieState.source,
+  text: cookieState.source === 'settings' && cookieState.header ? cookieState.header : null,
+  updatedAtUnixMs: cookieState.updatedAtUnixMs,
+})
+
 const saveCookieInput = (text) => {
   const cookiePairList = extractCookiePairsFromInput(text)
   if (cookiePairList.length === 0) {
@@ -499,29 +505,30 @@ const createF95Headers = (acceptValue) => {
   return headers
 }
 
-const buildLatestGamesEndpointUrl = (pageNumber) => {
+const normalizeLatestGamesSort = (value) => {
+  return value === 'views' ? 'views' : 'date'
+}
+
+const buildLatestGamesEndpointUrl = (pageNumber, latestGamesSort = 'date') => {
   const searchParameters = new URLSearchParams()
 
   searchParameters.set('cmd', 'list')
   searchParameters.set('cat', 'games')
   searchParameters.set('page', String(pageNumber))
-
-  searchParameters.append('noprefixes[]', '1')
-  searchParameters.append('noprefixes[]', '4')
-  searchParameters.append('noprefixes[]', '7')
-
-  searchParameters.append('notags[]', '2265')
-  searchParameters.set('sort', 'date')
+  searchParameters.set('sort', normalizeLatestGamesSort(latestGamesSort))
   searchParameters.set('_', String(Date.now()))
 
   return `/sam/latest_alpha/latest_data.php?${searchParameters.toString()}`
 }
 
-const fetchLatestGamesPage = async (pageNumber) => {
-  const response = await fetch(new URL(buildLatestGamesEndpointUrl(pageNumber), F95_ORIGIN), {
-    method: 'GET',
-    headers: createF95Headers('application/json'),
-  })
+const fetchLatestGamesPage = async (pageNumber, latestGamesSort = 'date') => {
+  const response = await fetch(
+    new URL(buildLatestGamesEndpointUrl(pageNumber, latestGamesSort), F95_ORIGIN),
+    {
+      method: 'GET',
+      headers: createF95Headers('application/json'),
+    },
+  )
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
@@ -575,30 +582,34 @@ const fetchThreadPageHtml = async (threadLink) => {
   return response.text()
 }
 
-const resolveBundledTagsPath = () => {
+const resolveBundledLookupPath = (fileName) => {
   const candidatePathList = [
-    path.join(APP_ROOT, 'public', 'tags.json'),
-    path.join(APP_ROOT, 'dist', 'tags.json'),
-    path.join(app.getAppPath(), 'dist', 'tags.json'),
-    path.join(app.getAppPath(), 'public', 'tags.json'),
+    path.join(APP_ROOT, 'public', fileName),
+    path.join(APP_ROOT, 'dist', fileName),
+    path.join(app.getAppPath(), 'dist', fileName),
+    path.join(app.getAppPath(), 'public', fileName),
   ]
 
   return candidatePathList.find((candidatePath) => fs.existsSync(candidatePath)) ?? null
 }
 
-const loadBundledTagsMap = () => {
-  const bundledTagsPath = resolveBundledTagsPath()
-  if (!bundledTagsPath) {
-    throw new Error('Не удалось найти tags.json')
+const loadBundledLookupMap = (fileName) => {
+  const bundledLookupPath = resolveBundledLookupPath(fileName)
+  if (!bundledLookupPath) {
+    throw new Error(`Не удалось найти ${fileName}`)
   }
 
-  const parsedValue = JSON.parse(fs.readFileSync(bundledTagsPath, 'utf8'))
+  const parsedValue = JSON.parse(fs.readFileSync(bundledLookupPath, 'utf8'))
   if (!parsedValue || typeof parsedValue !== 'object' || Array.isArray(parsedValue)) {
-    throw new Error('tags.json имеет неверный формат')
+    throw new Error(`${fileName} имеет неверный формат`)
   }
 
   return parsedValue
 }
+
+const loadBundledTagsMap = () => loadBundledLookupMap('tags.json')
+
+const loadBundledPrefixesMap = () => loadBundledLookupMap('prefixes.json')
 
 const safeDestroyWindow = (targetWindow) => {
   if (!targetWindow || targetWindow.isDestroyed()) {
@@ -1723,12 +1734,16 @@ const registerIpcHandlers = () => {
   ipcMain.handle('app:loadBundledTagsMap', async () => {
     return loadBundledTagsMap()
   })
+  ipcMain.handle('app:loadBundledPrefixesMap', async () => {
+    return loadBundledPrefixesMap()
+  })
 
   ipcMain.handle('f95:getCookieStatus', async () => buildCookieStatus(runtimeCookieState))
+  ipcMain.handle('f95:getCookieBackup', async () => buildCookieBackup(runtimeCookieState))
   ipcMain.handle('f95:saveCookieInput', async (_event, text) => saveCookieInput(text))
   ipcMain.handle('f95:clearCookieInput', async () => clearCookieInput())
-  ipcMain.handle('f95:fetchLatestGamesPage', async (_event, pageNumber) =>
-    fetchLatestGamesPage(pageNumber),
+  ipcMain.handle('f95:fetchLatestGamesPage', async (_event, pageNumber, latestGamesSort) =>
+    fetchLatestGamesPage(pageNumber, latestGamesSort),
   )
   ipcMain.handle('f95:fetchThreadPageHtml', async (_event, threadLink) =>
     fetchThreadPageHtml(threadLink),

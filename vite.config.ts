@@ -208,6 +208,17 @@ const buildCookieStatus = (runtimeCookieState: RuntimeCookieState) => {
   };
 };
 
+const buildCookieBackup = (runtimeCookieState: RuntimeCookieState) => {
+  return {
+    source: runtimeCookieState.source,
+    text:
+      runtimeCookieState.source === "settings" && runtimeCookieState.header
+        ? runtimeCookieState.header
+        : null,
+    updatedAtUnixMs: runtimeCookieState.updatedAtUnixMs,
+  };
+};
+
 const sendJson = (response: NodeJS.WritableStream & { setHeader: Function; end: Function; statusCode: number }, payload: unknown) => {
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   response.end(JSON.stringify(payload));
@@ -268,6 +279,11 @@ const createF95ProxyPlugin = (envCookieHeader?: string): Plugin => {
 
       if (requestUrl === "/__f95_config/status" && request.method === "GET") {
         sendJson(response, buildCookieStatus(runtimeCookieState));
+        return;
+      }
+
+      if (requestUrl === "/__f95_config/cookie" && request.method === "GET") {
+        sendJson(response, buildCookieBackup(runtimeCookieState));
         return;
       }
 

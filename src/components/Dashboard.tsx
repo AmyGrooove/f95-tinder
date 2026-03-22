@@ -1,8 +1,14 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
-import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
+import type {
+  F95ThreadItem,
+  ListType,
+  ProcessedThreadItem,
+  SessionState,
+} from "../f95/types";
 import {
   countUpdatedTrackedItems,
+  getProcessedThreadItemUpdateLabel,
   hasProcessedThreadItemUpdate,
 } from "../f95/updateTracking";
 import {
@@ -10,6 +16,7 @@ import {
   isLauncherGameBusy,
 } from "../launcher/ui";
 import type { LauncherGameRecord } from "../launcher/types";
+import { TagChips } from "./TagChips";
 
 type DashboardCard = {
   threadLink: string;
@@ -41,7 +48,10 @@ type DashboardProps = {
       openInBackground?: boolean;
     },
   ) => void | Promise<void>;
+  onOpenThread: (threadLink: string) => void | Promise<void>;
+  onOpenImageViewer: (imageUrlList: string[], startIndex: number) => void;
   tagsMap: Record<string, string>;
+  prefixesMap: Record<string, string>;
   onRevealInstalledGame: (threadLink: string) => void | Promise<void>;
   onDeleteGameFilesForThread: (
     threadLink: string,
@@ -145,12 +155,97 @@ const formatLauncherStatus = (launcherGame: LauncherGameRecord | null) => {
   return "Ошибка";
 };
 
+const compactNumberFormatter = new Intl.NumberFormat("ru-RU", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const shortDateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const formatCompactNumber = (value: number | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "0";
+  }
+
+  return compactNumberFormatter.format(value);
+};
+
+const formatThreadDateLabel = (value: string | undefined) => {
+  if (!value) {
+    return "Не указана";
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return shortDateFormatter.format(parsedDate);
+};
+
+const formatDateTimeLabel = (unixSeconds: number | undefined) => {
+  if (
+    typeof unixSeconds !== "number" ||
+    !Number.isFinite(unixSeconds) ||
+    unixSeconds <= 0
+  ) {
+    return "Не указана";
+  }
+
+  return dateTimeFormatter.format(new Date(unixSeconds * 1000));
+};
+
+const formatListTypeLabel = (value: ListType | null) => {
+  if (value === "favorite") {
+    return "Закладки";
+  }
+  if (value === "trash") {
+    return "Мусор";
+  }
+  if (value === "played") {
+    return "Играл";
+  }
+  return "Не определен";
+};
+
+const buildPrefixLabels = (
+  threadItem: F95ThreadItem | null,
+  prefixesMap: Record<string, string>,
+) => {
+  if (!threadItem || !Array.isArray(threadItem.prefixes)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      threadItem.prefixes.filter(
+        (prefixId): prefixId is number => typeof prefixId === "number",
+      ),
+    ),
+  ).map((prefixId) => prefixesMap[String(prefixId)] ?? `#${prefixId}`);
+};
+
 export const Dashboard = ({
   sessionState,
   isLauncherAvailable,
   launcherGamesByThreadLink,
   openBestDownloadForThread,
+  onOpenThread,
+  onOpenImageViewer,
   tagsMap,
+  prefixesMap,
   onRevealInstalledGame,
   onDeleteGameFilesForThread,
   onChooseLaunchTargetForThread,
@@ -176,6 +271,9 @@ export const Dashboard = ({
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("asc");
   const [visibleCardCountByTab, setVisibleCardCountByTab] = useState(
     createInitialVisibleCardCounts,
+  );
+  const [activeGameCard, setActiveGameCard] = useState<DashboardCard | null>(
+    null,
   );
   const [gameSettingsModalState, setGameSettingsModalState] =
     useState<GameSettingsModalState | null>(null);
@@ -546,6 +644,84 @@ export const Dashboard = ({
   const activeTabItem =
     tabItems.find((item) => item.id === activeTab) ?? tabItems[0];
 
+  const activeGameThreadIdentifier = activeGameCard
+    ? parseThreadIdentifierFromLink(activeGameCard.threadLink)
+    : null;
+  const activeGameThreadItem =
+    activeGameThreadIdentifier !== null
+      ? sessionState.threadItemsByIdentifier[String(activeGameThreadIdentifier)] ??
+        null
+      : null;
+  const activeGameProcessedItem = activeGameCard
+    ? sessionState.processedThreadItemsByLink[activeGameCard.threadLink] ?? null
+    : null;
+  const activeGamePrefixLabels = buildPrefixLabels(
+    activeGameThreadItem,
+    prefixesMap,
+  );
+  const activeGameFactPills = activeGameCard
+    ? [
+        { label: "Рейтинг", value: String(activeGameCard.rating ?? 0) },
+        {
+          label: "Лайки",
+          value: formatCompactNumber(activeGameThreadItem?.likes),
+        },
+        {
+          label: "Просмотры",
+          value: formatCompactNumber(activeGameThreadItem?.views),
+        },
+        {
+          label: "Дата",
+          value: formatThreadDateLabel(activeGameThreadItem?.date),
+        },
+      ]
+    : [];
+  const activeGameStateBadges = activeGameCard
+    ? [
+        activeGameCard.isUpdated ? "Есть апдейт" : null,
+        activeGameThreadItem?.new ? "New" : null,
+        activeGameThreadItem?.watched ? "Watched" : null,
+        activeGameThreadItem?.ignored ? "Ignored" : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
+  const activeGameUpdateLabel = getProcessedThreadItemUpdateLabel(
+    activeGameProcessedItem,
+  );
+  const activeGameInfoCards = activeGameCard
+    ? [
+        {
+          label: "Автор",
+          value: activeGameCard.creator || "Unknown",
+        },
+        {
+          label: "Версия",
+          value: activeGameCard.version
+            ? `v${activeGameCard.version}`
+            : "Не указана",
+        },
+        {
+          label: "Список",
+          value: formatListTypeLabel(activeGameCard.listType),
+        },
+        {
+          label: "Добавлена",
+          value: formatDateTimeLabel(activeGameCard.addedAt),
+        },
+        {
+          label: "Thread ID",
+          value:
+            activeGameThreadIdentifier !== null
+              ? String(activeGameThreadIdentifier)
+              : "Не найден",
+        },
+        {
+          label: "Трекер",
+          value: activeGameUpdateLabel ?? "Без новых апдейтов",
+        },
+      ]
+    : [];
+  const activeGameScreens = activeGameThreadItem?.screens ?? [];
+
   const activeGameSettingsRecord = useMemo(() => {
     if (!gameSettingsModalState) {
       return null;
@@ -563,6 +739,21 @@ export const Dashboard = ({
       setIsGameSettingsBusy(false);
     }
   }, [gameSettingsModalState, launcherGamesByThreadLink]);
+
+  useEffect(() => {
+    if (!activeGameCard) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActiveGameCard(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeGameCard]);
 
   const runGameSettingsAction = (action: () => void | Promise<void>) => {
     setIsGameSettingsBusy(true);
@@ -776,43 +967,105 @@ export const Dashboard = ({
     return (
       <>
         <div className="listGrid" style={{ marginTop: 12 }}>
-          {cards.map((card) => (
-            <div
-              key={card.threadLink}
-              className={`listItemCard ${
-                card.isUpdated ? "listItemCardUpdated" : ""
-              }`}
-            >
-              <a
-                className="listItemCoverLink"
-                href={card.threadLink}
-                target="_blank"
-                rel="noopener noreferrer"
+          {cards.map((card) => {
+            const handleCardMiddleMouseDown = (
+              event: MouseEvent<HTMLButtonElement>,
+            ) => {
+              if (event.button !== 1) {
+                return;
+              }
+
+              // Prevent the browser autoscroll gesture on middle click.
+              event.preventDefault();
+            };
+
+            const handleCardAuxClick = (
+              event: MouseEvent<HTMLButtonElement>,
+            ) => {
+              if (event.button !== 1) {
+                return;
+              }
+
+              event.preventDefault();
+              void onOpenThread(card.threadLink);
+            };
+
+            return (
+              <div
+                key={card.threadLink}
+                className={`listItemCard ${
+                  card.isUpdated ? "listItemCardUpdated" : ""
+                }`}
               >
-                {card.coverUrl ? (
-                  <img
-                    className="listItemCover"
-                    src={card.coverUrl}
-                    alt="cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="listItemCover" />
-                )}
-              </a>
-              <div className="listItemBody">
-                <div className="listItemContent">
-                  <div className="listItemTitleRow">
-                    <div className="listItemTitle" title={card.title}>
-                      {card.title}
+                <button
+                  className="listItemOpenSurface"
+                  type="button"
+                  onMouseDown={handleCardMiddleMouseDown}
+                  onAuxClick={handleCardAuxClick}
+                  onClick={() => setActiveGameCard(card)}
+                >
+                  <div className="listItemCoverLink">
+                    {card.coverUrl ? (
+                      <img
+                        className="listItemCover"
+                        src={card.coverUrl}
+                        alt={card.title}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="listItemCover" />
+                    )}
+                  </div>
+
+                  <div className="listItemBody listItemPreviewBody">
+                    <div className="listItemContent">
+                      <div className="listItemBadgeRow">
+                        {card.listType ? (
+                          <span className="listItemStatusBadge">
+                            {formatListTypeLabel(card.listType)}
+                          </span>
+                        ) : null}
+                        {card.isUpdated ? (
+                          <span className="listItemStatusBadge listItemStatusBadgeUpdated">
+                            Апдейт
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="listItemTitleRow">
+                        <div className="listItemTitle" title={card.title}>
+                          {card.title}
+                        </div>
+                      </div>
+
+                      {card.creator || card.version ? (
+                        <div className="listItemPreviewMeta">
+                          {card.creator ? (
+                            <span
+                              className="listItemPreviewMetaItem"
+                              title={card.creator}
+                            >
+                              {card.creator}
+                            </span>
+                          ) : null}
+                          {card.version ? (
+                            <span className="listItemPreviewMetaItem">
+                              v{card.version}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
+                </button>
+
+                <div className="listItemBody listItemActionBody">
+                  {renderCardActions(card)}
                 </div>
-                {renderCardActions(card)}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {remainingCardsCount > 0 ? (
           <div className="dashboardPagination">
@@ -978,6 +1231,183 @@ export const Dashboard = ({
         </div>
         {renderCardsList(visibleCards, activeCards.length, activeTabItem.id)}
       </div>
+
+      {activeGameCard ? (
+        <div
+          className="downloadModalOverlay"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) {
+              setActiveGameCard(null);
+            }
+          }}
+        >
+          <div className="downloadModal dashboardGameModal">
+            <div className="downloadModalHeader">
+              <div className="downloadModalTitleWrap gameSettingsTitleWrap">
+                <div className="dashboardGameHero">
+                  {activeGameCard.coverUrl ? (
+                    <button
+                      className="dashboardGameHeroCoverButton"
+                      type="button"
+                      onClick={() =>
+                        onOpenImageViewer(
+                          [
+                            activeGameCard.coverUrl,
+                            ...activeGameScreens,
+                          ],
+                          0,
+                        )
+                      }
+                    >
+                      <img
+                        className="dashboardGameHeroCover"
+                        src={activeGameCard.coverUrl}
+                        alt={activeGameCard.title}
+                      />
+                    </button>
+                  ) : (
+                    <div className="dashboardGameHeroCover" />
+                  )}
+
+                  <div className="dashboardGameHeroText">
+                    <div className="downloadModalTitle">
+                      {activeGameCard.title}
+                    </div>
+                    <div className="dashboardGameHeroMeta">
+                      {activeGameCard.creator ? (
+                        <span>{activeGameCard.creator}</span>
+                      ) : null}
+                      {activeGameCard.version ? (
+                        <span>v{activeGameCard.version}</span>
+                      ) : null}
+                      <span>{formatListTypeLabel(activeGameCard.listType)}</span>
+                    </div>
+                    <div className="downloadModalMeta">
+                      {activeGameCard.threadLink}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="downloadModalActions">
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => {
+                    void onOpenThread(activeGameCard.threadLink);
+                  }}
+                >
+                  Открыть страницу
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={() => setActiveGameCard(null)}
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+
+            <div className="downloadModalBody">
+              <div className="swipeMetaBody">
+                <div className="cardFactRow">
+                  {activeGameFactPills.map((fact) => (
+                    <span key={fact.label} className="cardFactPill">
+                      {fact.label}: <strong>{fact.value}</strong>
+                    </span>
+                  ))}
+                </div>
+
+                {activeGameStateBadges.length > 0 ? (
+                  <div className="cardStateBadgeRow">
+                    {activeGameStateBadges.map((badge) => (
+                      <span key={badge} className="cardStateBadge">
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {activeGamePrefixLabels.length > 0 ? (
+                  <div className="swipeMetaGroup">
+                    <div className="swipeMetaGroupLabel">Префиксы</div>
+                    <div className="tagChips">
+                      {activeGamePrefixLabels.map((prefixLabel) => (
+                        <span key={prefixLabel} className="tagChip">
+                          {prefixLabel}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeGameCard.tags.length > 0 ? (
+                  <div className="swipeMetaGroup">
+                    <div className="swipeMetaGroupLabel">Теги</div>
+                    <TagChips
+                      tags={activeGameCard.tags}
+                      tagsMap={tagsMap}
+                      maxVisible={18}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="gameSettingsInfoGrid dashboardGameInfoGrid">
+                {activeGameInfoCards.map((infoCard) => (
+                  <div
+                    key={infoCard.label}
+                    className="gameSettingsInfoCard dashboardGameInfoCard"
+                  >
+                    <div className="gameSettingsInfoLabel">{infoCard.label}</div>
+                    <div className="gameSettingsInfoValue dashboardGameInfoValue">
+                      {infoCard.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="swipeScreensPanel">
+                <div className="swipeScreensPanelHeader">
+                  <div className="swipeMediaSectionLabel">Скриншоты</div>
+                  <div className="swipeScreensPanelMeta">
+                    {activeGameScreens.length}
+                  </div>
+                </div>
+
+                {activeGameScreens.length > 0 ? (
+                  <div className="screensGrid dashboardGameScreensGrid">
+                    {activeGameScreens.map((screenUrl, index) => (
+                      <button
+                        key={`${screenUrl}-${index}`}
+                        className="dashboardGameScreenButton"
+                        type="button"
+                        onClick={() =>
+                          onOpenImageViewer(activeGameScreens, index)
+                        }
+                      >
+                        <img
+                          className="screenImage"
+                          src={screenUrl}
+                          alt={`Скриншот ${index + 1}`}
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="downloadEmptyState">
+                    {activeGameThreadItem
+                      ? "Для этой игры скриншоты не пришли."
+                      : "Полные метаданные и скриншоты появятся после синхронизации."}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {gameSettingsModalState && activeGameSettingsRecord ? (
         <div

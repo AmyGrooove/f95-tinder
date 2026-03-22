@@ -1,9 +1,11 @@
 import type {
+  LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,
   LauncherLatestGamesResult,
   LauncherLibrarySnapshot,
 } from './types'
+import type { LatestGamesSort } from '../f95/types'
 
 type LauncherBridge = {
   runtime: {
@@ -11,9 +13,14 @@ type LauncherBridge = {
   }
   openExternal: (targetUrl: string) => Promise<boolean>
   loadBundledTagsMap: () => Promise<Record<string, string>>
-  fetchLatestGamesPage: (pageNumber: number) => Promise<LauncherLatestGamesResult>
+  loadBundledPrefixesMap: () => Promise<Record<string, string>>
+  fetchLatestGamesPage: (
+    pageNumber: number,
+    latestGamesSort: LatestGamesSort,
+  ) => Promise<LauncherLatestGamesResult>
   fetchThreadPageHtml: (threadLink: string) => Promise<string>
   getCookieStatus: () => Promise<LauncherCookieStatus>
+  getCookieBackup: () => Promise<LauncherCookieBackup>
   saveCookieInput: (text: string) => Promise<LauncherCookieStatus>
   clearCookieInput: () => Promise<LauncherCookieStatus>
   getLibrarySnapshot: () => Promise<LauncherLibrarySnapshot>

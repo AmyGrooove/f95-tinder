@@ -51,6 +51,12 @@ type LauncherCookieStatus = {
   updatedAtUnixMs: number | null
 }
 
+type LauncherCookieBackup = {
+  source: 'settings' | 'env' | 'none'
+  text: string | null
+  updatedAtUnixMs: number | null
+}
+
 type LauncherLatestGamesResult = {
   threadItemList: F95ThreadItem[]
   pageFromResponse: number
@@ -58,6 +64,7 @@ type LauncherLatestGamesResult = {
 }
 
 export type {
+  LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,
   LauncherDownloadSource,

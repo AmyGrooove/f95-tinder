@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import {
   clearCookieProxyInput,
@@ -6,10 +6,12 @@ import {
   saveCookieProxyInput,
   type CookieProxyStatus,
 } from "../f95/cookieProxy";
+import { MAX_TAG_FILTERS_PER_GROUP } from "../f95/filtering";
+import type { FilterState, LatestGamesSort } from "../f95/types";
 import { SyncMetadataPanel } from "./SyncMetadataPanel";
 import type { MetadataSyncState } from "../f95/types";
 
-type SettingsTab = "hosts" | "cookies" | "tags" | "data";
+type SettingsTab = "hosts" | "cookies" | "filters" | "tags" | "data";
 
 type SettingsPageProps = {
   preferredDownloadHosts: string[];
@@ -17,8 +19,25 @@ type SettingsPageProps = {
   hiddenDownloadHosts: string[];
   knownDownloadHosts: string[];
   tagsCount: number;
+  prefixesCount: number;
   metadataSyncState: MetadataSyncState;
+  bundledDefaultFiltersStatus:
+    | "checking"
+    | "loaded"
+    | "not_loaded"
+    | "unavailable";
+  currentFilterState: FilterState;
+  defaultFilterState: FilterState;
+  defaultLatestGamesSort: LatestGamesSort;
+  tagsMap: Record<string, string>;
+  prefixesMap: Record<string, string>;
   onStartMetadataSync: () => void;
+  onUpdateDefaultFilterState: (partialFilterState: Partial<FilterState>) => void;
+  onUpdateDefaultLatestGamesSort: (latestGamesSort: LatestGamesSort) => void;
+  onResetDefaultFilterState: () => void;
+  onImportBundledDefaultFilterState: () => void;
+  onSaveCurrentFiltersAsDefault: () => void;
+  onApplyDefaultFiltersToSwipe: () => void;
   onMoveDownloadHost: (hostLabel: string, direction: -1 | 1) => void;
   onDisableDownloadHostTemporarily: (hostLabel: string) => void;
   onEnableDownloadHost: (hostLabel: string) => void;
@@ -29,16 +48,30 @@ type SettingsPageProps = {
   onImportBundledTagsMap: () => void;
   onOpenImportTagsMap: () => void;
   onImportTagsMapChange: () => void;
-  onExportSessionState: () => void;
-  onOpenImportSessionState: () => void;
-  onImportSessionStateChange: () => void;
+  onImportBundledPrefixesMap: () => void;
+  onOpenImportPrefixesMap: () => void;
+  onImportPrefixesMapChange: () => void;
+  onExportAllBackup: () => void;
+  onExportSettingsBackup: () => void;
+  onExportListsBackup: () => void;
+  onOpenImportAllBackup: () => void;
+  onImportAllBackupChange: () => void;
+  onOpenImportSettingsBackup: () => void;
+  onImportSettingsBackupChange: () => void;
+  onOpenImportListsBackup: () => void;
+  onImportListsBackupChange: () => void;
   onOpenGameFolders: () => void;
   onClearGameFolders: () => void;
+  onClearAllLocalData: () => void;
+  onResetLocalSettings: () => void;
   onClearDashboardLists: () => void;
   isLauncherAvailable: boolean;
   libraryRootPath: string;
-  importSessionStateInputRef: RefObject<HTMLInputElement | null>;
+  importAllBackupInputRef: RefObject<HTMLInputElement | null>;
+  importSettingsBackupInputRef: RefObject<HTMLInputElement | null>;
+  importListsBackupInputRef: RefObject<HTMLInputElement | null>;
   importTagsMapInputRef: RefObject<HTMLInputElement | null>;
+  importPrefixesMapInputRef: RefObject<HTMLInputElement | null>;
   requestedTab?: SettingsTab | null;
 };
 
@@ -49,14 +82,34 @@ const formatDisabledUntilTime = (expiresAtUnixMs: number) => {
   });
 };
 
+const normalizeSettingsSearchText = (value: string) => value.trim().toLowerCase();
+
+const DEFAULT_SWIPE_SORT_OPTIONS = [
+  { value: "date", label: "По дате" },
+  { value: "views", label: "По просмотрам" },
+] as const;
+
 export const SettingsPage = ({
   preferredDownloadHosts,
   disabledDownloadHosts,
   hiddenDownloadHosts,
   knownDownloadHosts,
   tagsCount,
+  prefixesCount,
   metadataSyncState,
+  bundledDefaultFiltersStatus,
+  currentFilterState,
+  defaultFilterState,
+  defaultLatestGamesSort,
+  tagsMap,
+  prefixesMap,
   onStartMetadataSync,
+  onUpdateDefaultFilterState,
+  onUpdateDefaultLatestGamesSort,
+  onResetDefaultFilterState,
+  onImportBundledDefaultFilterState,
+  onSaveCurrentFiltersAsDefault,
+  onApplyDefaultFiltersToSwipe,
   onMoveDownloadHost,
   onDisableDownloadHostTemporarily,
   onEnableDownloadHost,
@@ -67,16 +120,30 @@ export const SettingsPage = ({
   onImportBundledTagsMap,
   onOpenImportTagsMap,
   onImportTagsMapChange,
-  onExportSessionState,
-  onOpenImportSessionState,
-  onImportSessionStateChange,
+  onImportBundledPrefixesMap,
+  onOpenImportPrefixesMap,
+  onImportPrefixesMapChange,
+  onExportAllBackup,
+  onExportSettingsBackup,
+  onExportListsBackup,
+  onOpenImportAllBackup,
+  onImportAllBackupChange,
+  onOpenImportSettingsBackup,
+  onImportSettingsBackupChange,
+  onOpenImportListsBackup,
+  onImportListsBackupChange,
   onOpenGameFolders,
   onClearGameFolders,
+  onClearAllLocalData,
+  onResetLocalSettings,
   onClearDashboardLists,
   isLauncherAvailable,
   libraryRootPath,
-  importSessionStateInputRef,
+  importAllBackupInputRef,
+  importSettingsBackupInputRef,
+  importListsBackupInputRef,
   importTagsMapInputRef,
+  importPrefixesMapInputRef,
   requestedTab = null,
 }: SettingsPageProps) => {
   const pausedHostCount = Object.keys(disabledDownloadHosts).length;
@@ -100,7 +167,344 @@ export const SettingsPage = ({
     string | null
   >(null);
   const [isCookieProxyBusy, setIsCookieProxyBusy] = useState(false);
+  const [defaultTagSearchText, setDefaultTagSearchText] = useState("");
+  const [defaultPrefixSearchText, setDefaultPrefixSearchText] = useState("");
   const cookieFileInputRef = useRef<HTMLInputElement | null>(null);
+  const bundledDefaultFiltersStatusText =
+    bundledDefaultFiltersStatus === "loaded"
+      ? "загружен"
+      : bundledDefaultFiltersStatus === "not_loaded"
+        ? "не загружен"
+        : bundledDefaultFiltersStatus === "unavailable"
+          ? "недоступен"
+          : "проверяю...";
+
+  const defaultTagOptions = useMemo(() => {
+    return Object.entries(tagsMap)
+      .map(([tagIdText, label]) => ({
+        id: Number(tagIdText),
+        label,
+      }))
+      .filter(
+        (option): option is { id: number; label: string } =>
+          Number.isInteger(option.id) && typeof option.label === "string",
+      )
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
+  }, [tagsMap]);
+
+  const defaultPrefixOptions = useMemo(() => {
+    return Object.entries(prefixesMap)
+      .map(([prefixIdText, label]) => ({
+        id: Number(prefixIdText),
+        label,
+      }))
+      .filter(
+        (option): option is { id: number; label: string } =>
+          Number.isInteger(option.id) && typeof option.label === "string",
+      )
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
+  }, [prefixesMap]);
+
+  const filteredDefaultTagOptions = useMemo(() => {
+    const normalizedSearchText = normalizeSettingsSearchText(defaultTagSearchText);
+    if (!normalizedSearchText) {
+      return defaultTagOptions;
+    }
+
+    return defaultTagOptions.filter((option) => {
+      return (
+        normalizeSettingsSearchText(option.label).includes(normalizedSearchText) ||
+        String(option.id).includes(normalizedSearchText)
+      );
+    });
+  }, [defaultTagOptions, defaultTagSearchText]);
+
+  const filteredDefaultPrefixOptions = useMemo(() => {
+    const normalizedSearchText = normalizeSettingsSearchText(defaultPrefixSearchText);
+    if (!normalizedSearchText) {
+      return defaultPrefixOptions;
+    }
+
+    return defaultPrefixOptions.filter((option) => {
+      return (
+        normalizeSettingsSearchText(option.label).includes(normalizedSearchText) ||
+        String(option.id).includes(normalizedSearchText)
+      );
+    });
+  }, [defaultPrefixOptions, defaultPrefixSearchText]);
+
+  const selectedDefaultPrefixCount =
+    defaultFilterState.includePrefixIds.length +
+    defaultFilterState.excludePrefixIds.length;
+
+  const toggleDefaultIncludePrefix = (prefixId: number) => {
+    const hasPrefix = defaultFilterState.includePrefixIds.includes(prefixId);
+    const nextIncludePrefixIds = hasPrefix
+      ? defaultFilterState.includePrefixIds.filter((value) => value !== prefixId)
+      : [...defaultFilterState.includePrefixIds, prefixId];
+
+    onUpdateDefaultFilterState({
+      includePrefixIds: nextIncludePrefixIds,
+      excludePrefixIds: defaultFilterState.excludePrefixIds.filter(
+        (value) => value !== prefixId,
+      ),
+    });
+  };
+
+  const toggleDefaultExcludePrefix = (prefixId: number) => {
+    const hasPrefix = defaultFilterState.excludePrefixIds.includes(prefixId);
+    const nextExcludePrefixIds = hasPrefix
+      ? defaultFilterState.excludePrefixIds.filter((value) => value !== prefixId)
+      : [...defaultFilterState.excludePrefixIds, prefixId];
+
+    onUpdateDefaultFilterState({
+      includePrefixIds: defaultFilterState.includePrefixIds.filter(
+        (value) => value !== prefixId,
+      ),
+      excludePrefixIds: nextExcludePrefixIds,
+    });
+  };
+
+  const toggleDefaultIncludeTag = (tagId: number) => {
+    const hasTag = defaultFilterState.includeTagIds.includes(tagId);
+    const isAtLimit =
+      !hasTag &&
+      defaultFilterState.includeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP;
+
+    if (isAtLimit) {
+      return;
+    }
+
+    const nextIncludeTagIds = hasTag
+      ? defaultFilterState.includeTagIds.filter((value) => value !== tagId)
+      : [...defaultFilterState.includeTagIds, tagId];
+
+    onUpdateDefaultFilterState({
+      includeTagIds: nextIncludeTagIds,
+      excludeTagIds: defaultFilterState.excludeTagIds.filter(
+        (value) => value !== tagId,
+      ),
+    });
+  };
+
+  const toggleDefaultExcludeTag = (tagId: number) => {
+    const hasTag = defaultFilterState.excludeTagIds.includes(tagId);
+    const isAtLimit =
+      !hasTag &&
+      defaultFilterState.excludeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP;
+
+    if (isAtLimit) {
+      return;
+    }
+
+    const nextExcludeTagIds = hasTag
+      ? defaultFilterState.excludeTagIds.filter((value) => value !== tagId)
+      : [...defaultFilterState.excludeTagIds, tagId];
+
+    onUpdateDefaultFilterState({
+      includeTagIds: defaultFilterState.includeTagIds.filter(
+        (value) => value !== tagId,
+      ),
+      excludeTagIds: nextExcludeTagIds,
+    });
+  };
+
+  const renderDefaultFilterOptionGroup = (
+    title: string,
+    fieldName: string,
+    options: Array<{ id: number; label: string }>,
+    selectedIds: number[],
+    onToggle: (id: number) => void,
+    variant: "include" | "exclude",
+    countMeta?: string,
+  ) => {
+    return (
+      <div className="swipeFilterModalGroup">
+        <div className="swipeFilterModalGroupHeader">
+          <div>
+            <div className="swipeFilterModalGroupTitle">{title}</div>
+            <div className="swipeFilterModalGroupField">{fieldName}</div>
+          </div>
+          <div className="swipeFilterModalGroupMeta">
+            {countMeta ?? `Выбрано: ${selectedIds.length}`}
+          </div>
+        </div>
+
+        <div className="tagFilterChips swipeFilterModalChipGrid settingsDefaultFilterChipGrid">
+          {options.length > 0 ? (
+            options.map((option) => {
+              const isActive = selectedIds.includes(option.id);
+              const activeClassName = isActive
+                ? variant === "exclude"
+                  ? "tagFilterChipExcludeActive"
+                  : "tagFilterChipActive"
+                : "";
+
+              return (
+                <button
+                  key={`${fieldName}-${option.id}`}
+                  type="button"
+                  className={`tagFilterChip ${activeClassName}`}
+                  onClick={() => onToggle(option.id)}
+                >
+                  {option.label}
+                </button>
+              );
+            })
+          ) : (
+            <span className="smallText">Ничего не найдено</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const defaultFiltersPanel = (
+    <>
+      <div className="panel">
+        <div className="sectionTitleRow">
+          <div className="sectionTitle">Дефолтные фильтры свайпа</div>
+          <div className="sectionMeta">
+            Применяются при сбросе фильтров и на новой сессии
+          </div>
+        </div>
+
+        <div className="settingsActions">
+          <button
+            className="button"
+            type="button"
+            onClick={onImportBundledDefaultFilterState}
+          >
+            Сбросить к встроенным
+          </button>
+        </div>
+
+        <div className="smallText settingsHint">
+          Здесь задаются сортировка и фильтры, которые будут применяться по
+          умолчанию в свайпе.
+        </div>
+
+        <div className="smallText">
+          Теги ограничены до {MAX_TAG_FILTERS_PER_GROUP} в каждой группе.
+          Если выбрать один и тот же тег или префикс в противоположной
+          группе, он автоматически уберется оттуда.
+        </div>
+      </div>
+
+      <div className="settingsDefaultFilterLayout">
+        <div className="panel settingsDefaultFilterSectionPanel settingsDefaultFilterSortPanel">
+          <div className="swipeFilterModalSectionHeader">
+            <div className="swipeFilterModalSectionTitle">Сортировка</div>
+            <div className="swipeFilterModalSectionMeta">По умолчанию</div>
+          </div>
+
+          <div className="formRow" style={{ marginBottom: 0 }}>
+            <div className="label">Сортировка свайпа</div>
+            <select
+              className="input"
+              value={defaultLatestGamesSort}
+              onChange={(event) =>
+                onUpdateDefaultLatestGamesSort(
+                  event.target.value === "views" ? "views" : "date",
+                )
+              }
+            >
+              {DEFAULT_SWIPE_SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="panel settingsDefaultFilterSectionPanel">
+          <div className="swipeFilterModalSectionHeader">
+            <div className="swipeFilterModalSectionTitle">Префиксы</div>
+            <div className="swipeFilterModalSectionMeta">
+              Выбрано: {selectedDefaultPrefixCount}
+            </div>
+          </div>
+
+          <div className="formRow" style={{ marginBottom: 0 }}>
+            <div className="label">Поиск по префиксам</div>
+            <input
+              className="input"
+              value={defaultPrefixSearchText}
+              onChange={(event) =>
+                setDefaultPrefixSearchText(event.target.value)
+              }
+              placeholder="например: ren'py, unity"
+            />
+          </div>
+
+          <div className="swipeFilterModalGroupGrid">
+            {renderDefaultFilterOptionGroup(
+              "Включить",
+              "prefixes[]",
+              filteredDefaultPrefixOptions,
+              defaultFilterState.includePrefixIds,
+              toggleDefaultIncludePrefix,
+              "include",
+            )}
+            {renderDefaultFilterOptionGroup(
+              "Выключить",
+              "noprefixes[]",
+              filteredDefaultPrefixOptions,
+              defaultFilterState.excludePrefixIds,
+              toggleDefaultExcludePrefix,
+              "exclude",
+            )}
+          </div>
+        </div>
+
+        <div className="panel settingsDefaultFilterSectionPanel">
+          <div className="swipeFilterModalSectionHeader">
+            <div className="swipeFilterModalSectionTitle">Теги</div>
+            <div className="swipeFilterModalSectionMeta">
+              Включить: {defaultFilterState.includeTagIds.length}/
+              {MAX_TAG_FILTERS_PER_GROUP} • Выключить:{" "}
+              {defaultFilterState.excludeTagIds.length}/
+              {MAX_TAG_FILTERS_PER_GROUP}
+            </div>
+          </div>
+
+          <div className="formRow" style={{ marginBottom: 0 }}>
+            <div className="label">Поиск по тегам</div>
+            <input
+              className="input"
+              value={defaultTagSearchText}
+              onChange={(event) =>
+                setDefaultTagSearchText(event.target.value)
+              }
+              placeholder="например: sandbox, corruption"
+            />
+          </div>
+
+          <div className="swipeFilterModalGroupGrid">
+            {renderDefaultFilterOptionGroup(
+              "Включить",
+              "tags[]",
+              filteredDefaultTagOptions,
+              defaultFilterState.includeTagIds,
+              toggleDefaultIncludeTag,
+              "include",
+              `${defaultFilterState.includeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
+            )}
+            {renderDefaultFilterOptionGroup(
+              "Выключить",
+              "notags[]",
+              filteredDefaultTagOptions,
+              defaultFilterState.excludeTagIds,
+              toggleDefaultExcludeTag,
+              "exclude",
+              `${defaultFilterState.excludeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   useEffect(() => {
     let isCancelled = false;
@@ -200,8 +604,8 @@ export const SettingsPage = ({
         <div className="settingsPageIntro">
           <h3 className="panelTitle settingsPageTitle">Настройки</h3>
           <div className="smallText">
-            Разделы вынесены во вкладки: host'ы, куки для proxy, теги и
-            локальные данные.
+            Разделы вынесены во вкладки: host'ы, куки для proxy, фильтры,
+            метаданные и локальное хранилище.
           </div>
         </div>
 
@@ -230,6 +634,17 @@ export const SettingsPage = ({
           </button>
           <button
             className={`button settingsTabButton ${
+              activeTab === "filters" ? "settingsTabButtonActive" : ""
+            }`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "filters"}
+            onClick={() => setActiveTab("filters")}
+          >
+            Фильтры
+          </button>
+          <button
+            className={`button settingsTabButton ${
               activeTab === "tags" ? "settingsTabButtonActive" : ""
             }`}
             type="button"
@@ -237,7 +652,7 @@ export const SettingsPage = ({
             aria-selected={activeTab === "tags"}
             onClick={() => setActiveTab("tags")}
           >
-            Теги
+            Метаданные
           </button>
           <button
             className={`button settingsTabButton ${
@@ -248,7 +663,7 @@ export const SettingsPage = ({
             aria-selected={activeTab === "data"}
             onClick={() => setActiveTab("data")}
           >
-            Данные
+            Локально
           </button>
         </div>
       </div>
@@ -617,63 +1032,161 @@ export const SettingsPage = ({
               </div>
             </div>
           </>
+        ) : activeTab === "filters" ? (
+          <>{defaultFiltersPanel}</>
         ) : activeTab === "tags" ? (
-          <div className="panel">
-            <div className="sectionTitleRow">
-              <div className="sectionTitle">Импорт тегов</div>
-              <div className="sectionMeta">
-                Локальная карта id to label для интерфейса
-              </div>
-            </div>
+          <>
+            <SyncMetadataPanel
+              metadataSyncState={metadataSyncState}
+              autoSyncEnabled={false}
+              onStartSync={onStartMetadataSync}
+            />
 
-            <div className="settingsSummaryGrid settingsTagStatusGrid">
-              <div className="metricCard">
-                <div className="metricLabel">Загружено тегов</div>
-                <div className="metricValue settingsMetricValue">
-                  {tagsCount}
+            <div className="panel">
+              <div className="sectionTitleRow">
+                <div className="sectionTitle">Дефолтные фильтры</div>
+                <div className="sectionMeta">
+                  Встроенный `default-filters.json`
+                </div>
+              </div>
+
+              <div className="settingsActions">
+                <button
+                  className="button buttonPrimary"
+                  type="button"
+                  onClick={onImportBundledDefaultFilterState}
+                >
+                  Загрузить встроенные дефолтные фильтры
+                </button>
+              </div>
+
+              <div className="smallText" style={{ marginTop: 8 }}>
+                Статус: {bundledDefaultFiltersStatusText}
+              </div>
+
+              <div className="settingsDataNote">
+                <div className="smallText">
+                  Берет локальный `/default-filters.json` из проекта и
+                  обновляет дефолтные фильтры и сортировку на вкладке
+                  `Фильтры`.
                 </div>
               </div>
             </div>
 
-            <div className="settingsActions">
-              <button
-                className="button buttonPrimary"
-                type="button"
-                onClick={onImportBundledTagsMap}
-              >
-                Загрузить встроенные теги
-              </button>
-              <button
-                className="button"
-                type="button"
-                onClick={onOpenImportTagsMap}
-              >
-                Импорт tagsMap.json
-              </button>
+            <div className="panel">
+              <div className="sectionTitleRow">
+                <div className="sectionTitle">Теги</div>
+                <div className="sectionMeta">
+                  Локальная карта {"`id -> label`"} для интерфейса
+                </div>
+              </div>
+
+              <div className="settingsSummaryGrid settingsTagStatusGrid">
+                <div className="metricCard">
+                  <div className="metricLabel">Загружено тегов</div>
+                  <div className="metricValue settingsMetricValue">
+                    {tagsCount}
+                  </div>
+                </div>
+              </div>
+
+              <div className="settingsActions">
+                <button
+                  className="button buttonPrimary"
+                  type="button"
+                  onClick={onImportBundledTagsMap}
+                >
+                  Загрузить встроенные теги
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={onOpenImportTagsMap}
+                >
+                  Импорт tags.json
+                </button>
+              </div>
+
+              <input
+                ref={importTagsMapInputRef}
+                type="file"
+                accept="application/json"
+                hidden
+                onChange={onImportTagsMapChange}
+              />
+
+              <div className="settingsDataNote">
+                <div className="smallText">
+                  `Загрузить встроенные теги` берет локальный `/tags.json` из
+                  проекта одним кликом.
+                </div>
+                <div className="smallText">
+                  Формат: {`{ "45": "3D", "130": "RenPy" }`}
+                </div>
+                <div className="smallText">
+                  Эти данные используются для подписей тегов в карточках и
+                  дашборде.
+                </div>
+              </div>
             </div>
 
-            <input
-              ref={importTagsMapInputRef}
-              type="file"
-              accept="application/json"
-              hidden
-              onChange={onImportTagsMapChange}
-            />
+            <div className="panel">
+              <div className="sectionTitleRow">
+                <div className="sectionTitle">Префиксы</div>
+                <div className="sectionMeta">
+                  Локальная карта {"`id -> label`"} для префиксов
+                </div>
+              </div>
 
-            <div className="settingsDataNote">
-              <div className="smallText">
-                `Загрузить встроенные теги` берет локальный `/tags.json` из
-                проекта одним кликом.
+              <div className="settingsSummaryGrid settingsTagStatusGrid">
+                <div className="metricCard">
+                  <div className="metricLabel">Загружено префиксов</div>
+                  <div className="metricValue settingsMetricValue">
+                    {prefixesCount}
+                  </div>
+                </div>
               </div>
-              <div className="smallText">
-                Формат: {`{ "45": "3D", "130": "RenPy" }`}
+
+              <div className="settingsActions">
+                <button
+                  className="button buttonPrimary"
+                  type="button"
+                  onClick={onImportBundledPrefixesMap}
+                >
+                  Загрузить встроенные префиксы
+                </button>
+                <button
+                  className="button"
+                  type="button"
+                  onClick={onOpenImportPrefixesMap}
+                >
+                  Импорт prefixes.json
+                </button>
               </div>
-              <div className="smallText">
-                Эти данные используются для подписей тегов в карточках и
-                дашборде.
+
+              <input
+                ref={importPrefixesMapInputRef}
+                type="file"
+                accept="application/json"
+                hidden
+                onChange={onImportPrefixesMapChange}
+              />
+
+              <div className="settingsDataNote">
+                <div className="smallText">
+                  `Загрузить встроенные префиксы` берет локальный
+                  `/prefixes.json` из проекта одним кликом.
+                </div>
+                <div className="smallText">
+                  Формат: {`{ "7": "Ren'Py", "3": "Unity" }`}
+                </div>
+                <div className="smallText">
+                  Эти данные сохраняются локально и экспортируются вместе с
+                  сессией.
+                </div>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <>
             <div className="panel">
@@ -720,70 +1233,175 @@ export const SettingsPage = ({
               </div>
             </div>
 
-            <div className="panel">
-              <div className="sectionTitleRow">
-                <div className="sectionTitle">Сессия и списки</div>
-                <div className="sectionMeta">
-                  Импорт, экспорт и очистка дашборда
+            <div className="settingsLocalActionGrid">
+              <div className="panel settingsLocalActionPanel">
+                <div className="sectionTitleRow">
+                  <div className="sectionTitle">Экспорт</div>
+                  <div className="sectionMeta">Собрать JSON-бэкап</div>
+                </div>
+
+                <div className="settingsLocalButtonGrid">
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onExportAllBackup}
+                  >
+                    Все сразу
+                  </button>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onExportSettingsBackup}
+                  >
+                    Только настройки
+                  </button>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onExportListsBackup}
+                  >
+                    Только списки
+                  </button>
+                </div>
+
+                <div className="settingsDataNote">
+                  <div className="smallText">
+                    `Все сразу` сохраняет и списки дашборда, и все локальные
+                    пользовательские настройки в один backup-файл.
+                  </div>
+                  <div className="smallText">
+                    `Только настройки` сохраняет дефолтные фильтры,
+                    `tagsMap/prefixesMap`, настройки host'ов и локальные куки
+                    proxy.
+                  </div>
+                  <div className="smallText">
+                    `Только списки` сохраняет session-данные и tracked-списки
+                    так же, как раньше локальный экспорт.
+                  </div>
                 </div>
               </div>
 
-              <div className="settingsActions">
-                <button
-                  className="button"
-                  type="button"
-                  onClick={onExportSessionState}
-                >
-                  Экспорт session
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  onClick={onOpenImportSessionState}
-                >
-                  Импорт session
-                </button>
-                <button
-                  className="button buttonDanger"
-                  type="button"
-                  onClick={onClearDashboardLists}
-                >
-                  Очистить списки в дашборде
-                </button>
+              <div className="panel settingsLocalActionPanel">
+                <div className="sectionTitleRow">
+                  <div className="sectionTitle">Импорт</div>
+                  <div className="sectionMeta">Восстановить из JSON</div>
+                </div>
+
+                <div className="settingsLocalButtonGrid">
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onOpenImportAllBackup}
+                  >
+                    Все сразу
+                  </button>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onOpenImportSettingsBackup}
+                  >
+                    Только настройки
+                  </button>
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={onOpenImportListsBackup}
+                  >
+                    Только списки
+                  </button>
+                </div>
+
+                <input
+                  ref={importAllBackupInputRef}
+                  type="file"
+                  accept="application/json"
+                  hidden
+                  onChange={() => {
+                    void onImportAllBackupChange();
+                  }}
+                />
+                <input
+                  ref={importSettingsBackupInputRef}
+                  type="file"
+                  accept="application/json"
+                  hidden
+                  onChange={() => {
+                    void onImportSettingsBackupChange();
+                  }}
+                />
+                <input
+                  ref={importListsBackupInputRef}
+                  type="file"
+                  accept="application/json"
+                  hidden
+                  onChange={() => {
+                    void onImportListsBackupChange();
+                  }}
+                />
+
+                <div className="settingsDataNote">
+                  <div className="smallText">
+                    Импорт `всего` восстанавливает и списки, и настройки, затем
+                    перезагружает приложение.
+                  </div>
+                  <div className="smallText">
+                    Импорт `настроек` можно использовать отдельно, если нужно
+                    перенести только локальную конфигурацию без tracked-истории.
+                  </div>
+                  <div className="smallText">
+                    Импорт `списков` понимает и новый backup, и старый
+                    `session`-формат.
+                  </div>
+                </div>
               </div>
 
-              <input
-                ref={importSessionStateInputRef}
-                type="file"
-                accept="application/json"
-                hidden
-                onChange={() => {
-                  void onImportSessionStateChange();
-                }}
-              />
+              <div className="panel settingsLocalActionPanel">
+                <div className="sectionTitleRow">
+                  <div className="sectionTitle">Удаление</div>
+                  <div className="sectionMeta">Очистка и сброс</div>
+                </div>
 
-              <div className="settingsDataNote">
-                <div className="smallText">
-                  `Экспорт session` сохраняет текущие локальные списки,
-                  фильтры, метаданные сессии и `tagsMap` в один JSON-файл.
+                <div className="settingsLocalButtonGrid">
+                  <button
+                    className="button buttonDanger"
+                    type="button"
+                    onClick={onClearAllLocalData}
+                  >
+                    Все сразу
+                  </button>
+                  <button
+                    className="button buttonDanger"
+                    type="button"
+                    onClick={onResetLocalSettings}
+                  >
+                    Сбросить настройки
+                  </button>
+                  <button
+                    className="button buttonDanger"
+                    type="button"
+                    onClick={onClearDashboardLists}
+                  >
+                    Очистить списки
+                  </button>
                 </div>
-                <div className="smallText">
-                  `Импорт session` восстанавливает эти данные из файла и
-                  перезагружает приложение.
-                </div>
-                <div className="smallText">
-                  `Очистить списки в дашборде` сбрасывает только `Закладки`,
-                  `Мусор` и `Играл` после подтверждения, не трогая библиотеку
-                  игр и остальные локальные данные.
+
+                <div className="settingsDataNote">
+                  <div className="smallText">
+                    `Все сразу` чистит локальные списки, настройки, кэш и
+                    сохраненные через приложение куки proxy, но не трогает
+                    папку игр launcher'а.
+                  </div>
+                  <div className="smallText">
+                    `Сбросить настройки` оставляет tracked-списки как есть, но
+                    возвращает локальную конфигурацию к начальному состоянию.
+                  </div>
+                  <div className="smallText">
+                    `Очистить списки` сбрасывает только `Закладки`, `Мусор` и
+                    `Играл`.
+                  </div>
                 </div>
               </div>
             </div>
-
-            <SyncMetadataPanel
-              metadataSyncState={metadataSyncState}
-              autoSyncEnabled={false}
-              onStartSync={onStartMetadataSync}
-            />
           </>
         )}
       </div>

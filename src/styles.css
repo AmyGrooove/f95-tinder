@@ -26,6 +26,12 @@
   --primaryHover: #418aff;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background:
@@ -33,6 +39,7 @@ body {
     radial-gradient(900px 500px at 20% 0%, #1a1440 0%, transparent 55%),
     var(--background);
   color: var(--text);
+  overflow: hidden;
 }
 
 * {
@@ -40,9 +47,11 @@ body {
 }
 
 .appRoot {
+  height: 100vh;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .topBar {
@@ -135,6 +144,641 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.swipeSidebar {
+  display: grid;
+  gap: 0;
+  align-content: start;
+}
+
+.swipeQueueSummary {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(34, 48, 74, 0.75);
+}
+
+.swipeQueueStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.swipeQueueStatCard {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  background:
+    linear-gradient(180deg, rgba(42, 63, 105, 0.2), rgba(13, 20, 33, 0.82)),
+    rgba(13, 20, 33, 0.72);
+}
+
+.swipeQueueStatLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.swipeQueueStatValue {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.swipeNextCard,
+.swipeNextEmpty {
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  background: rgba(12, 18, 29, 0.76);
+}
+
+.swipeNextCard {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.swipeNextCardCover,
+.swipeNextCardCoverPlaceholder {
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+}
+
+.swipeNextCardCover {
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.swipeNextCardCoverPlaceholder,
+.swipeNextEmpty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.swipeNextCardCoverPlaceholder {
+  padding: 12px;
+  text-align: center;
+  background:
+    linear-gradient(145deg, rgba(59, 78, 112, 0.24), rgba(14, 20, 32, 0.92)),
+    rgba(15, 21, 32, 0.72);
+}
+
+.swipeNextCardBody {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 12px 12px 12px 0;
+}
+
+.swipeNextCardLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.swipeNextCardTitle {
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.swipeNextCardMeta {
+  font-size: 12px;
+  color: rgba(233, 237, 245, 0.68);
+}
+
+.swipeNextEmpty {
+  padding: 14px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.swipeFilterSection {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(34, 48, 74, 0.75);
+}
+
+.swipeTagFilterGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.swipeTagSelectionSummary {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.92);
+  background:
+    linear-gradient(180deg, rgba(25, 39, 67, 0.18), rgba(13, 20, 33, 0.82)),
+    rgba(13, 20, 33, 0.72);
+}
+
+.swipeTagSelectionGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.swipeTagSelectionLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.swipeTagClearButton {
+  justify-self: flex-start;
+}
+
+.swipeScreen {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(290px, 320px) minmax(0, 1fr) 116px;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.swipeFiltersPanel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.swipeSidebarHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.swipeSidebarHeading {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.swipeSidebarTitle {
+  margin: 0;
+}
+
+.swipeSidebarPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swipeSidebarPills .pill {
+  gap: 5px;
+  padding: 4px 9px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.swipeSidebarContent {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  overflow: auto;
+}
+
+.swipeSidebarSectionPanel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.swipeFilterTriggerRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swipeCenterColumn {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+}
+
+.swipeCardDeck {
+  width: 100%;
+  height: 100%;
+}
+
+.swipeFocusCard {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.swipeFocusCardHeader {
+  display: grid;
+  gap: 8px;
+  padding: 18px 18px 14px;
+}
+
+.swipeFocusCardTitleBlock {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.swipeFocusCardTitle {
+  font-size: clamp(22px, 2.1vw, 30px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.swipeFocusCardSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.swipeFocusCardSubtitle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swipeOpenThreadButton {
+  justify-self: flex-start;
+  white-space: nowrap;
+}
+
+.swipeFocusCardBody {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(320px, 28vw, 380px) minmax(0, 1fr);
+  gap: 16px;
+  padding: 0 18px 18px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.swipeHeroPanel,
+.swipeScreensPanel {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.swipeHeroPanel {
+  align-content: start;
+}
+
+.swipeScreensPanel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.swipeMediaSectionLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.swipeCoverGestureSurface {
+  height: 220px;
+  padding: 0;
+  display: grid;
+}
+
+.swipeHeroCover {
+  width: 100%;
+  height: 220px;
+  min-height: 220px;
+  aspect-ratio: auto;
+}
+
+.swipeHeroImage {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.swipeHeroMeta {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+
+.swipeScreensPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.swipeScreensPanelMeta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.swipeCompactScreens {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: start;
+  align-items: start;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.swipeScreenTile {
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 16 / 8;
+  padding: 0;
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.swipeCompactScreenImage {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: block;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+}
+
+.swipeScreensEmpty {
+  min-height: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  background:
+    linear-gradient(145deg, rgba(59, 78, 112, 0.12), rgba(12, 18, 29, 0.92)),
+    rgba(12, 18, 29, 0.72);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.swipeMetaBody {
+  display: grid;
+  gap: 12px;
+}
+
+.swipeMetaGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.swipeMetaGroupLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.85px;
+  text-transform: uppercase;
+  color: rgba(233, 237, 245, 0.54);
+}
+
+.swipeMetaLink {
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.swipeActionSidebar {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.swipeSideActionButton {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(8, 12, 20, 0.95)
+  );
+  box-shadow:
+    0 16px 30px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.swipeSideActionButton:hover {
+  transform: translateY(-2px);
+}
+
+.swipeSideActionButtonActive {
+  transform: translateY(-2px);
+}
+
+.swipeActionUndo {
+  border-color: rgba(86, 138, 255, 0.42);
+  background: linear-gradient(
+    155deg,
+    rgba(86, 138, 255, 0.18),
+    rgba(18, 26, 40, 0.96)
+  );
+}
+
+.swipeActionUndo:hover {
+  border-color: rgba(86, 138, 255, 0.72);
+}
+
+.swipeStatusBox {
+  width: 100%;
+  height: 100%;
+  place-content: center;
+}
+
+.swipeFilterModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  background: rgba(2, 6, 12, 0.88);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.swipeFilterModal {
+  width: min(1100px, 100%);
+  height: min(820px, calc(100vh - 40px));
+  border-radius: 18px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  background: rgba(10, 14, 22, 0.96);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.swipeFilterModalTopBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(34, 48, 74, 0.7);
+}
+
+.swipeFilterModalIntro {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.swipeFilterModalTitle {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.swipeFilterModalMeta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.swipeFilterModalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.swipeFilterModalBody {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.swipeFilterModalSection {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.swipeFilterModalSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.swipeFilterModalSectionTitle {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(233, 237, 245, 0.92);
+}
+
+.swipeFilterModalSectionMeta {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.swipeFilterModalGroupGrid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.swipeFilterModalGroup {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.92);
+  background:
+    linear-gradient(180deg, rgba(25, 39, 67, 0.16), rgba(13, 20, 33, 0.82)),
+    rgba(13, 20, 33, 0.72);
+}
+
+.swipeFilterModalGroupHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.swipeFilterModalGroupTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(233, 237, 245, 0.92);
+}
+
+.swipeFilterModalGroupField {
+  font-size: 12px;
+  color: rgba(233, 237, 245, 0.58);
+}
+
+.swipeFilterModalGroupMeta {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.swipeFilterModalChipGrid {
+  align-content: flex-start;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .mainGrid {
@@ -426,24 +1070,194 @@ body {
 
 .cardArea {
   display: grid;
-  place-items: center;
+  align-items: start;
+  justify-items: center;
   padding: 10px;
 }
 
-.card {
+.cardDeck {
+  position: relative;
   width: min(920px, 100%);
+}
+
+.card {
+  width: 100%;
+  position: relative;
   border-radius: 18px;
   border: 1px solid rgba(34, 48, 74, 0.95);
   background: rgba(15, 21, 32, 0.78);
   backdrop-filter: blur(10px);
   overflow: hidden;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  will-change: transform;
+}
+
+.cardGhost {
+  position: absolute;
+  inset: 18px 18px 0;
+  z-index: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 18px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.88;
+  background:
+    linear-gradient(180deg, rgba(35, 53, 87, 0.22), rgba(11, 17, 28, 0.94)),
+    rgba(9, 14, 22, 0.86);
+  transition: transform 180ms ease;
+}
+
+.cardGhostBadge {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(86, 138, 255, 0.5);
+  background: rgba(47, 125, 255, 0.12);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.65px;
+  text-transform: uppercase;
+  color: #d9e7ff;
+}
+
+.cardGhostTitle {
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardGhostMeta {
+  font-size: 13px;
+  color: rgba(233, 237, 245, 0.64);
+}
+
+.cardGhostCover,
+.cardGhostCoverPlaceholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.82);
+}
+
+.cardGhostCover {
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cardGhostCoverPlaceholder {
+  display: grid;
+  place-items: center;
+  color: rgba(233, 237, 245, 0.56);
+  background:
+    linear-gradient(145deg, rgba(59, 78, 112, 0.18), rgba(12, 18, 29, 0.92)),
+    rgba(12, 18, 29, 0.72);
+}
+
+.cardSwipeHud {
+  position: absolute;
+  inset: 18px 18px auto;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.cardSwipeHudPill {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  background: rgba(8, 12, 20, 0.58);
+  color: rgba(233, 237, 245, 0.66);
+  backdrop-filter: blur(10px);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.cardSwipeHudIcon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.cardSwipeHudPillActive {
+  transform: translateY(-3px);
+  color: #fff;
+}
+
+.cardSwipeHudPillTrash.cardSwipeHudPillActive {
+  border-color: rgba(255, 107, 107, 0.88);
+  background: rgba(255, 107, 107, 0.18);
+}
+
+.cardSwipeHudPillPlayed.cardSwipeHudPillActive {
+  border-color: rgba(139, 92, 246, 0.88);
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.cardSwipeHudPillFavorite.cardSwipeHudPillActive {
+  border-color: rgba(47, 125, 255, 0.88);
+  background: rgba(47, 125, 255, 0.2);
+}
+
+.cardCurrent {
+  z-index: 2;
+}
+
+.cardCurrentDragging {
+  box-shadow:
+    0 26px 60px rgba(0, 0, 0, 0.44),
+    0 16px 30px rgba(8, 12, 18, 0.32);
+}
+
+.cardCurrent[data-swipe-action="trash"] {
+  border-color: rgba(255, 107, 107, 0.72);
+  box-shadow:
+    0 28px 62px rgba(255, 107, 107, 0.18),
+    0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.cardCurrent[data-swipe-action="played"] {
+  border-color: rgba(139, 92, 246, 0.78);
+  box-shadow:
+    0 28px 62px rgba(139, 92, 246, 0.2),
+    0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.cardCurrent[data-swipe-action="favorite"] {
+  border-color: rgba(47, 125, 255, 0.78);
+  box-shadow:
+    0 28px 62px rgba(47, 125, 255, 0.22),
+    0 18px 42px rgba(0, 0, 0, 0.42);
 }
 
 .cardHeader {
   padding: 16px 16px 12px 16px;
   display: grid;
   gap: 8px;
+}
+
+.cardHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .cardTitle {
@@ -460,6 +1274,49 @@ body {
   gap: 12px;
 }
 
+.cardStateBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardStateBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(86, 138, 255, 0.55);
+  background: rgba(47, 125, 255, 0.14);
+  color: #d9e7ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.35px;
+}
+
+.cardFactRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardFactPill {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  background: rgba(11, 17, 28, 0.88);
+  color: rgba(233, 237, 245, 0.74);
+  font-size: 12px;
+}
+
+.cardFactPill strong {
+  color: var(--text);
+}
+
 .cardLinkRow {
   display: flex;
   flex-wrap: wrap;
@@ -473,17 +1330,121 @@ body {
   color: rgba(233, 237, 245, 0.85);
 }
 
+.cardGestureSurface {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 0 16px;
+  user-select: none;
+  touch-action: none;
+}
+
+.cardGestureHintStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardGestureHintStrip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 48, 74, 0.88);
+  background: rgba(11, 17, 28, 0.72);
+  color: rgba(233, 237, 245, 0.66);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cardGestureOverlay {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  min-width: 240px;
+  max-width: calc(100% - 48px);
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  background: rgba(7, 12, 19, 0.88);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.36);
+  text-align: center;
+  pointer-events: none;
+}
+
+.cardGestureOverlay[data-swipe-action="trash"] {
+  border-color: rgba(255, 107, 107, 0.7);
+  background: rgba(54, 20, 24, 0.9);
+}
+
+.cardGestureOverlay[data-swipe-action="played"] {
+  border-color: rgba(139, 92, 246, 0.74);
+  background: rgba(31, 21, 56, 0.9);
+}
+
+.cardGestureOverlay[data-swipe-action="favorite"] {
+  border-color: rgba(47, 125, 255, 0.74);
+  background: rgba(14, 31, 59, 0.9);
+}
+
+.cardGestureOverlayLabel {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.cardGestureOverlayHint {
+  font-size: 12px;
+  color: rgba(233, 237, 245, 0.74);
+}
+
 .coverImageBack {
+  position: relative;
   aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 20px 34px rgba(2, 8, 18, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .coverImage {
   width: 100%;
+  height: 100%;
   display: block;
   object-fit: cover;
   background: rgba(255, 255, 255, 0.04);
+  cursor: grab;
+}
+
+.coverImage:active {
+  cursor: grabbing;
+}
+
+.coverImageFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: rgba(233, 237, 245, 0.64);
+  font-size: 18px;
+  font-weight: 800;
+  background:
+    linear-gradient(145deg, rgba(59, 78, 112, 0.22), rgba(14, 20, 32, 0.94)),
+    rgba(15, 21, 32, 0.72);
 }
 
 .screensSection {
@@ -570,10 +1531,10 @@ body {
   border-radius: 18px;
   border: 1px solid transparent;
   background: linear-gradient(
-      155deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(8, 12, 20, 0.95)
-    );
+    155deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(8, 12, 20, 0.95)
+  );
   box-shadow:
     0 16px 30px rgba(0, 0, 0, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -613,10 +1574,10 @@ body {
 .swipeActionTrash {
   border-color: rgba(255, 107, 107, 0.65);
   background: linear-gradient(
-      155deg,
-      rgba(255, 107, 107, 0.28),
-      rgba(18, 26, 40, 0.96)
-    );
+    155deg,
+    rgba(255, 107, 107, 0.28),
+    rgba(18, 26, 40, 0.96)
+  );
   box-shadow:
     0 18px 32px rgba(255, 107, 107, 0.18),
     0 14px 26px rgba(0, 0, 0, 0.35);
@@ -629,10 +1590,10 @@ body {
 .swipeActionPlayed {
   border-color: rgba(139, 92, 246, 0.7);
   background: linear-gradient(
-      155deg,
-      rgba(139, 92, 246, 0.3),
-      rgba(18, 26, 40, 0.96)
-    );
+    155deg,
+    rgba(139, 92, 246, 0.3),
+    rgba(18, 26, 40, 0.96)
+  );
   box-shadow:
     0 18px 32px rgba(139, 92, 246, 0.2),
     0 14px 26px rgba(0, 0, 0, 0.35);
@@ -645,10 +1606,10 @@ body {
 .swipeActionFavorite {
   border-color: rgba(47, 125, 255, 0.7);
   background: linear-gradient(
-      155deg,
-      rgba(47, 125, 255, 0.3),
-      rgba(18, 26, 40, 0.96)
-    );
+    155deg,
+    rgba(47, 125, 255, 0.3),
+    rgba(18, 26, 40, 0.96)
+  );
   box-shadow:
     0 18px 32px rgba(47, 125, 255, 0.2),
     0 14px 26px rgba(0, 0, 0, 0.35);
@@ -659,6 +1620,18 @@ body {
 }
 
 @media (max-width: 720px) {
+  .cardSwipeHud {
+    position: static;
+    inset: auto;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .cardSwipeHudPill {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+
   .cardActions {
     grid-template-columns: 1fr;
   }
@@ -667,6 +1640,128 @@ body {
   .cardActionPlayed,
   .cardActionFavorite {
     justify-self: stretch;
+  }
+
+  .cardHeaderTop {
+    flex-direction: column;
+  }
+
+  .cardGestureOverlay {
+    min-width: 0;
+    width: calc(100% - 28px);
+  }
+}
+
+@media (min-width: 981px) {
+  .swipeSidebar {
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 1200px) {
+  .swipeScreen {
+    grid-template-columns: minmax(260px, 290px) minmax(0, 1fr) 104px;
+  }
+
+  .swipeFocusCardBody {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  }
+
+  .swipeCompactScreens {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .swipeFilterModalBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  body {
+    overflow: auto;
+  }
+
+  .appRoot {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .swipeScreen {
+    height: auto;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .swipeFiltersPanel,
+  .swipeCenterColumn {
+    min-height: auto;
+  }
+
+  .swipeFocusCardBody {
+    grid-template-columns: 1fr;
+  }
+
+  .swipeCoverGestureSurface,
+  .swipeHeroCover {
+    height: 200px;
+    min-height: 200px;
+  }
+
+  .swipeCompactScreens {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 420px;
+  }
+
+  .swipeActionSidebar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+
+  .swipeSideActionButton {
+    min-height: 92px;
+  }
+
+  .swipeFilterModal {
+    height: min(900px, calc(100vh - 24px));
+  }
+
+  .swipeFilterModalTopBar {
+    flex-direction: column;
+  }
+
+  .swipeFilterModalActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .swipeFilterModalGroupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsDefaultFilterLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .swipeCompactScreens {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .swipeQueueStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .swipeNextCard {
+    grid-template-columns: 1fr;
+  }
+
+  .swipeNextCardBody {
+    padding: 0 12px 12px;
   }
 }
 
@@ -679,6 +1774,33 @@ body {
   padding: 18px;
   display: grid;
   gap: 10px;
+}
+
+.cardDeck.swipeCardDeck {
+  width: 100%;
+  max-width: none;
+}
+
+.cardGestureSurface.swipeCoverGestureSurface {
+  height: 100%;
+  padding: 0;
+}
+
+.coverImageBack.swipeHeroCover {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.screenImage.swipeCompactScreenImage {
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.statusBox.swipeStatusBox {
+  width: 100%;
+  height: 100%;
 }
 
 .mutedText {
@@ -757,6 +1879,10 @@ body {
   max-height: min(820px, calc(100vh - 40px));
 }
 
+.dashboardGameModal {
+  width: min(980px, 100%);
+}
+
 .gameSettingsTitleWrap {
   width: 100%;
 }
@@ -781,6 +1907,50 @@ body {
   min-width: 0;
   display: grid;
   gap: 6px;
+}
+
+.dashboardGameHero {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.dashboardGameHeroCover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dashboardGameHeroCoverButton {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dashboardGameHeroCoverButton:focus-visible {
+  outline: 2px solid rgba(86, 138, 255, 0.92);
+  outline-offset: 4px;
+}
+
+.dashboardGameHeroText {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dashboardGameHeroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .gameSettingsInfoGrid {
@@ -825,11 +1995,7 @@ body {
   line-height: 1.45;
   word-break: break-word;
   font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    "Liberation Mono",
-    monospace;
+    ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .gameSettingsActions {
@@ -838,7 +2004,33 @@ body {
   gap: 8px;
 }
 
+.dashboardGameInfoValue {
+  white-space: pre-wrap;
+}
+
+.dashboardGameScreensGrid {
+  margin-top: 2px;
+}
+
+.dashboardGameScreenButton {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dashboardGameScreenButton:focus-visible {
+  outline: 2px solid rgba(86, 138, 255, 0.92);
+  outline-offset: 4px;
+}
+
 @media (max-width: 640px) {
+  .dashboardGameHero {
+    grid-template-columns: 1fr;
+  }
+
   .gameSettingsHero {
     grid-template-columns: 1fr;
   }
@@ -1180,6 +2372,8 @@ body {
   gap: 12px;
   padding: 12px;
   align-content: start;
+  min-height: 0;
+  overflow: auto;
 }
 
 .dashboardPanelTitle {
@@ -1309,6 +2503,9 @@ body {
 }
 
 .tagFilterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid rgba(34, 48, 74, 0.95);
   border-radius: 999px;
   padding: 4px 10px;
@@ -1323,8 +2520,40 @@ body {
   background: rgba(47, 125, 255, 0.15);
 }
 
+.tagFilterChipExcludeActive {
+  border-color: rgba(255, 107, 107, 0.88);
+  background: rgba(255, 107, 107, 0.14);
+  color: #ffd7d7;
+}
+
+.tagFilterChipExcludeActive:hover {
+  border-color: rgba(255, 128, 128, 0.96);
+}
+
+.tagFilterChipCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(233, 237, 245, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .tagFilterChip:hover {
   border-color: rgba(61, 144, 255, 0.95);
+}
+
+.tagFilterChipDisabled,
+.tagFilterChipDisabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: rgba(34, 48, 74, 0.95);
+  background: rgba(18, 26, 40, 0.7);
 }
 
 .dashboardEmptyState {
@@ -1454,6 +2683,8 @@ body {
   gap: 12px;
   padding: 12px;
   align-content: start;
+  min-height: 0;
+  overflow: auto;
 }
 
 .settingsHeaderTop {
@@ -1530,6 +2761,48 @@ body {
   border-top: 1px solid rgba(34, 48, 74, 0.75);
 }
 
+.settingsLocalActionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.settingsLocalActionPanel {
+  min-height: 0;
+}
+
+.settingsLocalButtonGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.settingsLocalButtonGrid .button {
+  width: 100%;
+}
+
+.settingsDefaultFilterLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.settingsDefaultFilterSectionPanel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.settingsDefaultFilterSortPanel {
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
+.settingsDefaultFilterChipGrid {
+  max-height: 260px;
+}
+
 .settingsCookieStatusGrid {
   margin-top: 16px;
 }
@@ -1564,11 +2837,7 @@ body {
   margin-top: 12px;
   resize: vertical;
   font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    "Liberation Mono",
-    monospace;
+    ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .settingsHostGrid {
@@ -1827,6 +3096,23 @@ body {
     inset 0 0 0 1px rgba(47, 125, 255, 0.08);
 }
 
+.listItemOpenSurface {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  display: grid;
+  text-align: left;
+  cursor: pointer;
+}
+
+.listItemOpenSurface:focus-visible {
+  outline: 2px solid rgba(86, 138, 255, 0.92);
+  outline-offset: -2px;
+}
+
 .listItemCoverLink {
   display: block;
 }
@@ -1844,6 +3130,14 @@ body {
   grid-template-rows: auto auto;
   align-content: start;
   gap: 10px;
+}
+
+.listItemPreviewBody {
+  padding-bottom: 10px;
+}
+
+.listItemActionBody {
+  padding-top: 0;
 }
 
 .listItemBadgeRow {
@@ -1892,6 +3186,20 @@ body {
 .listItemContent {
   display: block;
   min-height: 0;
+}
+
+.listItemPreviewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.listItemPreviewMetaItem {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .listItemActionsRow {

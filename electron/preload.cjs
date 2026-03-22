@@ -6,11 +6,13 @@ contextBridge.exposeInMainWorld('f95Launcher', {
   },
   openExternal: (targetUrl) => ipcRenderer.invoke('app:openExternal', targetUrl),
   loadBundledTagsMap: () => ipcRenderer.invoke('app:loadBundledTagsMap'),
-  fetchLatestGamesPage: (pageNumber) =>
-    ipcRenderer.invoke('f95:fetchLatestGamesPage', pageNumber),
+  loadBundledPrefixesMap: () => ipcRenderer.invoke('app:loadBundledPrefixesMap'),
+  fetchLatestGamesPage: (pageNumber, latestGamesSort) =>
+    ipcRenderer.invoke('f95:fetchLatestGamesPage', pageNumber, latestGamesSort),
   fetchThreadPageHtml: (threadLink) =>
     ipcRenderer.invoke('f95:fetchThreadPageHtml', threadLink),
   getCookieStatus: () => ipcRenderer.invoke('f95:getCookieStatus'),
+  getCookieBackup: () => ipcRenderer.invoke('f95:getCookieBackup'),
   saveCookieInput: (text) => ipcRenderer.invoke('f95:saveCookieInput', text),
   clearCookieInput: () => ipcRenderer.invoke('f95:clearCookieInput'),
   getLibrarySnapshot: () => ipcRenderer.invoke('launcher:getLibrarySnapshot'),

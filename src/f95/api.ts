@@ -1,4 +1,4 @@
-import type { F95ApiResponse, F95ThreadItem } from './types'
+import type { F95ApiResponse, F95ThreadItem, LatestGamesSort } from './types'
 import { fetchLatestGamesPageViaLauncher } from '../launcher/runtime'
 
 const F95_COOKIE_REFRESH_ERROR_MESSAGE =
@@ -25,32 +25,36 @@ const isLikelyCookieRefreshErrorMessage = (
 
 const buildThreadLink = (threadIdentifier: number) => `https://f95zone.to/threads/${threadIdentifier}`
 
-const buildLatestGamesEndpointUrl = (pageNumber: number) => {
+const buildLatestGamesEndpointUrl = (
+  pageNumber: number,
+  latestGamesSort: LatestGamesSort,
+) => {
   const searchParameters = new URLSearchParams()
 
   searchParameters.set('cmd', 'list')
   searchParameters.set('cat', 'games')
   searchParameters.set('page', String(pageNumber))
-
-  searchParameters.append('noprefixes[]', '1')
-  searchParameters.append('noprefixes[]', '4')
-  searchParameters.append('noprefixes[]', '7')
-
-  searchParameters.append('notags[]', '2265')
-  searchParameters.set('sort', 'date')
+  searchParameters.set('sort', latestGamesSort)
 
   searchParameters.set('_', String(Date.now()))
 
   return `/f95/sam/latest_alpha/latest_data.php?${searchParameters.toString()}`
 }
 
-const fetchLatestGamesPage = async (pageNumber: number, abortSignal: AbortSignal) => {
-  const launcherResult = await fetchLatestGamesPageViaLauncher(pageNumber)
+const fetchLatestGamesPage = async (
+  pageNumber: number,
+  abortSignal: AbortSignal,
+  latestGamesSort: LatestGamesSort,
+) => {
+  const launcherResult = await fetchLatestGamesPageViaLauncher(
+    pageNumber,
+    latestGamesSort,
+  )
   if (launcherResult) {
     return launcherResult
   }
 
-  const endpointUrl = buildLatestGamesEndpointUrl(pageNumber)
+  const endpointUrl = buildLatestGamesEndpointUrl(pageNumber, latestGamesSort)
   const response = await fetch(endpointUrl, {
     method: 'GET',
     signal: abortSignal,

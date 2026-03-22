@@ -1,9 +1,11 @@
 import type {
+  LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,
   LauncherLatestGamesResult,
   LauncherLibrarySnapshot,
 } from './types'
+import type { LatestGamesSort } from '../f95/types'
 
 const createEmptyLibrarySnapshot = (): LauncherLibrarySnapshot => ({
   libraryRootPath: '',
@@ -32,13 +34,14 @@ const openExternalUrl = async (targetUrl: string) => {
 
 const fetchLatestGamesPageViaLauncher = async (
   pageNumber: number,
+  latestGamesSort: LatestGamesSort,
 ): Promise<LauncherLatestGamesResult | null> => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
     return null
   }
 
-  return launcherBridge.fetchLatestGamesPage(pageNumber)
+  return launcherBridge.fetchLatestGamesPage(pageNumber, latestGamesSort)
 }
 
 const fetchThreadPageHtmlViaLauncher = async (threadLink: string) => {
@@ -57,6 +60,15 @@ const getCookieStatusViaLauncher = async (): Promise<LauncherCookieStatus | null
   }
 
   return launcherBridge.getCookieStatus()
+}
+
+const getCookieBackupViaLauncher = async (): Promise<LauncherCookieBackup | null> => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.getCookieBackup()
 }
 
 const saveCookieInputViaLauncher = async (
@@ -86,6 +98,15 @@ const loadBundledTagsMapViaLauncher = async () => {
   }
 
   return launcherBridge.loadBundledTagsMap()
+}
+
+const loadBundledPrefixesMapViaLauncher = async () => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.loadBundledPrefixesMap()
 }
 
 const getLauncherLibrarySnapshot = async () => {
@@ -188,12 +209,14 @@ const requestLauncherLibraryClear = async () => {
 
 export {
   clearCookieInputViaLauncher,
+  getCookieBackupViaLauncher,
   fetchLatestGamesPageViaLauncher,
   fetchThreadPageHtmlViaLauncher,
   getCookieStatusViaLauncher,
   getLauncherBridge,
   getLauncherLibrarySnapshot,
   isLauncherBridgeAvailable,
+  loadBundledPrefixesMapViaLauncher,
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
   requestLauncherDownload,
