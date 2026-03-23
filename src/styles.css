@@ -1231,14 +1231,17 @@ body {
 
 .listItemDownloadButton {
   width: 100%;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   border-radius: 12px;
-  min-height: 40px;
+  height: 46px;
   padding: 7px 12px;
   font-size: 14px;
   line-height: 1.15;
   font-weight: 800;
+  overflow: hidden;
   border-color: rgba(68, 101, 165, 0.92);
   background:
     linear-gradient(180deg, rgba(58, 91, 150, 0.3), rgba(19, 27, 42, 0.96)),
@@ -1277,6 +1280,9 @@ body {
   background:
     linear-gradient(180deg, rgba(61, 112, 225, 0.34), rgba(19, 28, 46, 0.96)),
     rgba(26, 35, 52, 0.95);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .listItemPlayButton {
@@ -2520,6 +2526,12 @@ body {
   gap: 8px;
 }
 
+.downloadChoiceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .downloadLinkButton {
   min-height: 40px;
   padding: 9px 12px;
@@ -2537,9 +2549,23 @@ body {
     transform 0.08s ease;
 }
 
+.downloadLinkButtonHost {
+  min-height: 30px;
+  padding: 6px 10px;
+  border-style: dashed;
+  background: rgba(47, 125, 255, 0.08);
+  color: rgba(217, 231, 255, 0.9);
+  cursor: default;
+}
+
 .downloadLinkButton:hover {
   border-color: rgba(47, 125, 255, 0.95);
   background: rgba(47, 125, 255, 0.14);
+}
+
+.downloadLinkButtonHost:hover {
+  border-color: rgba(42, 58, 87, 0.95);
+  background: rgba(47, 125, 255, 0.08);
 }
 
 .downloadLinkButtonDisabled {
@@ -3636,6 +3662,16 @@ body {
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.listItemLauncherStatus {
+  margin-top: 6px;
+  color: rgba(233, 237, 245, 0.68);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .listItemActionsRow {

@@ -14,6 +14,8 @@ import {
 } from "../f95/updateTracking";
 import {
   getLauncherPrimaryActionLabel,
+  getLauncherStatusLabel,
+  getLauncherStatusText,
   isLauncherGameBusy,
 } from "../launcher/ui";
 import type { LauncherGameRecord } from "../launcher/types";
@@ -147,31 +149,6 @@ const sortCards = (
 
     return comparison * multiplier;
   });
-};
-
-const formatLauncherStatus = (launcherGame: LauncherGameRecord | null) => {
-  if (!launcherGame) {
-    return "Нет данных";
-  }
-
-  if (launcherGame.status === "queued") {
-    return "В очереди";
-  }
-  if (launcherGame.status === "resolving") {
-    return "Подготовка";
-  }
-  if (launcherGame.status === "downloading") {
-    return typeof launcherGame.progressPercent === "number"
-      ? `Скачивание ${launcherGame.progressPercent}%`
-      : "Скачивание";
-  }
-  if (launcherGame.status === "extracting") {
-    return "Распаковка";
-  }
-  if (launcherGame.status === "installed") {
-    return "Установлена";
-  }
-  return "Ошибка";
 };
 
 const compactNumberFormatter = new Intl.NumberFormat("ru-RU", {
@@ -869,6 +846,9 @@ export const Dashboard = ({
       activeGameSettingsRecord?.installDir ??
       activeGameSettingsRecord?.archivePath,
   );
+  const isActiveGameSettingsLauncherBusy = isLauncherGameBusy(
+    activeGameSettingsRecord,
+  );
 
   useEffect(() => {
     if (
@@ -909,11 +889,11 @@ export const Dashboard = ({
     const showFavoriteQuickAction = !isInFavorites;
     const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
     const canOpenGameSettings = isLauncherAvailable && Boolean(launcherGame);
-    const showInstallFolderButton = isLauncherAvailable;
     const isInstalled = launcherGame?.status === "installed";
     const canLaunchInstalledGame =
       isInstalled && Boolean(launcherGame?.launchTargetPath);
     const isBusy = isLauncherGameBusy(launcherGame);
+    const showInstallFolderButton = isLauncherAvailable && !isBusy;
     const isError = launcherGame?.status === "error";
     const errorHint =
       isError &&
@@ -980,7 +960,6 @@ export const Dashboard = ({
             type="button"
             onMouseDown={handleBestDownloadMiddleMouseDown}
             onAuxClick={handleBestDownloadAuxClick}
-            disabled={isBusy}
             onClick={() => {
               void openBestDownloadForThread(card.threadLink, card.title);
             }}
@@ -1140,6 +1119,15 @@ export const Dashboard = ({
               launcherGame?.status === "installed"
                 ? formatStorageSizeLabel(launcherGame.sizeBytes)
                 : null;
+            const launcherStatusText =
+              launcherGame &&
+              (launcherGame.status === "queued" ||
+                launcherGame.status === "downloading" ||
+                launcherGame.status === "resolving" ||
+                launcherGame.status === "extracting" ||
+                launcherGame.status === "error")
+                ? getLauncherStatusText(launcherGame)
+                : null;
             const showPlayedFavoriteButton = card.sectionKey === "played";
             const playedFavoriteLabel = card.isPlayedFavorite
               ? "Убрать из любимого"
@@ -1258,6 +1246,15 @@ export const Dashboard = ({
                               {installedSizeLabel}
                             </span>
                           ) : null}
+                        </div>
+                      ) : null}
+
+                      {launcherStatusText ? (
+                        <div
+                          className="listItemLauncherStatus"
+                          title={launcherStatusText}
+                        >
+                          {launcherStatusText}
                         </div>
                       ) : null}
                     </div>
@@ -1546,11 +1543,10 @@ export const Dashboard = ({
                 >
                   Открыть страницу
                 </button>
-                {isLauncherAvailable ? (
+                {isLauncherAvailable && !isActiveGameLauncherBusy ? (
                   <button
                     className="button"
                     type="button"
-                    disabled={isActiveGameLauncherBusy}
                     onClick={() => {
                       void onChooseInstallFolderForThread(
                         activeGameCard.threadLink,
@@ -1723,7 +1719,7 @@ export const Dashboard = ({
                 <div className="gameSettingsInfoCard">
                   <div className="gameSettingsInfoLabel">Статус</div>
                   <div className="gameSettingsInfoValue">
-                    {formatLauncherStatus(activeGameSettingsRecord)}
+                    {getLauncherStatusLabel(activeGameSettingsRecord)}
                   </div>
                 </div>
                 <div className="gameSettingsInfoCard">
@@ -1792,21 +1788,23 @@ export const Dashboard = ({
                 >
                   Открыть папку
                 </button>
-                <button
-                  className="button"
-                  type="button"
-                  disabled={isGameSettingsBusy}
-                  onClick={() =>
-                    runGameSettingsAction(() =>
-                      onChooseInstallFolderForThread(
-                        gameSettingsModalState.threadLink,
-                        gameSettingsModalState.threadTitle,
-                      ),
-                    )
-                  }
-                >
-                  Сменить папку игры
-                </button>
+                {!isActiveGameSettingsLauncherBusy ? (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={isGameSettingsBusy}
+                    onClick={() =>
+                      runGameSettingsAction(() =>
+                        onChooseInstallFolderForThread(
+                          gameSettingsModalState.threadLink,
+                          gameSettingsModalState.threadTitle,
+                        ),
+                      )
+                    }
+                  >
+                    Сменить папку игры
+                  </button>
+                ) : null}
                 <button
                   className="button"
                   type="button"

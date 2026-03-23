@@ -115,6 +115,13 @@ type DownloadGroup = {
   links: DownloadLink[]
 }
 
+type DownloadChoice = {
+  key: string
+  label: string
+  contextLabel: string | null
+  links: DownloadLink[]
+}
+
 type ThreadDownloadsStatus = 'available' | 'login_required' | 'not_found'
 
 type ThreadDownloadsData = {
@@ -138,6 +145,7 @@ export type {
   MetadataSyncState,
   DownloadLink,
   DownloadGroup,
+  DownloadChoice,
   ThreadDownloadsStatus,
   ThreadDownloadsData,
 }

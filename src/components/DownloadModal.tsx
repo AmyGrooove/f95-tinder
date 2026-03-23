@@ -1,79 +1,48 @@
 import {
+  collectDownloadChoices,
+  collectPreferredDownloadLinksFromLinks,
   findBestDownloadLink,
-  isDownloadHostHidden,
-  isSupportedDownloadHost,
+  getDownloadLinkHostLabel,
   SUPPORTED_DOWNLOAD_HOSTS,
-  shouldHideDownloadGroup,
 } from "../f95/downloads";
-import type { ThreadDownloadsData } from "../f95/types";
+import type { DownloadLink, ThreadDownloadsData } from "../f95/types";
 
-const formatHiddenGroupsSummary = (count: number) => {
-  const remainder10 = count % 10;
-  const remainder100 = count % 100;
-
-  if (remainder10 === 1 && remainder100 !== 11) {
-    return `Скрыта ${count} платформенная секция`;
-  }
-
-  if (
-    remainder10 >= 2 &&
-    remainder10 <= 4 &&
-    (remainder100 < 12 || remainder100 > 14)
-  ) {
-    return `Скрыто ${count} платформенные секции`;
-  }
-
-  return `Скрыто ${count} платформенных секций`;
-};
-
-type VisibleDownloadGroup = {
+type VisibleDownloadChoice = {
+  key: string;
   label: string;
   contextLabel: string | null;
-  links: ThreadDownloadsData["groups"][number]["links"];
+  links: DownloadLink[];
+  autoDownloadLinks: DownloadLink[];
+  hostLabelList: string[];
 };
 
-const buildVisibleGroups = (
+const buildVisibleChoices = (
   downloadsData: ThreadDownloadsData | null,
+  preferredDownloadHosts: string[],
+  disabledDownloadHosts: Record<string, number>,
   hiddenDownloadHosts: string[],
 ) => {
-  const visibleGroups: VisibleDownloadGroup[] = [];
-  const hiddenGroupLabels = new Set<string>();
-  let pendingContextLabel: string | null = null;
-
-  for (const group of downloadsData?.groups ?? []) {
-    const visibleLinks = group.links.filter(
-      (link) =>
-        isSupportedDownloadHost(link.label) &&
-        !isDownloadHostHidden(link.label, hiddenDownloadHosts),
-    );
-    const hasLinks = visibleLinks.length > 0;
-
-    if (group.links.length === 0) {
-      pendingContextLabel = group.label;
-      continue;
-    }
-
-    if (!hasLinks) {
-      continue;
-    }
-
-    if (shouldHideDownloadGroup(group.label)) {
-      hiddenGroupLabels.add(group.label);
-      continue;
-    }
-
-    visibleGroups.push({
-      label: group.label,
-      contextLabel: pendingContextLabel,
-      links: visibleLinks,
-    });
-    pendingContextLabel = null;
+  if (!downloadsData) {
+    return [];
   }
 
-  return {
-    visibleGroups,
-    hiddenGroupLabels: Array.from(hiddenGroupLabels),
-  };
+  return collectDownloadChoices(downloadsData).map((choice) => {
+    const autoDownloadLinks = collectPreferredDownloadLinksFromLinks(
+      choice.links,
+      preferredDownloadHosts,
+      disabledDownloadHosts,
+      hiddenDownloadHosts,
+    );
+    const hostLabelList = choice.links
+      .map((link) => getDownloadLinkHostLabel(link) || link.label)
+      .filter((label, index, array) => label.length > 0 && array.indexOf(label) === index);
+
+    return {
+      ...choice,
+      autoDownloadLinks,
+      hostLabelList,
+    };
+  });
 };
 
 type DownloadModalProps = {
@@ -90,6 +59,11 @@ type DownloadModalProps = {
   isPrimaryActionDisabled?: boolean;
   onClose: () => void;
   onOpenBestDownload: (threadLink: string, threadTitle: string) => void;
+  onOpenDownloadChoice: (
+    threadLink: string,
+    threadTitle: string,
+    linkList: DownloadLink[],
+  ) => void;
   onOpenSettings: () => void;
   onOpenThread: (threadLink: string) => void;
 };
@@ -124,6 +98,7 @@ const DownloadModal = ({
   isPrimaryActionDisabled = false,
   onClose,
   onOpenBestDownload,
+  onOpenDownloadChoice,
   onOpenSettings,
   onOpenThread,
 }: DownloadModalProps) => {
@@ -135,8 +110,10 @@ const DownloadModal = ({
   const shouldShowLoginHint =
     downloadsData?.status === "login_required" ||
     (downloadsData?.requiresAuth ?? false);
-  const { visibleGroups, hiddenGroupLabels } = buildVisibleGroups(
+  const visibleChoices = buildVisibleChoices(
     downloadsData,
+    preferredDownloadHosts,
+    disabledDownloadHosts,
     hiddenDownloadHosts,
   );
   const bestAvailableDownloadLink = downloadsData
@@ -147,6 +124,10 @@ const DownloadModal = ({
         hiddenDownloadHosts,
       )
     : null;
+  const shouldShowPrimaryAction =
+    Boolean(threadLink) &&
+    visibleChoices.length <= 1 &&
+    Boolean(bestAvailableDownloadLink?.url);
 
   return (
     <div
@@ -171,7 +152,7 @@ const DownloadModal = ({
           </div>
 
           <div className="downloadModalActions">
-            {threadLink ? (
+            {threadLink && shouldShowPrimaryAction ? (
               <button
                 className="button buttonPrimary"
                 type="button"
@@ -222,13 +203,18 @@ const DownloadModal = ({
             <div className="downloadQuickSummary">
               <div className="downloadQuickSummaryLabel">One-click</div>
               <div className="downloadQuickSummaryValue">
-                {bestAvailableDownloadLink?.label
-                  ? `Сейчас выберет ${bestAvailableDownloadLink.label}`
-                  : `Сейчас нет поддерживаемого host'а. Доступны только ${supportedHostsLabel}`}
+                {visibleChoices.length > 1
+                  ? `Найдено ${visibleChoices.length} варианта. Выбери, что скачивать.`
+                  : bestAvailableDownloadLink?.label
+                    ? `Готово к скачиванию через ${bestAvailableDownloadLink.label}`
+                    : visibleChoices.length === 1
+                      ? "Есть ссылки, но auto one-click не нашел поддерживаемый host."
+                      : `Сейчас нет подходящих зеркал. Доступны auto-host'ы: ${supportedHostsLabel}`}
               </div>
               <div className="downloadQuickSummaryMeta">
-                One-click работает только с {supportedHostsLabel}. Порядок и
-                временная пауза настраиваются отдельно.
+                One-click работает только с {supportedHostsLabel}. Если host
+                не подходит, приложение попробует следующий внутри выбранного
+                варианта.
               </div>
             </div>
           ) : null}
@@ -245,29 +231,60 @@ const DownloadModal = ({
           !errorMessage &&
           downloadsData &&
           downloadsData.groups.length > 0 &&
-          visibleGroups.length === 0 ? (
+          visibleChoices.length === 0 ? (
             <div className="downloadEmptyState">
-              В этом треде не найдено поддерживаемых host'ов или они скрыты
-              настройками. Сейчас поддерживаются только {supportedHostsLabel}.
+              В треде не осталось прямых или masked зеркал для скачивания.
+              Открой страницу треда и скачай вручную.
             </div>
           ) : null}
 
           {!isLoading && !errorMessage
-            ? visibleGroups.map((group) => (
-                <div key={group.label} className="downloadGroup">
+            ? visibleChoices.map((choice) => (
+                <div key={choice.key} className="downloadGroup">
                   <div className="downloadGroupHeader">
-                    {group.contextLabel ? (
+                    {choice.contextLabel ? (
                       <div className="downloadGroupContext">
-                        {group.contextLabel}
+                        {choice.contextLabel}
                       </div>
                     ) : null}
-                    <div className="downloadGroupLabel">{group.label}</div>
+                    <div className="downloadGroupLabel">{choice.label}</div>
+                    {choice.hostLabelList.length > 0 ? (
+                      <div className="downloadLinksGrid">
+                        {choice.hostLabelList.map((hostLabel) => (
+                          <span
+                            key={`${choice.key}-${hostLabel}`}
+                            className="downloadLinkButton downloadLinkButtonHost"
+                          >
+                            {hostLabel}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
+                  {threadLink && choice.autoDownloadLinks.length > 0 ? (
+                    <div className="downloadChoiceActions">
+                      <button
+                        className="button buttonPrimary"
+                        type="button"
+                        onClick={() =>
+                          onOpenDownloadChoice(threadLink, threadTitle, choice.links)
+                        }
+                        disabled={isPrimaryActionDisabled}
+                      >
+                        Скачать этот вариант
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="downloadQuickSummaryMeta">
+                      Для этого варианта автоматическое скачивание сейчас
+                      недоступно. Можно открыть ссылки вручную.
+                    </div>
+                  )}
                   <div className="downloadLinksGrid">
-                    {group.links.map((link) =>
+                    {choice.links.map((link) =>
                       link.url ? (
                         <a
-                          key={`${group.label}-${link.label}-${link.url}`}
+                          key={`${choice.key}-${link.label}-${link.url}`}
                           className="downloadLinkButton"
                           href={link.url}
                           target="_blank"
@@ -282,7 +299,7 @@ const DownloadModal = ({
                         </a>
                       ) : (
                         <button
-                          key={`${group.label}-${link.label}`}
+                          key={`${choice.key}-${link.label}`}
                           className="downloadLinkButton downloadLinkButtonDisabled"
                           type="button"
                           disabled
@@ -296,17 +313,6 @@ const DownloadModal = ({
                 </div>
               ))
             : null}
-
-          {!isLoading && !errorMessage && hiddenGroupLabels.length > 0 ? (
-            <details className="downloadHiddenGroups">
-              <summary className="downloadHiddenGroupsSummary">
-                {formatHiddenGroupsSummary(hiddenGroupLabels.length)}
-              </summary>
-              <div className="downloadHiddenGroupsBody">
-                {hiddenGroupLabels.join(", ")}
-              </div>
-            </details>
-          ) : null}
         </div>
       </div>
     </div>

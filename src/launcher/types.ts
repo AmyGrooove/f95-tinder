@@ -20,6 +20,7 @@ type LauncherGameRecord = {
   launchTargetName: string | null
   lastHostLabel: string | null
   lastDownloadUrl: string | null
+  downloadSpeedBytesPerSecond: number | null
   errorMessage: string | null
   sizeBytes: number | null
   updatedAtUnixMs: number

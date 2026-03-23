@@ -56,6 +56,14 @@ const TAG_CONTRIBUTION_WEIGHT = 1.65;
 const PREFIX_CONTRIBUTION_WEIGHT = 1.05;
 const CREATOR_CONTRIBUTION_WEIGHT = 1.3;
 const REASON_LIMIT = 3;
+const MIN_NEGATIVE_SIGNAL_SCALE = 0.35;
+
+type InterestSignalEntry = {
+  creatorName: string;
+  prefixIdList: number[];
+  signalWeight: number;
+  tagIdList: number[];
+};
 
 const createEmptyInterestProfile = (): InterestProfile => ({
   tagEvidenceById: new Map<number, FeatureEvidence>(),
@@ -211,6 +219,34 @@ const calculateFeatureContribution = (
   const strength = Math.min(1, totalEvidence / 4.5);
 
   return balance * strength * maxContribution;
+};
+
+const getNegativeSignalScale = (signalEntryList: InterestSignalEntry[]) => {
+  let positiveSignalWeightTotal = 0;
+  let negativeSignalWeightTotal = 0;
+
+  for (const signalEntry of signalEntryList) {
+    if (signalEntry.signalWeight > 0) {
+      positiveSignalWeightTotal += signalEntry.signalWeight;
+      continue;
+    }
+
+    negativeSignalWeightTotal += Math.abs(signalEntry.signalWeight);
+  }
+
+  if (negativeSignalWeightTotal <= 0) {
+    return 1;
+  }
+
+  if (positiveSignalWeightTotal <= 0) {
+    return MIN_NEGATIVE_SIGNAL_SCALE;
+  }
+
+  // Large trash lists should not overwhelm the taste profile purely by volume.
+  return Math.max(
+    MIN_NEGATIVE_SIGNAL_SCALE,
+    Math.min(1, positiveSignalWeightTotal / negativeSignalWeightTotal),
+  );
 };
 
 const getRatingBonus = (rating: number | undefined) => {
@@ -391,6 +427,7 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     ...playedSet,
     ...trashSet,
   ]);
+  const signalEntryList: InterestSignalEntry[] = [];
 
   for (const threadLink of trackedLinkSet) {
     const signalType = getSignalTypeForLink(
@@ -414,9 +451,12 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     const prefixIdList = uniqueNumberList(processedItem.prefixes);
     const creatorName = normalizeCreatorName(processedItem.creator);
 
-    accumulateTagEvidence(profile, tagIdList, signalWeight);
-    accumulatePrefixEvidence(profile, prefixIdList, signalWeight);
-    accumulateCreatorEvidence(profile, creatorName, signalWeight);
+    signalEntryList.push({
+      creatorName,
+      prefixIdList,
+      signalWeight,
+      tagIdList,
+    });
 
     profile.trackedSignalsCount += 1;
     if (signalWeight > 0) {
@@ -424,6 +464,27 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     } else {
       profile.negativeSignalsCount += 1;
     }
+  }
+
+  const negativeSignalScale = getNegativeSignalScale(signalEntryList);
+
+  for (const signalEntry of signalEntryList) {
+    const adjustedSignalWeight =
+      signalEntry.signalWeight < 0
+        ? signalEntry.signalWeight * negativeSignalScale
+        : signalEntry.signalWeight;
+
+    accumulateTagEvidence(profile, signalEntry.tagIdList, adjustedSignalWeight);
+    accumulatePrefixEvidence(
+      profile,
+      signalEntry.prefixIdList,
+      adjustedSignalWeight,
+    );
+    accumulateCreatorEvidence(
+      profile,
+      signalEntry.creatorName,
+      adjustedSignalWeight,
+    );
   }
 
   return profile;

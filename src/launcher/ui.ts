@@ -9,6 +9,37 @@ const isLauncherGameBusy = (launcherGame: LauncherGameRecord | null | undefined)
   )
 }
 
+const formatLauncherSourceSuffix = (
+  launcherGame: LauncherGameRecord | null | undefined,
+) => {
+  const hostLabel =
+    typeof launcherGame?.lastHostLabel === 'string'
+      ? launcherGame.lastHostLabel.trim()
+      : ''
+
+  return hostLabel ? ` · ${hostLabel}` : ''
+}
+
+const formatTransferSpeedLabel = (bytesPerSecond: number | null | undefined) => {
+  if (
+    typeof bytesPerSecond !== 'number' ||
+    !Number.isFinite(bytesPerSecond) ||
+    bytesPerSecond <= 0
+  ) {
+    return null
+  }
+
+  if (bytesPerSecond >= 1024 ** 2) {
+    return `${(bytesPerSecond / 1024 ** 2).toFixed(1)} MB/s`
+  }
+
+  if (bytesPerSecond >= 1024) {
+    return `${Math.round(bytesPerSecond / 1024)} KB/s`
+  }
+
+  return `${bytesPerSecond} B/s`
+}
+
 const getLauncherPrimaryActionLabel = (
   isLauncherAvailable: boolean,
   launcherGame: LauncherGameRecord | null | undefined,
@@ -30,33 +61,54 @@ const getLauncherPrimaryActionLabel = (
   }
 
   if (launcherGame.status === 'queued') {
-    return 'В очереди'
+    return 'Отменить'
   }
 
   if (launcherGame.status === 'resolving') {
-    const statusMessage = launcherGame.message?.toLowerCase() ?? ''
-    if (
-      statusMessage.includes('captcha') ||
-      statusMessage.includes('вручную') ||
-      statusMessage.includes('manual')
-    ) {
-      return 'Жду вручную'
-    }
-
-    return 'Готовлю'
+    return 'Отменить'
   }
 
   if (launcherGame.status === 'downloading') {
-    return typeof launcherGame.progressPercent === 'number'
-      ? `Скачиваю ${launcherGame.progressPercent}%`
-      : 'Скачиваю'
+    return 'Отменить'
   }
 
   if (launcherGame.status === 'extracting') {
-    return 'Распаковываю'
+    return 'Отменить'
   }
 
   return 'Повторить'
+}
+
+const getLauncherStatusLabel = (
+  launcherGame: LauncherGameRecord | null | undefined,
+) => {
+  if (!launcherGame) {
+    return 'Нет данных'
+  }
+
+  if (launcherGame.status === 'queued') {
+    return `В очереди${formatLauncherSourceSuffix(launcherGame)}`
+  }
+  if (launcherGame.status === 'resolving') {
+    return `Подготовка${formatLauncherSourceSuffix(launcherGame)}`
+  }
+  if (launcherGame.status === 'downloading') {
+    return typeof launcherGame.progressPercent === 'number'
+      ? `Скачивание ${launcherGame.progressPercent}%${formatLauncherSourceSuffix(
+          launcherGame,
+        )}`
+      : `Скачивание${formatLauncherSourceSuffix(launcherGame)}`
+  }
+  if (launcherGame.status === 'extracting') {
+    return `Распаковка${formatLauncherSourceSuffix(launcherGame)}`
+  }
+  if (launcherGame.status === 'installed') {
+    return 'Установлена'
+  }
+  if (launcherGame.lastHostLabel) {
+    return `Ошибка · ${launcherGame.lastHostLabel}`
+  }
+  return 'Ошибка'
 }
 
 const getLauncherStatusText = (
@@ -80,11 +132,21 @@ const getLauncherStatusText = (
     return launcherGame.errorMessage
   }
 
+  if (launcherGame.status === 'downloading') {
+    const speedLabel = formatTransferSpeedLabel(
+      launcherGame.downloadSpeedBytesPerSecond,
+    )
+    if (speedLabel) {
+      return `Скорость: ${speedLabel}`
+    }
+  }
+
   return launcherGame.message
 }
 
 export {
   getLauncherPrimaryActionLabel,
+  getLauncherStatusLabel,
   getLauncherStatusText,
   isLauncherGameBusy,
 }

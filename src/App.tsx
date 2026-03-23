@@ -18,6 +18,8 @@ import {
   clearHiddenDownloadHosts,
   clearDisabledDownloadHosts,
   clearAllCachedThreadDownloads,
+  collectDownloadChoices,
+  collectPreferredDownloadLinksFromLinks,
   collectPreferredDownloadLinks,
   disableDownloadHostTemporarily,
   enableDownloadHost,
@@ -62,20 +64,24 @@ import {
 } from "./f95/recommendations";
 import type {
   DefaultSwipeSettings,
+  DownloadLink,
   ListType,
   ProcessedThreadItem,
   SessionState,
   ThreadDownloadsData,
 } from "./f95/types";
 import { Dashboard } from "./components/Dashboard";
+import { CookiePromptModal } from "./components/CookiePromptModal";
 import { DownloadModal } from "./components/DownloadModal";
 import { SettingsPage, type SettingsTab } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
 import {
   clearCookieProxyInput,
   fetchCookieProxyBackup,
+  fetchCookieProxyStatus,
   saveCookieProxyInput,
   type CookieProxyBackup,
+  type CookieProxyStatus,
 } from "./f95/cookieProxy";
 import {
   getLauncherPrimaryActionLabel,
@@ -148,6 +154,7 @@ const closeBackgroundTarget = (openedWindow: Window | null) => {
 
 type BestDownloadOpenOptions = {
   openInBackground?: boolean;
+  selectedDownloadLinks?: DownloadLink[];
 };
 
 const DOWNLOAD_PRELOAD_LIMIT = 4;
@@ -197,6 +204,24 @@ const createClosedDownloadModalState = (): DownloadModalState => ({
   threadTitle: "",
   downloadsData: null,
   isLoading: false,
+  errorMessage: null,
+});
+
+type CookiePromptModalState = {
+  isOpen: boolean;
+  threadLink: string | null;
+  threadTitle: string;
+  draft: string;
+  status: CookieProxyStatus | null;
+  errorMessage: string | null;
+};
+
+const createClosedCookiePromptModalState = (): CookiePromptModalState => ({
+  isOpen: false,
+  threadLink: null,
+  threadTitle: "",
+  draft: "",
+  status: null,
   errorMessage: null,
 });
 
@@ -673,6 +698,7 @@ const App = () => {
     gamesByThreadLink: launcherGamesByThreadLink,
     libraryRootPath,
     downloadGame,
+    cancelDownloadGame,
     clearLibrary,
     chooseInstallFolder,
     chooseLaunchTarget,
@@ -702,6 +728,8 @@ const App = () => {
   );
   const [downloadModalState, setDownloadModalState] =
     useState<DownloadModalState>(() => createClosedDownloadModalState());
+  const [cookiePromptModalState, setCookiePromptModalState] =
+    useState<CookiePromptModalState>(() => createClosedCookiePromptModalState());
   const [pageType, setPageType] = useState<PageType>(() => readPageFromHash());
   const [requestedSettingsTab, setRequestedSettingsTab] =
     useState<SettingsTab | null>(() => readSettingsTabFromHash());
@@ -724,6 +752,7 @@ const App = () => {
     useState<DefaultSwipeSettings | null>(null);
   const [isBundledDefaultSwipeSettingsChecking, setIsBundledDefaultSwipeSettingsChecking] =
     useState(true);
+  const [isCookiePromptBusy, setIsCookiePromptBusy] = useState(false);
 
   const importAllBackupInputRef = useRef<HTMLInputElement | null>(null);
   const importSettingsBackupInputRef = useRef<HTMLInputElement | null>(null);
@@ -1562,6 +1591,67 @@ const App = () => {
     setDownloadModalState(createClosedDownloadModalState());
   }, []);
 
+  const closeCookiePromptModal = useCallback(() => {
+    setCookiePromptModalState(createClosedCookiePromptModalState());
+    setIsCookiePromptBusy(false);
+  }, []);
+
+  const promptForCookiesBeforeDownload = useCallback(
+    async (threadLink: string, threadTitle: string, errorMessageValue: string | null = null) => {
+      let cookieStatus: CookieProxyStatus | null = null;
+      let cookieDraft = "";
+
+      try {
+        cookieStatus = await fetchCookieProxyStatus();
+      } catch {
+        cookieStatus = null;
+      }
+
+      try {
+        const cookieBackup = await fetchCookieProxyBackup();
+        if (cookieBackup?.source === "settings" && cookieBackup.text) {
+          cookieDraft = cookieBackup.text;
+        }
+      } catch {
+        cookieDraft = "";
+      }
+
+      setCookiePromptModalState({
+        isOpen: true,
+        threadLink,
+        threadTitle,
+        draft: cookieDraft,
+        status: cookieStatus,
+        errorMessage: errorMessageValue,
+      });
+    },
+    [],
+  );
+
+  const ensureCookiesBeforeDownload = useCallback(
+    async (threadLink: string, threadTitle: string) => {
+      try {
+        const cookieStatus = await fetchCookieProxyStatus();
+        if (cookieStatus.configured) {
+          return true;
+        }
+
+        await promptForCookiesBeforeDownload(threadLink, threadTitle);
+        return false;
+      } catch (error) {
+        await promptForCookiesBeforeDownload(
+          threadLink,
+          threadTitle,
+          error instanceof Error
+            ? error.message
+            : "Не удалось проверить состояние куки. Вставь их вручную.",
+        );
+        return false;
+      }
+    },
+    [promptForCookiesBeforeDownload],
+  );
+
   const showDownloadModal = useCallback(
     (
       threadLink: string,
@@ -1653,13 +1743,46 @@ const App = () => {
         }
 
         if (isLauncherGameBusy(launcherGame)) {
+          try {
+            await cancelDownloadGame(threadLink);
+          } catch (error) {
+            setErrorMessage(
+              error instanceof Error
+                ? error.message
+                : "Не удалось отменить скачивание",
+            );
+          }
+          return;
+        }
+
+        const hasCookies = await ensureCookiesBeforeDownload(threadLink, threadTitle);
+        if (!hasCookies) {
           return;
         }
 
         try {
           const downloadsData = await loadOrFetchThreadDownloads(threadLink);
-          const preferredDownloadLinkList = collectPreferredDownloadLinks(
-            downloadsData,
+          const downloadChoiceList = collectDownloadChoices(downloadsData);
+          if (downloadChoiceList.length === 0) {
+            showDownloadModal(
+              threadLink,
+              threadTitle,
+              downloadsData,
+              false,
+              "Не удалось найти зеркала для автоматического скачивания. Открой тред и скачай вручную.",
+            );
+            return;
+          }
+
+          if (!options.selectedDownloadLinks && downloadChoiceList.length > 1) {
+            showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+            return;
+          }
+
+          const selectedDownloadLinkList =
+            options.selectedDownloadLinks ?? downloadChoiceList[0]?.links ?? [];
+          const preferredDownloadLinkList = collectPreferredDownloadLinksFromLinks(
+            selectedDownloadLinkList,
             preferredDownloadHosts,
             disabledDownloadHosts,
             hiddenDownloadHosts,
@@ -1682,7 +1805,13 @@ const App = () => {
             return;
           }
 
-          showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+          showDownloadModal(
+            threadLink,
+            threadTitle,
+            downloadsData,
+            false,
+            "Для выбранного варианта нет поддерживаемого host'а. Открой тред и скачай вручную.",
+          );
           return;
         } catch (error) {
           showDownloadModal(
@@ -1704,14 +1833,36 @@ const App = () => {
 
       try {
         const downloadsData = await loadOrFetchThreadDownloads(threadLink);
-        const preferredDownloadLinkList = collectPreferredDownloadLinks(
-          downloadsData,
+        const downloadChoiceList = collectDownloadChoices(downloadsData);
+        if (downloadChoiceList.length === 0) {
+          closeBackgroundTarget(pendingBackgroundTarget);
+          showDownloadModal(
+            threadLink,
+            threadTitle,
+            downloadsData,
+            false,
+            "Не удалось найти ссылки на скачивание. Открой тред вручную.",
+          );
+          return;
+        }
+
+        if (!options.selectedDownloadLinks && downloadChoiceList.length > 1) {
+          closeBackgroundTarget(pendingBackgroundTarget);
+          showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+          return;
+        }
+
+        const selectedDownloadLinkList =
+          options.selectedDownloadLinks ?? downloadChoiceList[0]?.links ?? [];
+        const preferredDownloadLinkList = collectPreferredDownloadLinksFromLinks(
+          selectedDownloadLinkList,
           preferredDownloadHosts,
           disabledDownloadHosts,
           hiddenDownloadHosts,
         );
         const bestDownloadLink =
           preferredDownloadLinkList[0] ??
+          selectedDownloadLinkList.find((link) => typeof link.url === "string") ??
           findBestDownloadLink(
             downloadsData,
             preferredDownloadHosts,
@@ -1729,7 +1880,13 @@ const App = () => {
         }
 
         closeBackgroundTarget(pendingBackgroundTarget);
-        showDownloadModal(threadLink, threadTitle, downloadsData, false, null);
+        showDownloadModal(
+          threadLink,
+          threadTitle,
+          downloadsData,
+          false,
+          "Для выбранного варианта нет прямой ссылки. Открой тред вручную.",
+        );
       } catch (error) {
         closeBackgroundTarget(pendingBackgroundTarget);
         showDownloadModal(
@@ -1744,9 +1901,11 @@ const App = () => {
       }
     },
     [
+      cancelDownloadGame,
       chooseLaunchTarget,
       disabledDownloadHosts,
       downloadGame,
+      ensureCookiesBeforeDownload,
       hiddenDownloadHosts,
       isLauncherAvailable,
       launchGame,
@@ -1990,6 +2149,46 @@ const App = () => {
     setPage("settings");
   }, [closeDownloadModal, setPage]);
 
+  const openCookieSettingsPage = useCallback(() => {
+    closeCookiePromptModal();
+    setPage("settings", "cookies");
+  }, [closeCookiePromptModal, setPage]);
+
+  const handleSaveCookiePrompt = useCallback(async () => {
+    if (
+      !cookiePromptModalState.threadLink ||
+      cookiePromptModalState.draft.trim().length === 0
+    ) {
+      return;
+    }
+
+    const { threadLink, threadTitle, draft } = cookiePromptModalState;
+
+    try {
+      setIsCookiePromptBusy(true);
+      setCookiePromptModalState((previousState) => ({
+        ...previousState,
+        errorMessage: null,
+      }));
+
+      const nextStatus = await saveCookieProxyInput(draft);
+      if (!nextStatus.configured) {
+        throw new Error("Не удалось сохранить куки.");
+      }
+
+      closeCookiePromptModal();
+      await openBestDownloadForThread(threadLink, threadTitle);
+    } catch (error) {
+      setCookiePromptModalState((previousState) => ({
+        ...previousState,
+        errorMessage:
+          error instanceof Error ? error.message : "Не удалось сохранить куки",
+      }));
+    } finally {
+      setIsCookiePromptBusy(false);
+    }
+  }, [closeCookiePromptModal, cookiePromptModalState, openBestDownloadForThread]);
+
   const preloadThreadLinks = useMemo(() => {
     const threadLinkList: string[] = [];
 
@@ -2068,6 +2267,14 @@ const App = () => {
         return;
       }
 
+      if (cookiePromptModalState.isOpen) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeCookiePromptModal();
+        }
+        return;
+      }
+
       if (viewerState.isOpen) {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -2139,7 +2346,9 @@ const App = () => {
   }, [
     canUndo,
     closeDownloadModal,
+    closeCookiePromptModal,
     closeViewer,
+    cookiePromptModalState.isOpen,
     currentThreadLink,
     downloadModalState.isOpen,
     handleFavorite,
@@ -3494,17 +3703,38 @@ const App = () => {
             ? launcherGamesByThreadLink[downloadModalState.threadLink] ?? null
             : null,
         )}
-        isPrimaryActionDisabled={isLauncherGameBusy(
-          downloadModalState.threadLink
-            ? launcherGamesByThreadLink[downloadModalState.threadLink] ?? null
-            : null,
-        )}
+        isPrimaryActionDisabled={false}
         onClose={closeDownloadModal}
         onOpenBestDownload={(threadLink, threadTitle) => {
           void openBestDownloadForThread(threadLink, threadTitle);
         }}
+        onOpenDownloadChoice={(threadLink, threadTitle, linkList) => {
+          void openBestDownloadForThread(threadLink, threadTitle, {
+            selectedDownloadLinks: linkList,
+          });
+        }}
         onOpenSettings={openSettingsPage}
         onOpenThread={openLinkInNewTab}
+      />
+
+      <CookiePromptModal
+        isOpen={cookiePromptModalState.isOpen}
+        threadTitle={cookiePromptModalState.threadTitle}
+        draft={cookiePromptModalState.draft}
+        status={cookiePromptModalState.status}
+        errorMessage={cookiePromptModalState.errorMessage}
+        isBusy={isCookiePromptBusy}
+        onChangeDraft={(value) => {
+          setCookiePromptModalState((previousState) => ({
+            ...previousState,
+            draft: value,
+          }));
+        }}
+        onClose={closeCookiePromptModal}
+        onOpenSettings={openCookieSettingsPage}
+        onSave={() => {
+          void handleSaveCookiePrompt();
+        }}
       />
 
       {viewerState.isOpen ? (

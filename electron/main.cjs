@@ -2,6 +2,10 @@ const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const path = require('node:path')
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
+const {
+  resolveDownloadHostScenario,
+  runDownloadHostAutomationStep,
+} = require('./download-host-automation.cjs')
 let path7za = null
 
 try {
@@ -43,6 +47,25 @@ let runtimeCookieState = null
 let libraryState = null
 let localDataFilesState = null
 const activeDownloadJobs = new Map()
+
+const createCancelledDownloadError = () => {
+  const error = new Error('Загрузка отменена пользователем.')
+  error.code = 'DOWNLOAD_CANCELLED'
+  return error
+}
+
+const isDownloadCancelledError = (error) => {
+  return (
+    Boolean(error && typeof error === 'object' && error.code === 'DOWNLOAD_CANCELLED') ||
+    (error instanceof Error && error.message === 'Загрузка отменена пользователем.')
+  )
+}
+
+const throwIfDownloadCancelled = (jobState) => {
+  if (jobState?.cancelled) {
+    throw createCancelledDownloadError()
+  }
+}
 
 const ensureDirectory = (targetPath) => {
   fs.mkdirSync(targetPath, { recursive: true })
@@ -231,6 +254,9 @@ const buildGameFolderName = (threadLink, threadTitle) => {
     : titlePart
 }
 
+const buildGameRootPath = (threadLink, threadTitle) =>
+  path.join(libraryState.libraryRootPath, buildGameFolderName(threadLink, threadTitle))
+
 const createEmptyCookieState = () => ({
   header: '',
   source: 'none',
@@ -249,6 +275,7 @@ const createDefaultGameRecord = (threadLink, threadTitle = '') => ({
   launchTargetName: null,
   lastHostLabel: null,
   lastDownloadUrl: null,
+  downloadSpeedBytesPerSecond: null,
   errorMessage: null,
   sizeBytes: null,
   updatedAtUnixMs: Date.now(),
@@ -365,6 +392,12 @@ const normalizeGameRecord = (threadLink, value) => {
       typeof record.lastHostLabel === 'string' ? record.lastHostLabel : null,
     lastDownloadUrl:
       typeof record.lastDownloadUrl === 'string' ? record.lastDownloadUrl : null,
+    downloadSpeedBytesPerSecond:
+      typeof record.downloadSpeedBytesPerSecond === 'number' &&
+      Number.isFinite(record.downloadSpeedBytesPerSecond) &&
+      record.downloadSpeedBytesPerSecond >= 0
+        ? record.downloadSpeedBytesPerSecond
+        : null,
     errorMessage:
       typeof record.errorMessage === 'string' ? record.errorMessage : null,
     sizeBytes:
@@ -995,10 +1028,69 @@ const formatDownloadProgress = (receivedBytes, totalBytes) => {
   return Math.max(0, Math.min(100, Math.round((receivedBytes / totalBytes) * 100)))
 }
 
-const extractArchiveToInstallDir = async (archivePath, gameRoot) => {
+const removeDirectoryWithRetries = async (targetPath, attemptCount = 6) => {
+  let lastError = null
+
+  for (let attemptIndex = 0; attemptIndex < attemptCount; attemptIndex += 1) {
+    try {
+      fs.rmSync(targetPath, { recursive: true, force: true })
+      return
+    } catch (error) {
+      lastError = error
+      await delay(120)
+    }
+  }
+
+  if (lastError) {
+    throw lastError
+  }
+}
+
+const clearCancelledDownloadArtifacts = async (threadLink, threadTitle) => {
+  const gameRoot = buildGameRootPath(threadLink, threadTitle)
+
+  try {
+    await removeDirectoryWithRetries(gameRoot)
+  } catch (error) {
+    updateGameRecord(threadLink, {
+      threadTitle,
+      status: 'error',
+      progressPercent: null,
+      message: null,
+      archivePath: null,
+      installDir: null,
+      launchTargetPath: null,
+      launchTargetName: null,
+      lastDownloadUrl: null,
+      downloadSpeedBytesPerSecond: null,
+      errorMessage:
+        error instanceof Error
+          ? `Загрузка отменена, но не удалось удалить временные файлы: ${error.message}`
+          : 'Загрузка отменена, но не удалось удалить временные файлы.',
+      sizeBytes: null,
+    })
+    return
+  }
+
+  if (!libraryState.gamesByThreadLink[threadLink]) {
+    return
+  }
+
+  const nextGamesByThreadLink = { ...libraryState.gamesByThreadLink }
+  delete nextGamesByThreadLink[threadLink]
+  libraryState = {
+    ...libraryState,
+    gamesByThreadLink: nextGamesByThreadLink,
+  }
+  persistLibraryState()
+}
+
+const extractArchiveToInstallDir = async (archivePath, gameRoot, jobState) => {
   if (!path7za) {
     throw new Error('Не найден 7zip-bin. Распаковка недоступна.')
   }
+
+  throwIfDownloadCancelled(jobState)
 
   const nextInstallDir = path.join(gameRoot, 'current.next')
   const finalInstallDir = path.join(gameRoot, 'current')
@@ -1014,6 +1106,9 @@ const extractArchiveToInstallDir = async (archivePath, gameRoot) => {
         windowsHide: true,
       },
     )
+    if (jobState) {
+      jobState.extractProcess = childProcess
+    }
 
     let stderrText = ''
     childProcess.stderr.on('data', (chunk) => {
@@ -1025,6 +1120,15 @@ const extractArchiveToInstallDir = async (archivePath, gameRoot) => {
     })
 
     childProcess.once('close', (exitCode) => {
+      if (jobState?.extractProcess === childProcess) {
+        jobState.extractProcess = null
+      }
+
+      if (jobState?.cancelled) {
+        reject(createCancelledDownloadError())
+        return
+      }
+
       if (exitCode === 0 || exitCode === 1) {
         resolve()
         return
@@ -1035,6 +1139,8 @@ const extractArchiveToInstallDir = async (archivePath, gameRoot) => {
       )
     })
   })
+
+  throwIfDownloadCancelled(jobState)
 
   fs.rmSync(finalInstallDir, { recursive: true, force: true })
   fs.renameSync(nextInstallDir, finalInstallDir)
@@ -1162,144 +1268,32 @@ const findBestLaunchTarget = (installDir, threadTitle) => {
   return scoredCandidateList[0]?.candidate.absolutePath ?? null
 }
 
-const buildAutoClickScript = () => `
-(() => {
-  const normalize = (value) =>
-    String(value ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/\\s+/g, ' ');
-
-  const pageText = normalize(document.body?.innerText ?? '');
-  const hasCaptcha =
-    pageText.includes('captcha') ||
-    pageText.includes('i am human') ||
-    pageText.includes('verify you are human') ||
-    document.querySelector('.g-recaptcha, .h-captcha, iframe[src*="recaptcha"], iframe[src*="hcaptcha"]') !== null;
-
-  const isVisible = (element) => {
-    if (!(element instanceof HTMLElement)) {
-      return false;
-    }
-
-    const style = window.getComputedStyle(element);
-    const rect = element.getBoundingClientRect();
-    return (
-      style.display !== 'none' &&
-      style.visibility !== 'hidden' &&
-      rect.width > 0 &&
-      rect.height > 0
-    );
-  };
-
-  const candidateList = Array.from(
-    document.querySelectorAll('a[href], button, input[type="button"], input[type="submit"], [role="button"]'),
-  );
-
-  let bestCandidate = null;
-
-  for (const element of candidateList) {
-    if (!(element instanceof HTMLElement) || !isVisible(element)) {
-      continue;
-    }
-
-    if (
-      element.hasAttribute('disabled') ||
-      element.getAttribute('aria-disabled') === 'true'
-    ) {
-      continue;
-    }
-
-    const text = normalize(
-      [
-        element.innerText,
-        element.getAttribute('aria-label'),
-        element.getAttribute('title'),
-        element.getAttribute('value'),
-        element.getAttribute('href'),
-        element.getAttribute('id'),
-        element.className,
-      ]
-        .filter(Boolean)
-        .join(' '),
-    );
-
-    let score = 0;
-
-    if (text.includes('download')) score += 120;
-    if (text.includes('continue')) score += 60;
-    if (text.includes('click here')) score += 55;
-    if (text.includes('get link')) score += 50;
-    if (text.includes('slow')) score += 25;
-    if (text.includes('free')) score += 20;
-    if (text.includes('direct')) score += 35;
-    if (text.includes('mirror')) score += 20;
-    if (text.includes('.zip') || text.includes('.rar') || text.includes('.7z')) score += 100;
-    if (text.includes('premium') || text.includes('login') || text.includes('sign in') || text.includes('register') || text.includes('advert')) score -= 120;
-
-    if (element.tagName === 'A') {
-      const href = normalize(element.getAttribute('href'));
-      if (/\\.(zip|rar|7z)(\\?|$)/i.test(href)) {
-        score += 160;
-      }
-    }
-
-    if (score <= 0) {
-      continue;
-    }
-
-    if (!bestCandidate || score > bestCandidate.score) {
-      bestCandidate = {
-        element,
-        score,
-        text,
-      };
-    }
-  }
-
-  if (!bestCandidate) {
-    return {
-      clicked: false,
-      label: null,
-      hasCaptcha,
-      location: window.location.href,
-    };
-  }
-
-  bestCandidate.element.dispatchEvent(
-    new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    }),
-  );
-
-  return {
-    clicked: true,
-    label: bestCandidate.text,
-    hasCaptcha,
-    location: window.location.href,
-  };
-})();
-`
-
 const driveBrowserWindowUntilDownloadStarts = async (
   browserWindow,
   downloadUrl,
   request,
   automationState,
+  jobState,
 ) => {
+  const hostScenario = resolveDownloadHostScenario(request.hostLabel)
   updateGameRecord(request.threadLink, {
     threadTitle: request.threadTitle,
     status: 'resolving',
     progressPercent: null,
-    message: 'Открываю зеркало и жду архив...',
+    message: hostScenario
+      ? `Открываю зеркало и запускаю сценарий ${hostScenario.label}...`
+      : 'Открываю зеркало и жду архив...',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl: request.downloadUrl,
   })
 
   browserWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (hostScenario?.suppressWindowOpenNavigation) {
+      return { action: 'deny' }
+    }
+
     void browserWindow.loadURL(url).catch(() => {
       // ignore
     })
@@ -1307,11 +1301,23 @@ const driveBrowserWindowUntilDownloadStarts = async (
     return { action: 'deny' }
   })
 
-  await browserWindow.loadURL(downloadUrl)
+  throwIfDownloadCancelled(jobState)
+
+  try {
+    await browserWindow.loadURL(downloadUrl)
+  } catch (error) {
+    if (jobState?.cancelled) {
+      throw createCancelledDownloadError()
+    }
+
+    throw error
+  }
 
   const startedAtUnixMs = Date.now()
 
   while (!automationState.downloadStarted) {
+    throwIfDownloadCancelled(jobState)
+
     if (Date.now() - startedAtUnixMs > DOWNLOAD_TIMEOUT_MS) {
       throw new Error(
         'Автоматический download не стартовал вовремя. Похоже, хост потребовал ручное действие.',
@@ -1319,10 +1325,15 @@ const driveBrowserWindowUntilDownloadStarts = async (
     }
 
     try {
-      const clickResult = await browserWindow.webContents.executeJavaScript(
-        buildAutoClickScript(),
-        true,
+      const clickResult = await runDownloadHostAutomationStep(
+        browserWindow,
+        request,
+        automationState,
       )
+
+      if (clickResult?.errorMessage) {
+        throw new Error(clickResult.errorMessage)
+      }
 
       if (clickResult?.hasCaptcha) {
         throw new Error(
@@ -1334,7 +1345,11 @@ const driveBrowserWindowUntilDownloadStarts = async (
         updateGameRecord(request.threadLink, {
           threadTitle: request.threadTitle,
           status: 'resolving',
-          message: 'Пытаюсь нажать кнопку download на host...',
+          message:
+            clickResult.scenarioId && clickResult.scenarioId !== 'GENERIC'
+              ? `Сценарий ${clickResult.scenarioLabel}: пытаюсь запустить download на host...`
+              : 'Пытаюсь нажать кнопку download на host...',
+          downloadSpeedBytesPerSecond: null,
           lastHostLabel: request.hostLabel ?? null,
           lastDownloadUrl: request.downloadUrl,
         })
@@ -1346,6 +1361,10 @@ const driveBrowserWindowUntilDownloadStarts = async (
         !message.includes('Execution context was destroyed') &&
         !message.includes('Object has been destroyed')
       ) {
+        if (jobState?.cancelled) {
+          throw createCancelledDownloadError()
+        }
+
         throw error
       }
     }
@@ -1358,6 +1377,7 @@ const waitForArchiveDownload = async (
   browserWindow,
   request,
   automationState,
+  jobState,
   options = {},
 ) => {
   const targetSession = browserWindow.webContents.session
@@ -1373,10 +1393,19 @@ const waitForArchiveDownload = async (
   ensureDirectory(downloadsDir)
 
   return new Promise((resolve, reject) => {
+    if (jobState?.cancelled) {
+      reject(createCancelledDownloadError())
+      return
+    }
+
     let settled = false
     let timeoutId = null
     const handleWindowClosed = () => {
-      finishReject(new Error('Окно зеркала закрыто до старта скачивания.'))
+      finishReject(
+        jobState?.cancelled
+          ? createCancelledDownloadError()
+          : new Error('Окно зеркала закрыто до старта скачивания.'),
+      )
     }
 
     const cleanup = () => {
@@ -1406,6 +1435,12 @@ const waitForArchiveDownload = async (
     }
 
     const handleWillDownload = (_event, item, webContents) => {
+      if (jobState?.cancelled) {
+        item.cancel()
+        finishReject(createCancelledDownloadError())
+        return
+      }
+
       if (webContents.id !== browserWindow.webContents.id) {
         return
       }
@@ -1420,8 +1455,13 @@ const waitForArchiveDownload = async (
       }
 
       automationState.downloadStarted = true
+      if (jobState) {
+        jobState.downloadItem = item
+      }
       const archivePath = path.join(downloadsDir, sanitizeFileName(originalFileName))
       item.setSavePath(archivePath)
+      let lastReceivedBytes = item.getReceivedBytes()
+      let lastProgressUpdateUnixMs = Date.now()
 
       updateGameRecord(request.threadLink, {
         threadTitle: request.threadTitle,
@@ -1432,21 +1472,31 @@ const waitForArchiveDownload = async (
         launchTargetName: null,
         progressPercent: 0,
         message: 'Архив скачивается...',
+        downloadSpeedBytesPerSecond: null,
         errorMessage: null,
         lastHostLabel: request.hostLabel ?? null,
         lastDownloadUrl: request.downloadUrl,
       })
 
       item.on('updated', () => {
+        const receivedBytes = item.getReceivedBytes()
+        const totalBytes = item.getTotalBytes()
+        const now = Date.now()
+        const elapsedMs = Math.max(1, now - lastProgressUpdateUnixMs)
+        const bytesDelta = Math.max(0, receivedBytes - lastReceivedBytes)
+        const downloadSpeedBytesPerSecond =
+          bytesDelta > 0 ? Math.round((bytesDelta * 1000) / elapsedMs) : null
+
+        lastReceivedBytes = receivedBytes
+        lastProgressUpdateUnixMs = now
+
         updateGameRecord(request.threadLink, {
           threadTitle: request.threadTitle,
           status: 'downloading',
           archivePath,
-          progressPercent: formatDownloadProgress(
-            item.getReceivedBytes(),
-            item.getTotalBytes(),
-          ),
+          progressPercent: formatDownloadProgress(receivedBytes, totalBytes),
           message: 'Архив скачивается...',
+          downloadSpeedBytesPerSecond,
           errorMessage: null,
           lastHostLabel: request.hostLabel ?? null,
           lastDownloadUrl: request.downloadUrl,
@@ -1454,13 +1504,19 @@ const waitForArchiveDownload = async (
       })
 
       item.once('done', (_doneEvent, state) => {
+        if (jobState?.downloadItem === item) {
+          jobState.downloadItem = null
+        }
+
         if (state !== 'completed') {
           finishReject(
-            new Error(
-              state === 'cancelled'
-                ? 'Скачивание было отменено.'
-                : `Скачивание завершилось со статусом ${state}.`,
-            ),
+            state === 'cancelled' && jobState?.cancelled
+              ? createCancelledDownloadError()
+              : new Error(
+                  state === 'cancelled'
+                    ? 'Скачивание было отменено.'
+                    : `Скачивание завершилось со статусом ${state}.`,
+                ),
           )
           return
         }
@@ -1552,11 +1608,15 @@ const isManualFallbackError = (error) => {
   )
 }
 
-const runAutomaticDownloadAttempt = async (request) => {
+const runAutomaticDownloadAttempt = async (request, jobState) => {
   const hiddenWindow = getHiddenDownloadWindow()
+  if (jobState) {
+    jobState.window = hiddenWindow
+  }
 
   try {
     await applyF95CookiesToSession(hiddenWindow.webContents.session)
+    throwIfDownloadCancelled(jobState)
 
     const automationState = {
       downloadStarted: false,
@@ -1566,26 +1626,36 @@ const runAutomaticDownloadAttempt = async (request) => {
       hiddenWindow,
       request,
       automationState,
+      jobState,
     )
     const drivePromise = driveBrowserWindowUntilDownloadStarts(
       hiddenWindow,
       request.downloadUrl,
       request,
       automationState,
+      jobState,
     )
 
     const [archivePath] = await Promise.all([archivePathPromise, drivePromise])
+    throwIfDownloadCancelled(jobState)
     return archivePath
   } finally {
+    if (jobState?.window === hiddenWindow) {
+      jobState.window = null
+    }
     safeDestroyWindow(hiddenWindow)
   }
 }
 
-const runManualDownloadAttempt = async (request) => {
+const runManualDownloadAttempt = async (request, jobState) => {
   const visibleWindow = getVisibleDownloadWindow()
+  if (jobState) {
+    jobState.window = visibleWindow
+  }
 
   try {
     await applyF95CookiesToSession(visibleWindow.webContents.session)
+    throwIfDownloadCancelled(jobState)
 
     visibleWindow.webContents.setWindowOpenHandler(({ url }) => {
       void visibleWindow.loadURL(url).catch(() => {
@@ -1600,12 +1670,21 @@ const runManualDownloadAttempt = async (request) => {
       status: 'resolving',
       progressPercent: null,
       message: 'Открыл зеркало. Пройди captcha и нажми download вручную.',
+      downloadSpeedBytesPerSecond: null,
       errorMessage: null,
       lastHostLabel: request.hostLabel ?? null,
       lastDownloadUrl: request.downloadUrl,
     })
 
-    await visibleWindow.loadURL(request.downloadUrl)
+    try {
+      await visibleWindow.loadURL(request.downloadUrl)
+    } catch (error) {
+      if (jobState?.cancelled) {
+        throw createCancelledDownloadError()
+      }
+
+      throw error
+    }
     if (visibleWindow.isMinimized()) {
       visibleWindow.restore()
     }
@@ -1616,20 +1695,27 @@ const runManualDownloadAttempt = async (request) => {
       downloadStarted: false,
     }
 
-    return await waitForArchiveDownload(visibleWindow, request, automationState, {
-      timeoutMs: MANUAL_DOWNLOAD_TIMEOUT_MS,
-      rejectOnWindowClose: true,
-    })
+    return await waitForArchiveDownload(
+      visibleWindow,
+      request,
+      automationState,
+      jobState,
+      {
+        timeoutMs: MANUAL_DOWNLOAD_TIMEOUT_MS,
+        rejectOnWindowClose: true,
+      },
+    )
   } finally {
+    if (jobState?.window === visibleWindow) {
+      jobState.window = null
+    }
     safeDestroyWindow(visibleWindow)
   }
 }
 
-const finalizeDownloadedArchive = async (request, archivePath) => {
-  const gameRoot = path.join(
-    libraryState.libraryRootPath,
-    buildGameFolderName(request.threadLink, request.threadTitle),
-  )
+const finalizeDownloadedArchive = async (request, archivePath, jobState) => {
+  const gameRoot = buildGameRootPath(request.threadLink, request.threadTitle)
+  throwIfDownloadCancelled(jobState)
 
   updateGameRecord(request.threadLink, {
     threadTitle: request.threadTitle,
@@ -1637,12 +1723,14 @@ const finalizeDownloadedArchive = async (request, archivePath) => {
     archivePath,
     progressPercent: null,
     message: 'Распаковываю архив...',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl: request.downloadUrl,
   })
 
-  const installDir = await extractArchiveToInstallDir(archivePath, gameRoot)
+  const installDir = await extractArchiveToInstallDir(archivePath, gameRoot, jobState)
+  throwIfDownloadCancelled(jobState)
   const launchTargetPath = findBestLaunchTarget(installDir, request.threadTitle)
   if (!launchTargetPath) {
     throw new Error(
@@ -1659,6 +1747,7 @@ const finalizeDownloadedArchive = async (request, archivePath) => {
     launchTargetName: path.basename(launchTargetPath),
     progressPercent: 100,
     message: 'Готово к запуску.',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
     sizeBytes: getDirectorySizeBytes(installDir),
     lastHostLabel: request.hostLabel ?? null,
@@ -1672,6 +1761,7 @@ const markDownloadError = (request, error) => {
     status: 'error',
     progressPercent: null,
     message: null,
+    downloadSpeedBytesPerSecond: null,
     errorMessage:
       error instanceof Error ? error.message : 'Не удалось скачать игру.',
     lastHostLabel: request.hostLabel ?? null,
@@ -1679,7 +1769,16 @@ const markDownloadError = (request, error) => {
   })
 }
 
-const runDownloadJob = async (request) => {
+const formatFinalDownloadFailureMessage = (error) => {
+  const detailMessage =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message.trim()
+      : 'Не удалось скачать игру.'
+
+  return `Все зеркала выбранного варианта не подошли. ${detailMessage} Попробуй снова или скачай вручную через тред.`
+}
+
+const runDownloadJob = async (request, jobState) => {
   const downloadSourceList = normalizeDownloadSourceList(request)
   const fallbackAttemptRequest = createAttemptRequest(
     request,
@@ -1689,7 +1788,16 @@ const runDownloadJob = async (request) => {
     },
   )
 
+  const handleCancelledJob = async () => {
+    await clearCancelledDownloadArtifacts(request.threadLink, request.threadTitle)
+  }
+
   if (downloadSourceList.length === 0) {
+    if (jobState?.cancelled) {
+      await handleCancelledJob()
+      return
+    }
+
     markDownloadError(
       fallbackAttemptRequest,
       new Error('Не найдено доступных зеркал для скачивания.'),
@@ -1699,9 +1807,15 @@ const runDownloadJob = async (request) => {
 
   if (request.manualOnly) {
     try {
-      const archivePath = await runManualDownloadAttempt(fallbackAttemptRequest)
-      await finalizeDownloadedArchive(fallbackAttemptRequest, archivePath)
+      throwIfDownloadCancelled(jobState)
+      const archivePath = await runManualDownloadAttempt(fallbackAttemptRequest, jobState)
+      await finalizeDownloadedArchive(fallbackAttemptRequest, archivePath, jobState)
     } catch (error) {
+      if (isDownloadCancelledError(error) || jobState?.cancelled) {
+        await handleCancelledJob()
+        return
+      }
+
       markDownloadError(fallbackAttemptRequest, error)
     }
     return
@@ -1711,13 +1825,23 @@ const runDownloadJob = async (request) => {
   let manualFallbackSource = null
 
   for (const downloadSource of downloadSourceList) {
+    if (jobState?.cancelled) {
+      await handleCancelledJob()
+      return
+    }
+
     const attemptRequest = createAttemptRequest(request, downloadSource)
 
     try {
-      const archivePath = await runAutomaticDownloadAttempt(attemptRequest)
-      await finalizeDownloadedArchive(attemptRequest, archivePath)
+      const archivePath = await runAutomaticDownloadAttempt(attemptRequest, jobState)
+      await finalizeDownloadedArchive(attemptRequest, archivePath, jobState)
       return
     } catch (error) {
+      if (isDownloadCancelledError(error) || jobState?.cancelled) {
+        await handleCancelledJob()
+        return
+      }
+
       lastError = error
       if (!manualFallbackSource && isManualFallbackError(error)) {
         manualFallbackSource = downloadSource
@@ -1734,26 +1858,79 @@ const runDownloadJob = async (request) => {
       progressPercent: null,
       message:
         'Автоматика не сработала. Открываю зеркало для ручного продолжения...',
+      downloadSpeedBytesPerSecond: null,
       errorMessage: null,
       lastHostLabel: manualAttemptRequest.hostLabel ?? null,
       lastDownloadUrl: manualAttemptRequest.downloadUrl,
     })
 
     try {
-      const archivePath = await runManualDownloadAttempt(manualAttemptRequest)
-      await finalizeDownloadedArchive(manualAttemptRequest, archivePath)
+      throwIfDownloadCancelled(jobState)
+      const archivePath = await runManualDownloadAttempt(manualAttemptRequest, jobState)
+      await finalizeDownloadedArchive(manualAttemptRequest, archivePath, jobState)
       return
     } catch (error) {
+      if (isDownloadCancelledError(error) || jobState?.cancelled) {
+        await handleCancelledJob()
+        return
+      }
+
       lastError = error
-      markDownloadError(manualAttemptRequest, error)
+      markDownloadError(
+        manualAttemptRequest,
+        new Error(formatFinalDownloadFailureMessage(error)),
+      )
       return
     }
   }
 
   markDownloadError(
     createAttemptRequest(request, downloadSourceList[downloadSourceList.length - 1]),
-    lastError ?? new Error('Не удалось скачать игру.'),
+    new Error(formatFinalDownloadFailureMessage(lastError)),
   )
+}
+
+const cancelDownloadJob = async (threadLink) => {
+  const activeJob = activeDownloadJobs.get(threadLink)
+  if (!activeJob) {
+    throw new Error('Для этой игры сейчас нет активной загрузки.')
+  }
+
+  activeJob.state.cancelled = true
+
+  const currentRecord = libraryState.gamesByThreadLink[threadLink] ?? null
+  if (currentRecord) {
+    updateGameRecord(threadLink, {
+      threadTitle: currentRecord.threadTitle,
+      message: 'Отменяю загрузку...',
+      downloadSpeedBytesPerSecond: null,
+      errorMessage: null,
+    })
+  }
+
+  try {
+    activeJob.state.downloadItem?.cancel()
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (activeJob.state.extractProcess && !activeJob.state.extractProcess.killed) {
+      activeJob.state.extractProcess.kill()
+    }
+  } catch {
+    // ignore
+  }
+
+  safeDestroyWindow(activeJob.state.window)
+
+  try {
+    await activeJob.promise
+  } catch {
+    // ignore
+  }
+
+  return toJsonClone(libraryState)
 }
 
 const openMirrorForGame = async (threadLink) => {
@@ -1791,17 +1968,27 @@ const queueDownloadJob = (request) => {
     status: 'queued',
     progressPercent: null,
     message: 'Ставлю в очередь...',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl:
       typeof request.downloadUrl === 'string' ? request.downloadUrl : null,
   })
 
-  const nextJob = runDownloadJob(request).finally(() => {
+  const jobState = {
+    cancelled: false,
+    window: null,
+    downloadItem: null,
+    extractProcess: null,
+  }
+  const nextJob = runDownloadJob(request, jobState).finally(() => {
     activeDownloadJobs.delete(request.threadLink)
   })
 
-  activeDownloadJobs.set(request.threadLink, nextJob)
+  activeDownloadJobs.set(request.threadLink, {
+    promise: nextJob,
+    state: jobState,
+  })
 }
 
 const revealGame = async (threadLink) => {
@@ -1905,6 +2092,7 @@ const chooseLaunchTarget = async (threadLink) => {
     launchTargetName: path.basename(selectedPath),
     progressPercent: 100,
     message: 'Готово к запуску.',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
   })
 
@@ -1980,6 +2168,7 @@ const chooseInstallFolder = async (request) => {
     message: launchTargetPath
       ? 'Папка игры привязана. Готово к запуску.'
       : 'Папка игры привязана. Выбери запускатор вручную.',
+    downloadSpeedBytesPerSecond: null,
     errorMessage: null,
     sizeBytes: getDirectorySizeBytes(selectedInstallDir),
   })
@@ -2000,6 +2189,7 @@ const launchGame = async (threadLink) => {
   if (!fs.existsSync(gameRecord.launchTargetPath)) {
     updateGameRecord(threadLink, {
       status: 'error',
+      downloadSpeedBytesPerSecond: null,
       errorMessage: 'Файл запуска больше не существует. Попробуй скачать игру заново.',
       message: null,
     })
@@ -2197,6 +2387,9 @@ const registerIpcHandlers = () => {
 
     return libraryState.gamesByThreadLink[request.threadLink] ?? null
   })
+  ipcMain.handle('launcher:cancelDownloadGame', async (_event, threadLink) =>
+    cancelDownloadJob(threadLink),
+  )
 
   ipcMain.handle('launcher:chooseInstallFolder', async (_event, request) =>
     chooseInstallFolder(request),

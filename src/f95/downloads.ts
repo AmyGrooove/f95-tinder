@@ -1,4 +1,4 @@
-import type { DownloadGroup, ThreadDownloadsData } from './types'
+import type { DownloadChoice, DownloadGroup, DownloadLink, ThreadDownloadsData } from './types'
 import { fetchThreadPageHtmlViaLauncher } from '../launcher/runtime'
 import {
   getLauncherLocalDataSnapshotSync,
@@ -37,6 +37,24 @@ const HIDDEN_DOWNLOAD_GROUP_PATTERNS = [
   /\bandorid\b/i,
   /\bios\b/i,
 ]
+const NON_DOWNLOAD_LINK_LABEL_PATTERNS = [
+  /\bwalkthrough\b/i,
+  /\bguide(s)?\b/i,
+  /\bfaq(s)?\b/i,
+  /\bcheat(s)?\b/i,
+  /\bbonus\b/i,
+  /\bcoin\b/i,
+  /\blocation(s)?\b/i,
+  /\bremake\b/i,
+  /\bforce\s+run\b/i,
+]
+const HOST_LABEL_BY_DOMAIN_SUFFIX = [
+  ['gofile.io', 'GOFILE'],
+  ['pixeldrain.com', 'PIXELDRAIN'],
+  ['datanodes.to', 'DATANODES'],
+  ['datanodes.cc', 'DATANODES'],
+  ['datanodes.net', 'DATANODES'],
+]
 const inflightDownloadsByThreadLink = new Map<string, Promise<ThreadDownloadsData>>()
 
 const normalizeWhitespace = (value: string) => {
@@ -59,6 +77,156 @@ const normalizeDownloadHostLabel = (value: string) => {
     .toUpperCase()
 }
 
+const normalizeDisplayDownloadLinkLabel = (value: string) => {
+  return normalizeWhitespace(value).replace(/^[^A-Za-z0-9]+/, '')
+}
+
+const isF95Url = (url: string) => {
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase()
+    return hostname === 'f95zone.to' || hostname.endsWith('.f95zone.to')
+  } catch {
+    return false
+  }
+}
+
+const getDirectDownloadHostLabelFromUrl = (url: string | null) => {
+  if (!url || url.includes('/masked/')) {
+    return null
+  }
+
+  try {
+    const parsedUrl = new URL(url)
+    const hostname = parsedUrl.hostname.toLowerCase()
+    if (hostname === 'f95zone.to' || hostname.endsWith('.f95zone.to')) {
+      return null
+    }
+
+    const normalizedHostname = hostname.replace(/^www\./, '')
+    for (const [domainSuffix, hostLabel] of HOST_LABEL_BY_DOMAIN_SUFFIX) {
+      if (
+        normalizedHostname === domainSuffix ||
+        normalizedHostname.endsWith(`.${domainSuffix}`)
+      ) {
+        return hostLabel
+      }
+    }
+
+    const hostnamePartList = normalizedHostname.split('.').filter(Boolean)
+    if (hostnamePartList.length === 0) {
+      return null
+    }
+
+    const fallbackHostPart =
+      hostnamePartList.length > 1
+        ? hostnamePartList[hostnamePartList.length - 2]
+        : hostnamePartList[0]
+    const normalizedHostLabel = normalizeDownloadHostLabel(fallbackHostPart)
+    return normalizedHostLabel || null
+  } catch {
+    return null
+  }
+}
+
+const resolveSupportedDownloadHostLabel = (value: string) => {
+  const normalizedHostLabel = normalizeDownloadHostLabel(value)
+  if (!normalizedHostLabel) {
+    return null
+  }
+
+  if (SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel)) {
+    return normalizedHostLabel
+  }
+
+  for (const supportedHostLabel of SUPPORTED_DOWNLOAD_HOSTS) {
+    if (normalizedHostLabel.includes(supportedHostLabel)) {
+      return supportedHostLabel
+    }
+  }
+
+  return null
+}
+
+const getDownloadLinkHostLabel = (link: DownloadLink) => {
+  const urlHostLabel = getDirectDownloadHostLabelFromUrl(link.url)
+  if (urlHostLabel) {
+    return urlHostLabel
+  }
+
+  const fallbackHostLabel =
+    resolveSupportedDownloadHostLabel(link.label) ??
+    normalizeDownloadHostLabel(normalizeDisplayDownloadLinkLabel(link.label))
+
+  return fallbackHostLabel || null
+}
+
+const getSupportedDownloadHostLabelForLink = (link: DownloadLink) => {
+  const urlHostLabel = getDirectDownloadHostLabelFromUrl(link.url)
+  if (urlHostLabel) {
+    return resolveSupportedDownloadHostLabel(urlHostLabel)
+  }
+
+  return resolveSupportedDownloadHostLabel(link.label)
+}
+
+const isLikelyDownloadHostLabel = (value: string) => {
+  const normalizedLabel = normalizeDisplayDownloadLinkLabel(value)
+  if (!normalizedLabel) {
+    return false
+  }
+
+  if (NON_DOWNLOAD_LINK_LABEL_PATTERNS.some((pattern) => pattern.test(normalizedLabel))) {
+    return false
+  }
+
+  if (resolveSupportedDownloadHostLabel(normalizedLabel)) {
+    return true
+  }
+
+  if (normalizedLabel.includes(' ')) {
+    return false
+  }
+
+  return /^[A-Za-z0-9][A-Za-z0-9+._-]{1,30}$/.test(normalizedLabel)
+}
+
+const isRelevantDownloadLink = (link: DownloadLink) => {
+  if (typeof link.url === 'string') {
+    if (link.isMasked) {
+      return isLikelyDownloadHostLabel(link.label)
+    }
+
+    if (isF95Url(link.url)) {
+      return false
+    }
+
+    return true
+  }
+
+  return isLikelyDownloadHostLabel(link.label)
+}
+
+const createDownloadLink = (
+  rawLabel: string,
+  url: string | null,
+  isMasked: boolean,
+): DownloadLink => {
+  const directHostLabel = getDirectDownloadHostLabelFromUrl(url)
+  const supportedHostLabel = resolveSupportedDownloadHostLabel(rawLabel)
+  const displayLabel =
+    directHostLabel ??
+    supportedHostLabel ??
+    normalizeDisplayDownloadLinkLabel(rawLabel) ??
+    normalizeWhitespace(rawLabel)
+
+  return {
+    label: displayLabel || normalizeWhitespace(rawLabel),
+    url,
+    isMasked,
+  }
+}
+
 const normalizeDownloadHostLabelList = (hostLabelList: string[]) => {
   return hostLabelList
     .map((item) => normalizeDownloadHostLabel(item))
@@ -66,14 +234,15 @@ const normalizeDownloadHostLabelList = (hostLabelList: string[]) => {
 }
 
 const isSupportedDownloadHost = (hostLabel: string) => {
-  const normalizedHostLabel = normalizeDownloadHostLabel(hostLabel)
-  return normalizedHostLabel.length > 0 && SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel)
+  return resolveSupportedDownloadHostLabel(hostLabel) !== null
 }
 
 const filterSupportedDownloadHostLabels = (hostLabelList: string[]) => {
-  return normalizeDownloadHostLabelList(hostLabelList).filter((item) =>
-    SUPPORTED_DOWNLOAD_HOST_SET.has(item),
-  )
+  return hostLabelList
+    .map((item) => resolveSupportedDownloadHostLabel(item))
+    .filter((item, index, array): item is string => {
+      return item !== null && array.indexOf(item) === index
+    })
 }
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -259,11 +428,9 @@ const parseFallbackGroupsFromText = (sourceText: string): DownloadGroup[] => {
 
     groupList.push({
       label,
-      links: linkLabelList.map((linkLabel) => ({
-        label: linkLabel,
-        url: null,
-        isMasked: false,
-      })),
+      links: linkLabelList.map((linkLabel) =>
+        createDownloadLink(linkLabel, null, false),
+      ),
     })
   }
 
@@ -404,9 +571,7 @@ const parseDownloadGroupsFromSection = (sectionRoot: Element) => {
     }
 
     group.links.push({
-      label,
-      url: absoluteUrl,
-      isMasked: absoluteUrl.includes('/masked/'),
+      ...createDownloadLink(label, absoluteUrl, absoluteUrl.includes('/masked/')),
     })
   }
 
@@ -1100,25 +1265,108 @@ const sortDownloadHostsByPreference = (
   })
 }
 
-const collectDownloadHostLabels = (threadDownloadsData: ThreadDownloadsData) => {
-  const hostLabelList: string[] = []
+const collectDownloadChoices = (threadDownloadsData: ThreadDownloadsData): DownloadChoice[] => {
+  const choiceList: DownloadChoice[] = []
+  let pendingContextLabel: string | null = null
 
   for (const group of threadDownloadsData.groups) {
     if (shouldHideDownloadGroup(group.label)) {
       continue
     }
 
-    for (const link of group.links) {
-      const normalizedHostLabel = normalizeDownloadHostLabel(link.label)
-      if (
-        !normalizedHostLabel ||
-        !SUPPORTED_DOWNLOAD_HOST_SET.has(normalizedHostLabel) ||
-        hostLabelList.includes(normalizedHostLabel)
-      ) {
+    if (group.links.length === 0) {
+      pendingContextLabel = group.label
+      continue
+    }
+
+    const relevantLinkList = group.links.filter((link) => isRelevantDownloadLink(link))
+    if (relevantLinkList.length === 0) {
+      continue
+    }
+
+    const deduplicatedLinkList = relevantLinkList.filter((link, index, array) => {
+      const currentKey = `${link.label}::${link.url ?? ''}`
+      return (
+        array.findIndex((candidate) => {
+          return `${candidate.label}::${candidate.url ?? ''}` === currentKey
+        }) === index
+      )
+    })
+
+    choiceList.push({
+      key: `${pendingContextLabel ?? ''}::${group.label}::${choiceList.length}`,
+      label: group.label,
+      contextLabel: pendingContextLabel,
+      links: deduplicatedLinkList,
+    })
+
+    pendingContextLabel = null
+  }
+
+  return choiceList
+}
+
+const collectPreferredDownloadLinksFromLinks = (
+  linkList: DownloadLink[],
+  preferredHostLabelList: string[],
+  disabledHostMap: Record<string, number> = {},
+  hiddenHostLabelList: string[] = [],
+) => {
+  const normalizedPreferredHostList = preferredHostLabelList
+    .map((item) => resolveSupportedDownloadHostLabel(item))
+    .filter((item): item is string => item !== null)
+  const linkByHostLabel = new Map<string, DownloadLink>()
+
+  for (const link of linkList) {
+    if (typeof link.url !== 'string') {
+      continue
+    }
+
+    const supportedHostLabel = getSupportedDownloadHostLabelForLink(link)
+    if (
+      !supportedHostLabel ||
+      isDownloadHostTemporarilyDisabled(supportedHostLabel, disabledHostMap) ||
+      isDownloadHostHidden(supportedHostLabel, hiddenHostLabelList)
+    ) {
+      continue
+    }
+
+    if (!linkByHostLabel.has(supportedHostLabel)) {
+      linkByHostLabel.set(supportedHostLabel, {
+        ...link,
+        label: supportedHostLabel,
+      })
+    }
+  }
+
+  return Array.from(linkByHostLabel.entries())
+    .sort(([firstHostLabel], [secondHostLabel]) => {
+      const firstIndex = normalizedPreferredHostList.indexOf(firstHostLabel)
+      const secondIndex = normalizedPreferredHostList.indexOf(secondHostLabel)
+
+      const firstRank = firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex
+      const secondRank = secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex
+
+      if (firstRank !== secondRank) {
+        return firstRank - secondRank
+      }
+
+      return firstHostLabel.localeCompare(secondHostLabel)
+    })
+    .map(([, link]) => link)
+}
+
+const collectDownloadHostLabels = (threadDownloadsData: ThreadDownloadsData) => {
+  const hostLabelList: string[] = []
+
+  for (const choice of collectDownloadChoices(threadDownloadsData)) {
+    for (const link of choice.links) {
+      const supportedHostLabel = getSupportedDownloadHostLabelForLink(link)
+      if (!supportedHostLabel || hostLabelList.includes(supportedHostLabel)) {
         continue
       }
 
-      hostLabelList.push(normalizedHostLabel)
+      hostLabelList.push(supportedHostLabel)
     }
   }
 
@@ -1131,44 +1379,16 @@ const findBestDownloadLink = (
   disabledHostMap: Record<string, number> = {},
   hiddenHostLabelList: string[] = [],
 ) => {
-  const normalizedPreferredHostList = preferredHostLabelList.map((item) =>
-    normalizeDownloadHostLabel(item),
-  )
-
-  for (const group of threadDownloadsData.groups) {
-    if (shouldHideDownloadGroup(group.label)) {
-      continue
+  for (const choice of collectDownloadChoices(threadDownloadsData)) {
+    const availableLinkList = collectPreferredDownloadLinksFromLinks(
+      choice.links,
+      preferredHostLabelList,
+      disabledHostMap,
+      hiddenHostLabelList,
+    )
+    if (availableLinkList.length > 0) {
+      return availableLinkList[0] ?? null
     }
-
-    const availableLinkList = group.links.filter((link) => {
-      return (
-        typeof link.url === 'string' &&
-        isSupportedDownloadHost(link.label) &&
-        !isDownloadHostTemporarilyDisabled(link.label, disabledHostMap) &&
-        !isDownloadHostHidden(link.label, hiddenHostLabelList)
-      )
-    })
-    if (availableLinkList.length === 0) {
-      continue
-    }
-
-    return [...availableLinkList].sort((first, second) => {
-      const firstIndex = normalizedPreferredHostList.indexOf(
-        normalizeDownloadHostLabel(first.label),
-      )
-      const secondIndex = normalizedPreferredHostList.indexOf(
-        normalizeDownloadHostLabel(second.label),
-      )
-
-      const firstRank = firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex
-      const secondRank = secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex
-
-      if (firstRank !== secondRank) {
-        return firstRank - secondRank
-      }
-
-      return first.label.localeCompare(second.label)
-    })[0] ?? null
   }
 
   return null
@@ -1180,50 +1400,16 @@ const collectPreferredDownloadLinks = (
   disabledHostMap: Record<string, number> = {},
   hiddenHostLabelList: string[] = [],
 ) => {
-  const normalizedPreferredHostList = preferredHostLabelList.map((item) =>
-    normalizeDownloadHostLabel(item),
+  const flattenedLinkList = collectDownloadChoices(threadDownloadsData).flatMap(
+    (choice) => choice.links,
   )
-  const linkByHostLabel = new Map<string, DownloadGroup['links'][number]>()
 
-  for (const group of threadDownloadsData.groups) {
-    if (shouldHideDownloadGroup(group.label)) {
-      continue
-    }
-
-    for (const link of group.links) {
-      if (
-        typeof link.url !== 'string' ||
-        !isSupportedDownloadHost(link.label) ||
-        isDownloadHostTemporarilyDisabled(link.label, disabledHostMap) ||
-        isDownloadHostHidden(link.label, hiddenHostLabelList)
-      ) {
-        continue
-      }
-
-      const normalizedHostLabel = normalizeDownloadHostLabel(link.label)
-      if (!linkByHostLabel.has(normalizedHostLabel)) {
-        linkByHostLabel.set(normalizedHostLabel, link)
-      }
-    }
-  }
-
-  return Array.from(linkByHostLabel.values()).sort((first, second) => {
-    const firstIndex = normalizedPreferredHostList.indexOf(
-      normalizeDownloadHostLabel(first.label),
-    )
-    const secondIndex = normalizedPreferredHostList.indexOf(
-      normalizeDownloadHostLabel(second.label),
-    )
-
-    const firstRank = firstIndex === -1 ? Number.MAX_SAFE_INTEGER : firstIndex
-    const secondRank = secondIndex === -1 ? Number.MAX_SAFE_INTEGER : secondIndex
-
-    if (firstRank !== secondRank) {
-      return firstRank - secondRank
-    }
-
-    return first.label.localeCompare(second.label)
-  })
+  return collectPreferredDownloadLinksFromLinks(
+    flattenedLinkList,
+    preferredHostLabelList,
+    disabledHostMap,
+    hiddenHostLabelList,
+  )
 }
 
 const fetchThreadDownloadsFromNetwork = async (
@@ -1319,15 +1505,20 @@ const loadKnownDownloadHosts = () => {
 export {
   clearHiddenDownloadHosts,
   clearDisabledDownloadHosts,
+  collectDownloadChoices,
   clearAllCachedThreadDownloads,
+  collectPreferredDownloadLinksFromLinks,
   collectPreferredDownloadLinks,
   collectDownloadHostLabels,
   disableDownloadHostTemporarily,
   enableDownloadHost,
   fetchThreadDownloads,
   findBestDownloadLink,
+  getDownloadLinkHostLabel,
+  getSupportedDownloadHostLabelForLink,
   hideDownloadHost,
   isDownloadHostHidden,
+  isRelevantDownloadLink,
   isSupportedDownloadHost,
   loadCachedThreadDownloads,
   loadDisabledDownloadHosts,

@@ -204,6 +204,15 @@ const requestLauncherDownload = async (request: LauncherDownloadRequest) => {
   return launcherBridge.downloadGame(request)
 }
 
+const requestLauncherDownloadCancel = async (threadLink: string) => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  return launcherBridge.cancelDownloadGame(threadLink)
+}
+
 const requestLauncherInstallFolderChoice = async (
   request: LauncherInstallFolderRequest,
 ) => {
@@ -299,6 +308,7 @@ export {
   openExternalUrl,
   openLauncherLocalDataFolder,
   requestLauncherDownload,
+  requestLauncherDownloadCancel,
   requestLauncherInstallFolderChoice,
   requestLauncherGameDeletion,
   requestLauncherGameLaunch,
