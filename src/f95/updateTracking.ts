@@ -1,6 +1,10 @@
 import type { ListType, ProcessedThreadItem } from './types'
 
-const normalizeVersionForCompare = (value: string) => {
+const normalizeVersionForCompare = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
   return value.trim().replace(/\s+/g, ' ').toLowerCase()
 }
 
@@ -62,8 +66,12 @@ const getProcessedThreadItemUpdateLabel = (
     return null
   }
 
-  const trackedVersion = processedItem.trackedVersion.trim()
-  const currentVersion = processedItem.version.trim()
+  const trackedVersion =
+    typeof processedItem.trackedVersion === 'string'
+      ? processedItem.trackedVersion.trim()
+      : ''
+  const currentVersion =
+    typeof processedItem.version === 'string' ? processedItem.version.trim() : ''
   if (
     trackedVersion &&
     currentVersion &&

@@ -1,4 +1,5 @@
-import type { F95ThreadItem, SessionState } from "./types";
+import type { F95ThreadItem, ProcessedThreadItem, SessionState } from "./types";
+import { getEnginePrefixIdList } from "./prefixes";
 
 type InterestLevel = "top" | "good" | "neutral" | "bad" | "trash";
 type InterestTone = "positive" | "negative" | "neutral";
@@ -12,6 +13,8 @@ type InterestCandidate = Pick<
 type FeatureEvidence = {
   positive: number;
   negative: number;
+  positiveSignalsCount: number;
+  negativeSignalsCount: number;
 };
 
 type FeatureContribution = {
@@ -24,6 +27,8 @@ type InterestReason = {
   text: string;
   tone: InterestTone;
 };
+
+type FeatureSignalKind = "tag" | "prefix" | "creator";
 
 type InterestProfile = {
   tagEvidenceById: Map<number, FeatureEvidence>;
@@ -40,28 +45,68 @@ type ThreadInterestAssessment = {
   summary: string;
   reasons: InterestReason[];
   score: number;
+  confidence: number;
   rawScore: number;
   hasInsufficientData: boolean;
 };
 
 const SIGNAL_WEIGHT_BY_TYPE: Record<InterestSignalType, number> = {
-  playedFavorite: 5,
-  played: 3,
-  favorite: 2,
-  trash: -5,
+  playedFavorite: 5.2,
+  played: 1.2,
+  favorite: 2.7,
+  trash: -2.8,
 };
 
 const MIN_SIGNALS_FOR_STABLE_PROFILE = 8;
-const TAG_CONTRIBUTION_WEIGHT = 1.65;
-const PREFIX_CONTRIBUTION_WEIGHT = 1.05;
-const CREATOR_CONTRIBUTION_WEIGHT = 1.3;
+const TAG_CONTRIBUTION_WEIGHT = 1.35;
+const PREFIX_CONTRIBUTION_WEIGHT = 0.88;
+const CREATOR_CONTRIBUTION_WEIGHT = 1.05;
 const REASON_LIMIT = 3;
-const MIN_NEGATIVE_SIGNAL_SCALE = 0.35;
+const MIN_NEGATIVE_SIGNAL_SCALE = 0.16;
+const BASELINE_RAW_SCORE = 0.24;
+const LOW_CONFIDENCE_NEGATIVE_DAMPING = 0.42;
+const NEGATIVE_CONTRIBUTION_DAMPING = 0.58;
+const SIGNAL_RECENCY_HALF_LIFE_DAYS = 160;
+const MIN_SIGNAL_RECENCY_WEIGHT = 0.35;
+const SECONDS_PER_DAY = 24 * 60 * 60;
+const FEATURE_POLICY_BY_KIND: Record<
+  FeatureSignalKind,
+  {
+    maxContribution: number;
+    minimumReliableSupport: number;
+    shrinkagePrior: number;
+    minimumCoverageWeight: number;
+    coveragePenaltyExponent: number;
+  }
+> = {
+  tag: {
+    maxContribution: TAG_CONTRIBUTION_WEIGHT,
+    minimumReliableSupport: 2,
+    shrinkagePrior: 1.4,
+    minimumCoverageWeight: 0.56,
+    coveragePenaltyExponent: 0.82,
+  },
+  prefix: {
+    maxContribution: PREFIX_CONTRIBUTION_WEIGHT,
+    minimumReliableSupport: 2,
+    shrinkagePrior: 1.6,
+    minimumCoverageWeight: 0.68,
+    coveragePenaltyExponent: 0.95,
+  },
+  creator: {
+    maxContribution: CREATOR_CONTRIBUTION_WEIGHT,
+    minimumReliableSupport: 3,
+    shrinkagePrior: 2.8,
+    minimumCoverageWeight: 0.78,
+    coveragePenaltyExponent: 1.1,
+  },
+};
 
 type InterestSignalEntry = {
   creatorName: string;
   prefixIdList: number[];
   signalWeight: number;
+  signalTimestampUnixSeconds: number | null;
   tagIdList: number[];
 };
 
@@ -74,8 +119,9 @@ const createEmptyInterestProfile = (): InterestProfile => ({
   negativeSignalsCount: 0,
 });
 
-const normalizeCreatorName = (value: string | null | undefined) => {
-  const normalizedValue = value?.trim();
+const normalizeCreatorName = (value: unknown) => {
+  const normalizedValue =
+    typeof value === "string" ? value.trim() : "";
   if (!normalizedValue || normalizedValue.toLowerCase() === "unknown") {
     return "";
   }
@@ -97,6 +143,26 @@ const uniqueNumberList = (value: number[] | undefined) => {
   );
 };
 
+const normalizePositiveUnixTimestamp = (value: unknown) => {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value > 0
+    ? value
+    : null;
+};
+
+const resolveSignalTimestamp = (processedItem: ProcessedThreadItem) => {
+  const addedAtUnixSeconds = normalizePositiveUnixTimestamp(
+    processedItem.addedAtUnixSeconds,
+  );
+  if (addedAtUnixSeconds !== null) {
+    return addedAtUnixSeconds;
+  }
+
+  return normalizePositiveUnixTimestamp(processedItem.trackedTs);
+};
+
 const getOrCreateEvidence = <Key,>(
   map: Map<Key, FeatureEvidence>,
   key: Key,
@@ -109,6 +175,8 @@ const getOrCreateEvidence = <Key,>(
   const nextEvidence: FeatureEvidence = {
     positive: 0,
     negative: 0,
+    positiveSignalsCount: 0,
+    negativeSignalsCount: 0,
   };
   map.set(key, nextEvidence);
   return nextEvidence;
@@ -122,10 +190,12 @@ const addEvidence = <Key,>(
   const evidence = getOrCreateEvidence(map, key);
   if (signalWeight >= 0) {
     evidence.positive += signalWeight;
+    evidence.positiveSignalsCount += 1;
     return;
   }
 
   evidence.negative += Math.abs(signalWeight);
+  evidence.negativeSignalsCount += 1;
 };
 
 const getSignalTypeForLink = (
@@ -202,23 +272,96 @@ const accumulateCreatorEvidence = (
   );
 };
 
+const getFeatureSupportCount = (evidence: FeatureEvidence) => {
+  return evidence.positiveSignalsCount + evidence.negativeSignalsCount;
+};
+
+const getFeatureSupportWeight = (
+  supportCount: number,
+  minimumReliableSupport: number,
+  shrinkagePrior: number,
+) => {
+  if (supportCount <= 0) {
+    return 0;
+  }
+
+  const sparseSupportWeight =
+    supportCount >= minimumReliableSupport
+      ? 1
+      : Math.max(0.18, supportCount / (minimumReliableSupport + 1));
+  const shrinkageWeight = supportCount / (supportCount + shrinkagePrior);
+
+  return sparseSupportWeight * shrinkageWeight;
+};
+
+const getFeatureCoverageWeight = (
+  supportCount: number,
+  trackedSignalsCount: number,
+  minimumCoverageWeight: number,
+  coveragePenaltyExponent: number,
+) => {
+  if (trackedSignalsCount < MIN_SIGNALS_FOR_STABLE_PROFILE || supportCount <= 1) {
+    return 1;
+  }
+
+  const coverage = Math.min(1, Math.max(0, supportCount / trackedSignalsCount));
+
+  return Math.max(
+    minimumCoverageWeight,
+    1 - Math.pow(coverage, coveragePenaltyExponent) * (1 - minimumCoverageWeight),
+  );
+};
+
 const calculateFeatureContribution = (
   evidence: FeatureEvidence | undefined,
-  maxContribution: number,
+  trackedSignalsCount: number,
+  featureKind: FeatureSignalKind,
 ) => {
   if (!evidence) {
     return 0;
   }
 
+  const featurePolicy = FEATURE_POLICY_BY_KIND[featureKind];
   const totalEvidence = evidence.positive + evidence.negative;
   if (totalEvidence <= 0) {
     return 0;
   }
 
+  const supportCount = getFeatureSupportCount(evidence);
+  const supportWeight = getFeatureSupportWeight(
+    supportCount,
+    featurePolicy.minimumReliableSupport,
+    featurePolicy.shrinkagePrior,
+  );
+  if (supportWeight <= 0) {
+    return 0;
+  }
+
+  const coverageWeight = getFeatureCoverageWeight(
+    supportCount,
+    trackedSignalsCount,
+    featurePolicy.minimumCoverageWeight,
+    featurePolicy.coveragePenaltyExponent,
+  );
   const balance = (evidence.positive - evidence.negative) / (totalEvidence + 1.15);
   const strength = Math.min(1, totalEvidence / 4.5);
+  const contribution =
+    balance *
+    strength *
+    featurePolicy.maxContribution *
+    supportWeight *
+    coverageWeight;
 
-  return balance * strength * maxContribution;
+  if (contribution >= 0) {
+    return contribution;
+  }
+
+  return (
+    contribution *
+    (totalEvidence < 2.25
+      ? LOW_CONFIDENCE_NEGATIVE_DAMPING
+      : NEGATIVE_CONTRIBUTION_DAMPING)
+  );
 };
 
 const getNegativeSignalScale = (signalEntryList: InterestSignalEntry[]) => {
@@ -245,8 +388,31 @@ const getNegativeSignalScale = (signalEntryList: InterestSignalEntry[]) => {
   // Large trash lists should not overwhelm the taste profile purely by volume.
   return Math.max(
     MIN_NEGATIVE_SIGNAL_SCALE,
-    Math.min(1, positiveSignalWeightTotal / negativeSignalWeightTotal),
+    Math.min(1, Math.sqrt(positiveSignalWeightTotal / negativeSignalWeightTotal)),
   );
+};
+
+const getSignalRecencyWeight = (
+  signalTimestampUnixSeconds: number | null,
+  newestSignalTimestampUnixSeconds: number | null,
+) => {
+  if (
+    signalTimestampUnixSeconds === null ||
+    newestSignalTimestampUnixSeconds === null ||
+    signalTimestampUnixSeconds >= newestSignalTimestampUnixSeconds
+  ) {
+    return 1;
+  }
+
+  const ageDays =
+    (newestSignalTimestampUnixSeconds - signalTimestampUnixSeconds) /
+    SECONDS_PER_DAY;
+  const decayedWeight = Math.pow(
+    0.5,
+    ageDays / SIGNAL_RECENCY_HALF_LIFE_DAYS,
+  );
+
+  return Math.max(MIN_SIGNAL_RECENCY_WEIGHT, decayedWeight);
 };
 
 const getRatingBonus = (rating: number | undefined) => {
@@ -254,21 +420,24 @@ const getRatingBonus = (rating: number | undefined) => {
     return 0;
   }
 
-  if (rating >= 4.6) {
-    return 0.45;
+  if (rating >= 4.7) {
+    return 0.52;
   }
-  if (rating >= 4.2) {
-    return 0.3;
+  if (rating >= 4.4) {
+    return 0.38;
   }
-  if (rating >= 3.8) {
-    return 0.16;
+  if (rating >= 4.0) {
+    return 0.24;
+  }
+  if (rating >= 3.6) {
+    return 0.12;
   }
 
   return 0;
 };
 
 const getFreshnessBonus = (threadItem: InterestCandidate) => {
-  return threadItem.new ? 0.18 : 0;
+  return threadItem.new ? 0.12 : 0;
 };
 
 const toScore100 = (rawScore: number) => {
@@ -276,17 +445,43 @@ const toScore100 = (rawScore: number) => {
   return Math.round(normalizedValue * 100);
 };
 
+const clamp01 = (value: number) => {
+  return Math.min(1, Math.max(0, value));
+};
+
+const getInterestConfidence = (
+  profile: InterestProfile,
+  evidenceMagnitude: number,
+) => {
+  if (profile.trackedSignalsCount <= 0 || evidenceMagnitude <= 0) {
+    return 0;
+  }
+
+  const trackedSignalsConfidence = clamp01(
+    profile.trackedSignalsCount / MIN_SIGNALS_FOR_STABLE_PROFILE,
+  );
+  const evidenceConfidence = clamp01(evidenceMagnitude / 1.2);
+
+  return clamp01(
+    Math.sqrt(trackedSignalsConfidence * evidenceConfidence),
+  );
+};
+
+const applyConfidenceToScore = (score: number, confidence: number) => {
+  return Math.round(50 + (score - 50) * clamp01(confidence));
+};
+
 const toInterestLevel = (score: number): InterestLevel => {
-  if (score >= 78) {
+  if (score >= 80) {
     return "top";
   }
-  if (score >= 62) {
+  if (score >= 63) {
     return "good";
   }
-  if (score >= 40) {
+  if (score >= 34) {
     return "neutral";
   }
-  if (score >= 24) {
+  if (score >= 16) {
     return "bad";
   }
   return "trash";
@@ -304,8 +499,8 @@ const toReasonText = (
 
   if (contribution.kind === "prefix") {
     return isPositive
-      ? `Часто нравится: ${contribution.label}`
-      : `Префикс обычно не заходит: ${contribution.label}`;
+      ? `Движок часто нравится: ${contribution.label}`
+      : `Движок обычно не заходит: ${contribution.label}`;
   }
 
   if (contribution.kind === "creator") {
@@ -378,7 +573,7 @@ const buildSummary = (
   }
 
   if (level === "good") {
-    return "Есть заметные совпадения с твоими любимыми тегами и префиксами.";
+    return "Есть заметные совпадения с твоими любимыми тегами и движками.";
   }
 
   if (level === "trash") {
@@ -428,6 +623,7 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     ...trashSet,
   ]);
   const signalEntryList: InterestSignalEntry[] = [];
+  let newestSignalTimestampUnixSeconds: number | null = null;
 
   for (const threadLink of trackedLinkSet) {
     const signalType = getSignalTypeForLink(
@@ -448,13 +644,23 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
 
     const signalWeight = SIGNAL_WEIGHT_BY_TYPE[signalType];
     const tagIdList = uniqueNumberList(processedItem.tags);
-    const prefixIdList = uniqueNumberList(processedItem.prefixes);
+    const prefixIdList = getEnginePrefixIdList(processedItem.prefixes);
     const creatorName = normalizeCreatorName(processedItem.creator);
+    const signalTimestampUnixSeconds = resolveSignalTimestamp(processedItem);
+
+    if (
+      signalTimestampUnixSeconds !== null &&
+      (newestSignalTimestampUnixSeconds === null ||
+        signalTimestampUnixSeconds > newestSignalTimestampUnixSeconds)
+    ) {
+      newestSignalTimestampUnixSeconds = signalTimestampUnixSeconds;
+    }
 
     signalEntryList.push({
       creatorName,
       prefixIdList,
       signalWeight,
+      signalTimestampUnixSeconds,
       tagIdList,
     });
 
@@ -466,9 +672,21 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     }
   }
 
-  const negativeSignalScale = getNegativeSignalScale(signalEntryList);
+  const recencyAdjustedSignalEntryList = signalEntryList.map((signalEntry) => ({
+    ...signalEntry,
+    signalWeight:
+      signalEntry.signalWeight *
+      getSignalRecencyWeight(
+        signalEntry.signalTimestampUnixSeconds,
+        newestSignalTimestampUnixSeconds,
+      ),
+  }));
 
-  for (const signalEntry of signalEntryList) {
+  const negativeSignalScale = getNegativeSignalScale(
+    recencyAdjustedSignalEntryList,
+  );
+
+  for (const signalEntry of recencyAdjustedSignalEntryList) {
     const adjustedSignalWeight =
       signalEntry.signalWeight < 0
         ? signalEntry.signalWeight * negativeSignalScale
@@ -501,12 +719,13 @@ const assessThreadInterest = (
   }
 
   const contributionList: FeatureContribution[] = [];
-  let rawScore = 0;
+  let rawScore = BASELINE_RAW_SCORE;
 
   for (const tagId of uniqueNumberList(threadItem.tags)) {
     const contribution = calculateFeatureContribution(
       profile.tagEvidenceById.get(tagId),
-      TAG_CONTRIBUTION_WEIGHT,
+      profile.trackedSignalsCount,
+      "tag",
     );
 
     if (contribution !== 0) {
@@ -519,10 +738,11 @@ const assessThreadInterest = (
     }
   }
 
-  for (const prefixId of uniqueNumberList(threadItem.prefixes)) {
+  for (const prefixId of getEnginePrefixIdList(threadItem.prefixes)) {
     const contribution = calculateFeatureContribution(
       profile.prefixEvidenceById.get(prefixId),
-      PREFIX_CONTRIBUTION_WEIGHT,
+      profile.trackedSignalsCount,
+      "prefix",
     );
 
     if (contribution !== 0) {
@@ -539,7 +759,8 @@ const assessThreadInterest = (
   if (creatorName) {
     const creatorContribution = calculateFeatureContribution(
       profile.creatorEvidenceByName.get(creatorName.toLowerCase()),
-      CREATOR_CONTRIBUTION_WEIGHT,
+      profile.trackedSignalsCount,
+      "creator",
     );
 
     if (creatorContribution !== 0) {
@@ -584,7 +805,8 @@ const assessThreadInterest = (
     (profile.trackedSignalsCount < MIN_SIGNALS_FOR_STABLE_PROFILE &&
       evidenceMagnitude < 0.9);
 
-  const score = toScore100(rawScore);
+  const confidence = getInterestConfidence(profile, evidenceMagnitude);
+  const score = applyConfidenceToScore(toScore100(rawScore), confidence);
   const level = hasInsufficientData ? "neutral" : toInterestLevel(score);
 
   return {
@@ -598,6 +820,7 @@ const assessThreadInterest = (
     ),
     reasons: buildReasonList(contributionList, hasInsufficientData),
     score,
+    confidence,
     rawScore,
     hasInsufficientData,
   };

@@ -15,8 +15,8 @@ import {
 import { safeJsonParse } from './utils'
 
 const F95_ORIGIN = 'https://f95zone.to'
-const DOWNLOAD_CACHE_PREFIX = 'f95_tinder_downloads_v2_'
-const DOWNLOAD_CACHE_INDEX_KEY = 'f95_tinder_downloads_index_v2'
+const DOWNLOAD_CACHE_PREFIX = 'f95_tinder_downloads_v3_'
+const DOWNLOAD_CACHE_INDEX_KEY = 'f95_tinder_downloads_index_v3'
 const DOWNLOAD_CACHE_TTL_MS = 1000 * 60 * 60 * 6
 const DOWNLOAD_CACHE_MAX_ENTRIES = 60
 const DOWNLOAD_HOST_PREFERENCES_KEY = 'f95_tinder_download_host_preferences_v2'
@@ -81,6 +81,10 @@ const normalizeDisplayDownloadLinkLabel = (value: string) => {
   return normalizeWhitespace(value).replace(/^[^A-Za-z0-9]+/, '')
 }
 
+const isReasonableHostnameLabel = (value: string) => {
+  return /^[A-Za-z0-9][A-Za-z0-9-]{1,30}$/.test(value)
+}
+
 const isF95Url = (url: string) => {
   try {
     const parsedUrl = new URL(url)
@@ -104,6 +108,10 @@ const getDirectDownloadHostLabelFromUrl = (url: string | null) => {
     }
 
     const normalizedHostname = hostname.replace(/^www\./, '')
+    if (normalizedHostname.includes('%')) {
+      return null
+    }
+
     for (const [domainSuffix, hostLabel] of HOST_LABEL_BY_DOMAIN_SUFFIX) {
       if (
         normalizedHostname === domainSuffix ||
@@ -122,6 +130,10 @@ const getDirectDownloadHostLabelFromUrl = (url: string | null) => {
       hostnamePartList.length > 1
         ? hostnamePartList[hostnamePartList.length - 2]
         : hostnamePartList[0]
+    if (!isReasonableHostnameLabel(fallbackHostPart)) {
+      return null
+    }
+
     const normalizedHostLabel = normalizeDownloadHostLabel(fallbackHostPart)
     return normalizedHostLabel || null
   } catch {
@@ -490,9 +502,12 @@ const parseFallbackGroupsFromStructuredData = (documentNode: Document) => {
 const parseDownloadGroupsFromSection = (sectionRoot: Element) => {
   const groupList: DownloadGroup[] = []
   const groupByLabel = new Map<string, DownloadGroup>()
-  let hasHiddenLinks = false
-  let hasReachedDownloadHeading = false
+  const hasHiddenLinks =
+    sectionRoot.querySelector('.messageHide--link') !== null
   let currentGroupLabel: string | null = null
+
+  const cloneDocument = sectionRoot.ownerDocument
+  const sectionClone = sectionRoot.cloneNode(true) as Element
 
   const ensureGroup = (groupLabel: string) => {
     const existingGroup = groupByLabel.get(groupLabel)
@@ -509,70 +524,161 @@ const parseDownloadGroupsFromSection = (sectionRoot: Element) => {
     return nextGroup
   }
 
-  const elementList = Array.from(sectionRoot.querySelectorAll('*'))
-  for (const element of elementList) {
-    if (!hasReachedDownloadHeading) {
-      if (isDownloadHeadingElement(element)) {
-        hasReachedDownloadHeading = true
-        currentGroupLabel = null
+  const appendGroupLink = (groupLabel: string, link: DownloadLink) => {
+    const group = ensureGroup(groupLabel)
+    const isAlreadyPresent = group.links.some((candidate) => {
+      return candidate.label === link.label && candidate.url === link.url
+    })
+
+    if (!isAlreadyPresent) {
+      group.links.push(link)
+    }
+  }
+
+  const replaceWithLineBreak = (element: Element) => {
+    const parentNode = element.parentNode
+    if (!parentNode) {
+      return
+    }
+
+    parentNode.replaceChild(cloneDocument.createTextNode('\n'), element)
+  }
+
+  for (const lineBreakElement of Array.from(sectionClone.querySelectorAll('br'))) {
+    replaceWithLineBreak(lineBreakElement)
+  }
+
+  for (const blockElement of Array.from(
+    sectionClone.querySelectorAll('div, p, blockquote, li'),
+  )) {
+    if (blockElement === sectionClone) {
+      continue
+    }
+
+    const parentNode = blockElement.parentNode
+    if (!parentNode) {
+      continue
+    }
+
+    if (
+      !blockElement.previousSibling ||
+      blockElement.previousSibling.nodeType !== Node.TEXT_NODE ||
+      !blockElement.previousSibling.textContent?.endsWith('\n')
+    ) {
+      parentNode.insertBefore(cloneDocument.createTextNode('\n'), blockElement)
+    }
+
+    if (
+      !blockElement.nextSibling ||
+      blockElement.nextSibling.nodeType !== Node.TEXT_NODE ||
+      !blockElement.nextSibling.textContent?.startsWith('\n')
+    ) {
+      parentNode.insertBefore(
+        cloneDocument.createTextNode('\n'),
+        blockElement.nextSibling,
+      )
+    }
+  }
+
+  const linkTokenList: {
+    token: string
+    label: string
+    url: string | null
+    isMasked: boolean
+  }[] = []
+  const cloneAnchorList = Array.from(sectionClone.querySelectorAll('a'))
+  cloneAnchorList.forEach((anchorElement, index) => {
+    if (
+      anchorElement.classList.contains('messageHide--link') ||
+      anchorElement.querySelector('img.bbImage')
+    ) {
+      anchorElement.replaceWith(cloneDocument.createTextNode(' '))
+      return
+    }
+
+    const label = normalizeWhitespace(anchorElement.textContent ?? '')
+    if (!label) {
+      anchorElement.replaceWith(cloneDocument.createTextNode(' '))
+      return
+    }
+
+    const href = anchorElement.getAttribute('href')
+    const absoluteUrl = href ? toAbsoluteUrl(href) : null
+    if (absoluteUrl === `${F95_ORIGIN}/login/`) {
+      anchorElement.replaceWith(cloneDocument.createTextNode(' '))
+      return
+    }
+
+    const token = `__F95_DOWNLOAD_LINK_${index}__`
+    linkTokenList.push({
+      token,
+      label,
+      url: absoluteUrl,
+      isMasked: Boolean(absoluteUrl?.includes('/masked/')),
+    })
+    anchorElement.replaceWith(cloneDocument.createTextNode(` ${token} `))
+  })
+
+  const rawLineList = (sectionClone.textContent ?? '')
+    .replace(/\r/g, '')
+    .replace(/\u200b/g, '')
+    .split('\n')
+
+  for (const rawLine of rawLineList) {
+    const tokenMatchList = Array.from(
+      rawLine.matchAll(/__F95_DOWNLOAD_LINK_(\d+)__/g),
+    )
+    const tokenList = tokenMatchList.map((match) => match[0])
+    const plainLineText = normalizeWhitespace(
+      rawLine.replace(/__F95_DOWNLOAD_LINK_(\d+)__/g, ' '),
+    )
+
+    if (tokenList.length === 0) {
+      if (!plainLineText) {
+        continue
       }
-      continue
-    }
 
-    if (
-      element.tagName.toLowerCase() === 'a' &&
-      element.querySelector('img.bbImage')
-    ) {
-      break
-    }
-
-    if (
-      element.tagName.toLowerCase() === 'img' &&
-      element.classList.contains('bbImage')
-    ) {
-      break
-    }
-
-    if (element.classList.contains('messageHide--link')) {
-      hasHiddenLinks = true
-      continue
-    }
-
-    if (isDownloadGroupLabelElement(element)) {
-      currentGroupLabel = normalizeGroupLabel(element.textContent ?? '')
+      const nextGroupLabelMatch = /^([^:]{1,120})\s*:\s*(.*)$/.exec(plainLineText)
+      const nextGroupLabel = nextGroupLabelMatch
+        ? normalizeGroupLabel(nextGroupLabelMatch[1])
+        : null
+      currentGroupLabel =
+        nextGroupLabel && nextGroupLabel.toLowerCase() !== 'download'
+          ? nextGroupLabel
+          : null
       if (currentGroupLabel) {
         ensureGroup(currentGroupLabel)
       }
       continue
     }
 
-    if (element.tagName.toLowerCase() !== 'a' || !currentGroupLabel) {
+    const nextGroupLabelMatch = /^([^:]{1,120})\s*:\s*(.*)$/.exec(plainLineText)
+    const explicitGroupLabel = nextGroupLabelMatch
+      ? normalizeGroupLabel(nextGroupLabelMatch[1])
+      : null
+    const effectiveGroupLabel =
+      explicitGroupLabel && explicitGroupLabel.toLowerCase() !== 'download'
+        ? explicitGroupLabel
+        : currentGroupLabel
+
+    if (!effectiveGroupLabel) {
       continue
     }
 
-    const href = element.getAttribute('href')
-    const label = normalizeWhitespace(element.textContent ?? '')
-    if (!href || !label) {
-      continue
+    currentGroupLabel = effectiveGroupLabel
+    ensureGroup(effectiveGroupLabel)
+
+    for (const token of tokenList) {
+      const linkToken = linkTokenList.find((candidate) => candidate.token === token)
+      if (!linkToken) {
+        continue
+      }
+
+      appendGroupLink(
+        effectiveGroupLabel,
+        createDownloadLink(linkToken.label, linkToken.url, linkToken.isMasked),
+      )
     }
-
-    const absoluteUrl = toAbsoluteUrl(href)
-    if (absoluteUrl === `${F95_ORIGIN}/login/`) {
-      continue
-    }
-
-    const group = ensureGroup(currentGroupLabel)
-    const isAlreadyPresent = group.links.some((link) => {
-      return link.label === label && link.url === absoluteUrl
-    })
-
-    if (isAlreadyPresent) {
-      continue
-    }
-
-    group.links.push({
-      ...createDownloadLink(label, absoluteUrl, absoluteUrl.includes('/masked/')),
-    })
   }
 
   return {

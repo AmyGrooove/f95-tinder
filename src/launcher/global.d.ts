@@ -9,19 +9,42 @@ import type {
 } from './types'
 import type { FilterState, LatestGamesSort } from '../f95/types'
 
+type BundledLookupMap = Record<string, string>
+type BundledPrefixesPayload =
+  | BundledLookupMap
+  | {
+      prefixes?: BundledLookupMap
+      engines?: BundledLookupMap
+    }
+type LauncherOpenExternalOptions = {
+  background?: boolean
+}
+
 type LauncherBridge = {
   runtime: {
     isElectron: boolean
   }
   getLocalDataSnapshotSync: () => LauncherLocalDataSnapshot
   saveLocalListsSync: (value: unknown) => LauncherLocalDataSnapshot
+  saveLocalLists: (value: unknown) => Promise<boolean>
   saveLocalSettingsSync: (value: unknown) => LauncherLocalDataSnapshot
+  saveLocalSettings: (value: unknown) => Promise<boolean>
+  saveLocalCatalogSync: (value: unknown) => LauncherLocalDataSnapshot
+  saveLocalCatalog: (value: unknown) => Promise<boolean>
   clearLocalListsSync: () => LauncherLocalDataSnapshot
+  clearLocalLists: () => Promise<boolean>
   clearLocalSettingsSync: () => LauncherLocalDataSnapshot
+  clearLocalSettings: () => Promise<boolean>
+  clearLocalCatalogSync: () => LauncherLocalDataSnapshot
+  clearLocalCatalog: () => Promise<boolean>
   openLocalDataFolder: () => Promise<boolean>
-  openExternal: (targetUrl: string) => Promise<boolean>
-  loadBundledTagsMap: () => Promise<Record<string, string>>
-  loadBundledPrefixesMap: () => Promise<Record<string, string>>
+  openExternal: (
+    targetUrl: string,
+    options?: LauncherOpenExternalOptions,
+  ) => Promise<boolean>
+  restartApp: () => Promise<boolean>
+  loadBundledTagsMap: () => Promise<BundledLookupMap>
+  loadBundledPrefixesMap: () => Promise<BundledPrefixesPayload>
   fetchLatestGamesPage: (
     pageNumber: number,
     latestGamesSort: LatestGamesSort,

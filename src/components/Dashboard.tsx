@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
 import {
@@ -12,13 +12,6 @@ import {
   getProcessedThreadItemUpdateLabel,
   hasProcessedThreadItemUpdate,
 } from "../f95/updateTracking";
-import {
-  getLauncherPrimaryActionLabel,
-  getLauncherStatusLabel,
-  getLauncherStatusText,
-  isLauncherGameBusy,
-} from "../launcher/ui";
-import type { LauncherGameRecord } from "../launcher/types";
 import { TagChips } from "./TagChips";
 
 type DashboardCard = {
@@ -48,33 +41,11 @@ type DashboardTabId = "bookmarks" | "trash" | "played";
 
 type DashboardProps = {
   sessionState: SessionState;
-  isLauncherAvailable: boolean;
-  launcherGamesByThreadLink: Record<string, LauncherGameRecord>;
-  openBestDownloadForThread: (
-    threadLink: string,
-    threadTitle: string,
-    options?: {
-      openInBackground?: boolean;
-    },
-  ) => void | Promise<void>;
   onOpenThread: (threadLink: string) => void | Promise<void>;
+  onOpenThreadInBackground: (threadLink: string) => void | Promise<void>;
   onOpenImageViewer: (imageUrlList: string[], startIndex: number) => void;
   tagsMap: Record<string, string>;
   prefixesMap: Record<string, string>;
-  onRevealInstalledGame: (threadLink: string) => void | Promise<void>;
-  onDeleteGameFilesForThread: (
-    threadLink: string,
-    threadTitle: string,
-  ) => void | Promise<void>;
-  onChooseInstallFolderForThread: (
-    threadLink: string,
-    threadTitle: string,
-  ) => void | Promise<void>;
-  onChooseLaunchTargetForThread: (threadLink: string) => void | Promise<void>;
-  onOpenErrorMirrorForThread: (
-    threadLink: string,
-    threadTitle: string,
-  ) => void | Promise<void>;
   moveLinkToList: (link: string, listType: ListType) => void;
   togglePlayedFavoriteLink: (link: string) => void;
   removeLinkFromList: (link: string, listType: ListType) => void;
@@ -98,12 +69,6 @@ type DashboardProps = {
     processedThreadItemsByLink: Record<string, ProcessedThreadItem>,
     threadItemsByIdentifier: Record<string, { rating?: number }>,
   ) => number;
-};
-
-type GameSettingsModalState = {
-  threadLink: string;
-  threadTitle: string;
-  coverUrl: string;
 };
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -203,25 +168,6 @@ const formatDateTimeLabel = (unixSeconds: number | undefined) => {
   return dateTimeFormatter.format(new Date(unixSeconds * 1000));
 };
 
-const formatStorageSizeLabel = (value: number | null | undefined) => {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-
-  const unitList = ["Б", "КБ", "МБ", "ГБ", "ТБ"];
-  let nextValue = value;
-  let unitIndex = 0;
-
-  while (nextValue >= 1024 && unitIndex < unitList.length - 1) {
-    nextValue /= 1024;
-    unitIndex += 1;
-  }
-
-  const fractionDigits = nextValue >= 10 || unitIndex === 0 ? 0 : 1;
-  const formattedValue = nextValue.toFixed(fractionDigits).replace(/\.0$/, "");
-  return `${formattedValue} ${unitList[unitIndex]}`;
-};
-
 const formatListTypeLabel = (value: ListType | null) => {
   if (value === "favorite") {
     return "Закладки";
@@ -294,18 +240,11 @@ const buildInterestCandidate = (
 
 export const Dashboard = ({
   sessionState,
-  isLauncherAvailable,
-  launcherGamesByThreadLink,
-  openBestDownloadForThread,
   onOpenThread,
+  onOpenThreadInBackground,
   onOpenImageViewer,
   tagsMap,
   prefixesMap,
-  onRevealInstalledGame,
-  onDeleteGameFilesForThread,
-  onChooseInstallFolderForThread,
-  onChooseLaunchTargetForThread,
-  onOpenErrorMirrorForThread,
   moveLinkToList,
   togglePlayedFavoriteLink,
   removeLinkFromList,
@@ -332,9 +271,6 @@ export const Dashboard = ({
   const [activeGameCard, setActiveGameCard] = useState<DashboardCard | null>(
     null,
   );
-  const [gameSettingsModalState, setGameSettingsModalState] =
-    useState<GameSettingsModalState | null>(null);
-  const [isGameSettingsBusy, setIsGameSettingsBusy] = useState(false);
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
     [sessionState.playedLinks],
@@ -353,6 +289,25 @@ export const Dashboard = ({
     [sessionState.trashLinks],
   );
   const playedLinkSet = useMemo(() => new Set(playedLinks), [playedLinks]);
+  const preventMiddleClickAutoScroll = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (event.button === 1) {
+        event.preventDefault();
+      }
+    },
+    [],
+  );
+  const handleThreadAuxClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>, threadLink: string) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      event.preventDefault();
+      void onOpenThreadInBackground(threadLink);
+    },
+    [onOpenThreadInBackground],
+  );
 
   const trackedLinks = useMemo(() => {
     const linkSet = new Set<string>();
@@ -368,7 +323,12 @@ export const Dashboard = ({
     return Array.from(linkSet);
   }, [favoritesLinkSet, trashLinkSet, playedLinkSet]);
 
+  const shouldBuildAvailableTagOptions = isIncludeTagsOpen || isExcludeTagsOpen;
   const availableTagOptions = useMemo(() => {
+    if (!shouldBuildAvailableTagOptions) {
+      return [];
+    }
+
     const tagSet = new Set<number>();
     for (const link of trackedLinks) {
       const processedItem = sessionState.processedThreadItemsByLink[link];
@@ -383,7 +343,12 @@ export const Dashboard = ({
     return tagEntries.sort((first, second) =>
       first.label.localeCompare(second.label),
     );
-  }, [sessionState.processedThreadItemsByLink, trackedLinks, tagsMap]);
+  }, [
+    sessionState.processedThreadItemsByLink,
+    shouldBuildAvailableTagOptions,
+    trackedLinks,
+    tagsMap,
+  ]);
 
   const includeTagNumbers = useMemo(
     () => includeTags.map((tagId) => Number(tagId)).filter(Number.isFinite),
@@ -400,14 +365,57 @@ export const Dashboard = ({
     [deferredSearchText],
   );
 
+  const shouldComputeInterest = sortField === "interest" || showInterestBadges;
   const interestProfile = useMemo(
-    () => buildInterestProfile(sessionState),
+    () => (shouldComputeInterest ? buildInterestProfile(sessionState) : null),
     [
       sessionState.favoritesLinks,
       sessionState.playedFavoriteLinks,
       sessionState.playedLinks,
       sessionState.processedThreadItemsByLink,
       sessionState.trashLinks,
+      shouldComputeInterest,
+    ],
+  );
+
+  const decorateCardsWithInterest = useCallback(
+    (cards: DashboardCard[]) => {
+      if (!interestProfile || cards.length === 0) {
+        return cards;
+      }
+
+      return cards.map((card) => {
+        if (card.interestAssessment) {
+          return card;
+        }
+
+        const threadIdentifier = parseThreadIdentifierFromLink(card.threadLink);
+        const threadItem =
+          threadIdentifier !== null
+            ? sessionState.threadItemsByIdentifier[String(threadIdentifier)] ?? null
+            : null;
+        const processedItem =
+          sessionState.processedThreadItemsByLink[card.threadLink] ?? null;
+        const interestAssessment = assessThreadInterest(
+          buildInterestCandidate(processedItem, threadItem),
+          interestProfile,
+          tagsMap,
+          prefixesMap,
+        );
+
+        return {
+          ...card,
+          interestAssessment,
+          interestScore: interestAssessment?.score ?? 50,
+        };
+      });
+    },
+    [
+      interestProfile,
+      prefixesMap,
+      sessionState.processedThreadItemsByLink,
+      sessionState.threadItemsByIdentifier,
+      tagsMap,
     ],
   );
 
@@ -530,12 +538,6 @@ export const Dashboard = ({
         threadIdentifier !== null
           ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
           : null;
-      const interestAssessment = assessThreadInterest(
-        buildInterestCandidate(processedItem, threadItem),
-        interestProfile,
-        tagsMap,
-        prefixesMap,
-      );
       const version =
         processedItem?.version?.trim() ||
         (typeof threadItem?.version === "string" ? threadItem.version : "");
@@ -571,12 +573,17 @@ export const Dashboard = ({
         isInTrash,
         listType: sectionKey,
         sectionKey,
-        interestAssessment,
-        interestScore: interestAssessment?.score ?? 50,
+        interestAssessment: null,
+        interestScore: 50,
       });
     }
 
-    return sortCards(filteredCards, sortField, sortDirection);
+    const cardsForSort =
+      sortField === "interest"
+        ? decorateCardsWithInterest(filteredCards)
+        : filteredCards;
+
+    return sortCards(cardsForSort, sortField, sortDirection);
   };
 
   const activeCards = useMemo(() => {
@@ -608,17 +615,26 @@ export const Dashboard = ({
     pickTitleForLink,
     pickCreatorForLink,
     pickRatingForLink,
-    interestProfile,
-    tagsMap,
     prefixesMap,
     showOnlyPlayedFavorites,
+    decorateCardsWithInterest,
   ]);
 
   const visibleCardCount = visibleCardCountByTab[activeTab];
-  const visibleCards = useMemo(
-    () => activeCards.slice(0, visibleCardCount),
-    [activeCards, visibleCardCount],
-  );
+  const visibleCards = useMemo(() => {
+    const nextVisibleCards = activeCards.slice(0, visibleCardCount);
+    if (!showInterestBadges || sortField === "interest") {
+      return nextVisibleCards;
+    }
+
+    return decorateCardsWithInterest(nextVisibleCards);
+  }, [
+    activeCards,
+    decorateCardsWithInterest,
+    showInterestBadges,
+    sortField,
+    visibleCardCount,
+  ]);
 
   const toggleIncludeTag = (tagId: string) => {
     setIncludeTags((previous) => {
@@ -829,37 +845,6 @@ export const Dashboard = ({
       ]
     : [];
   const activeGameScreens = activeGameThreadItem?.screens ?? [];
-  const activeGameLauncherRecord = activeGameCard
-    ? launcherGamesByThreadLink[activeGameCard.threadLink] ?? null
-    : null;
-  const isActiveGameLauncherBusy = isLauncherGameBusy(activeGameLauncherRecord);
-
-  const activeGameSettingsRecord = useMemo(() => {
-    if (!gameSettingsModalState) {
-      return null;
-    }
-
-    return launcherGamesByThreadLink[gameSettingsModalState.threadLink] ?? null;
-  }, [gameSettingsModalState, launcherGamesByThreadLink]);
-  const canRevealActiveGameSettingsRecord = Boolean(
-    activeGameSettingsRecord?.launchTargetPath ??
-      activeGameSettingsRecord?.installDir ??
-      activeGameSettingsRecord?.archivePath,
-  );
-  const isActiveGameSettingsLauncherBusy = isLauncherGameBusy(
-    activeGameSettingsRecord,
-  );
-
-  useEffect(() => {
-    if (
-      gameSettingsModalState &&
-      !launcherGamesByThreadLink[gameSettingsModalState.threadLink]
-    ) {
-      setGameSettingsModalState(null);
-      setIsGameSettingsBusy(false);
-    }
-  }, [gameSettingsModalState, launcherGamesByThreadLink]);
-
   useEffect(() => {
     if (!activeGameCard) {
       return undefined;
@@ -875,40 +860,13 @@ export const Dashboard = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeGameCard]);
 
-  const runGameSettingsAction = (action: () => void | Promise<void>) => {
-    setIsGameSettingsBusy(true);
-    void Promise.resolve(action()).finally(() => {
-      setIsGameSettingsBusy(false);
-    });
-  };
-
   const renderCardActions = (card: DashboardCard) => {
     const isInFavorites = card.isInFavorites;
     const isInTrash = card.isInTrash;
     const isPlayed = card.isPlayed;
     const showFavoriteQuickAction = !isInFavorites;
-    const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
-    const canOpenGameSettings = isLauncherAvailable && Boolean(launcherGame);
-    const isInstalled = launcherGame?.status === "installed";
-    const canLaunchInstalledGame =
-      isInstalled && Boolean(launcherGame?.launchTargetPath);
-    const isBusy = isLauncherGameBusy(launcherGame);
-    const showInstallFolderButton = isLauncherAvailable && !isBusy;
-    const isError = launcherGame?.status === "error";
-    const errorHint =
-      isError &&
-      (launcherGame.errorMessage?.trim() ||
-        launcherGame.message?.trim() ||
-        "Автоматическая загрузка завершилась ошибкой.");
-    const errorHintLabel = errorHint
-      ? `${errorHint} Нажми, чтобы открыть зеркало.`
-      : null;
-    const primaryActionSecondaryButtonCount =
-      Number(showInstallFolderButton) +
-      Number(canOpenGameSettings) +
-      Number(Boolean(errorHint));
     const quickActionCount =
-      Number(!isPlayed) + Number(showFavoriteQuickAction) + Number(!isInTrash) + 1;
+      Number(!isPlayed) + Number(showFavoriteQuickAction) + Number(!isInTrash) + 2;
 
     const handleDangerClick = () => {
       if (card.sectionKey === "played") {
@@ -918,109 +876,29 @@ export const Dashboard = ({
       removeLinkFromList(card.threadLink, card.sectionKey as ListType);
     };
 
-    const handleBestDownloadMiddleMouseDown = (
-      event: MouseEvent<HTMLButtonElement>,
-    ) => {
-      if (event.button !== 1) {
-        return;
-      }
-
-      // Prevent the browser autoscroll gesture on middle click.
-      event.preventDefault();
-    };
-
-    const handleBestDownloadAuxClick = (
-      event: MouseEvent<HTMLButtonElement>,
-    ) => {
-      if (event.button !== 1) {
-        return;
-      }
-
-      event.preventDefault();
-      void openBestDownloadForThread(card.threadLink, card.title, {
-        openInBackground: true,
-      });
-    };
-
     return (
       <div className="listItemActionsRow">
-        <div
-          className="listItemPrimaryActions"
-          style={{
-            gridTemplateColumns:
-              primaryActionSecondaryButtonCount > 0
-                ? `minmax(0, 1fr) repeat(${primaryActionSecondaryButtonCount}, 46px)`
-                : "minmax(0, 1fr)",
-          }}
-        >
-          <button
-            className={`button listItemDownloadButton listItemBestDownloadButton ${
-              canLaunchInstalledGame ? "listItemPlayButton" : ""
-            } ${isBusy ? "listItemBusyButton" : ""}`}
-            type="button"
-            onMouseDown={handleBestDownloadMiddleMouseDown}
-            onAuxClick={handleBestDownloadAuxClick}
-            onClick={() => {
-              void openBestDownloadForThread(card.threadLink, card.title);
-            }}
-          >
-            {getLauncherPrimaryActionLabel(isLauncherAvailable, launcherGame)}
-          </button>
-          {showInstallFolderButton ? (
-            <button
-              className="button listItemDownloadButton listItemSettingsButton"
-              type="button"
-              title="Указать папку игры"
-              aria-label="Указать папку игры"
-              disabled={isBusy}
-              onClick={() => {
-                void onChooseInstallFolderForThread(card.threadLink, card.title);
-              }}
-            >
-              <span aria-hidden>📁</span>
-              <span className="srOnly">Указать папку игры</span>
-            </button>
-          ) : null}
-          {canOpenGameSettings ? (
-            <button
-              className="button listItemDownloadButton listItemSettingsButton"
-              type="button"
-              title="Настройки игры"
-              aria-label="Настройки игры"
-              disabled={isBusy}
-              onClick={() => {
-                setGameSettingsModalState({
-                  threadLink: card.threadLink,
-                  threadTitle: card.title,
-                  coverUrl: card.coverUrl,
-                });
-              }}
-            >
-              <span aria-hidden>⚙</span>
-              <span className="srOnly">Настройки игры</span>
-            </button>
-          ) : null}
-          {errorHint ? (
-            <button
-              className="button listItemStatusHintButton"
-              type="button"
-              title={errorHintLabel ?? undefined}
-              aria-label={errorHintLabel ?? undefined}
-              disabled={isBusy}
-              onClick={() => {
-                void onOpenErrorMirrorForThread(card.threadLink, card.title);
-              }}
-            >
-              !
-            </button>
-          ) : null}
-        </div>
         <div
           className="listItemQuickActions"
           style={{
             gridTemplateColumns: `repeat(${quickActionCount}, minmax(0, 1fr))`,
           }}
         >
+          <button
+            className="iconButton listItemActionIconButton"
+            onClick={() => {
+              void onOpenThread(card.threadLink);
+            }}
+            onMouseDown={preventMiddleClickAutoScroll}
+            onAuxClick={(event) => {
+              handleThreadAuxClick(event, card.threadLink);
+            }}
+            title="Открыть страницу"
+            aria-label="Открыть страницу"
+          >
+            <span aria-hidden>↗</span>
+            <span className="srOnly">Открыть страницу</span>
+          </button>
           {!isPlayed ? (
             <button
               className="iconButton listItemActionIconButton iconButtonPlayed"
@@ -1114,45 +992,10 @@ export const Dashboard = ({
       <>
         <div className="listGrid" style={{ marginTop: 12 }}>
           {cards.map((card) => {
-            const launcherGame = launcherGamesByThreadLink[card.threadLink] ?? null;
-            const installedSizeLabel =
-              launcherGame?.status === "installed"
-                ? formatStorageSizeLabel(launcherGame.sizeBytes)
-                : null;
-            const launcherStatusText =
-              launcherGame &&
-              (launcherGame.status === "queued" ||
-                launcherGame.status === "downloading" ||
-                launcherGame.status === "resolving" ||
-                launcherGame.status === "extracting" ||
-                launcherGame.status === "error")
-                ? getLauncherStatusText(launcherGame)
-                : null;
             const showPlayedFavoriteButton = card.sectionKey === "played";
             const playedFavoriteLabel = card.isPlayedFavorite
               ? "Убрать из любимого"
               : "Добавить в любимое";
-            const handleCardMiddleMouseDown = (
-              event: MouseEvent<HTMLButtonElement>,
-            ) => {
-              if (event.button !== 1) {
-                return;
-              }
-
-              // Prevent the browser autoscroll gesture on middle click.
-              event.preventDefault();
-            };
-
-            const handleCardAuxClick = (
-              event: MouseEvent<HTMLButtonElement>,
-            ) => {
-              if (event.button !== 1) {
-                return;
-              }
-
-              event.preventDefault();
-              void onOpenThread(card.threadLink);
-            };
 
             return (
               <div
@@ -1164,7 +1007,7 @@ export const Dashboard = ({
                 {showInterestBadges && card.interestAssessment ? (
                   <div
                     className={`dashboardInterestBadge swipeInterestBadge swipeInterestBadge${card.interestAssessment.level[0].toUpperCase()}${card.interestAssessment.level.slice(1)}`}
-                    title={`${card.interestAssessment.label} · ${card.interestScore}/100. ${card.interestAssessment.summary}`}
+                    title={`${card.interestAssessment.label} · ${card.interestScore}/100 · уверенность ${Math.round(card.interestAssessment.confidence * 100)}%. ${card.interestAssessment.summary}`}
                   >
                     {card.interestAssessment.label}
                   </div>
@@ -1190,8 +1033,10 @@ export const Dashboard = ({
                 <button
                   className="listItemOpenSurface"
                   type="button"
-                  onMouseDown={handleCardMiddleMouseDown}
-                  onAuxClick={handleCardAuxClick}
+                  onMouseDown={preventMiddleClickAutoScroll}
+                  onAuxClick={(event) => {
+                    handleThreadAuxClick(event, card.threadLink);
+                  }}
                   onClick={() => setActiveGameCard(card)}
                 >
                   <div className="listItemCoverLink">
@@ -1224,7 +1069,7 @@ export const Dashboard = ({
                         </div>
                       </div>
 
-                      {card.engineLabel || card.version || installedSizeLabel ? (
+                      {card.engineLabel || card.version ? (
                         <div className="listItemPreviewMeta">
                           <div className="listItemPreviewMetaDetails">
                             {card.engineLabel ? (
@@ -1241,20 +1086,6 @@ export const Dashboard = ({
                               </span>
                             ) : null}
                           </div>
-                          {installedSizeLabel ? (
-                            <span className="listItemPreviewMetaSize">
-                              {installedSizeLabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      {launcherStatusText ? (
-                        <div
-                          className="listItemLauncherStatus"
-                          title={launcherStatusText}
-                        >
-                          {launcherStatusText}
                         </div>
                       ) : null}
                     </div>
@@ -1310,7 +1141,7 @@ export const Dashboard = ({
 
   return (
     <div className="dashboard">
-      <div className="dashboardTabBar" role="tablist" aria-label="Списки дашборда">
+      <div className="dashboardTabBar" role="tablist" aria-label="Списки">
         {tabItems.map((item) => (
           <button
             key={`tab-${item.id}`}
@@ -1540,25 +1371,13 @@ export const Dashboard = ({
                   onClick={() => {
                     void onOpenThread(activeGameCard.threadLink);
                   }}
+                  onMouseDown={preventMiddleClickAutoScroll}
+                  onAuxClick={(event) => {
+                    handleThreadAuxClick(event, activeGameCard.threadLink);
+                  }}
                 >
                   Открыть страницу
                 </button>
-                {isLauncherAvailable && !isActiveGameLauncherBusy ? (
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => {
-                      void onChooseInstallFolderForThread(
-                        activeGameCard.threadLink,
-                        activeGameCard.title,
-                      );
-                    }}
-                  >
-                    {activeGameLauncherRecord?.installDir
-                      ? "Сменить папку"
-                      : "Указать папку"}
-                  </button>
-                ) : null}
                 <button
                   className="button"
                   type="button"
@@ -1663,179 +1482,6 @@ export const Dashboard = ({
                       : "Полные метаданные и скриншоты появятся после синхронизации."}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {gameSettingsModalState && activeGameSettingsRecord ? (
-        <div
-          className="downloadModalOverlay"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target && !isGameSettingsBusy) {
-              setGameSettingsModalState(null);
-            }
-          }}
-        >
-          <div className="downloadModal gameSettingsModal">
-            <div className="downloadModalHeader">
-              <div className="downloadModalTitleWrap gameSettingsTitleWrap">
-                <div className="gameSettingsHero">
-                  {gameSettingsModalState.coverUrl ? (
-                    <img
-                      className="gameSettingsHeroCover"
-                      src={gameSettingsModalState.coverUrl}
-                      alt="cover"
-                    />
-                  ) : (
-                    <div className="gameSettingsHeroCover" />
-                  )}
-                  <div className="gameSettingsHeroText">
-                    <div className="downloadModalTitle">
-                      {gameSettingsModalState.threadTitle}
-                    </div>
-                    <div className="downloadModalMeta">
-                      {gameSettingsModalState.threadLink}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="downloadModalActions">
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => setGameSettingsModalState(null)}
-                  disabled={isGameSettingsBusy}
-                >
-                  Закрыть
-                </button>
-              </div>
-            </div>
-
-            <div className="downloadModalBody">
-              <div className="gameSettingsInfoGrid">
-                <div className="gameSettingsInfoCard">
-                  <div className="gameSettingsInfoLabel">Статус</div>
-                  <div className="gameSettingsInfoValue">
-                    {getLauncherStatusLabel(activeGameSettingsRecord)}
-                  </div>
-                </div>
-                <div className="gameSettingsInfoCard">
-                  <div className="gameSettingsInfoLabel">Текущий запускатор</div>
-                  <div className="gameSettingsInfoValue">
-                    {activeGameSettingsRecord.launchTargetName ?? "Не выбран"}
-                  </div>
-                </div>
-                <div className="gameSettingsInfoCard">
-                  <div className="gameSettingsInfoLabel">Последний хост</div>
-                  <div className="gameSettingsInfoValue">
-                    {activeGameSettingsRecord.lastHostLabel ?? "Нет данных"}
-                  </div>
-                </div>
-                <div className="gameSettingsInfoCard">
-                  <div className="gameSettingsInfoLabel">Обновлено</div>
-                  <div className="gameSettingsInfoValue">
-                    {new Date(
-                      activeGameSettingsRecord.updatedAtUnixMs,
-                    ).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              <div className="gameSettingsPaths">
-                <div className="gameSettingsPathCard">
-                  <div className="gameSettingsInfoLabel">Папка игры</div>
-                  <div className="gameSettingsPathValue">
-                    {activeGameSettingsRecord.installDir ?? "Нет данных"}
-                  </div>
-                </div>
-                <div className="gameSettingsPathCard">
-                  <div className="gameSettingsInfoLabel">Архив</div>
-                  <div className="gameSettingsPathValue">
-                    {activeGameSettingsRecord.archivePath ?? "Нет данных"}
-                  </div>
-                </div>
-                <div className="gameSettingsPathCard">
-                  <div className="gameSettingsInfoLabel">Путь запускатора</div>
-                  <div className="gameSettingsPathValue">
-                    {activeGameSettingsRecord.launchTargetPath ?? "Не выбран"}
-                  </div>
-                </div>
-                {activeGameSettingsRecord.errorMessage ? (
-                  <div className="gameSettingsPathCard">
-                    <div className="gameSettingsInfoLabel">Ошибка</div>
-                    <div className="gameSettingsPathValue">
-                      {activeGameSettingsRecord.errorMessage}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="gameSettingsActions">
-                <button
-                  className="button"
-                  type="button"
-                  disabled={
-                    isGameSettingsBusy || !canRevealActiveGameSettingsRecord
-                  }
-                  onClick={() =>
-                    runGameSettingsAction(() =>
-                      onRevealInstalledGame(gameSettingsModalState.threadLink),
-                    )
-                  }
-                >
-                  Открыть папку
-                </button>
-                {!isActiveGameSettingsLauncherBusy ? (
-                  <button
-                    className="button"
-                    type="button"
-                    disabled={isGameSettingsBusy}
-                    onClick={() =>
-                      runGameSettingsAction(() =>
-                        onChooseInstallFolderForThread(
-                          gameSettingsModalState.threadLink,
-                          gameSettingsModalState.threadTitle,
-                        ),
-                      )
-                    }
-                  >
-                    Сменить папку игры
-                  </button>
-                ) : null}
-                <button
-                  className="button"
-                  type="button"
-                  disabled={
-                    isGameSettingsBusy || !activeGameSettingsRecord.installDir
-                  }
-                  onClick={() =>
-                    runGameSettingsAction(() =>
-                      onChooseLaunchTargetForThread(
-                        gameSettingsModalState.threadLink,
-                      ),
-                    )
-                  }
-                >
-                  Выбрать запускатор
-                </button>
-                <button
-                  className="button buttonDanger"
-                  type="button"
-                  disabled={isGameSettingsBusy}
-                  onClick={() =>
-                    runGameSettingsAction(() =>
-                      onDeleteGameFilesForThread(
-                        gameSettingsModalState.threadLink,
-                        gameSettingsModalState.threadTitle,
-                      ),
-                    )
-                  }
-                >
-                  Удалить файлы игры
-                </button>
               </div>
             </div>
           </div>

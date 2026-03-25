@@ -8,6 +8,25 @@ type LauncherGameStatus =
   | 'installed'
   | 'error'
 
+type LauncherAutomationDebugWindowMode = 'visible' | 'hidden'
+
+type LauncherAutomationDebugInfo = {
+  scenarioId: string | null
+  scenarioLabel: string | null
+  phase: string | null
+  reasonCode: string | null
+  note: string | null
+  lastUrl: string | null
+  retryAfterMs: number | null
+  attemptCount: number
+  lastUpdatedAtUnixMs: number | null
+  windowMode: LauncherAutomationDebugWindowMode
+  sessionDir: string | null
+  logFilePath: string | null
+  lastHtmlPath: string | null
+  lastScreenshotPath: string | null
+}
+
 type LauncherGameRecord = {
   threadLink: string
   threadTitle: string
@@ -23,6 +42,7 @@ type LauncherGameRecord = {
   downloadSpeedBytesPerSecond: number | null
   errorMessage: string | null
   sizeBytes: number | null
+  automationDebug: LauncherAutomationDebugInfo | null
   updatedAtUnixMs: number
 }
 
@@ -79,11 +99,15 @@ type LauncherLocalDataFile = {
 type LauncherLocalDataSnapshot = {
   listsFile: LauncherLocalDataFile
   settingsFile: LauncherLocalDataFile
+  catalogFile: LauncherLocalDataFile
   lists: unknown | null
   settings: unknown | null
+  catalog: unknown | null
 }
 
 export type {
+  LauncherAutomationDebugInfo,
+  LauncherAutomationDebugWindowMode,
   LauncherCookieBackup,
   LauncherCookieStatus,
   LauncherDownloadRequest,

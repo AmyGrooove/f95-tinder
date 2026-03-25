@@ -1,4 +1,46 @@
 const GENERIC_DOWNLOAD_SCENARIO_ID = 'GENERIC'
+const DEFAULT_AUTOMATION_RETRY_AFTER_MS = 1_250
+const AUTOMATION_REASON_CODES = Object.freeze({
+  CAPTCHA_REQUIRED: 'captcha_required',
+  NO_ACTIONABLE_ELEMENT: 'no_actionable_element',
+  WAITING_FOR_CONTINUE: 'waiting_for_continue',
+  WAITING_FOR_DOWNLOAD: 'waiting_for_download',
+  WAITING_FOR_ARCHIVE_ROW: 'waiting_for_archive_row',
+  COUNTDOWN_PENDING: 'countdown_pending',
+  DOWNLOAD_LIMIT_REACHED: 'download_limit_reached',
+  CONCURRENT_LIMIT_REACHED: 'concurrent_limit_reached',
+  AUTOMATION_ERROR: 'automation_error',
+  DOWNLOAD_TIMEOUT: 'download_timeout',
+  MANUAL_ACTION_REQUIRED: 'manual_action_required',
+})
+const WAITING_AUTOMATION_REASON_CODE_SET = new Set([
+  AUTOMATION_REASON_CODES.NO_ACTIONABLE_ELEMENT,
+  AUTOMATION_REASON_CODES.WAITING_FOR_CONTINUE,
+  AUTOMATION_REASON_CODES.WAITING_FOR_DOWNLOAD,
+  AUTOMATION_REASON_CODES.WAITING_FOR_ARCHIVE_ROW,
+  AUTOMATION_REASON_CODES.COUNTDOWN_PENDING,
+])
+
+const normalizeAutomationReasonCode = (value) => {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim().toLowerCase()
+  return normalizedValue.length > 0 ? normalizedValue : null
+}
+
+const normalizeAutomationRetryAfterMs = (value, reasonCode) => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.round(value)
+  }
+
+  if (reasonCode && WAITING_AUTOMATION_REASON_CODE_SET.has(reasonCode)) {
+    return DEFAULT_AUTOMATION_RETRY_AFTER_MS
+  }
+
+  return null
+}
 
 const normalizeDownloadHostLabel = (value) =>
   String(value ?? '')
@@ -111,8 +153,12 @@ const buildGenericAutoClickScript = (scenario) => `
       label: null,
       hasCaptcha,
       location: window.location.href,
-      phase: null,
+      phase: 'generic_wait',
       note: 'No matching element found',
+      reasonCode: hasCaptcha
+        ? ${JSON.stringify(AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED)}
+        : ${JSON.stringify(AUTOMATION_REASON_CODES.NO_ACTIONABLE_ELEMENT)},
+      retryAfterMs: hasCaptcha ? null : ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
       errorMessage: null,
     };
   }
@@ -132,8 +178,10 @@ const buildGenericAutoClickScript = (scenario) => `
     label: bestCandidate.text,
     hasCaptcha,
     location: window.location.href,
-    phase: null,
+    phase: 'generic_click',
     note: null,
+    reasonCode: null,
+    retryAfterMs: null,
     errorMessage: null,
   };
 })();
@@ -167,6 +215,10 @@ const buildPixeldrainAutomationScript = () => {
     location: currentUrl,
     phase: null,
     note: null,
+    reasonCode: hasCaptcha
+      ? ${JSON.stringify(AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED)}
+      : null,
+    retryAfterMs: null,
     errorMessage: null,
     ...patch,
   });
@@ -208,6 +260,9 @@ const buildPixeldrainAutomationScript = () => {
     ) {
       return createResult({
         phase: 'limit_reached',
+        reasonCode: ${JSON.stringify(
+          AUTOMATION_REASON_CODES.DOWNLOAD_LIMIT_REACHED,
+        )},
         errorMessage: \`Pixeldrain: исчерпан лимит скачивания (\${limitMatch[0].trim()}).\`,
       });
     }
@@ -223,6 +278,9 @@ const buildPixeldrainAutomationScript = () => {
   if (concurrentLimitPatterns.some((pattern) => pattern.test(pageTextRaw))) {
     return createResult({
       phase: 'concurrent_limit',
+      reasonCode: ${JSON.stringify(
+        AUTOMATION_REASON_CODES.CONCURRENT_LIMIT_REACHED,
+      )},
       errorMessage:
         'Pixeldrain: достигнут лимит одновременных скачиваний (до 5 одновременно).',
     });
@@ -235,6 +293,9 @@ const buildPixeldrainAutomationScript = () => {
   ) {
     return createResult({
       phase: 'limit_reached',
+      reasonCode: ${JSON.stringify(
+        AUTOMATION_REASON_CODES.DOWNLOAD_LIMIT_REACHED,
+      )},
       errorMessage: 'Pixeldrain: достигнут лимит скачивания.',
     });
   }
@@ -333,6 +394,8 @@ const buildPixeldrainAutomationScript = () => {
       label: continueCandidate.text,
       phase: 'masked_continue',
       note: 'Continue to Pixeldrain',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -370,6 +433,8 @@ const buildPixeldrainAutomationScript = () => {
       label: downloadCandidate.text,
       phase: 'host_download',
       note: 'Download',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -377,12 +442,18 @@ const buildPixeldrainAutomationScript = () => {
     return createResult({
       phase: 'masked_wait',
       note: 'Waiting for Continue to Pixeldrain button',
+      reasonCode: ${JSON.stringify(
+        AUTOMATION_REASON_CODES.WAITING_FOR_CONTINUE,
+      )},
+      retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
     });
   }
 
   return createResult({
     phase: 'host_wait',
     note: 'Waiting for Pixeldrain download button',
+    reasonCode: ${JSON.stringify(AUTOMATION_REASON_CODES.WAITING_FOR_DOWNLOAD)},
+    retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
   });
 })();
 `
@@ -416,6 +487,10 @@ const buildGofileAutomationScript = () => {
     location: currentUrl,
     phase: null,
     note: null,
+    reasonCode: hasCaptcha
+      ? ${JSON.stringify(AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED)}
+      : null,
+    retryAfterMs: null,
     errorMessage: null,
     ...patch,
   });
@@ -512,6 +587,8 @@ const buildGofileAutomationScript = () => {
       label: continueCandidate.text,
       phase: 'masked_continue',
       note: 'Continue to Gofile',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -614,6 +691,8 @@ const buildGofileAutomationScript = () => {
       label: archiveRowDownloadPair.buttonText,
       phase: 'host_archive_download',
       note: archiveRowDownloadPair.archiveText,
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -647,6 +726,8 @@ const buildGofileAutomationScript = () => {
       label: genericDownloadCandidate.text,
       phase: 'host_download_fallback',
       note: 'Fallback Download',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -654,12 +735,20 @@ const buildGofileAutomationScript = () => {
     return createResult({
       phase: 'masked_wait',
       note: 'Waiting for Continue to Gofile button',
+      reasonCode: ${JSON.stringify(
+        AUTOMATION_REASON_CODES.WAITING_FOR_CONTINUE,
+      )},
+      retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
     });
   }
 
   return createResult({
     phase: 'host_wait',
     note: 'Waiting for Gofile archive row and Download button',
+    reasonCode: ${JSON.stringify(
+      AUTOMATION_REASON_CODES.WAITING_FOR_ARCHIVE_ROW,
+    )},
+    retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
   });
 })();
 `
@@ -692,6 +781,10 @@ const buildDatanodesAutomationScript = () => {
     location: currentUrl,
     phase: null,
     note: null,
+    reasonCode: hasCaptcha
+      ? ${JSON.stringify(AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED)}
+      : null,
+    retryAfterMs: null,
     errorMessage: null,
     ...patch,
   });
@@ -794,6 +887,8 @@ const buildDatanodesAutomationScript = () => {
       label: freeDownloadCandidate.text,
       phase: 'free_download_click',
       note: 'Free Download',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
@@ -819,6 +914,8 @@ const buildDatanodesAutomationScript = () => {
       label: preparingCandidate.text,
       phase: 'preparing_wait',
       note: 'Waiting for Start Download',
+      reasonCode: ${JSON.stringify(AUTOMATION_REASON_CODES.COUNTDOWN_PENDING)},
+      retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
     });
   }
 
@@ -845,12 +942,16 @@ const buildDatanodesAutomationScript = () => {
       label: startDownloadCandidate.text,
       phase: 'start_download_click',
       note: 'Start Download',
+      reasonCode: null,
+      retryAfterMs: null,
     });
   }
 
   return createResult({
     phase: 'host_wait',
     note: 'Waiting for Datanodes download button state',
+    reasonCode: ${JSON.stringify(AUTOMATION_REASON_CODES.WAITING_FOR_DOWNLOAD)},
+    retryAfterMs: ${DEFAULT_AUTOMATION_RETRY_AFTER_MS},
   });
 })();
 `
@@ -907,6 +1008,14 @@ const resolveDownloadHostScenario = (hostLabel) => {
 const normalizeAutomationResult = (value, scenario) => {
   const normalizedValue =
     value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  const hasCaptcha = normalizedValue.hasCaptcha === true
+  const normalizedReasonCode = normalizeAutomationReasonCode(
+    normalizedValue.reasonCode,
+  )
+  const reasonCode =
+    hasCaptcha && !normalizedReasonCode
+      ? AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED
+      : normalizedReasonCode
 
   return {
     scenarioId:
@@ -923,7 +1032,7 @@ const normalizeAutomationResult = (value, scenario) => {
       typeof normalizedValue.label === 'string' && normalizedValue.label.trim().length > 0
         ? normalizedValue.label
         : null,
-    hasCaptcha: normalizedValue.hasCaptcha === true,
+    hasCaptcha,
     location:
       typeof normalizedValue.location === 'string' &&
       normalizedValue.location.trim().length > 0
@@ -937,6 +1046,11 @@ const normalizeAutomationResult = (value, scenario) => {
       typeof normalizedValue.note === 'string' && normalizedValue.note.trim().length > 0
         ? normalizedValue.note
         : null,
+    reasonCode,
+    retryAfterMs: normalizeAutomationRetryAfterMs(
+      normalizedValue.retryAfterMs,
+      reasonCode,
+    ),
     errorMessage:
       typeof normalizedValue.errorMessage === 'string' &&
       normalizedValue.errorMessage.trim().length > 0
@@ -972,6 +1086,7 @@ const runDownloadHostAutomationStep = async (
 }
 
 module.exports = {
+  AUTOMATION_REASON_CODES,
   DOWNLOAD_HOST_SCENARIOS,
   GENERIC_DOWNLOAD_SCENARIO,
   normalizeDownloadHostLabel,

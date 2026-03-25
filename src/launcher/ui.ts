@@ -40,45 +40,6 @@ const formatTransferSpeedLabel = (bytesPerSecond: number | null | undefined) => 
   return `${bytesPerSecond} B/s`
 }
 
-const getLauncherPrimaryActionLabel = (
-  isLauncherAvailable: boolean,
-  launcherGame: LauncherGameRecord | null | undefined,
-) => {
-  if (!isLauncherAvailable) {
-    return 'Лучший'
-  }
-
-  if (!launcherGame) {
-    return 'Скачать'
-  }
-
-  if (launcherGame.status === 'installed') {
-    if (!launcherGame.launchTargetPath) {
-      return 'Выбрать EXE'
-    }
-
-    return 'Играть'
-  }
-
-  if (launcherGame.status === 'queued') {
-    return 'Отменить'
-  }
-
-  if (launcherGame.status === 'resolving') {
-    return 'Отменить'
-  }
-
-  if (launcherGame.status === 'downloading') {
-    return 'Отменить'
-  }
-
-  if (launcherGame.status === 'extracting') {
-    return 'Отменить'
-  }
-
-  return 'Повторить'
-}
-
 const getLauncherStatusLabel = (
   launcherGame: LauncherGameRecord | null | undefined,
 ) => {
@@ -145,7 +106,6 @@ const getLauncherStatusText = (
 }
 
 export {
-  getLauncherPrimaryActionLabel,
   getLauncherStatusLabel,
   getLauncherStatusText,
   isLauncherGameBusy,

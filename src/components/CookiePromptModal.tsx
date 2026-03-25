@@ -43,8 +43,7 @@ const CookiePromptModal = ({
           <div className="downloadModalTitleWrap">
             <div className="downloadModalTitle">Нужны куки F95</div>
             <div className="smallText">
-              Чтобы скачать `{threadTitle}`, лаунчеру нужны куки для доступа к
-              реальным mirrors.
+              Для доступа к `{threadTitle}` через F95 приложению нужны куки.
             </div>
           </div>
 
@@ -55,7 +54,7 @@ const CookiePromptModal = ({
               onClick={onSave}
               disabled={isBusy || draft.trim().length === 0}
             >
-              Сохранить и скачать
+              Сохранить
             </button>
             <button
               className="button"
@@ -74,7 +73,7 @@ const CookiePromptModal = ({
         <div className="downloadModalBody">
           <div className="downloadNotice">
             Вставь `F95_COOKIE="..."`, `cookies.txt`, JSON или таблицу из
-            DevTools. После сохранения загрузка продолжится автоматически.
+            DevTools. После сохранения приложение сразу начнет использовать эти куки.
           </div>
 
           <div className="settingsSummaryGrid settingsCookieStatusGrid">

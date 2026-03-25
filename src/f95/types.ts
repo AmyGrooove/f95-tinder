@@ -34,6 +34,7 @@ type F95ApiResponse = {
 }
 
 type LatestGamesSort = 'date' | 'views'
+type SwipeSortMode = LatestGamesSort | 'interest'
 
 type FilterState = {
   searchText: string
@@ -75,6 +76,7 @@ type SessionState = {
   currentPageNumber: number
   nextPageToFetchNumber: number
   latestGamesSort: LatestGamesSort
+  swipeSortMode: SwipeSortMode
   remainingThreadIdentifiers: number[]
   threadItemsByIdentifier: Record<string, F95ThreadItem>
 
@@ -97,11 +99,28 @@ type UndoSnapshot = {
 
 type MetadataSyncState = {
   isRunning: boolean
+  isPaused: boolean
+  isStopping: boolean
   currentPage: number
   pageLimit: number
   syncedCount: number
-  trackedCount: number
+  updatedTrackedCount: number
+  lastOutcome: 'completed' | 'stopped' | null
   error: string | null
+}
+
+type LatestCatalogState = {
+  threadItemsByIdentifier: Record<string, F95ThreadItem>
+  orderedThreadIdentifiers: number[]
+  pageCount: number
+  sourceLatestGamesSort: LatestGamesSort
+  sourceFilterState: FilterState
+}
+
+type LatestCatalogSnapshot = {
+  catalog: LatestCatalogState | null
+  updatedAtUnixMs: number | null
+  path: string | null
 }
 
 type DownloadLink = {
@@ -136,6 +155,7 @@ export type {
   F95ThreadItem,
   F95ApiResponse,
   LatestGamesSort,
+  SwipeSortMode,
   FilterState,
   DefaultSwipeSettings,
   ListType,
@@ -143,6 +163,8 @@ export type {
   SessionState,
   UndoSnapshot,
   MetadataSyncState,
+  LatestCatalogState,
+  LatestCatalogSnapshot,
   DownloadLink,
   DownloadGroup,
   DownloadChoice,

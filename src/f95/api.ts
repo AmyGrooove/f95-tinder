@@ -33,6 +33,83 @@ const isLikelyCookieRefreshErrorMessage = (
 const buildThreadLink = (threadIdentifier: number) =>
   `${F95_ORIGIN}/threads/${threadIdentifier}`
 
+const normalizeFiniteNumber = (value: unknown) => {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+const normalizeBoolean = (value: unknown) => value === true
+
+const normalizeNumericIdList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return Array.from(
+    new Set(
+      value.filter(
+        (item): item is number => Number.isInteger(item) && Number.isFinite(item),
+      ),
+    ),
+  )
+}
+
+const normalizeStringArray = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeThreadItem = (value: unknown): F95ThreadItem | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const threadItem = value as Partial<F95ThreadItem>
+  if (
+    typeof threadItem.thread_id !== 'number' ||
+    !Number.isInteger(threadItem.thread_id) ||
+    !Number.isFinite(threadItem.thread_id) ||
+    typeof threadItem.title !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    thread_id: threadItem.thread_id,
+    title: threadItem.title,
+    creator: typeof threadItem.creator === 'string' ? threadItem.creator : '',
+    version: typeof threadItem.version === 'string' ? threadItem.version : '',
+    views: normalizeFiniteNumber(threadItem.views),
+    likes: normalizeFiniteNumber(threadItem.likes),
+    prefixes: normalizeNumericIdList(threadItem.prefixes),
+    tags: normalizeNumericIdList(threadItem.tags),
+    rating: normalizeFiniteNumber(threadItem.rating),
+    cover: typeof threadItem.cover === 'string' ? threadItem.cover : '',
+    screens: normalizeStringArray(threadItem.screens),
+    date: typeof threadItem.date === 'string' ? threadItem.date : '',
+    watched: normalizeBoolean(threadItem.watched),
+    ignored: normalizeBoolean(threadItem.ignored),
+    new: normalizeBoolean(threadItem.new),
+    ts: normalizeFiniteNumber(threadItem.ts),
+  }
+}
+
+const normalizeThreadItemList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.reduce<F95ThreadItem[]>((normalized, entry) => {
+    const threadItem = normalizeThreadItem(entry)
+    if (threadItem) {
+      normalized.push(threadItem)
+    }
+    return normalized
+  }, [])
+}
+
 const hasLatestGamesServerFilters = (filterState?: FilterState | null) => {
   if (!filterState) {
     return false
@@ -144,7 +221,16 @@ const fetchLatestGamesPage = async (
     filterState,
   )
   if (launcherResult) {
-    return launcherResult
+    return {
+      ...launcherResult,
+      threadItemList: normalizeThreadItemList(launcherResult.threadItemList),
+      pageFromResponse:
+        typeof launcherResult.pageFromResponse === 'number'
+          ? launcherResult.pageFromResponse
+          : pageNumber,
+      totalPages:
+        typeof launcherResult.totalPages === 'number' ? launcherResult.totalPages : 0,
+    }
   }
 
   const endpointUrl = buildLatestGamesEndpointUrl(
@@ -181,7 +267,7 @@ const fetchLatestGamesPage = async (
     throw new Error(F95_COOKIE_REFRESH_ERROR_MESSAGE)
   }
 
-  const threadItemList: F95ThreadItem[] = parsedJson.msg.data
+  const threadItemList = normalizeThreadItemList(parsedJson.msg.data)
   const pageFromResponse = parsedJson.msg.pagination?.page ?? pageNumber
   const totalPages = parsedJson.msg.pagination?.total ?? 0
 

@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -39,7 +40,6 @@ import {
   sortDownloadHostsByPreference,
   showDownloadHost,
 } from "./f95/downloads";
-import { countUpdatedTrackedItems } from "./f95/updateTracking";
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "./f95/utils";
 import {
   clearAllStoredData,
@@ -68,11 +68,12 @@ import type {
   ListType,
   ProcessedThreadItem,
   SessionState,
+  SwipeSortMode,
   ThreadDownloadsData,
 } from "./f95/types";
-import { Dashboard } from "./components/Dashboard";
+import { Dashboard as ListsDashboard } from "./components/Dashboard";
+import { DashboardOverview } from "./components/DashboardOverview";
 import { CookiePromptModal } from "./components/CookiePromptModal";
-import { DownloadModal } from "./components/DownloadModal";
 import { SettingsPage, type SettingsTab } from "./components/SettingsPage";
 import { TagChips } from "./components/TagChips";
 import {
@@ -83,21 +84,27 @@ import {
   type CookieProxyBackup,
   type CookieProxyStatus,
 } from "./f95/cookieProxy";
-import {
-  getLauncherPrimaryActionLabel,
-  isLauncherGameBusy,
-} from "./launcher/ui";
+import { isLauncherGameBusy } from "./launcher/ui";
 import {
   getLauncherLocalDataSnapshotSync,
   loadBundledPrefixesMapViaLauncher,
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
   openLauncherLocalDataFolder,
+  restartLauncherApp,
 } from "./launcher/runtime";
 import { useLauncherLibrary } from "./launcher/useLauncherLibrary";
 
 const openLinkInNewTab = (link: string) => {
   void openExternalUrl(link);
+};
+
+const openLinkInBackground = (link: string) => {
+  void openExternalUrl(link, { background: true });
+};
+
+const restartApplicationWindow = async () => {
+  await restartLauncherApp();
 };
 
 const openLinkViaAnchor = (link: string) => {
@@ -225,7 +232,7 @@ const createClosedCookiePromptModalState = (): CookiePromptModalState => ({
   errorMessage: null,
 });
 
-type PageType = "swipe" | "dashboard" | "settings";
+type PageType = "swipe" | "lists" | "dashboard" | "settings";
 
 const readHashRoute = () => {
   const rawHashValue = window.location.hash.replace("#", "").trim().toLowerCase();
@@ -239,6 +246,9 @@ const readHashRoute = () => {
 
 const readPageFromHash = (): PageType => {
   const { pageValue } = readHashRoute();
+  if (pageValue === "lists") {
+    return "lists";
+  }
   if (pageValue === "dashboard") {
     return "dashboard";
   }
@@ -250,7 +260,6 @@ const readPageFromHash = (): PageType => {
 
 const isSettingsTab = (value: string | null): value is SettingsTab => {
   return (
-    value === "hosts" ||
     value === "cookies" ||
     value === "filters" ||
     value === "tags" ||
@@ -272,6 +281,10 @@ const buildHashForPage = (
   nextPageType: PageType,
   nextSettingsTab: SettingsTab | null = null,
 ) => {
+  if (nextPageType === "lists") {
+    return "#lists";
+  }
+
   if (nextPageType === "dashboard") {
     return "#dashboard";
   }
@@ -393,6 +406,12 @@ type SwipeFilterOption = {
   count: number;
 };
 
+type SwipeQueueSnapshot = {
+  visibleCount: number;
+  tagOptions: SwipeFilterOption[];
+  prefixOptions: SwipeFilterOption[];
+};
+
 const createIdleSwipeGestureState = (): SwipeGestureState => ({
   isDragging: false,
   offsetX: 0,
@@ -466,6 +485,12 @@ const SWIPE_SORT_OPTIONS = [
   { value: "date", label: "По дате" },
   { value: "views", label: "По просмотрам" },
 ] as const;
+
+const SWIPE_ORDER_OPTIONS: Array<{ value: SwipeSortMode; label: string }> = [
+  { value: "date", label: "По дате" },
+  { value: "views", label: "По просмотрам" },
+  { value: "interest", label: "По весу" },
+];
 
 const serializeDefaultSwipeSettings = (settings: DefaultSwipeSettings) => {
   return JSON.stringify({
@@ -663,6 +688,7 @@ const getSwipeActionCopy = (action: ListType | null) => {
 const App = () => {
   const {
     sessionState,
+    orderedSwipeThreadIdentifiers,
     currentThreadIdentifier,
     currentThreadItem,
     isLoadingPage,
@@ -672,6 +698,7 @@ const App = () => {
     undoLastAction,
     updateFilterState,
     setLatestGamesSort,
+    setSwipeSortMode,
     resetFilterState,
     defaultFilterState,
     defaultLatestGamesSort,
@@ -689,6 +716,9 @@ const App = () => {
     updatePrefixesMap,
     metadataSyncState,
     startMetadataSync,
+    pauseMetadataSync,
+    resumeMetadataSync,
+    stopMetadataSync,
     moveLinkToList,
     togglePlayedFavoriteLink,
     removeLinkFromList,
@@ -718,8 +748,14 @@ const App = () => {
     }
 
     return {
-      listsPath: launcherLocalDataSnapshot.listsFile.path,
-      settingsPath: launcherLocalDataSnapshot.settingsFile.path,
+      listsPath:
+        launcherLocalDataSnapshot.listsFile.path || "Файл списков не найден",
+      settingsPath:
+        launcherLocalDataSnapshot.settingsFile.path ||
+        "Файл настроек не найден",
+      catalogPath:
+        launcherLocalDataSnapshot.catalogFile.path ||
+        "Файл каталога latest не найден",
     };
   }, [launcherLocalDataSnapshot]);
 
@@ -776,35 +812,143 @@ const App = () => {
     return buildThreadLink(currentThreadIdentifier);
   }, [currentThreadIdentifier]);
 
-  const playedLinks = useMemo(
-    () => sessionState.playedLinks,
-    [sessionState.playedLinks],
+  const deferredOrderedSwipeThreadIdentifiers = useDeferredValue(
+    orderedSwipeThreadIdentifiers,
   );
-
-  const playedCount = useMemo(
-    () => playedLinks.length,
-    [playedLinks],
-  );
-
-  const visibleSwipeThreadIdentifiers = useMemo(() => {
-    return sessionState.remainingThreadIdentifiers.filter((threadIdentifier) => {
-      const threadItem =
-        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
-      return threadItem
-        ? threadMatchesFilter(threadItem, sessionState.filterState)
-        : false;
-    });
-  }, [
-    sessionState.filterState,
-    sessionState.remainingThreadIdentifiers,
+  const deferredSwipeFilterState = useDeferredValue(sessionState.filterState);
+  const deferredSwipeThreadItemsByIdentifier = useDeferredValue(
     sessionState.threadItemsByIdentifier,
+  );
+  const shouldBuildSwipeFilterOptions =
+    pageType === "swipe" && isSwipeFilterModalOpen;
+  const swipeQueueSnapshot = useMemo<SwipeQueueSnapshot>(() => {
+    if (pageType !== "swipe") {
+      return {
+        visibleCount: 0,
+        tagOptions: [],
+        prefixOptions: [],
+      };
+    }
+
+    const tagCounts = shouldBuildSwipeFilterOptions ? new Map<number, number>() : null;
+    const prefixCounts = shouldBuildSwipeFilterOptions
+      ? new Map<number, number>()
+      : null;
+
+    if (prefixCounts) {
+      for (const [prefixIdText] of Object.entries(prefixesMap)) {
+        const prefixId = Number(prefixIdText);
+        if (Number.isInteger(prefixId)) {
+          prefixCounts.set(prefixId, 0);
+        }
+      }
+    }
+
+    let visibleCount = 0;
+
+    for (const threadIdentifier of deferredOrderedSwipeThreadIdentifiers) {
+      const threadItem =
+        deferredSwipeThreadItemsByIdentifier[String(threadIdentifier)];
+      if (!threadItem || !threadMatchesFilter(threadItem, deferredSwipeFilterState)) {
+        continue;
+      }
+
+      visibleCount += 1;
+
+      if (tagCounts && Array.isArray(threadItem.tags)) {
+        for (const tagId of new Set(
+          threadItem.tags.filter((tagId) => typeof tagId === "number"),
+        )) {
+          tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
+        }
+      }
+
+      if (prefixCounts && Array.isArray(threadItem.prefixes)) {
+        for (const prefixId of new Set(
+          threadItem.prefixes.filter(
+            (prefixId) =>
+              typeof prefixId === "number" &&
+              typeof prefixesMap[String(prefixId)] === "string",
+          ),
+        )) {
+          prefixCounts.set(prefixId, (prefixCounts.get(prefixId) ?? 0) + 1);
+        }
+      }
+    }
+
+    if (tagCounts) {
+      for (const tagId of sessionState.filterState.includeTagIds) {
+        if (!tagCounts.has(tagId)) {
+          tagCounts.set(tagId, 0);
+        }
+      }
+
+      for (const tagId of sessionState.filterState.excludeTagIds) {
+        if (!tagCounts.has(tagId)) {
+          tagCounts.set(tagId, 0);
+        }
+      }
+    }
+
+    if (prefixCounts) {
+      for (const prefixId of sessionState.filterState.includePrefixIds) {
+        if (!prefixCounts.has(prefixId)) {
+          prefixCounts.set(prefixId, 0);
+        }
+      }
+
+      for (const prefixId of sessionState.filterState.excludePrefixIds) {
+        if (!prefixCounts.has(prefixId)) {
+          prefixCounts.set(prefixId, 0);
+        }
+      }
+    }
+
+    const tagOptions = tagCounts
+      ? Array.from(tagCounts.entries())
+          .map(([tagId, count]) => ({
+            id: tagId,
+            label: tagsMap[String(tagId)] ?? `#${tagId}`,
+            count,
+          }))
+          .sort((first, second) => first.label.localeCompare(second.label, "ru"))
+      : [];
+
+    const prefixOptions = prefixCounts
+      ? Array.from(prefixCounts.entries())
+          .map(([prefixId, count]) => ({
+            id: prefixId,
+            label: prefixesMap[String(prefixId)] ?? `#${prefixId}`,
+            count,
+          }))
+          .sort((first, second) => first.label.localeCompare(second.label, "ru"))
+      : [];
+
+    return {
+      visibleCount,
+      tagOptions,
+      prefixOptions,
+    };
+  }, [
+    deferredOrderedSwipeThreadIdentifiers,
+    deferredSwipeFilterState,
+    deferredSwipeThreadItemsByIdentifier,
+    isSwipeFilterModalOpen,
+    pageType,
+    prefixesMap,
+    sessionState.filterState.excludePrefixIds,
+    sessionState.filterState.excludeTagIds,
+    sessionState.filterState.includePrefixIds,
+    sessionState.filterState.includeTagIds,
+    shouldBuildSwipeFilterOptions,
+    tagsMap,
   ]);
 
-  const visibleSwipeQueueCount = visibleSwipeThreadIdentifiers.length;
+  const visibleSwipeQueueCount = swipeQueueSnapshot.visibleCount;
 
   const swipeProgressPills = useMemo(() => {
     return [
-      { label: "Страница", value: sessionState.currentPageNumber },
+      { label: "Страниц", value: sessionState.currentPageNumber },
       { label: "В очереди", value: visibleSwipeQueueCount },
       { label: "Просмотрено", value: sessionState.viewedCount },
     ];
@@ -814,110 +958,25 @@ const App = () => {
     visibleSwipeQueueCount,
   ]);
 
-  const availableSwipeTagOptions = useMemo<SwipeFilterOption[]>(() => {
-    const tagCounts = new Map<number, number>();
-
-    for (const threadIdentifier of visibleSwipeThreadIdentifiers) {
-      const threadItem =
-        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
-      if (!threadItem || !Array.isArray(threadItem.tags)) {
-        continue;
-      }
-
-      const uniqueTagIds = Array.from(
-        new Set(threadItem.tags.filter((tagId) => typeof tagId === "number")),
-      );
-
-      for (const tagId of uniqueTagIds) {
-        tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
-      }
+  const swipeSyncProgressPercent = useMemo(() => {
+    if (metadataSyncState.pageLimit <= 0) {
+      return null;
     }
 
-    for (const tagId of sessionState.filterState.includeTagIds) {
-      if (!tagCounts.has(tagId)) {
-        tagCounts.set(tagId, 0);
-      }
-    }
+    return clamp(
+      Math.round(
+        (metadataSyncState.currentPage / metadataSyncState.pageLimit) * 100,
+      ),
+      0,
+      100,
+    );
+  }, [metadataSyncState.currentPage, metadataSyncState.pageLimit]);
 
-    for (const tagId of sessionState.filterState.excludeTagIds) {
-      if (!tagCounts.has(tagId)) {
-        tagCounts.set(tagId, 0);
-      }
-    }
+  const isSwipeInteractionLocked =
+    metadataSyncState.isRunning && !metadataSyncState.isPaused;
 
-    return Array.from(tagCounts.entries())
-      .map(([tagId, count]) => ({
-        id: tagId,
-        label: tagsMap[String(tagId)] ?? `#${tagId}`,
-        count,
-      }))
-      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
-  }, [
-    sessionState.filterState.excludeTagIds,
-    sessionState.filterState.includeTagIds,
-    sessionState.threadItemsByIdentifier,
-    tagsMap,
-    visibleSwipeThreadIdentifiers,
-  ]);
-
-  const availableSwipePrefixOptions = useMemo<SwipeFilterOption[]>(() => {
-    const prefixCounts = new Map<number, number>();
-
-    for (const [prefixIdText] of Object.entries(prefixesMap)) {
-      const prefixId = Number(prefixIdText);
-      if (Number.isInteger(prefixId)) {
-        prefixCounts.set(prefixId, 0);
-      }
-    }
-
-    for (const threadIdentifier of visibleSwipeThreadIdentifiers) {
-      const threadItem =
-        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
-      if (!threadItem || !Array.isArray(threadItem.prefixes)) {
-        continue;
-      }
-
-      const uniquePrefixIds = Array.from(
-        new Set(
-          threadItem.prefixes.filter(
-            (prefixId) =>
-              typeof prefixId === "number" &&
-              typeof prefixesMap[String(prefixId)] === "string",
-          ),
-        ),
-      );
-
-      for (const prefixId of uniquePrefixIds) {
-        prefixCounts.set(prefixId, (prefixCounts.get(prefixId) ?? 0) + 1);
-      }
-    }
-
-    for (const prefixId of sessionState.filterState.includePrefixIds) {
-      if (!prefixCounts.has(prefixId)) {
-        prefixCounts.set(prefixId, 0);
-      }
-    }
-
-    for (const prefixId of sessionState.filterState.excludePrefixIds) {
-      if (!prefixCounts.has(prefixId)) {
-        prefixCounts.set(prefixId, 0);
-      }
-    }
-
-    return Array.from(prefixCounts.entries())
-      .map(([prefixId, count]) => ({
-        id: prefixId,
-        label: prefixesMap[String(prefixId)] ?? `#${prefixId}`,
-        count,
-      }))
-      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
-  }, [
-    prefixesMap,
-    sessionState.filterState.excludePrefixIds,
-    sessionState.filterState.includePrefixIds,
-    sessionState.threadItemsByIdentifier,
-    visibleSwipeThreadIdentifiers,
-  ]);
+  const availableSwipeTagOptions = swipeQueueSnapshot.tagOptions;
+  const availableSwipePrefixOptions = swipeQueueSnapshot.prefixOptions;
 
   const normalizedSwipeTagSearchText = useMemo(
     () => normalizeText(swipeTagSearchText),
@@ -1053,29 +1112,41 @@ const App = () => {
   );
 
   const handleFavorite = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
     applyActionToCurrentCard("favorite");
-  }, [applyActionToCurrentCard]);
+  }, [applyActionToCurrentCard, isSwipeInteractionLocked]);
 
   const handleTrash = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
     if (currentThreadLink) {
       removeCachedThreadDownloads(currentThreadLink);
     }
     applyActionToCurrentCard("trash");
-  }, [applyActionToCurrentCard, currentThreadLink]);
+  }, [applyActionToCurrentCard, currentThreadLink, isSwipeInteractionLocked]);
 
   const handlePlayed = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
     if (currentThreadLink) {
       removeCachedThreadDownloads(currentThreadLink);
     }
     applyActionToCurrentCard("played");
-  }, [applyActionToCurrentCard, currentThreadLink]);
+  }, [applyActionToCurrentCard, currentThreadLink, isSwipeInteractionLocked]);
 
   const handlePlayedFavorite = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
     if (currentThreadLink) {
       removeCachedThreadDownloads(currentThreadLink);
     }
     applyActionToCurrentCard("playedFavorite");
-  }, [applyActionToCurrentCard, currentThreadLink]);
+  }, [applyActionToCurrentCard, currentThreadLink, isSwipeInteractionLocked]);
 
   const handlePlayedButtonClick = useCallback(
     (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -1236,7 +1307,7 @@ const App = () => {
 
       await applyImportedSettingsBackup(backup.settings);
       applyImportedListsBackup(backup.lists);
-      window.location.reload();
+      await restartApplicationWindow();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Ошибка импорта локальных данных",
@@ -1262,7 +1333,7 @@ const App = () => {
       const backup = extractLocalSettingsBackup(parsedJson);
 
       await applyImportedSettingsBackup(backup);
-      window.location.reload();
+      await restartApplicationWindow();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Ошибка импорта настроек",
@@ -1288,7 +1359,7 @@ const App = () => {
       const backup = extractLocalListsBackup(parsedJson);
 
       applyImportedListsBackup(backup);
-      window.location.reload();
+      await restartApplicationWindow();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Ошибка импорта списков",
@@ -1546,11 +1617,6 @@ const App = () => {
   }, [loadBundledTagsMap, setErrorMessage, tagsMap, updateTagsMap]);
 
   useEffect(() => {
-    if (Object.keys(prefixesMap).length > 0) {
-      hasAttemptedBundledPrefixesBootstrapRef.current = false;
-      return;
-    }
-
     if (hasAttemptedBundledPrefixesBootstrapRef.current) {
       return;
     }
@@ -1559,7 +1625,23 @@ const App = () => {
 
     void (async () => {
       try {
-        updatePrefixesMap(await loadBundledPrefixesMap());
+        const bundledPrefixesMap = await loadBundledPrefixesMap();
+        const mergedPrefixesMap = {
+          ...bundledPrefixesMap,
+          ...prefixesMap,
+        };
+        const hasMissingBundledPrefixLabels = Object.keys(bundledPrefixesMap).some(
+          (prefixId) => {
+            const currentLabel = prefixesMap[prefixId];
+            return (
+              typeof currentLabel !== "string" || currentLabel.trim().length === 0
+            );
+          },
+        );
+
+        if (hasMissingBundledPrefixLabels) {
+          updatePrefixesMap(mergedPrefixesMap);
+        }
       } catch (error) {
         const message =
           error instanceof Error
@@ -1949,7 +2031,7 @@ const App = () => {
   const handleDeleteGameFilesForThread = useCallback(
     (threadLink: string, threadTitle: string) => {
       const shouldDelete = window.confirm(
-        `Удалить локальные файлы игры "${threadTitle}"? Это удалит архив и распакованную папку, но не тронет списки в дашборде.`,
+        `Удалить локальные файлы игры "${threadTitle}"? Это удалит архив и распакованную папку, но не тронет списки.`,
       );
       if (!shouldDelete) {
         return Promise.resolve();
@@ -2003,6 +2085,7 @@ const App = () => {
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (
         !currentThreadItem ||
+        isSwipeInteractionLocked ||
         downloadModalState.isOpen ||
         viewerState.isOpen ||
         isSwipeFilterModalOpen
@@ -2034,6 +2117,7 @@ const App = () => {
     [
       currentThreadItem,
       downloadModalState.isOpen,
+      isSwipeInteractionLocked,
       isSwipeFilterModalOpen,
       updateSwipeGestureState,
       viewerState.isOpen,
@@ -2137,11 +2221,18 @@ const App = () => {
     nextPageType: PageType,
     nextSettingsTab: SettingsTab | null = null,
   ) => {
-    setPageType(nextPageType);
-    setRequestedSettingsTab(
-      nextPageType === "settings" ? nextSettingsTab : null,
+    setPageType((previousPageType) =>
+      previousPageType === nextPageType ? previousPageType : nextPageType,
     );
-    window.location.hash = buildHashForPage(nextPageType, nextSettingsTab);
+    setRequestedSettingsTab((previousTab) => {
+      const resolvedTab = nextPageType === "settings" ? nextSettingsTab : null;
+      return previousTab === resolvedTab ? previousTab : resolvedTab;
+    });
+
+    const nextHash = buildHashForPage(nextPageType, nextSettingsTab);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
   }, []);
 
   const openSettingsPage = useCallback(() => {
@@ -2196,7 +2287,7 @@ const App = () => {
       threadLinkList.push(currentThreadLink);
     }
 
-    for (const threadIdentifier of sessionState.remainingThreadIdentifiers) {
+    for (const threadIdentifier of orderedSwipeThreadIdentifiers) {
       const threadLink = buildThreadLink(threadIdentifier);
       if (threadLinkList.includes(threadLink)) {
         continue;
@@ -2209,12 +2300,19 @@ const App = () => {
     }
 
     return threadLinkList;
-  }, [currentThreadLink, sessionState.remainingThreadIdentifiers]);
+  }, [currentThreadLink, orderedSwipeThreadIdentifiers]);
 
   useEffect(() => {
     const handleHashChange = () => {
-      setPageType(readPageFromHash());
-      setRequestedSettingsTab(readSettingsTabFromHash());
+      const nextPageType = readPageFromHash();
+      const nextSettingsTab = readSettingsTabFromHash();
+
+      setPageType((previousPageType) =>
+        previousPageType === nextPageType ? previousPageType : nextPageType,
+      );
+      setRequestedSettingsTab((previousTab) =>
+        previousTab === nextSettingsTab ? previousTab : nextSettingsTab,
+      );
     };
 
     window.addEventListener("hashchange", handleHashChange);
@@ -2222,7 +2320,11 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (pageType !== "swipe" || preloadThreadLinks.length === 0) {
+    if (
+      pageType !== "swipe" ||
+      isSwipeInteractionLocked ||
+      preloadThreadLinks.length === 0
+    ) {
       return;
     }
 
@@ -2247,7 +2349,7 @@ const App = () => {
       isCancelled = true;
       window.clearTimeout(preloadTimeoutId);
     };
-  }, [pageType, preloadThreadLinks]);
+  }, [isSwipeInteractionLocked, pageType, preloadThreadLinks]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -2302,6 +2404,10 @@ const App = () => {
       }
 
       if (pageType === "swipe") {
+        if (isSwipeInteractionLocked) {
+          return;
+        }
+
         if (event.key === "ArrowLeft") {
           event.preventDefault();
           handleTrash();
@@ -2355,6 +2461,7 @@ const App = () => {
     handlePlayed,
     handlePlayedFavorite,
     handleTrash,
+    isSwipeInteractionLocked,
     isSwipeFilterModalOpen,
     pageType,
     showNextViewerImage,
@@ -2366,7 +2473,15 @@ const App = () => {
 
   useEffect(() => {
     resetSwipeGesture();
-  }, [currentThreadIdentifier, pageType, resetSwipeGesture]);
+  }, [currentThreadIdentifier, isSwipeInteractionLocked, pageType, resetSwipeGesture]);
+
+  useEffect(() => {
+    if (!isSwipeInteractionLocked || !isSwipeFilterModalOpen) {
+      return;
+    }
+
+    setIsSwipeFilterModalOpen(false);
+  }, [isSwipeFilterModalOpen, isSwipeInteractionLocked]);
 
 
   const getTagsForLink = useCallback(
@@ -2595,8 +2710,14 @@ const App = () => {
       return [];
     }
 
-    const creator = currentThreadItem.creator.trim();
-    const version = currentThreadItem.version.trim();
+    const creator =
+      typeof currentThreadItem.creator === "string"
+        ? currentThreadItem.creator.trim()
+        : "";
+    const version =
+      typeof currentThreadItem.version === "string"
+        ? currentThreadItem.version.trim()
+        : "";
 
     return [
       { label: "Автор", value: creator || "Не указан" },
@@ -2614,14 +2735,13 @@ const App = () => {
 
   const swipeDataRequestUrl = useMemo(() => {
     return buildLatestGamesDataRequestUrl(
-      sessionState.currentPageNumber,
-      sessionState.latestGamesSort,
-      sessionState.filterState,
+      1,
+      defaultLatestGamesSort,
+      defaultFilterState,
     );
   }, [
-    sessionState.currentPageNumber,
-    sessionState.filterState,
-    sessionState.latestGamesSort,
+    defaultFilterState,
+    defaultLatestGamesSort,
   ]);
 
   const swipeHudAction = useMemo(() => {
@@ -2656,25 +2776,6 @@ const App = () => {
     swipeGestureState.offsetX,
     swipeGestureState.offsetY,
   ]);
-
-  const dashboardTotalCount =
-    sessionState.favoritesLinks.length +
-    sessionState.trashLinks.length +
-    playedCount;
-
-  const favoritesUpdatedCount = useMemo(() => {
-    return countUpdatedTrackedItems(
-      sessionState.favoritesLinks,
-      sessionState.processedThreadItemsByLink,
-    );
-  }, [sessionState.favoritesLinks, sessionState.processedThreadItemsByLink]);
-
-  const playedUpdatedCount = useMemo(() => {
-    return countUpdatedTrackedItems(
-      playedLinks,
-      sessionState.processedThreadItemsByLink,
-    );
-  }, [playedLinks, sessionState.processedThreadItemsByLink]);
 
   const cookieRefreshNoticeMessage = useMemo(() => {
     if (!isLikelyCookieRefreshErrorMessage(metadataSyncState.error)) {
@@ -2713,12 +2814,20 @@ const App = () => {
   ]);
 
   const handleManualMetadataSync = useCallback(() => {
-    const pageLimit = Math.max(
-      5,
-      Math.min(20, Math.max(sessionState.currentPageNumber, 1)),
-    );
-    void startMetadataSync(pageLimit);
-  }, [sessionState.currentPageNumber, startMetadataSync]);
+    void startMetadataSync();
+  }, [startMetadataSync]);
+
+  const handlePauseMetadataSync = useCallback(() => {
+    pauseMetadataSync();
+  }, [pauseMetadataSync]);
+
+  const handleResumeMetadataSync = useCallback(() => {
+    resumeMetadataSync();
+  }, [resumeMetadataSync]);
+
+  const handleStopMetadataSync = useCallback(() => {
+    stopMetadataSync();
+  }, [stopMetadataSync]);
 
   const handleMoveLinkToList = useCallback(
     (threadLink: string, listType: ListType) => {
@@ -2770,7 +2879,7 @@ const App = () => {
 
   const handleConfirmClearDashboardLists = useCallback(() => {
     const shouldClear = window.confirm(
-      "Очистить списки в дашборде? Это удалит Закладки, Мусор и Играл, но не тронет папки с играми.",
+      "Очистить списки? Это удалит Закладки, Мусор и Играл.",
     );
     if (shouldClear) {
       clearDashboardLists();
@@ -2779,7 +2888,7 @@ const App = () => {
 
   const handleConfirmResetLocalSettings = useCallback(() => {
     const shouldReset = window.confirm(
-      "Сбросить локальные настройки? Это вернет дефолтные фильтры, очистит tags/prefixes map, сбросит настройки хостов и локально сохраненные куки proxy.",
+      "Сбросить локальные настройки? Это вернет дефолтные фильтры, очистит tags/prefixes map и локально сохраненные куки proxy.",
     );
     if (!shouldReset) {
       return;
@@ -2795,7 +2904,7 @@ const App = () => {
         clearDisabledDownloadHosts();
         clearHiddenDownloadHosts();
         await clearCookieProxyInput();
-        window.location.reload();
+        await restartApplicationWindow();
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Не удалось сбросить настройки",
@@ -2806,7 +2915,7 @@ const App = () => {
 
   const handleConfirmClearAllLocalData = useCallback(() => {
     const shouldClear = window.confirm(
-      "Очистить все локальные данные? Это удалит списки, фильтры, карты tags/prefixes, настройки хостов, локальные куки proxy и кэш. Папка игр launcher'а не будет затронута.",
+      "Очистить все локальные данные? Это удалит списки, фильтры, карты tags/prefixes, локальные куки proxy и кэш.",
     );
     if (!shouldClear) {
       return;
@@ -2821,7 +2930,7 @@ const App = () => {
         clearDisabledDownloadHosts();
         clearHiddenDownloadHosts();
         await clearCookieProxyInput();
-        window.location.reload();
+        await restartApplicationWindow();
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -2845,10 +2954,24 @@ const App = () => {
   ]);
 
   const openCurrentThreadPage = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
+
     if (currentThreadLink) {
       openLinkInNewTab(currentThreadLink);
     }
-  }, [currentThreadLink]);
+  }, [currentThreadLink, isSwipeInteractionLocked]);
+
+  const openCurrentThreadPageInBackground = useCallback(() => {
+    if (isSwipeInteractionLocked) {
+      return;
+    }
+
+    if (currentThreadLink) {
+      openLinkInBackground(currentThreadLink);
+    }
+  }, [currentThreadLink, isSwipeInteractionLocked]);
 
   const renderSwipeFilterOptionGroup = (
     title: string,
@@ -2857,6 +2980,7 @@ const App = () => {
     selectedIds: number[],
     onToggle: (id: number) => void,
     variant: "include" | "exclude",
+    isDisabled = false,
     countMeta?: string,
   ) => {
     return (
@@ -2886,6 +3010,7 @@ const App = () => {
                   key={`${title}-${option.id}`}
                   type="button"
                   className={`tagFilterChip ${activeClassName}`}
+                  disabled={isDisabled}
                   onClick={() => onToggle(option.id)}
                 >
                   {option.label}
@@ -3007,12 +3132,75 @@ const App = () => {
                 </span>
               ))}
             </div>
+
+            {metadataSyncState.isRunning ? (
+              <div className="syncProgressPanel">
+                <div className="syncProgressHeader">
+                  <span>
+                    {metadataSyncState.isStopping
+                      ? "Останавливаю синхронизацию"
+                      : metadataSyncState.isPaused
+                        ? "Синхронизация на паузе"
+                        : "Каталог обновляется в фоне"}
+                  </span>
+                  <span>
+                    {swipeSyncProgressPercent === null
+                      ? "..."
+                      : `${swipeSyncProgressPercent}%`}
+                  </span>
+                </div>
+                <div className="syncProgressTrack">
+                  <div
+                    className={`syncProgressFill ${
+                      swipeSyncProgressPercent === null
+                        ? "syncProgressFillIndeterminate"
+                        : ""
+                    }`}
+                    style={
+                      swipeSyncProgressPercent === null
+                        ? undefined
+                        : { width: `${swipeSyncProgressPercent}%` }
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {metadataSyncState.isRunning ? (
+              <div className="swipeSessionActions">
+                <button
+                  className="button"
+                  type="button"
+                  onClick={
+                    metadataSyncState.isPaused
+                      ? handleResumeMetadataSync
+                      : handlePauseMetadataSync
+                  }
+                  disabled={metadataSyncState.isStopping}
+                >
+                  {metadataSyncState.isPaused ? "Продолжить" : "Пауза"}
+                </button>
+                <button
+                  className="button buttonDanger"
+                  type="button"
+                  onClick={handleStopMetadataSync}
+                  disabled={metadataSyncState.isStopping}
+                >
+                  {metadataSyncState.isStopping ? "Останавливаю..." : "Стоп"}
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="panel swipeSidebarSectionPanel swipeFilterSection">
             <div className="sectionTitleRow">
               <div className="sectionTitle">Поиск и фильтры</div>
-              <button className="button" type="button" onClick={resetFilterState}>
+              <button
+                className="button"
+                type="button"
+                disabled={isSwipeInteractionLocked}
+                onClick={resetFilterState}
+              >
                 Сбросить
               </button>
             </div>
@@ -3021,6 +3209,7 @@ const App = () => {
               <div className="label">Поиск по title/creator</div>
               <input
                 className="input"
+                disabled={isSwipeInteractionLocked}
                 value={sessionState.filterState.searchText}
                 onChange={(event) =>
                   updateFilterState({ searchText: event.target.value })
@@ -3030,9 +3219,10 @@ const App = () => {
             </div>
 
             <div className="formRow" style={{ marginBottom: 0 }}>
-              <div className="label">Сортировка</div>
+              <div className="label">Источник latest_data</div>
               <select
                 className="input"
+                disabled={isSwipeInteractionLocked}
                 value={sessionState.latestGamesSort}
                 onChange={(event) =>
                   setLatestGamesSort(
@@ -3048,6 +3238,30 @@ const App = () => {
               </select>
             </div>
 
+            <div className="formRow" style={{ marginBottom: 0 }}>
+              <div className="label">Порядок карточек</div>
+              <select
+                className="input"
+                disabled={isSwipeInteractionLocked}
+                value={sessionState.swipeSortMode}
+                onChange={(event) =>
+                  setSwipeSortMode(
+                    event.target.value === "interest"
+                      ? "interest"
+                      : event.target.value === "views"
+                        ? "views"
+                        : "date",
+                  )
+                }
+              >
+                {SWIPE_ORDER_OPTIONS.map((option) => (
+                  <option key={`order-${option.value}`} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="sectionTitleRow">
               <div className="sectionTitle">Фильтры</div>
               <div className="sectionMeta">Выбрано: {selectedSwipeFilterCount}</div>
@@ -3057,6 +3271,7 @@ const App = () => {
               <button
                 className="button buttonPrimary"
                 type="button"
+                disabled={isSwipeInteractionLocked}
                 onClick={() => setIsSwipeFilterModalOpen(true)}
               >
                 Открыть фильтры
@@ -3066,6 +3281,7 @@ const App = () => {
                 <button
                   className="button"
                   type="button"
+                  disabled={isSwipeInteractionLocked}
                   onClick={clearSwipeTagFilters}
                 >
                   Очистить
@@ -3084,6 +3300,7 @@ const App = () => {
                           key={`selected-prefix-include-${prefixId}`}
                           type="button"
                           className="tagFilterChip tagFilterChipActive"
+                          disabled={isSwipeInteractionLocked}
                           onClick={() => toggleSwipeIncludePrefix(prefixId)}
                         >
                           {getSwipePrefixLabel(prefixId)}
@@ -3102,6 +3319,7 @@ const App = () => {
                           key={`selected-prefix-exclude-${prefixId}`}
                           type="button"
                           className="tagFilterChip tagFilterChipExcludeActive"
+                          disabled={isSwipeInteractionLocked}
                           onClick={() => toggleSwipeExcludePrefix(prefixId)}
                         >
                           {getSwipePrefixLabel(prefixId)}
@@ -3123,6 +3341,7 @@ const App = () => {
                           key={`selected-include-${tagId}`}
                           type="button"
                           className="tagFilterChip tagFilterChipActive"
+                          disabled={isSwipeInteractionLocked}
                           onClick={() => toggleSwipeIncludeTag(tagId)}
                         >
                           {getSwipeTagLabel(tagId)}
@@ -3144,6 +3363,7 @@ const App = () => {
                           key={`selected-exclude-${tagId}`}
                           type="button"
                           className="tagFilterChip tagFilterChipExcludeActive"
+                          disabled={isSwipeInteractionLocked}
                           onClick={() => toggleSwipeExcludeTag(tagId)}
                         >
                           {getSwipeTagLabel(tagId)}
@@ -3164,7 +3384,7 @@ const App = () => {
                     openLinkInNewTab(swipeDataRequestUrl);
                   }}
                 >
-                  Запрос latest_data.php
+                  Источник latest_data.php
                 </button>
               </div>
             ) : null}
@@ -3173,10 +3393,54 @@ const App = () => {
       </div>
 
       <div className="swipeCenterColumn">
-        {!currentThreadItem ? (
+        {isSwipeInteractionLocked ? (
+          <div className="statusBox swipeStatusBox">
+            <div style={{ fontWeight: 900, fontSize: 20 }}>
+              Свайп временно заблокирован
+            </div>
+            <div className="mutedText">
+              {metadataSyncState.isStopping
+                ? "Синхронизация завершает текущий проход. Свайп откроется сразу после остановки."
+                : "Каталог обновляется. Карточки снова станут доступны после завершения синхронизации или после паузы."}
+            </div>
+            <div className="syncProgressPanel">
+              <div className="syncProgressHeader">
+                <span>
+                  Страница {metadataSyncState.currentPage || 0}
+                  {metadataSyncState.pageLimit > 0
+                    ? ` из ${metadataSyncState.pageLimit}`
+                    : ""}
+                </span>
+                <span>
+                  {swipeSyncProgressPercent === null
+                    ? "..."
+                    : `${swipeSyncProgressPercent}%`}
+                </span>
+              </div>
+              <div className="syncProgressTrack">
+                <div
+                  className={`syncProgressFill ${
+                    swipeSyncProgressPercent === null
+                      ? "syncProgressFillIndeterminate"
+                      : ""
+                  }`}
+                  style={
+                    swipeSyncProgressPercent === null
+                      ? undefined
+                      : { width: `${swipeSyncProgressPercent}%` }
+                  }
+                />
+              </div>
+            </div>
+            <div className="smallText">
+              Сохранено в каталог: {metadataSyncState.syncedCount}. Обновлено
+              отслеживаемых: {metadataSyncState.updatedTrackedCount}.
+            </div>
+          </div>
+        ) : !currentThreadItem ? (
           <div className="statusBox">
             <div style={{ fontWeight: 900, fontSize: 20 }}>
-              {isLoadingPage ? "Загрузка..." : "Нет карточек для показа"}
+              {isLoadingPage ? "Синхронизация latest..." : "Нет карточек для показа"}
             </div>
             <div className="mutedText">
               Если включены фильтры, возможно, они отфильтровали все. Попробуй
@@ -3233,6 +3497,19 @@ const App = () => {
                         className="button buttonPrimary swipeOpenThreadButton"
                         type="button"
                         onClick={openCurrentThreadPage}
+                        onMouseDown={(event) => {
+                          if (event.button === 1) {
+                            event.preventDefault();
+                          }
+                        }}
+                        onAuxClick={(event) => {
+                          if (event.button !== 1) {
+                            return;
+                          }
+
+                          event.preventDefault();
+                          openCurrentThreadPageInBackground();
+                        }}
                         disabled={!currentThreadLink}
                       >
                         Открыть страницу
@@ -3274,139 +3551,98 @@ const App = () => {
         )}
       </div>
 
-      <div className="panel swipeActionSidebar">
-        <button
-          className={`button swipeSideActionButton swipeActionTrash ${
-            swipeHudAction?.className === "trash"
-              ? "swipeSideActionButtonActive"
-              : ""
-          }`}
-          type="button"
-          onClick={handleTrash}
-          disabled={!currentThreadItem}
-        >
-          <span className="swipeActionIcon" aria-hidden>
-            🗑
-          </span>
-          <span className="swipeActionLabel">В мусор</span>
-          <span className="swipeActionHint">Left</span>
-        </button>
-        <button
-          className={`button swipeSideActionButton swipeActionPlayed ${
-            swipeHudAction?.className === "played"
-              ? "swipeSideActionButtonActive"
-              : ""
-          }`}
-          type="button"
-          onClick={handlePlayedButtonClick}
-          onContextMenu={handlePlayedButtonContextMenu}
-          disabled={!currentThreadItem}
-          title="Клик: Играл. Shift + клик или правая кнопка мыши: Играл (любимое)"
-          aria-label="Играл. Shift + клик или правая кнопка мыши: Играл в любимое"
-        >
-          <span className="swipeActionIcon" aria-hidden>
-            🎮
-          </span>
-          <span className="swipeActionLabel">Играл</span>
-          <span className="swipeActionHint">Up • Shift / ПКМ = ♥</span>
-        </button>
-        <button
-          className={`button swipeSideActionButton swipeActionFavorite ${
-            swipeHudAction?.className === "favorite"
-              ? "swipeSideActionButtonActive"
-              : ""
-          }`}
-          type="button"
-          onClick={handleFavorite}
-          disabled={!currentThreadItem}
-        >
-          <span className="swipeActionIcon" aria-hidden>
-            ★
-          </span>
-          <span className="swipeActionLabel">В закладки</span>
-          <span className="swipeActionHint">Right</span>
-        </button>
-        <button
-          className="button swipeSideActionButton swipeActionUndo"
-          type="button"
-          onClick={undoLastAction}
-          disabled={!canUndo}
-        >
-          <span className="swipeActionIcon" aria-hidden>
-            ↶
-          </span>
-          <span className="swipeActionLabel">Назад</span>
-          <span className="swipeActionHint">Backspace / Z</span>
-        </button>
+      <div
+        className={`panel swipeActionSidebar ${
+          isSwipeInteractionLocked ? "swipeActionSidebarLocked" : ""
+        }`}
+      >
+        {isSwipeInteractionLocked ? (
+          <div className="swipeActionLockNotice">
+            <div className="swipeActionLockTitle">Свайп заблокирован</div>
+            <div className="swipeActionLockText">
+              Дождись окончания синхронизации каталога.
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              className={`button swipeSideActionButton swipeActionTrash ${
+                swipeHudAction?.className === "trash"
+                  ? "swipeSideActionButtonActive"
+                  : ""
+              }`}
+              type="button"
+              onClick={handleTrash}
+              disabled={!currentThreadItem}
+            >
+              <span className="swipeActionIcon" aria-hidden>
+                🗑
+              </span>
+              <span className="swipeActionLabel">В мусор</span>
+              <span className="swipeActionHint">Left</span>
+            </button>
+            <button
+              className={`button swipeSideActionButton swipeActionPlayed ${
+                swipeHudAction?.className === "played"
+                  ? "swipeSideActionButtonActive"
+                  : ""
+              }`}
+              type="button"
+              onClick={handlePlayedButtonClick}
+              onContextMenu={handlePlayedButtonContextMenu}
+              disabled={!currentThreadItem}
+              title="Клик: Играл. Shift + клик или правая кнопка мыши: Играл (любимое)"
+              aria-label="Играл. Shift + клик или правая кнопка мыши: Играл в любимое"
+            >
+              <span className="swipeActionIcon" aria-hidden>
+                🎮
+              </span>
+              <span className="swipeActionLabel">Играл</span>
+              <span className="swipeActionHint">Up • Shift / ПКМ = ♥</span>
+            </button>
+            <button
+              className={`button swipeSideActionButton swipeActionFavorite ${
+                swipeHudAction?.className === "favorite"
+                  ? "swipeSideActionButtonActive"
+                  : ""
+              }`}
+              type="button"
+              onClick={handleFavorite}
+              disabled={!currentThreadItem}
+            >
+              <span className="swipeActionIcon" aria-hidden>
+                ★
+              </span>
+              <span className="swipeActionLabel">В закладки</span>
+              <span className="swipeActionHint">Right</span>
+            </button>
+            <button
+              className="button swipeSideActionButton swipeActionUndo"
+              type="button"
+              onClick={undoLastAction}
+              disabled={!canUndo}
+            >
+              <span className="swipeActionIcon" aria-hidden>
+                ↶
+              </span>
+              <span className="swipeActionLabel">Назад</span>
+              <span className="swipeActionHint">Backspace / Z</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 
-  const dashboardView = (
+  const listsView = (
     <div className="dashboardScreen">
-      <div className="panel">
-        <div className="sectionTitleRow">
-          <div>
-            <h3 className="panelTitle dashboardPanelTitle">Дашборд</h3>
-            <div className="smallText">
-              Все списки и фильтры собраны в одном месте.
-            </div>
-          </div>
-        </div>
-        <div className="dashboardCardsRow">
-          <div className="metricCard">
-            <div className="metricLabel">Всего</div>
-            <div className="metricValue">{dashboardTotalCount}</div>
-          </div>
-          <div className="metricCard">
-            <div className="metricLabel">Закладки</div>
-            <div className="metricValue">
-              {sessionState.favoritesLinks.length}
-            </div>
-            {favoritesUpdatedCount > 0 ? (
-              <div className="smallText" style={{ marginTop: 4 }}>
-                Обновились: {favoritesUpdatedCount}
-              </div>
-            ) : null}
-          </div>
-          <div className="metricCard">
-            <div className="metricLabel">Мусор</div>
-            <div className="metricValue">{sessionState.trashLinks.length}</div>
-          </div>
-          <div className="metricCard">
-            <div className="metricLabel">Играл</div>
-            <div className="metricValue">{playedCount}</div>
-            {playedUpdatedCount > 0 ? (
-              <div className="smallText" style={{ marginTop: 6 }}>
-                Обновились: {playedUpdatedCount}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <Dashboard
-        sessionState={sessionState}
-        isLauncherAvailable={isLauncherAvailable}
-        launcherGamesByThreadLink={launcherGamesByThreadLink}
-        openBestDownloadForThread={openBestDownloadForThread}
-        onOpenThread={openLinkInNewTab}
-        onOpenImageViewer={openViewer}
-        tagsMap={tagsMap}
-        prefixesMap={prefixesMap}
-        onRevealInstalledGame={(threadLink) => {
-          void revealGame(threadLink).catch((error) => {
-            setErrorMessage(
-              error instanceof Error
-                ? error.message
-                : "Не удалось открыть папку игры",
-            );
-          });
-        }}
-        onDeleteGameFilesForThread={handleDeleteGameFilesForThread}
-        onChooseInstallFolderForThread={handleChooseInstallFolderForThread}
-        onChooseLaunchTargetForThread={handleChooseLaunchTargetForThread}
-        onOpenErrorMirrorForThread={handleOpenErrorMirrorForThread}
+        <ListsDashboard
+          sessionState={sessionState}
+          onOpenThread={openLinkInNewTab}
+          onOpenThreadInBackground={openLinkInBackground}
+          onOpenImageViewer={openViewer}
+          tagsMap={tagsMap}
+          prefixesMap={prefixesMap}
         moveLinkToList={handleMoveLinkToList}
         togglePlayedFavoriteLink={togglePlayedFavoriteLink}
         removeLinkFromList={removeLinkFromList}
@@ -3418,8 +3654,18 @@ const App = () => {
     </div>
   );
 
+  const dashboardView = (
+    <div className="dashboardScreen">
+      <DashboardOverview
+        sessionState={sessionState}
+        tagsMap={tagsMap}
+        prefixesMap={prefixesMap}
+      />
+    </div>
+  );
+
   const settingsView = (
-    <SettingsPage
+      <SettingsPage
       preferredDownloadHosts={preferredDownloadHosts}
       disabledDownloadHosts={disabledDownloadHosts}
       hiddenDownloadHosts={hiddenDownloadHosts}
@@ -3432,9 +3678,12 @@ const App = () => {
       defaultFilterState={defaultFilterState}
       defaultLatestGamesSort={defaultLatestGamesSort}
       tagsMap={tagsMap}
-      prefixesMap={prefixesMap}
-      onStartMetadataSync={handleManualMetadataSync}
-      onUpdateDefaultFilterState={updateDefaultFilterState}
+        prefixesMap={prefixesMap}
+        onStartMetadataSync={handleManualMetadataSync}
+        onPauseMetadataSync={handlePauseMetadataSync}
+        onResumeMetadataSync={handleResumeMetadataSync}
+        onStopMetadataSync={handleStopMetadataSync}
+        onUpdateDefaultFilterState={updateDefaultFilterState}
       onUpdateDefaultLatestGamesSort={updateDefaultLatestGamesSort}
       onResetDefaultFilterState={resetDefaultFilterState}
       onImportBundledDefaultFilterState={() => {
@@ -3503,7 +3752,9 @@ const App = () => {
   );
 
   const pageView =
-    pageType === "dashboard"
+    pageType === "lists"
+      ? listsView
+      : pageType === "dashboard"
       ? dashboardView
       : pageType === "settings"
         ? settingsView
@@ -3521,6 +3772,12 @@ const App = () => {
               onClick={() => setPage("swipe")}
             >
               Свайп
+            </button>
+            <button
+              className={`button ${pageType === "lists" ? "navButtonActive" : ""}`}
+              onClick={() => setPage("lists")}
+            >
+              Списки
             </button>
             <button
               className={`button ${pageType === "dashboard" ? "navButtonActive" : ""}`}
@@ -3585,6 +3842,7 @@ const App = () => {
                 <button
                   className="button"
                   type="button"
+                  disabled={isSwipeInteractionLocked}
                   onClick={clearSwipeTagFilters}
                 >
                   Очистить
@@ -3592,6 +3850,7 @@ const App = () => {
                 <button
                   className="button"
                   type="button"
+                  disabled={isSwipeInteractionLocked}
                   onClick={() => setIsSwipeFilterModalOpen(false)}
                 >
                   Закрыть
@@ -3612,6 +3871,7 @@ const App = () => {
                   <div className="label">Поиск по префиксам</div>
                   <input
                     className="input"
+                    disabled={isSwipeInteractionLocked}
                     value={swipePrefixSearchText}
                     onChange={(event) =>
                       setSwipePrefixSearchText(event.target.value)
@@ -3628,6 +3888,7 @@ const App = () => {
                     sessionState.filterState.includePrefixIds,
                     toggleSwipeIncludePrefix,
                     "include",
+                    isSwipeInteractionLocked,
                   )}
                   {renderSwipeFilterOptionGroup(
                     "Выключить",
@@ -3636,6 +3897,7 @@ const App = () => {
                     sessionState.filterState.excludePrefixIds,
                     toggleSwipeExcludePrefix,
                     "exclude",
+                    isSwipeInteractionLocked,
                   )}
                 </div>
               </div>
@@ -3655,6 +3917,7 @@ const App = () => {
                   <div className="label">Поиск по тегам</div>
                   <input
                     className="input"
+                    disabled={isSwipeInteractionLocked}
                     value={swipeTagSearchText}
                     onChange={(event) => setSwipeTagSearchText(event.target.value)}
                     placeholder="например: sandbox, corruption"
@@ -3669,6 +3932,7 @@ const App = () => {
                     sessionState.filterState.includeTagIds,
                     toggleSwipeIncludeTag,
                     "include",
+                    isSwipeInteractionLocked,
                     `${sessionState.filterState.includeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
                   )}
                   {renderSwipeFilterOptionGroup(
@@ -3678,6 +3942,7 @@ const App = () => {
                     sessionState.filterState.excludeTagIds,
                     toggleSwipeExcludeTag,
                     "exclude",
+                    isSwipeInteractionLocked,
                     `${sessionState.filterState.excludeTagIds.length}/${MAX_TAG_FILTERS_PER_GROUP}`,
                   )}
                 </div>
@@ -3686,36 +3951,6 @@ const App = () => {
           </div>
         </div>
       ) : null}
-
-      <DownloadModal
-        isOpen={downloadModalState.isOpen}
-        threadLink={downloadModalState.threadLink}
-        threadTitle={downloadModalState.threadTitle}
-        isLoading={downloadModalState.isLoading}
-        errorMessage={downloadModalState.errorMessage}
-        downloadsData={downloadModalState.downloadsData}
-        preferredDownloadHosts={preferredDownloadHosts}
-        disabledDownloadHosts={disabledDownloadHosts}
-        hiddenDownloadHosts={hiddenDownloadHosts}
-        primaryActionLabel={getLauncherPrimaryActionLabel(
-          isLauncherAvailable,
-          downloadModalState.threadLink
-            ? launcherGamesByThreadLink[downloadModalState.threadLink] ?? null
-            : null,
-        )}
-        isPrimaryActionDisabled={false}
-        onClose={closeDownloadModal}
-        onOpenBestDownload={(threadLink, threadTitle) => {
-          void openBestDownloadForThread(threadLink, threadTitle);
-        }}
-        onOpenDownloadChoice={(threadLink, threadTitle, linkList) => {
-          void openBestDownloadForThread(threadLink, threadTitle, {
-            selectedDownloadLinks: linkList,
-          });
-        }}
-        onOpenSettings={openSettingsPage}
-        onOpenThread={openLinkInNewTab}
-      />
 
       <CookiePromptModal
         isOpen={cookiePromptModalState.isOpen}

@@ -1,16 +1,26 @@
 {
-  "12": "ADRIFT",
-  "8": "Flash",
-  "4": "HTML",
-  "6": "Java",
-  "14": "Other",
-  "1": "QSP",
-  "5": "RAGS",
-  "2": "RPGM",
-  "7": "Ren'Py",
-  "17": "Tads",
-  "3": "Unity",
-  "31": "Unreal Engine",
-  "47": "WbGL",
-  "30": "Wolf RPG"
+  "prefixes": {
+    "13": "VN",
+    "18": "Completed",
+    "19": "Collection",
+    "20": "OnHold",
+    "22": "Ongoing",
+    "23": "SiteRip"
+  },
+  "engines": {
+    "1": "QSP",
+    "2": "RPGM",
+    "3": "Unity",
+    "4": "HTML",
+    "5": "RAGS",
+    "6": "Java",
+    "7": "Ren'Py",
+    "8": "Flash",
+    "12": "ADRIFT",
+    "14": "Other",
+    "17": "Tads",
+    "30": "Wolf RPG",
+    "31": "Unreal Engine",
+    "47": "WbGL"
+  }
 }

@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron')
 const {
+  AUTOMATION_REASON_CODES,
   resolveDownloadHostScenario,
   runDownloadHostAutomationStep,
 } = require('./download-host-automation.cjs')
@@ -22,6 +23,7 @@ const DOWNLOAD_TIMEOUT_MS = 120_000
 const MANUAL_DOWNLOAD_TIMEOUT_MS = 1000 * 60 * 15
 const DOWNLOAD_POLL_INTERVAL_MS = 1_250
 const SUPPORTED_ARCHIVE_EXTENSIONS = new Set(['.zip', '.7z', '.rar'])
+const AUTOMATION_LOG_FILE_NAME = 'automation-log.jsonl'
 const LAUNCHABLE_FILE_EXTENSIONS = new Set([
   '.exe',
   '.bat',
@@ -41,12 +43,49 @@ const NEGATIVE_LAUNCH_NAME_PATTERN =
   /(unins|uninstall|vc_redist|redist|directx|dxsetup|crashpad|updater|notification_helper|elevate|cleanup|launcherupdater)/i
 const NEGATIVE_LAUNCH_PATH_PATTERN =
   /(__macosx|_commonredist|redist|redistributable|directx|support|crashpad)/i
+const isTruthyEnvFlag = (value) =>
+  typeof value === 'string' && /^(1|true|yes|on)$/i.test(value.trim())
+const AUTOMATION_DEBUG_WINDOW_VISIBLE = isTruthyEnvFlag(
+  process.env.F95_DEBUG_DOWNLOAD_WINDOW,
+)
+const AUTOMATION_DEBUG_ARTIFACTS = isTruthyEnvFlag(
+  process.env.F95_DEBUG_DOWNLOAD_ARTIFACTS,
+)
 
 let mainWindow = null
 let runtimeCookieState = null
 let libraryState = null
 let localDataFilesState = null
 const activeDownloadJobs = new Map()
+
+const normalizeOpenExternalOptions = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      background: false,
+    }
+  }
+
+  return {
+    background: value.background === true,
+  }
+}
+
+const refocusWindowAfterExternalOpen = (browserWindow) => {
+  if (!browserWindow || browserWindow.isDestroyed()) {
+    return
+  }
+
+  const attemptRefocus = () => {
+    if (browserWindow.isDestroyed() || !browserWindow.isVisible()) {
+      return
+    }
+
+    browserWindow.focus()
+  }
+
+  setTimeout(attemptRefocus, 0)
+  setTimeout(attemptRefocus, 100)
+}
 
 const createCancelledDownloadError = () => {
   const error = new Error('Загрузка отменена пользователем.')
@@ -165,6 +204,9 @@ const getLocalListsStatePath = () =>
 const getLocalSettingsStatePath = () =>
   path.join(app.getPath('userData'), 'local-settings.json')
 
+const getLatestCatalogStatePath = () =>
+  path.join(app.getPath('userData'), 'latest-catalog.json')
+
 const getDefaultLibraryRoot = () => path.join(app.getPath('userData'), 'games')
 
 const readJsonFile = (targetPath) => {
@@ -257,6 +299,73 @@ const buildGameFolderName = (threadLink, threadTitle) => {
 const buildGameRootPath = (threadLink, threadTitle) =>
   path.join(libraryState.libraryRootPath, buildGameFolderName(threadLink, threadTitle))
 
+const buildGameDebugRootPath = (threadLink, threadTitle) =>
+  path.join(buildGameRootPath(threadLink, threadTitle), 'debug')
+
+const formatDebugSessionId = (unixMs) => {
+  const sessionDate = new Date(unixMs)
+  const part = (value, length = 2) => String(value).padStart(length, '0')
+  return [
+    sessionDate.getFullYear(),
+    part(sessionDate.getMonth() + 1),
+    part(sessionDate.getDate()),
+    '-',
+    part(sessionDate.getHours()),
+    part(sessionDate.getMinutes()),
+    part(sessionDate.getSeconds()),
+    '-',
+    part(sessionDate.getMilliseconds(), 3),
+  ].join('')
+}
+
+const normalizeAutomationWindowMode = (value) =>
+  value === 'visible' ? 'visible' : 'hidden'
+
+const createEmptyAutomationDebugInfo = (patch = {}) => ({
+  scenarioId: null,
+  scenarioLabel: null,
+  phase: null,
+  reasonCode: null,
+  note: null,
+  lastUrl: null,
+  retryAfterMs: null,
+  attemptCount: 0,
+  lastUpdatedAtUnixMs: null,
+  windowMode: 'hidden',
+  sessionDir: null,
+  logFilePath: null,
+  lastHtmlPath: null,
+  lastScreenshotPath: null,
+  ...patch,
+})
+
+const createDownloadDebugState = (request) => {
+  const createdAtUnixMs = Date.now()
+  const windowMode = AUTOMATION_DEBUG_WINDOW_VISIBLE ? 'visible' : 'hidden'
+  const sessionDir = path.join(
+    buildGameDebugRootPath(request.threadLink, request.threadTitle),
+    formatDebugSessionId(createdAtUnixMs),
+  )
+  const logFilePath = path.join(sessionDir, AUTOMATION_LOG_FILE_NAME)
+
+  return {
+    sessionDir,
+    logFilePath,
+    eventSequence: 0,
+    artifactSequence: 0,
+    info: createEmptyAutomationDebugInfo({
+      phase: 'queued',
+      note: 'Загрузка поставлена в очередь.',
+      lastUrl:
+        typeof request.downloadUrl === 'string' ? request.downloadUrl : null,
+      lastUpdatedAtUnixMs: createdAtUnixMs,
+      windowMode,
+      sessionDir,
+      logFilePath,
+    }),
+  }
+}
+
 const createEmptyCookieState = () => ({
   header: '',
   source: 'none',
@@ -278,6 +387,7 @@ const createDefaultGameRecord = (threadLink, threadTitle = '') => ({
   downloadSpeedBytesPerSecond: null,
   errorMessage: null,
   sizeBytes: null,
+  automationDebug: null,
   updatedAtUnixMs: Date.now(),
 })
 
@@ -289,6 +399,7 @@ const createDefaultLibraryState = () => ({
 const loadLocalDataFilesState = () => ({
   lists: readJsonFileWithMetadata(getLocalListsStatePath()),
   settings: readJsonFileWithMetadata(getLocalSettingsStatePath()),
+  catalog: readJsonFileWithMetadata(getLatestCatalogStatePath()),
 })
 
 const buildLocalDataFileDescriptor = (targetPath, entry) => ({
@@ -304,15 +415,26 @@ const buildLocalDataFilesSnapshot = () => ({
     getLocalSettingsStatePath(),
     localDataFilesState?.settings,
   ),
+  catalogFile: buildLocalDataFileDescriptor(
+    getLatestCatalogStatePath(),
+    localDataFilesState?.catalog,
+  ),
   lists: localDataFilesState?.lists?.value ? toJsonClone(localDataFilesState.lists.value) : null,
   settings: localDataFilesState?.settings?.value
     ? toJsonClone(localDataFilesState.settings.value)
+    : null,
+  catalog: localDataFilesState?.catalog?.value
+    ? toJsonClone(localDataFilesState.catalog.value)
     : null,
 })
 
 const writeLocalDataFileValue = (fileKind, value) => {
   const targetPath =
-    fileKind === 'lists' ? getLocalListsStatePath() : getLocalSettingsStatePath()
+    fileKind === 'lists'
+      ? getLocalListsStatePath()
+      : fileKind === 'catalog'
+        ? getLatestCatalogStatePath()
+        : getLocalSettingsStatePath()
 
   if (value === null || value === undefined) {
     try {
@@ -352,6 +474,55 @@ const patchLocalSettingsFileValue = (patch) => {
   return writeLocalDataFileValue('settings', {
     ...currentValue,
     ...patch,
+  })
+}
+
+const normalizeAutomationDebugInfo = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const debugInfo = value
+  return createEmptyAutomationDebugInfo({
+    scenarioId:
+      typeof debugInfo.scenarioId === 'string' ? debugInfo.scenarioId : null,
+    scenarioLabel:
+      typeof debugInfo.scenarioLabel === 'string'
+        ? debugInfo.scenarioLabel
+        : null,
+    phase: typeof debugInfo.phase === 'string' ? debugInfo.phase : null,
+    reasonCode:
+      typeof debugInfo.reasonCode === 'string' ? debugInfo.reasonCode : null,
+    note: typeof debugInfo.note === 'string' ? debugInfo.note : null,
+    lastUrl: typeof debugInfo.lastUrl === 'string' ? debugInfo.lastUrl : null,
+    retryAfterMs:
+      typeof debugInfo.retryAfterMs === 'number' &&
+      Number.isFinite(debugInfo.retryAfterMs) &&
+      debugInfo.retryAfterMs > 0
+        ? Math.round(debugInfo.retryAfterMs)
+        : null,
+    attemptCount:
+      typeof debugInfo.attemptCount === 'number' &&
+      Number.isFinite(debugInfo.attemptCount) &&
+      debugInfo.attemptCount >= 0
+        ? Math.max(0, Math.floor(debugInfo.attemptCount))
+        : 0,
+    lastUpdatedAtUnixMs:
+      typeof debugInfo.lastUpdatedAtUnixMs === 'number' &&
+      Number.isFinite(debugInfo.lastUpdatedAtUnixMs)
+        ? debugInfo.lastUpdatedAtUnixMs
+        : null,
+    windowMode: normalizeAutomationWindowMode(debugInfo.windowMode),
+    sessionDir:
+      typeof debugInfo.sessionDir === 'string' ? debugInfo.sessionDir : null,
+    logFilePath:
+      typeof debugInfo.logFilePath === 'string' ? debugInfo.logFilePath : null,
+    lastHtmlPath:
+      typeof debugInfo.lastHtmlPath === 'string' ? debugInfo.lastHtmlPath : null,
+    lastScreenshotPath:
+      typeof debugInfo.lastScreenshotPath === 'string'
+        ? debugInfo.lastScreenshotPath
+        : null,
   })
 }
 
@@ -408,6 +579,7 @@ const normalizeGameRecord = (threadLink, value) => {
         : statusValue === 'installed'
         ? resolveInstalledGameSizeBytes(record)
         : null,
+    automationDebug: normalizeAutomationDebugInfo(record.automationDebug),
     updatedAtUnixMs:
       typeof record.updatedAtUnixMs === 'number'
         ? record.updatedAtUnixMs
@@ -473,6 +645,269 @@ const updateGameRecord = (threadLink, patch) => {
   libraryState.gamesByThreadLink[threadLink] = nextRecord
   persistLibraryState()
   return nextRecord
+}
+
+const ensureAutomationDebugDirectory = (jobState) => {
+  const sessionDir = jobState?.debug?.sessionDir
+  if (!sessionDir) {
+    return null
+  }
+
+  ensureDirectory(sessionDir)
+  return sessionDir
+}
+
+const buildAutomationDebugLogEntry = (jobState, eventType, payload = {}) => ({
+  sequence: (jobState?.debug?.eventSequence ?? 0) + 1,
+  atUnixMs: Date.now(),
+  eventType,
+  ...payload,
+})
+
+const appendAutomationDebugLogEntry = (jobState, entry) => {
+  if (!jobState?.debug?.logFilePath) {
+    return
+  }
+
+  const sessionDir = ensureAutomationDebugDirectory(jobState)
+  if (!sessionDir) {
+    return
+  }
+
+  try {
+    fs.appendFileSync(
+      jobState.debug.logFilePath,
+      `${JSON.stringify(entry)}\n`,
+      'utf8',
+    )
+    jobState.debug.eventSequence = entry.sequence
+  } catch {
+    // ignore debug write failures
+  }
+}
+
+const updateAutomationDebugInfo = (request, jobState, patch = {}) => {
+  if (!jobState?.debug) {
+    return null
+  }
+
+  const nextInfo = createEmptyAutomationDebugInfo({
+    ...jobState.debug.info,
+    ...patch,
+    windowMode: normalizeAutomationWindowMode(
+      patch.windowMode ?? jobState.debug.info.windowMode,
+    ),
+    sessionDir: jobState.debug.sessionDir,
+    logFilePath: jobState.debug.logFilePath,
+    lastUpdatedAtUnixMs: Date.now(),
+  })
+
+  jobState.debug.info = nextInfo
+  updateGameRecord(request.threadLink, {
+    threadTitle: request.threadTitle,
+    automationDebug: nextInfo,
+  })
+  return nextInfo
+}
+
+const getBrowserWindowDebugUrl = (browserWindow, fallbackUrl = null) => {
+  try {
+    const targetUrl = browserWindow?.webContents?.getURL?.()
+    return typeof targetUrl === 'string' && targetUrl.trim().length > 0
+      ? targetUrl
+      : fallbackUrl
+  } catch {
+    return fallbackUrl
+  }
+}
+
+const captureAutomationArtifacts = async (
+  browserWindow,
+  request,
+  jobState,
+  label,
+) => {
+  if (!browserWindow || browserWindow.isDestroyed() || !jobState?.debug) {
+    return {
+      htmlPath: null,
+      screenshotPath: null,
+    }
+  }
+
+  const sessionDir = ensureAutomationDebugDirectory(jobState)
+  if (!sessionDir) {
+    return {
+      htmlPath: null,
+      screenshotPath: null,
+    }
+  }
+
+  const nextArtifactIndex = (jobState.debug.artifactSequence ?? 0) + 1
+  jobState.debug.artifactSequence = nextArtifactIndex
+  const artifactBaseName = `${String(nextArtifactIndex).padStart(3, '0')}-${sanitizeFileName(
+    label,
+  )}`
+  const htmlPath = path.join(sessionDir, `${artifactBaseName}.html`)
+  const screenshotPath = path.join(sessionDir, `${artifactBaseName}.png`)
+  let savedHtmlPath = null
+  let savedScreenshotPath = null
+
+  try {
+    const htmlText = await browserWindow.webContents.executeJavaScript(
+      'document.documentElement?.outerHTML ?? ""',
+      true,
+    )
+    if (typeof htmlText === 'string' && htmlText.length > 0) {
+      fs.writeFileSync(htmlPath, htmlText, 'utf8')
+      savedHtmlPath = htmlPath
+    }
+  } catch {
+    // ignore artifact capture failures
+  }
+
+  try {
+    const image = await browserWindow.webContents.capturePage()
+    const imageBuffer = image?.toPNG?.()
+    if (imageBuffer) {
+      fs.writeFileSync(screenshotPath, imageBuffer)
+      savedScreenshotPath = screenshotPath
+    }
+  } catch {
+    // ignore artifact capture failures
+  }
+
+  updateAutomationDebugInfo(request, jobState, {
+    lastHtmlPath: savedHtmlPath ?? jobState.debug.info.lastHtmlPath,
+    lastScreenshotPath:
+      savedScreenshotPath ?? jobState.debug.info.lastScreenshotPath,
+  })
+
+  return {
+    htmlPath: savedHtmlPath,
+    screenshotPath: savedScreenshotPath,
+  }
+}
+
+const logAutomationEvent = (jobState, eventType, payload = {}) => {
+  const entry = buildAutomationDebugLogEntry(jobState, eventType, payload)
+  appendAutomationDebugLogEntry(jobState, entry)
+}
+
+const logAutomationStepResult = async (
+  browserWindow,
+  request,
+  jobState,
+  automationState,
+  automationResult,
+) => {
+  const nextDebugInfo = updateAutomationDebugInfo(request, jobState, {
+    scenarioId:
+      typeof automationResult?.scenarioId === 'string'
+        ? automationResult.scenarioId
+        : automationState?.hostScenarioId ?? null,
+    scenarioLabel:
+      typeof automationResult?.scenarioLabel === 'string'
+        ? automationResult.scenarioLabel
+        : automationState?.hostScenarioLabel ?? null,
+    phase:
+      typeof automationResult?.phase === 'string' ? automationResult.phase : null,
+    reasonCode:
+      typeof automationResult?.reasonCode === 'string'
+        ? automationResult.reasonCode
+        : automationResult?.hasCaptcha
+        ? AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED
+        : null,
+    note:
+      typeof automationResult?.note === 'string'
+        ? automationResult.note
+        : typeof automationResult?.label === 'string'
+        ? automationResult.label
+        : null,
+    lastUrl: getBrowserWindowDebugUrl(
+      browserWindow,
+      automationResult?.location ?? request.downloadUrl,
+    ),
+    retryAfterMs:
+      typeof automationResult?.retryAfterMs === 'number'
+        ? automationResult.retryAfterMs
+        : null,
+    attemptCount:
+      typeof automationState?.hostScenarioAttempts === 'number'
+        ? automationState.hostScenarioAttempts
+        : jobState?.debug?.info?.attemptCount ?? 0,
+  })
+
+  logAutomationEvent(jobState, 'automation_step', {
+    threadLink: request.threadLink,
+    hostLabel: request.hostLabel ?? null,
+    automationResult,
+    automationDebug: nextDebugInfo,
+  })
+
+  if (
+    AUTOMATION_DEBUG_ARTIFACTS &&
+    (automationResult?.clicked || automationResult?.reasonCode)
+  ) {
+    await captureAutomationArtifacts(
+      browserWindow,
+      request,
+      jobState,
+      automationResult?.phase || automationResult?.scenarioId || 'automation-step',
+    )
+  }
+}
+
+const recordAutomationFailure = async (
+  browserWindow,
+  request,
+  jobState,
+  error,
+  stage,
+) => {
+  const errorCode = getDownloadAutomationErrorCode(error)
+  const errorMessage =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : 'Неизвестная ошибка automation.'
+  const lastAutomationResult = error?.automationResult ?? null
+  const artifactPaths = await captureAutomationArtifacts(
+    browserWindow,
+    request,
+    jobState,
+    `${stage}-failure`,
+  )
+  const nextDebugInfo = updateAutomationDebugInfo(request, jobState, {
+    phase:
+      typeof lastAutomationResult?.phase === 'string'
+        ? lastAutomationResult.phase
+        : stage,
+    reasonCode: errorCode ?? AUTOMATION_REASON_CODES.AUTOMATION_ERROR,
+    note: errorMessage,
+    lastUrl: getBrowserWindowDebugUrl(
+      browserWindow,
+      lastAutomationResult?.location ?? request.downloadUrl,
+    ),
+    retryAfterMs: null,
+    lastHtmlPath:
+      artifactPaths.htmlPath ?? jobState?.debug?.info?.lastHtmlPath ?? null,
+    lastScreenshotPath:
+      artifactPaths.screenshotPath ??
+      jobState?.debug?.info?.lastScreenshotPath ??
+      null,
+  })
+
+  logAutomationEvent(jobState, 'automation_failure', {
+    threadLink: request.threadLink,
+    hostLabel: request.hostLabel ?? null,
+    stage,
+    error: {
+      code: errorCode,
+      message: errorMessage,
+    },
+    automationResult: lastAutomationResult,
+    automationDebug: nextDebugInfo,
+    artifactPaths,
+  })
 }
 
 const loadRuntimeCookieState = (envCookieHeader = '') => {
@@ -991,6 +1426,11 @@ const getHiddenDownloadWindow = () => createDownloadWindow(false)
 
 const getVisibleDownloadWindow = () => createDownloadWindow(true)
 
+const getAutomaticDownloadWindow = () =>
+  AUTOMATION_DEBUG_WINDOW_VISIBLE
+    ? getVisibleDownloadWindow()
+    : getHiddenDownloadWindow()
+
 const isSupportedArchiveFileName = (fileName) =>
   SUPPORTED_ARCHIVE_EXTENSIONS.has(path.extname(fileName).toLowerCase())
 
@@ -1276,6 +1716,31 @@ const driveBrowserWindowUntilDownloadStarts = async (
   jobState,
 ) => {
   const hostScenario = resolveDownloadHostScenario(request.hostLabel)
+  logAutomationEvent(jobState, 'automatic_attempt_started', {
+    threadLink: request.threadLink,
+    hostLabel: request.hostLabel ?? null,
+    downloadUrl,
+    hostScenarioId: hostScenario?.id ?? null,
+    hostScenarioLabel: hostScenario?.label ?? null,
+    windowMode: jobState?.debug?.info?.windowMode ?? 'hidden',
+  })
+  transitionAutomationMachineState(
+    request,
+    jobState,
+    automationState,
+    AUTOMATION_MACHINE_STATES.LOADING_HOST_PAGE,
+    {
+      scenarioId: hostScenario?.id ?? null,
+      scenarioLabel: hostScenario?.label ?? null,
+      phase: 'loading_host_page',
+      reasonCode: null,
+      note: hostScenario
+        ? `Открываю зеркало и запускаю сценарий ${hostScenario.label}.`
+        : 'Открываю зеркало и жду архив.',
+      lastUrl: downloadUrl,
+      retryAfterMs: null,
+    },
+  )
   updateGameRecord(request.threadLink, {
     threadTitle: request.threadTitle,
     status: 'resolving',
@@ -1313,16 +1778,30 @@ const driveBrowserWindowUntilDownloadStarts = async (
     throw error
   }
 
+  transitionAutomationMachineState(
+    request,
+    jobState,
+    automationState,
+    AUTOMATION_MACHINE_STATES.INSPECTING_HOST_PAGE,
+    {
+      phase: 'host_page_loaded',
+      reasonCode: null,
+      note: 'Страница зеркала загружена, начинаю анализ DOM.',
+      lastUrl: getBrowserWindowDebugUrl(browserWindow, downloadUrl),
+      retryAfterMs: null,
+    },
+  )
+
   const startedAtUnixMs = Date.now()
 
   while (!automationState.downloadStarted) {
     throwIfDownloadCancelled(jobState)
 
     if (Date.now() - startedAtUnixMs > DOWNLOAD_TIMEOUT_MS) {
-      throw new Error(
-        'Автоматический download не стартовал вовремя. Похоже, хост потребовал ручное действие.',
-      )
+      throw buildAutomaticDownloadTimeoutError(automationState)
     }
+
+    let nextPollDelayMs = DOWNLOAD_POLL_INTERVAL_MS
 
     try {
       const clickResult = await runDownloadHostAutomationStep(
@@ -1330,46 +1809,83 @@ const driveBrowserWindowUntilDownloadStarts = async (
         request,
         automationState,
       )
+      await logAutomationStepResult(
+        browserWindow,
+        request,
+        jobState,
+        automationState,
+        clickResult,
+      )
+      const automationDecision = createAutomationDecisionFromResult(clickResult)
+      nextPollDelayMs = automationDecision.pollDelayMs
 
-      if (clickResult?.errorMessage) {
-        throw new Error(clickResult.errorMessage)
+      transitionAutomationMachineState(
+        request,
+        jobState,
+        automationState,
+        automationDecision.nextState,
+        {
+          scenarioId: clickResult?.scenarioId ?? automationState?.hostScenarioId ?? null,
+          scenarioLabel:
+            clickResult?.scenarioLabel ?? automationState?.hostScenarioLabel ?? null,
+          phase: clickResult?.phase ?? automationDecision.nextState,
+          reasonCode:
+            clickResult?.clicked === true
+              ? null
+              : automationDecision.reasonCode ?? clickResult?.reasonCode ?? null,
+          note:
+            automationDecision.statusText ||
+            clickResult?.note ||
+            clickResult?.label ||
+            null,
+          lastUrl: getBrowserWindowDebugUrl(
+            browserWindow,
+            clickResult?.location ?? request.downloadUrl,
+          ),
+          retryAfterMs:
+            automationDecision.kind === 'waiting' ? nextPollDelayMs : null,
+        },
+      )
+
+      if (automationDecision.kind === 'blocked') {
+        throw automationDecision.error
       }
 
-      if (clickResult?.hasCaptcha) {
-        throw new Error(
-          'Хост запросил captcha или human verification. Автоматический режим остановлен.',
-        )
-      }
-
-      if (clickResult?.clicked) {
-        updateGameRecord(request.threadLink, {
-          threadTitle: request.threadTitle,
-          status: 'resolving',
-          message:
-            clickResult.scenarioId && clickResult.scenarioId !== 'GENERIC'
-              ? `Сценарий ${clickResult.scenarioLabel}: пытаюсь запустить download на host...`
-              : 'Пытаюсь нажать кнопку download на host...',
-          downloadSpeedBytesPerSecond: null,
-          lastHostLabel: request.hostLabel ?? null,
-          lastDownloadUrl: request.downloadUrl,
-        })
-      }
+      updateGameRecord(request.threadLink, {
+        threadTitle: request.threadTitle,
+        status: 'resolving',
+        message: automationDecision.statusText,
+        downloadSpeedBytesPerSecond: null,
+        lastHostLabel: request.hostLabel ?? null,
+        lastDownloadUrl: request.downloadUrl,
+      })
     } catch (error) {
-      const message = error instanceof Error ? error.message : ''
-      if (
-        message &&
-        !message.includes('Execution context was destroyed') &&
-        !message.includes('Object has been destroyed')
-      ) {
+      if (!isRecoverableAutomationDriverError(error)) {
         if (jobState?.cancelled) {
           throw createCancelledDownloadError()
         }
 
+        transitionAutomationMachineState(
+          request,
+          jobState,
+          automationState,
+          AUTOMATION_MACHINE_STATES.FAILED,
+          {
+            phase: automationState?.machineState ?? 'automatic_attempt_failed',
+            reasonCode:
+              getDownloadAutomationErrorCode(error) ??
+              AUTOMATION_REASON_CODES.AUTOMATION_ERROR,
+            note:
+              error instanceof Error ? error.message : 'Ошибка automation.',
+            lastUrl: getBrowserWindowDebugUrl(browserWindow, downloadUrl),
+            retryAfterMs: null,
+          },
+        )
         throw error
       }
     }
 
-    await delay(DOWNLOAD_POLL_INTERVAL_MS)
+    await delay(nextPollDelayMs)
   }
 }
 
@@ -1404,7 +1920,13 @@ const waitForArchiveDownload = async (
       finishReject(
         jobState?.cancelled
           ? createCancelledDownloadError()
-          : new Error('Окно зеркала закрыто до старта скачивания.'),
+          : createDownloadAutomationError(
+              'Окно зеркала закрыто до старта скачивания.',
+              AUTOMATION_REASON_CODES.MANUAL_ACTION_REQUIRED,
+              {
+                automationResult: jobState?.debug?.info ?? null,
+              },
+            ),
       )
     }
 
@@ -1477,6 +1999,25 @@ const waitForArchiveDownload = async (
         lastHostLabel: request.hostLabel ?? null,
         lastDownloadUrl: request.downloadUrl,
       })
+      transitionAutomationMachineState(
+        request,
+        jobState,
+        automationState,
+        AUTOMATION_MACHINE_STATES.DOWNLOAD_STARTED,
+        {
+          phase: 'download_started',
+          reasonCode: null,
+          note: `Electron поймал скачивание архива ${originalFileName}.`,
+          lastUrl: getBrowserWindowDebugUrl(browserWindow, request.downloadUrl),
+          retryAfterMs: null,
+        },
+      )
+      logAutomationEvent(jobState, 'download_started', {
+        threadLink: request.threadLink,
+        hostLabel: request.hostLabel ?? null,
+        archivePath,
+        fileName: originalFileName,
+      })
 
       item.on('updated', () => {
         const receivedBytes = item.getReceivedBytes()
@@ -1509,6 +2050,12 @@ const waitForArchiveDownload = async (
         }
 
         if (state !== 'completed') {
+          logAutomationEvent(jobState, 'download_finished', {
+            threadLink: request.threadLink,
+            hostLabel: request.hostLabel ?? null,
+            archivePath,
+            state,
+          })
           finishReject(
             state === 'cancelled' && jobState?.cancelled
               ? createCancelledDownloadError()
@@ -1521,14 +2068,24 @@ const waitForArchiveDownload = async (
           return
         }
 
+        logAutomationEvent(jobState, 'download_finished', {
+          threadLink: request.threadLink,
+          hostLabel: request.hostLabel ?? null,
+          archivePath,
+          state,
+        })
         finishResolve(archivePath)
       })
     }
 
     timeoutId = setTimeout(() => {
       finishReject(
-        new Error(
+        createDownloadAutomationError(
           'Не удалось дождаться старта скачивания. Хост не отдал архив автоматически.',
+          AUTOMATION_REASON_CODES.DOWNLOAD_TIMEOUT,
+          {
+            automationResult: automationState?.lastHostAutomationResult ?? null,
+          },
         ),
       )
     }, timeoutMs)
@@ -1596,20 +2153,253 @@ const createAttemptRequest = (request, downloadSource) => ({
   hostLabel: downloadSource.hostLabel,
 })
 
-const isManualFallbackError = (error) => {
-  const message = error instanceof Error ? error.message.toLowerCase() : ''
-  return (
-    message.includes('captcha') ||
-    message.includes('human verification') ||
-    message.includes('ручное действие') ||
-    message.includes('автоматический download не стартовал') ||
-    message.includes('не удалось дождаться старта скачивания') ||
-    message.includes('не отдал архив автоматически')
+const MANUAL_FALLBACK_ERROR_CODE_SET = new Set([
+  AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED,
+  AUTOMATION_REASON_CODES.MANUAL_ACTION_REQUIRED,
+  AUTOMATION_REASON_CODES.DOWNLOAD_TIMEOUT,
+])
+const AUTOMATION_WAIT_REASON_CODE_SET = new Set([
+  AUTOMATION_REASON_CODES.NO_ACTIONABLE_ELEMENT,
+  AUTOMATION_REASON_CODES.WAITING_FOR_CONTINUE,
+  AUTOMATION_REASON_CODES.WAITING_FOR_DOWNLOAD,
+  AUTOMATION_REASON_CODES.WAITING_FOR_ARCHIVE_ROW,
+  AUTOMATION_REASON_CODES.COUNTDOWN_PENDING,
+])
+const AUTOMATION_BLOCKING_REASON_CODE_SET = new Set([
+  AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED,
+  AUTOMATION_REASON_CODES.DOWNLOAD_LIMIT_REACHED,
+  AUTOMATION_REASON_CODES.CONCURRENT_LIMIT_REACHED,
+  AUTOMATION_REASON_CODES.MANUAL_ACTION_REQUIRED,
+])
+const AUTOMATION_MACHINE_STATES = Object.freeze({
+  INITIALIZING: 'initializing',
+  LOADING_HOST_PAGE: 'loading_host_page',
+  INSPECTING_HOST_PAGE: 'inspecting_host_page',
+  WAITING_FOR_HOST_ACTION: 'waiting_for_host_action',
+  CLICK_DISPATCHED: 'click_dispatched',
+  MANUAL_FALLBACK_PENDING: 'manual_fallback_pending',
+  MANUAL_WINDOW_OPENED: 'manual_window_opened',
+  DOWNLOAD_STARTED: 'download_started',
+  BLOCKED: 'blocked',
+  FAILED: 'failed',
+})
+
+const createDownloadAutomationError = (message, code, metadata = {}) => {
+  const error = new Error(message)
+  error.code = code
+  Object.assign(error, metadata)
+  return error
+}
+
+const getDownloadAutomationErrorCode = (error) => {
+  return Boolean(error && typeof error === 'object' && typeof error.code === 'string')
+    ? error.code
+    : null
+}
+
+const resolveAutomationPollDelayMs = (automationResult) => {
+  const retryAfterMs = automationResult?.retryAfterMs
+  if (
+    typeof retryAfterMs === 'number' &&
+    Number.isFinite(retryAfterMs) &&
+    retryAfterMs > 0
+  ) {
+    return Math.max(200, Math.min(5_000, Math.round(retryAfterMs)))
+  }
+
+  return DOWNLOAD_POLL_INTERVAL_MS
+}
+
+const buildAutomaticDownloadTimeoutError = (automationState) => {
+  const lastResult = automationState?.lastHostAutomationResult ?? null
+  const detailList = [
+    automationState?.machineState,
+    lastResult?.scenarioLabel,
+    lastResult?.phase,
+    lastResult?.note,
+  ].filter((item) => typeof item === 'string' && item.trim().length > 0)
+  const detailSuffix =
+    detailList.length > 0 ? ` Последний шаг: ${detailList.join(' / ')}.` : ''
+
+  return createDownloadAutomationError(
+    `Автоматический download не стартовал вовремя.${detailSuffix} Похоже, хост потребовал ручное действие.`,
+    AUTOMATION_REASON_CODES.DOWNLOAD_TIMEOUT,
+    {
+      automationResult: lastResult,
+    },
   )
 }
 
+const isRecoverableAutomationDriverError = (error) => {
+  const message = error instanceof Error ? error.message : ''
+  return (
+    message.includes('Execution context was destroyed') ||
+    message.includes('Object has been destroyed')
+  )
+}
+
+const buildAutomationStepLabel = (automationResult) => {
+  const detailList = [
+    automationResult?.scenarioLabel,
+    automationResult?.note,
+    automationResult?.label,
+    automationResult?.phase,
+  ].filter((item) => typeof item === 'string' && item.trim().length > 0)
+
+  if (detailList.length === 0) {
+    return 'host'
+  }
+
+  return detailList.join(' / ')
+}
+
+const buildAutomationProgressMessage = (automationResult, actionLabel) => {
+  const stepLabel = buildAutomationStepLabel(automationResult)
+  return `${actionLabel}: ${stepLabel}.`
+}
+
+const transitionAutomationMachineState = (
+  request,
+  jobState,
+  automationState,
+  nextState,
+  patch = {},
+) => {
+  const previousState =
+    automationState?.machineState ?? jobState?.debug?.info?.phase ?? null
+  const nextUpdatedAtUnixMs = Date.now()
+
+  if (automationState) {
+    automationState.machineState = nextState
+    automationState.machineStateUpdatedAtUnixMs = nextUpdatedAtUnixMs
+  }
+
+  const nextInfo = updateAutomationDebugInfo(request, jobState, {
+    ...patch,
+    lastUpdatedAtUnixMs: nextUpdatedAtUnixMs,
+  })
+
+  if (previousState !== nextState) {
+    logAutomationEvent(jobState, 'automation_state_transition', {
+      threadLink: request.threadLink,
+      hostLabel: request.hostLabel ?? null,
+      previousState,
+      nextState,
+      automationDebug: nextInfo,
+    })
+  }
+
+  return nextInfo
+}
+
+const createAutomationDecisionFromResult = (automationResult) => {
+  const reasonCode = automationResult?.reasonCode ?? null
+  const pollDelayMs = resolveAutomationPollDelayMs(automationResult)
+
+  if (automationResult?.errorMessage) {
+    return {
+      kind: 'blocked',
+      nextState: AUTOMATION_MACHINE_STATES.BLOCKED,
+      pollDelayMs,
+      statusText: buildAutomationProgressMessage(
+        automationResult,
+        'Automation остановлен',
+      ),
+      error: createDownloadAutomationError(
+        automationResult.errorMessage,
+        reasonCode ?? AUTOMATION_REASON_CODES.AUTOMATION_ERROR,
+        {
+          automationResult,
+        },
+      ),
+    }
+  }
+
+  if (automationResult?.hasCaptcha) {
+    return {
+      kind: 'blocked',
+      nextState: AUTOMATION_MACHINE_STATES.BLOCKED,
+      pollDelayMs,
+      statusText: buildAutomationProgressMessage(
+        automationResult,
+        'Хост потребовал captcha',
+      ),
+      error: createDownloadAutomationError(
+        'Хост запросил captcha или human verification. Автоматический режим остановлен.',
+        reasonCode ?? AUTOMATION_REASON_CODES.CAPTCHA_REQUIRED,
+        {
+          automationResult,
+        },
+      ),
+    }
+  }
+
+  if (reasonCode && AUTOMATION_BLOCKING_REASON_CODE_SET.has(reasonCode)) {
+    return {
+      kind: 'blocked',
+      nextState: AUTOMATION_MACHINE_STATES.BLOCKED,
+      pollDelayMs,
+      statusText: buildAutomationProgressMessage(
+        automationResult,
+        'Automation остановлен',
+      ),
+      error: createDownloadAutomationError(
+        automationResult?.note ||
+          automationResult?.label ||
+          `Automation остановлен (${reasonCode}).`,
+        reasonCode,
+        {
+          automationResult,
+        },
+      ),
+    }
+  }
+
+  if (automationResult?.clicked) {
+    return {
+      kind: 'clicked',
+      nextState: AUTOMATION_MACHINE_STATES.CLICK_DISPATCHED,
+      pollDelayMs,
+      statusText: buildAutomationProgressMessage(
+        automationResult,
+        'Сценарий отправил клик',
+      ),
+      reasonCode: null,
+    }
+  }
+
+  if (reasonCode && AUTOMATION_WAIT_REASON_CODE_SET.has(reasonCode)) {
+    return {
+      kind: 'waiting',
+      nextState: AUTOMATION_MACHINE_STATES.WAITING_FOR_HOST_ACTION,
+      pollDelayMs,
+      statusText: buildAutomationProgressMessage(
+        automationResult,
+        'Жду следующий шаг на host',
+      ),
+      reasonCode,
+    }
+  }
+
+  return {
+    kind: 'inspecting',
+    nextState: AUTOMATION_MACHINE_STATES.INSPECTING_HOST_PAGE,
+    pollDelayMs,
+    statusText: buildAutomationProgressMessage(
+      automationResult,
+      'Повторно анализирую страницу host',
+    ),
+    reasonCode: reasonCode ?? null,
+  }
+}
+
+const isManualFallbackError = (error) => {
+  const errorCode = getDownloadAutomationErrorCode(error)
+  return Boolean(errorCode && MANUAL_FALLBACK_ERROR_CODE_SET.has(errorCode))
+}
+
 const runAutomaticDownloadAttempt = async (request, jobState) => {
-  const hiddenWindow = getHiddenDownloadWindow()
+  const hiddenWindow = getAutomaticDownloadWindow()
   if (jobState) {
     jobState.window = hiddenWindow
   }
@@ -1620,6 +2410,8 @@ const runAutomaticDownloadAttempt = async (request, jobState) => {
 
     const automationState = {
       downloadStarted: false,
+      machineState: AUTOMATION_MACHINE_STATES.INITIALIZING,
+      machineStateUpdatedAtUnixMs: Date.now(),
     }
 
     const archivePathPromise = waitForArchiveDownload(
@@ -1639,6 +2431,17 @@ const runAutomaticDownloadAttempt = async (request, jobState) => {
     const [archivePath] = await Promise.all([archivePathPromise, drivePromise])
     throwIfDownloadCancelled(jobState)
     return archivePath
+  } catch (error) {
+    if (!isDownloadCancelledError(error) && !jobState?.cancelled) {
+      await recordAutomationFailure(
+        hiddenWindow,
+        request,
+        jobState,
+        error,
+        'automatic_attempt',
+      )
+    }
+    throw error
   } finally {
     if (jobState?.window === hiddenWindow) {
       jobState.window = null
@@ -1663,6 +2466,25 @@ const runManualDownloadAttempt = async (request, jobState) => {
       })
 
       return { action: 'deny' }
+    })
+    transitionAutomationMachineState(
+      request,
+      jobState,
+      automationState,
+      AUTOMATION_MACHINE_STATES.MANUAL_WINDOW_OPENED,
+      {
+        phase: 'manual_window_opened',
+        reasonCode: AUTOMATION_REASON_CODES.MANUAL_ACTION_REQUIRED,
+        note: 'Открыто видимое окно для ручного продолжения.',
+        lastUrl: request.downloadUrl,
+        retryAfterMs: null,
+        windowMode: 'visible',
+      },
+    )
+    logAutomationEvent(jobState, 'manual_window_opened', {
+      threadLink: request.threadLink,
+      hostLabel: request.hostLabel ?? null,
+      downloadUrl: request.downloadUrl,
     })
 
     updateGameRecord(request.threadLink, {
@@ -1693,6 +2515,8 @@ const runManualDownloadAttempt = async (request, jobState) => {
 
     const automationState = {
       downloadStarted: false,
+      machineState: AUTOMATION_MACHINE_STATES.INITIALIZING,
+      machineStateUpdatedAtUnixMs: Date.now(),
     }
 
     return await waitForArchiveDownload(
@@ -1705,6 +2529,17 @@ const runManualDownloadAttempt = async (request, jobState) => {
         rejectOnWindowClose: true,
       },
     )
+  } catch (error) {
+    if (!isDownloadCancelledError(error) && !jobState?.cancelled) {
+      await recordAutomationFailure(
+        visibleWindow,
+        request,
+        jobState,
+        error,
+        'manual_attempt',
+      )
+    }
+    throw error
   } finally {
     if (jobState?.window === visibleWindow) {
       jobState.window = null
@@ -1753,9 +2588,45 @@ const finalizeDownloadedArchive = async (request, archivePath, jobState) => {
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl: request.downloadUrl,
   })
+  updateAutomationDebugInfo(request, jobState, {
+    phase: 'installed',
+    reasonCode: null,
+    note: launchTargetPath
+      ? `Архив распакован. Launch target: ${path.basename(launchTargetPath)}.`
+      : 'Архив распакован.',
+    lastUrl: request.downloadUrl,
+    retryAfterMs: null,
+  })
+  logAutomationEvent(jobState, 'install_completed', {
+    threadLink: request.threadLink,
+    hostLabel: request.hostLabel ?? null,
+    archivePath,
+    installDir,
+    launchTargetPath,
+  })
 }
 
-const markDownloadError = (request, error) => {
+const markDownloadError = (request, error, jobState = null) => {
+  const errorCode = getDownloadAutomationErrorCode(error)
+  if (jobState?.debug) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Не удалось скачать игру.'
+    updateAutomationDebugInfo(request, jobState, {
+      reasonCode: errorCode ?? AUTOMATION_REASON_CODES.AUTOMATION_ERROR,
+      note: errorMessage,
+      lastUrl: request.downloadUrl,
+      retryAfterMs: null,
+    })
+    logAutomationEvent(jobState, 'download_error_final', {
+      threadLink: request.threadLink,
+      hostLabel: request.hostLabel ?? null,
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
+    })
+  }
+
   updateGameRecord(request.threadLink, {
     threadTitle: request.threadTitle,
     status: 'error',
@@ -1801,6 +2672,7 @@ const runDownloadJob = async (request, jobState) => {
     markDownloadError(
       fallbackAttemptRequest,
       new Error('Не найдено доступных зеркал для скачивания.'),
+      jobState,
     )
     return
   }
@@ -1816,7 +2688,7 @@ const runDownloadJob = async (request, jobState) => {
         return
       }
 
-      markDownloadError(fallbackAttemptRequest, error)
+      markDownloadError(fallbackAttemptRequest, error, jobState)
     }
     return
   }
@@ -1852,6 +2724,25 @@ const runDownloadJob = async (request, jobState) => {
   if (manualFallbackSource) {
     const manualAttemptRequest = createAttemptRequest(request, manualFallbackSource)
 
+    transitionAutomationMachineState(
+      request,
+      jobState,
+      null,
+      AUTOMATION_MACHINE_STATES.MANUAL_FALLBACK_PENDING,
+      {
+        phase: 'manual_fallback_pending',
+        reasonCode: AUTOMATION_REASON_CODES.MANUAL_ACTION_REQUIRED,
+        note: 'Автоматика не справилась, переключаюсь на ручное продолжение.',
+        lastUrl: manualAttemptRequest.downloadUrl,
+        retryAfterMs: null,
+        windowMode: 'visible',
+      },
+    )
+    logAutomationEvent(jobState, 'manual_fallback_requested', {
+      threadLink: request.threadLink,
+      hostLabel: manualAttemptRequest.hostLabel ?? null,
+      downloadUrl: manualAttemptRequest.downloadUrl,
+    })
     updateGameRecord(request.threadLink, {
       threadTitle: request.threadTitle,
       status: 'resolving',
@@ -1879,6 +2770,7 @@ const runDownloadJob = async (request, jobState) => {
       markDownloadError(
         manualAttemptRequest,
         new Error(formatFinalDownloadFailureMessage(error)),
+        jobState,
       )
       return
     }
@@ -1887,6 +2779,7 @@ const runDownloadJob = async (request, jobState) => {
   markDownloadError(
     createAttemptRequest(request, downloadSourceList[downloadSourceList.length - 1]),
     new Error(formatFinalDownloadFailureMessage(lastError)),
+    jobState,
   )
 }
 
@@ -1963,6 +2856,14 @@ const queueDownloadJob = (request) => {
     return
   }
 
+  const jobState = {
+    cancelled: false,
+    window: null,
+    downloadItem: null,
+    extractProcess: null,
+    debug: createDownloadDebugState(request),
+  }
+
   updateGameRecord(request.threadLink, {
     threadTitle: request.threadTitle,
     status: 'queued',
@@ -1973,14 +2874,17 @@ const queueDownloadJob = (request) => {
     lastHostLabel: request.hostLabel ?? null,
     lastDownloadUrl:
       typeof request.downloadUrl === 'string' ? request.downloadUrl : null,
+    automationDebug: jobState.debug.info,
   })
-
-  const jobState = {
-    cancelled: false,
-    window: null,
-    downloadItem: null,
-    extractProcess: null,
-  }
+  logAutomationEvent(jobState, 'job_queued', {
+    threadLink: request.threadLink,
+    hostLabel: request.hostLabel ?? null,
+    downloadUrl: request.downloadUrl,
+    manualOnly: request.manualOnly === true,
+    windowMode: jobState.debug.info.windowMode,
+    sessionDir: jobState.debug.sessionDir,
+    logFilePath: jobState.debug.logFilePath,
+  })
   const nextJob = runDownloadJob(request, jobState).finally(() => {
     activeDownloadJobs.delete(request.threadLink)
   })
@@ -2319,14 +3223,44 @@ const registerIpcHandlers = () => {
   ipcMain.on('localData:saveListsSync', (event, value) => {
     event.returnValue = writeLocalDataFileValue('lists', value)
   })
+  ipcMain.handle('localData:saveLists', async (_event, value) => {
+    writeLocalDataFileValue('lists', value)
+    return true
+  })
   ipcMain.on('localData:saveSettingsSync', (event, value) => {
     event.returnValue = writeLocalDataFileValue('settings', value)
+  })
+  ipcMain.handle('localData:saveSettings', async (_event, value) => {
+    writeLocalDataFileValue('settings', value)
+    return true
+  })
+  ipcMain.on('localData:saveCatalogSync', (event, value) => {
+    event.returnValue = writeLocalDataFileValue('catalog', value)
+  })
+  ipcMain.handle('localData:saveCatalog', async (_event, value) => {
+    writeLocalDataFileValue('catalog', value)
+    return true
   })
   ipcMain.on('localData:clearListsSync', (event) => {
     event.returnValue = writeLocalDataFileValue('lists', null)
   })
+  ipcMain.handle('localData:clearLists', async () => {
+    writeLocalDataFileValue('lists', null)
+    return true
+  })
   ipcMain.on('localData:clearSettingsSync', (event) => {
     event.returnValue = writeLocalDataFileValue('settings', null)
+  })
+  ipcMain.handle('localData:clearSettings', async () => {
+    writeLocalDataFileValue('settings', null)
+    return true
+  })
+  ipcMain.on('localData:clearCatalogSync', (event) => {
+    event.returnValue = writeLocalDataFileValue('catalog', null)
+  })
+  ipcMain.handle('localData:clearCatalog', async () => {
+    writeLocalDataFileValue('catalog', null)
+    return true
   })
   ipcMain.handle('localData:openFolder', async () => {
     ensureDirectory(app.getPath('userData'))
@@ -2337,8 +3271,26 @@ const registerIpcHandlers = () => {
     return true
   })
 
-  ipcMain.handle('app:openExternal', async (_event, targetUrl) => {
-    await shell.openExternal(targetUrl)
+  ipcMain.handle('app:openExternal', async (event, targetUrl, rawOptions) => {
+    const openOptions = normalizeOpenExternalOptions(rawOptions)
+    const shellOptions =
+      openOptions.background && process.platform === 'darwin'
+        ? { activate: false }
+        : undefined
+
+    await shell.openExternal(targetUrl, shellOptions)
+
+    if (openOptions.background) {
+      refocusWindowAfterExternalOpen(BrowserWindow.fromWebContents(event.sender))
+    }
+
+    return true
+  })
+  ipcMain.handle('app:restart', async () => {
+    app.relaunch()
+    setImmediate(() => {
+      app.exit(0)
+    })
     return true
   })
 

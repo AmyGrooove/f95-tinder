@@ -58,6 +58,90 @@ body {
   overflow: hidden;
 }
 
+.appCrashRoot {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.appCrashPanel {
+  width: min(760px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 24px;
+  border: 1px solid rgba(63, 91, 143, 0.82);
+  background:
+    linear-gradient(180deg, rgba(30, 44, 73, 0.46), rgba(11, 16, 25, 0.96)),
+    rgba(11, 16, 25, 0.94);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.appCrashEyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: rgba(146, 191, 255, 0.92);
+}
+
+.appCrashTitle {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.05;
+}
+
+.appCrashText {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.appCrashMessage {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(186, 78, 109, 0.45);
+  background: rgba(88, 22, 38, 0.28);
+  color: #ffd9e1;
+  font-weight: 600;
+}
+
+.appCrashActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.appCrashDetailsBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.appCrashDetailsBlock summary {
+  cursor: pointer;
+  color: rgba(153, 198, 255, 0.96);
+  font-weight: 700;
+}
+
+.appCrashDetails {
+  margin: 0;
+  padding: 14px 16px;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.96);
+  background: rgba(8, 12, 19, 0.96);
+  color: rgba(224, 234, 255, 0.88);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
@@ -130,6 +214,56 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.syncProgressPanel {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.syncProgressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.syncProgressTrack {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 48, 74, 0.92);
+  background:
+    linear-gradient(180deg, rgba(18, 26, 40, 0.92), rgba(10, 15, 24, 0.96));
+}
+
+.syncProgressFill {
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(116, 170, 255, 0.96), rgba(47, 125, 255, 0.98));
+  box-shadow:
+    0 0 18px rgba(47, 125, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  transition: width 220ms ease;
+}
+
+.syncProgressFillIndeterminate {
+  width: 32%;
+  animation: syncProgressIndeterminate 1.25s ease-in-out infinite;
+}
+
+@keyframes syncProgressIndeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(330%);
+  }
 }
 
 .pill {
@@ -849,6 +983,10 @@ body {
   gap: 12px;
 }
 
+.swipeActionSidebarLocked {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .swipeSideActionButton {
   min-height: 0;
   height: 100%;
@@ -896,6 +1034,32 @@ body {
 
 .swipeActionUndo:hover {
   border-color: rgba(86, 138, 255, 0.72);
+}
+
+.swipeActionLockNotice {
+  height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 16px 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 48, 74, 0.9);
+  background:
+    linear-gradient(180deg, rgba(25, 39, 67, 0.16), rgba(13, 20, 33, 0.84)),
+    rgba(13, 20, 33, 0.74);
+}
+
+.swipeActionLockTitle {
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.swipeActionLockText {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .swipeStatusBox {
@@ -2684,6 +2848,129 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.dashboardOverview {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboardOverviewCardsRow {
+  margin-top: 12px;
+}
+
+.dashboardOverviewCompactCards {
+  margin-top: 10px;
+}
+
+.dashboardOverviewMetricMeta {
+  margin-top: 6px;
+}
+
+.dashboardOverviewSectionGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.dashboardOverviewListGrid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboardOverviewListCard {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboardOverviewListCardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.dashboardOverviewListCount {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dashboardOverviewFactGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboardOverviewFactItem {
+  display: grid;
+  gap: 4px;
+}
+
+.dashboardOverviewMetaList {
+  display: grid;
+  gap: 4px;
+}
+
+.dashboardOverviewPillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dashboardOverviewPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 999px;
+  background: rgba(18, 26, 40, 0.9);
+  font-size: 13px;
+}
+
+.dashboardOverviewPill strong {
+  color: #d9e7ff;
+}
+
+.dashboardOverviewEntryList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dashboardOverviewEntryItem {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 14px;
+  background: rgba(12, 18, 30, 0.72);
+}
+
+.dashboardOverviewEntryTitle {
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.dashboardOverviewEntryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dashboardOverviewEntryBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(47, 125, 255, 0.16);
+  color: #d9e7ff;
+}
+
 @media (max-width: 1200px) {
   .dashboardCardsRow {
     grid-template-columns: repeat(2, 1fr);
@@ -2692,6 +2979,12 @@ body {
 
 @media (max-width: 520px) {
   .dashboardCardsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardOverviewSectionGrid,
+  .dashboardOverviewListGrid,
+  .dashboardOverviewFactGrid {
     grid-template-columns: 1fr;
   }
 }
