@@ -1,19 +1,17 @@
-# F95 Tinder (локально)
+# F95 Tinder (Electron)
 
 ## Запуск
 1) pnpm i
 2) pnpm dev
 
-## Launcher mode
-- Для desktop launcher поверх текущего UI:
-  1) `pnpm dev`
-  2) в другом окне `pnpm electron`
-- Для production-сборки:
-  1) `pnpm build`
-  2) `pnpm start`
+`pnpm dev` теперь сам поднимает Vite renderer и открывает Electron.
+
+## Production
+1) `pnpm build`
+2) `pnpm start`
 
 ## Что умеет launcher
-- Кнопка `Скачать` в Electron-режиме больше не открывает просто ссылку: она запускает локальную очередь скачивания.
+- Кнопка `Скачать` больше не открывает просто ссылку: она запускает локальную очередь скачивания.
 - Приложение пытается пройти masked / host page автоматически через скрытое окно Electron.
 - Host automation вынесен в `electron/download-host-automation.cjs`.
 - Для `PIXELDRAIN`, `GOFILE` и `DATANODES` уже есть отдельные placeholder-сценарии; пока они используют generic fallback, но их можно наполнять точными шагами по каждому host.
@@ -22,8 +20,9 @@
 - Если host требует captcha / human verification или отдает не архив, игра переводится в статус ошибки.
 
 ## Важно
-- Запросы идут через Vite proxy /f95, иначе браузер упирается в CORS.
-- Данные (сессия, избранное, мусор) и кэш страниц сохраняются в localStorage.
+- Проект больше не поддерживает browser-only запуск. Если открыть renderer напрямую в браузере, приложение покажет заглушку и попросит стартовать Electron.
+- В dev-режиме Vite нужен только как источник renderer для Electron.
+- Сессия, настройки и каталог `latest` сохраняются в Electron JSON-файлы (`local-lists.json`, `local-settings.json`, `latest-catalog.json`).
 - F95 скрывает реальные download links для гостей. Поэтому без авторизации приложение может показать только названия mirrors, но не кликабельные ссылки.
 
 ## Download links

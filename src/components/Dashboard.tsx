@@ -1,6 +1,18 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
-import type { ListType, ProcessedThreadItem, SessionState } from "../f95/types";
+import {
+  loadDashboardViewState,
+  saveDashboardViewState,
+} from "../f95/storage";
+import type {
+  DashboardSortDirection,
+  DashboardSortField,
+  DashboardTabId,
+  DashboardViewState,
+  ListType,
+  ProcessedThreadItem,
+  SessionState,
+} from "../f95/types";
 import {
   assessThreadInterest,
   buildInterestProfile,
@@ -27,7 +39,9 @@ type DashboardCard = {
   addedAt: number;
   isPlayed: boolean;
   isInFavorites: boolean;
+  isBookmarkedDownloaded: boolean;
   isPlayedFavorite: boolean;
+  isPlayedDisliked: boolean;
   isInTrash: boolean;
   listType: ListType | null;
   sectionKey: "favorite" | "trash" | "played";
@@ -35,9 +49,7 @@ type DashboardCard = {
   interestScore: number;
 };
 
-type DashboardSortField = "addedAt" | "rating" | "title" | "interest";
-
-type DashboardTabId = "bookmarks" | "trash" | "played";
+type DashboardGameModalTab = "overview" | "interest";
 
 type DashboardProps = {
   sessionState: SessionState;
@@ -48,6 +60,8 @@ type DashboardProps = {
   prefixesMap: Record<string, string>;
   moveLinkToList: (link: string, listType: ListType) => void;
   togglePlayedFavoriteLink: (link: string) => void;
+  togglePlayedDislikedLink: (link: string) => void;
+  toggleBookmarkedDownloadedLink: (link: string) => void;
   removeLinkFromList: (link: string, listType: ListType) => void;
   pickCoverForLink: (
     threadLink: string,
@@ -93,7 +107,7 @@ const createInitialVisibleCardCounts = (): Record<DashboardTabId, number> => ({
 const sortCards = (
   cards: DashboardCard[],
   sortField: DashboardSortField,
-  sortDirection: "desc" | "asc",
+  sortDirection: DashboardSortDirection,
 ) => {
   const multiplier = sortDirection === "desc" ? -1 : 1;
   return [...cards].sort((first, second) => {
@@ -181,6 +195,39 @@ const formatListTypeLabel = (value: ListType | null) => {
   return "Не определен";
 };
 
+const formatPercentLabel = (value: number | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "0%";
+  }
+
+  return `${Math.round(value * 100)}%`;
+};
+
+const formatRawScoreLabel = (value: number | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "0.00";
+  }
+
+  return value.toFixed(2);
+};
+
+const resolveSectionKeyFromMembership = (
+  isInFavorites: boolean,
+  isInTrash: boolean,
+  isPlayed: boolean,
+): DashboardCard["sectionKey"] | null => {
+  if (isInFavorites) {
+    return "favorite";
+  }
+  if (isInTrash) {
+    return "trash";
+  }
+  if (isPlayed) {
+    return "played";
+  }
+  return null;
+};
+
 const buildPrefixLabels = (
   prefixIdList: number[] | undefined,
   prefixesMap: Record<string, string>,
@@ -247,30 +294,39 @@ export const Dashboard = ({
   prefixesMap,
   moveLinkToList,
   togglePlayedFavoriteLink,
+  togglePlayedDislikedLink,
+  toggleBookmarkedDownloadedLink,
   removeLinkFromList,
   pickCoverForLink,
   pickTitleForLink,
   pickCreatorForLink,
   pickRatingForLink,
 }: DashboardProps) => {
-  const [searchText, setSearchText] = useState("");
-  const [includeTags, setIncludeTags] = useState<string[]>([]);
-  const [excludeTags, setExcludeTags] = useState<string[]>([]);
+  const [dashboardViewState, setDashboardViewState] = useState<DashboardViewState>(
+    () => loadDashboardViewState(),
+  );
   const [isSearchAndSortOpen, setIsSearchAndSortOpen] = useState(false);
   const [isIncludeTagsOpen, setIsIncludeTagsOpen] = useState(false);
   const [isExcludeTagsOpen, setIsExcludeTagsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<DashboardTabId>("bookmarks");
-  const [onlyUpdatedTracked, setOnlyUpdatedTracked] = useState(false);
-  const [showOnlyPlayedFavorites, setShowOnlyPlayedFavorites] = useState(false);
-  const [sortField, setSortField] = useState<DashboardSortField>("addedAt");
-  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("asc");
-  const [showInterestBadges, setShowInterestBadges] = useState(true);
   const [visibleCardCountByTab, setVisibleCardCountByTab] = useState(
     createInitialVisibleCardCounts,
   );
-  const [activeGameCard, setActiveGameCard] = useState<DashboardCard | null>(
+  const [activeGameThreadLink, setActiveGameThreadLink] = useState<string | null>(
     null,
   );
+  const [activeGameModalTab, setActiveGameModalTab] =
+    useState<DashboardGameModalTab>("overview");
+  const {
+    activeTab,
+    searchText,
+    includeTags,
+    excludeTags,
+    onlyUpdatedTracked,
+    showOnlyPlayedFavorites,
+    sortField,
+    sortDirection,
+    showInterestBadges,
+  } = dashboardViewState;
   const playedLinks = useMemo(
     () => sessionState.playedLinks,
     [sessionState.playedLinks],
@@ -280,9 +336,17 @@ export const Dashboard = ({
     () => new Set(sessionState.favoritesLinks),
     [sessionState.favoritesLinks],
   );
+  const bookmarkedDownloadedLinkSet = useMemo(
+    () => new Set(sessionState.bookmarkedDownloadedLinks),
+    [sessionState.bookmarkedDownloadedLinks],
+  );
   const playedFavoriteLinkSet = useMemo(
     () => new Set(sessionState.playedFavoriteLinks),
     [sessionState.playedFavoriteLinks],
+  );
+  const playedDislikedLinkSet = useMemo(
+    () => new Set(sessionState.playedDislikedLinks),
+    [sessionState.playedDislikedLinks],
   );
   const trashLinkSet = useMemo(
     () => new Set(sessionState.trashLinks),
@@ -307,6 +371,26 @@ export const Dashboard = ({
       void onOpenThreadInBackground(threadLink);
     },
     [onOpenThreadInBackground],
+  );
+  const updateDashboardViewState = useCallback(
+    (
+      updater:
+        | Partial<DashboardViewState>
+        | ((previous: DashboardViewState) => DashboardViewState),
+    ) => {
+      setDashboardViewState((previous) => {
+        const nextDashboardViewState =
+          typeof updater === "function"
+            ? updater(previous)
+            : {
+                ...previous,
+                ...updater,
+              };
+        saveDashboardViewState(nextDashboardViewState);
+        return nextDashboardViewState;
+      });
+    },
+    [],
   );
 
   const trackedLinks = useMemo(() => {
@@ -365,11 +449,15 @@ export const Dashboard = ({
     [deferredSearchText],
   );
 
-  const shouldComputeInterest = sortField === "interest" || showInterestBadges;
+  const shouldComputeInterest =
+    sortField === "interest" ||
+    showInterestBadges ||
+    activeGameThreadLink !== null;
   const interestProfile = useMemo(
     () => (shouldComputeInterest ? buildInterestProfile(sessionState) : null),
     [
       sessionState.favoritesLinks,
+      sessionState.playedDislikedLinks,
       sessionState.playedFavoriteLinks,
       sessionState.playedLinks,
       sessionState.processedThreadItemsByLink,
@@ -453,25 +541,112 @@ export const Dashboard = ({
     .filter(Boolean)
     .join(" • ");
 
-  const buildTags = (threadLink: string) => {
-    const processedItem = sessionState.processedThreadItemsByLink[threadLink];
-    if (processedItem?.tags && processedItem.tags.length > 0) {
-      return processedItem.tags;
-    }
+  const buildTags = useCallback(
+    (threadLink: string) => {
+      const processedItem = sessionState.processedThreadItemsByLink[threadLink];
+      if (processedItem?.tags && processedItem.tags.length > 0) {
+        return processedItem.tags;
+      }
 
-    const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
-    if (threadIdentifier === null) {
-      return [];
-    }
+      const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
+      if (threadIdentifier === null) {
+        return [];
+      }
 
-    const threadItem =
-      sessionState.threadItemsByIdentifier[String(threadIdentifier)];
-    if (!threadItem || !Array.isArray(threadItem.tags)) {
-      return [];
-    }
+      const threadItem =
+        sessionState.threadItemsByIdentifier[String(threadIdentifier)];
+      if (!threadItem || !Array.isArray(threadItem.tags)) {
+        return [];
+      }
 
-    return threadItem.tags;
-  };
+      return threadItem.tags;
+    },
+    [sessionState.processedThreadItemsByLink, sessionState.threadItemsByIdentifier],
+  );
+
+  const buildCard = useCallback(
+    (threadLink: string, sectionKey: DashboardCard["sectionKey"]): DashboardCard => {
+      const processedItem = sessionState.processedThreadItemsByLink[threadLink];
+      const isUpdated = hasProcessedThreadItemUpdate(processedItem);
+      const isInFavorites = favoritesLinkSet.has(threadLink);
+      const isBookmarkedDownloaded =
+        sectionKey === "favorite" && bookmarkedDownloadedLinkSet.has(threadLink);
+      const isPlayedFavorite = playedFavoriteLinkSet.has(threadLink);
+      const isPlayedDisliked =
+        sectionKey === "played" && playedDislikedLinkSet.has(threadLink);
+      const isInTrash = trashLinkSet.has(threadLink);
+      const isPlayed = playedLinkSet.has(threadLink);
+      const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
+      const threadItem =
+        threadIdentifier !== null
+          ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
+          : null;
+      const version =
+        processedItem?.version?.trim() ||
+        (typeof threadItem?.version === "string" ? threadItem.version : "");
+      const engineLabel = buildPrefixLabels(
+        Array.isArray(threadItem?.prefixes)
+          ? threadItem.prefixes
+          : processedItem?.prefixes,
+        prefixesMap,
+      ).join(", ");
+
+      return {
+        threadLink,
+        coverUrl: pickCoverForLink(
+          threadLink,
+          sessionState.processedThreadItemsByLink,
+          sessionState.threadItemsByIdentifier,
+        ),
+        title: pickTitleForLink(
+          threadLink,
+          sessionState.processedThreadItemsByLink,
+          sessionState.threadItemsByIdentifier,
+        ),
+        creator: pickCreatorForLink(
+          threadLink,
+          sessionState.processedThreadItemsByLink,
+          sessionState.threadItemsByIdentifier,
+        ),
+        engineLabel,
+        rating: pickRatingForLink(
+          threadLink,
+          sessionState.processedThreadItemsByLink,
+          sessionState.threadItemsByIdentifier,
+        ),
+        version,
+        isUpdated,
+        tags: buildTags(threadLink),
+        addedAt: processedItem?.addedAtUnixSeconds ?? 0,
+        isPlayed,
+        isInFavorites,
+        isBookmarkedDownloaded,
+        isPlayedFavorite,
+        isPlayedDisliked,
+        isInTrash,
+        listType: sectionKey,
+        sectionKey,
+        interestAssessment: null,
+        interestScore: 50,
+      };
+    },
+    [
+      bookmarkedDownloadedLinkSet,
+      buildTags,
+      favoritesLinkSet,
+      pickCoverForLink,
+      pickCreatorForLink,
+      pickRatingForLink,
+      pickTitleForLink,
+      playedDislikedLinkSet,
+      playedFavoriteLinkSet,
+      playedLinkSet,
+      prefixesMap,
+      sessionState.processedThreadItemsByLink,
+      sessionState.threadItemsByIdentifier,
+      trashLinkSet,
+    ],
+  );
 
   const matchesTagFilters = (tags: number[]) => {
     const includeMatch =
@@ -495,87 +670,28 @@ export const Dashboard = ({
       }
       seenLinks.add(threadLink);
 
-      const title = pickTitleForLink(
-        threadLink,
-        sessionState.processedThreadItemsByLink,
-        sessionState.threadItemsByIdentifier,
-      );
-      const creator = pickCreatorForLink(
-        threadLink,
-        sessionState.processedThreadItemsByLink,
-        sessionState.threadItemsByIdentifier,
-      );
+      const card = buildCard(threadLink, sectionKey);
+      const title = card.title;
+      const creator = card.creator;
 
       const combinedText = normalizeText(`${title} ${creator}`);
-      if (
-        normalizedSearchText &&
-        !combinedText.includes(normalizedSearchText)
-      ) {
+      if (normalizedSearchText && !combinedText.includes(normalizedSearchText)) {
         continue;
       }
 
-      const cardTags = buildTags(threadLink);
-      if (!matchesTagFilters(cardTags)) {
+      if (!matchesTagFilters(card.tags)) {
         continue;
       }
 
-      const processedItem = sessionState.processedThreadItemsByLink[threadLink];
-      const isUpdated = hasProcessedThreadItemUpdate(processedItem);
-      if (onlyUpdatedTracked && sectionKey !== "trash" && !isUpdated) {
+      if (onlyUpdatedTracked && sectionKey !== "trash" && !card.isUpdated) {
         continue;
       }
 
-      const isInFavorites = favoritesLinkSet.has(threadLink);
-      const isPlayedFavorite = playedFavoriteLinkSet.has(threadLink);
-      const isInTrash = trashLinkSet.has(threadLink);
-      const isPlayed = playedLinkSet.has(threadLink);
-      if (sectionKey === "played" && showOnlyPlayedFavorites && !isPlayedFavorite) {
+      if (sectionKey === "played" && showOnlyPlayedFavorites && !card.isPlayedFavorite) {
         continue;
       }
 
-      const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
-      const threadItem =
-        threadIdentifier !== null
-          ? sessionState.threadItemsByIdentifier[String(threadIdentifier)]
-          : null;
-      const version =
-        processedItem?.version?.trim() ||
-        (typeof threadItem?.version === "string" ? threadItem.version : "");
-      const engineLabel = buildPrefixLabels(
-        Array.isArray(threadItem?.prefixes)
-          ? threadItem.prefixes
-          : processedItem?.prefixes,
-        prefixesMap,
-      ).join(", ");
-
-      filteredCards.push({
-        threadLink,
-        coverUrl: pickCoverForLink(
-          threadLink,
-          sessionState.processedThreadItemsByLink,
-          sessionState.threadItemsByIdentifier,
-        ),
-        title,
-        creator,
-        engineLabel,
-        rating: pickRatingForLink(
-          threadLink,
-          sessionState.processedThreadItemsByLink,
-          sessionState.threadItemsByIdentifier,
-        ),
-        version,
-        isUpdated,
-        tags: cardTags,
-        addedAt: processedItem?.addedAtUnixSeconds ?? 0,
-        isPlayed,
-        isInFavorites,
-        isPlayedFavorite,
-        isInTrash,
-        listType: sectionKey,
-        sectionKey,
-        interestAssessment: null,
-        interestScore: 50,
-      });
+      filteredCards.push(card);
     }
 
     const cardsForSort =
@@ -596,26 +712,16 @@ export const Dashboard = ({
     return createCards(playedLinks, "played");
   }, [
     activeTab,
+    buildCard,
     sessionState.favoritesLinks,
     sessionState.trashLinks,
     playedLinks,
-    sessionState.processedThreadItemsByLink,
-    sessionState.threadItemsByIdentifier,
-    favoritesLinkSet,
-    playedFavoriteLinkSet,
-    trashLinkSet,
-    playedLinkSet,
     sortField,
     sortDirection,
     normalizedSearchText,
     onlyUpdatedTracked,
     includeTagNumbers,
     excludeTagNumbers,
-    pickCoverForLink,
-    pickTitleForLink,
-    pickCreatorForLink,
-    pickRatingForLink,
-    prefixesMap,
     showOnlyPlayedFavorites,
     decorateCardsWithInterest,
   ]);
@@ -636,30 +742,64 @@ export const Dashboard = ({
     visibleCardCount,
   ]);
 
+  const activeGameCard = useMemo(() => {
+    if (!activeGameThreadLink) {
+      return null;
+    }
+
+    const sectionKey = resolveSectionKeyFromMembership(
+      favoritesLinkSet.has(activeGameThreadLink),
+      trashLinkSet.has(activeGameThreadLink),
+      playedLinkSet.has(activeGameThreadLink),
+    );
+    if (!sectionKey) {
+      return null;
+    }
+
+    return buildCard(activeGameThreadLink, sectionKey);
+  }, [
+    activeGameThreadLink,
+    buildCard,
+    favoritesLinkSet,
+    playedLinkSet,
+    trashLinkSet,
+  ]);
+
   const toggleIncludeTag = (tagId: string) => {
-    setIncludeTags((previous) => {
-      if (previous.includes(tagId)) {
-        return previous.filter((value) => value !== tagId);
-      }
-      return [...previous, tagId].filter(
-        (value) => !excludeTags.includes(value),
-      );
+    updateDashboardViewState((previous) => {
+      const nextIncludeTags = previous.includeTags.includes(tagId)
+        ? previous.includeTags.filter((value) => value !== tagId)
+        : [...previous.includeTags, tagId].filter(
+            (value) => !previous.excludeTags.includes(value),
+          );
+
+      return {
+        ...previous,
+        includeTags: nextIncludeTags,
+      };
     });
   };
 
   const toggleExcludeTag = (tagId: string) => {
-    setExcludeTags((previous) => {
-      if (previous.includes(tagId)) {
-        return previous.filter((value) => value !== tagId);
-      }
-      return [...previous, tagId].filter(
-        (value) => !includeTags.includes(value),
-      );
+    updateDashboardViewState((previous) => {
+      const nextExcludeTags = previous.excludeTags.includes(tagId)
+        ? previous.excludeTags.filter((value) => value !== tagId)
+        : [...previous.excludeTags, tagId].filter(
+            (value) => !previous.includeTags.includes(value),
+          );
+
+      return {
+        ...previous,
+        excludeTags: nextExcludeTags,
+      };
     });
   };
 
   const toggleSortDirection = () => {
-    setSortDirection((previous) => (previous === "desc" ? "asc" : "desc"));
+    updateDashboardViewState((previous) => ({
+      ...previous,
+      sortDirection: previous.sortDirection === "desc" ? "asc" : "desc",
+    }));
   };
 
   const favoritesUpdatedCount = useMemo(
@@ -777,6 +917,25 @@ export const Dashboard = ({
   const activeGameProcessedItem = activeGameCard
     ? sessionState.processedThreadItemsByLink[activeGameCard.threadLink] ?? null
     : null;
+  const activeGameInterestAssessment = useMemo(() => {
+    if (!activeGameCard || !interestProfile) {
+      return null;
+    }
+
+    return assessThreadInterest(
+      buildInterestCandidate(activeGameProcessedItem, activeGameThreadItem),
+      interestProfile,
+      tagsMap,
+      prefixesMap,
+    );
+  }, [
+    activeGameCard,
+    activeGameProcessedItem,
+    activeGameThreadItem,
+    interestProfile,
+    prefixesMap,
+    tagsMap,
+  ]);
   const activeGamePrefixLabels = buildPrefixLabels(
     Array.isArray(activeGameThreadItem?.prefixes)
       ? activeGameThreadItem.prefixes
@@ -803,6 +962,12 @@ export const Dashboard = ({
   const activeGameStateBadges = activeGameCard
     ? [
         activeGameCard.isUpdated ? "Есть апдейт" : null,
+        activeGameCard.listType === "favorite" && activeGameCard.isBookmarkedDownloaded
+          ? "Скачана"
+          : null,
+        activeGameCard.listType === "played" && activeGameCard.isPlayedDisliked
+          ? "Не очень"
+          : null,
         activeGameThreadItem?.new ? "New" : null,
         activeGameThreadItem?.watched ? "Watched" : null,
         activeGameThreadItem?.ignored ? "Ignored" : null,
@@ -811,6 +976,35 @@ export const Dashboard = ({
   const activeGameUpdateLabel = getProcessedThreadItemUpdateLabel(
     activeGameProcessedItem,
   );
+  const activeGameInterestInfoCards =
+    activeGameInterestAssessment && interestProfile
+      ? [
+          {
+            label: "Скор",
+            value: `${activeGameInterestAssessment.score}/100`,
+          },
+          {
+            label: "Уверенность",
+            value: formatPercentLabel(activeGameInterestAssessment.confidence),
+          },
+          {
+            label: "Raw score",
+            value: formatRawScoreLabel(activeGameInterestAssessment.rawScore),
+          },
+          {
+            label: "Сигналов",
+            value: String(interestProfile.trackedSignalsCount),
+          },
+          {
+            label: "Плюс-сигналы",
+            value: String(interestProfile.positiveSignalsCount),
+          },
+          {
+            label: "Минус-сигналы",
+            value: String(interestProfile.negativeSignalsCount),
+          },
+        ]
+      : [];
   const activeGameInfoCards = activeGameCard
     ? [
         {
@@ -845,20 +1039,31 @@ export const Dashboard = ({
       ]
     : [];
   const activeGameScreens = activeGameThreadItem?.screens ?? [];
+  const closeActiveGameModal = useCallback(() => {
+    setActiveGameThreadLink(null);
+    setActiveGameModalTab("overview");
+  }, []);
+
   useEffect(() => {
-    if (!activeGameCard) {
+    if (activeGameThreadLink && !activeGameCard) {
+      closeActiveGameModal();
+    }
+  }, [activeGameCard, activeGameThreadLink, closeActiveGameModal]);
+
+  useEffect(() => {
+    if (!activeGameThreadLink) {
       return undefined;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveGameCard(null);
+        closeActiveGameModal();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeGameCard]);
+  }, [activeGameThreadLink, closeActiveGameModal]);
 
   const renderCardActions = (card: DashboardCard) => {
     const isInFavorites = card.isInFavorites;
@@ -964,6 +1169,125 @@ export const Dashboard = ({
     );
   };
 
+  const renderGameModalActions = (card: DashboardCard) => {
+    const bookmarkedDownloadedLabel = card.isBookmarkedDownloaded
+      ? "Снять отметку 'Скачана'"
+      : "Пометить как скачанную";
+    const playedFavoriteLabel = card.isPlayedFavorite
+      ? "Убрать из любимого"
+      : "Добавить в любимое";
+    const playedDislikedLabel = card.isPlayedDisliked
+      ? "Снять отметку 'Не очень'"
+      : "Пометить как 'Не очень'";
+    const moveActionList = [
+      card.listType !== "favorite" ? (
+        <button
+          key="favorite"
+          className="button dashboardGameActionButton dashboardGameActionButtonFavorite"
+          type="button"
+          onClick={() => {
+            moveLinkToList(card.threadLink, "favorite");
+          }}
+        >
+          В закладки
+        </button>
+      ) : null,
+      card.listType !== "played" ? (
+        <button
+          key="played"
+          className="button dashboardGameActionButton dashboardGameActionButtonPlayed"
+          type="button"
+          onClick={() => {
+            moveLinkToList(card.threadLink, "played");
+          }}
+        >
+          В Играл
+        </button>
+      ) : null,
+      card.listType !== "trash" ? (
+        <button
+          key="trash"
+          className="button dashboardGameActionButton dashboardGameActionButtonTrash"
+          type="button"
+          onClick={() => {
+            moveLinkToList(card.threadLink, "trash");
+          }}
+        >
+          В мусор
+        </button>
+      ) : null,
+    ].filter(Boolean);
+    const statusActionList = [
+      card.listType === "favorite" ? (
+        <button
+          key="downloaded"
+          className={`button dashboardGameActionButton dashboardGameActionButtonDownloaded ${
+            card.isBookmarkedDownloaded
+              ? "dashboardGameActionButtonActive"
+              : ""
+          }`}
+          type="button"
+          aria-pressed={card.isBookmarkedDownloaded}
+          title={bookmarkedDownloadedLabel}
+          onClick={() => {
+            toggleBookmarkedDownloadedLink(card.threadLink);
+          }}
+        >
+          Скачана
+        </button>
+      ) : null,
+      card.listType === "played" ? (
+        <button
+          key="favorite-status"
+          className={`button dashboardGameActionButton dashboardGameActionButtonFavorite ${
+            card.isPlayedFavorite ? "dashboardGameActionButtonActive" : ""
+          }`}
+          type="button"
+          aria-pressed={card.isPlayedFavorite}
+          title={playedFavoriteLabel}
+          onClick={() => {
+            togglePlayedFavoriteLink(card.threadLink);
+          }}
+        >
+          Любимое
+        </button>
+      ) : null,
+      card.listType === "played" ? (
+        <button
+          key="disliked"
+          className={`button dashboardGameActionButton dashboardGameActionButtonDisliked ${
+            card.isPlayedDisliked ? "dashboardGameActionButtonActive" : ""
+          }`}
+          type="button"
+          aria-pressed={card.isPlayedDisliked}
+          title={playedDislikedLabel}
+          onClick={() => {
+            togglePlayedDislikedLink(card.threadLink);
+          }}
+        >
+          Не очень
+        </button>
+      ) : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="dashboardGameActionPanel">
+        {moveActionList.length > 0 ? (
+          <div className="dashboardGameActionSection">
+            <div className="dashboardGameActionSectionLabel">Перенести</div>
+            <div className="dashboardGameActionRow">{moveActionList}</div>
+          </div>
+        ) : null}
+        {statusActionList.length > 0 ? (
+          <div className="dashboardGameActionSection">
+            <div className="dashboardGameActionSectionLabel">Статус</div>
+            <div className="dashboardGameActionRow">{statusActionList}</div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   const renderCardsList = (
     cards: DashboardCard[],
     totalCardsCount: number,
@@ -993,9 +1317,17 @@ export const Dashboard = ({
         <div className="listGrid" style={{ marginTop: 12 }}>
           {cards.map((card) => {
             const showPlayedFavoriteButton = card.sectionKey === "played";
+            const showPlayedDislikedButton = card.sectionKey === "played";
+            const showBookmarkedDownloadedButton = card.sectionKey === "favorite";
             const playedFavoriteLabel = card.isPlayedFavorite
               ? "Убрать из любимого"
               : "Добавить в любимое";
+            const playedDislikedLabel = card.isPlayedDisliked
+              ? "Снять отметку 'Не очень'"
+              : "Пометить как 'Не очень'";
+            const bookmarkedDownloadedLabel = card.isBookmarkedDownloaded
+              ? "Снять отметку 'Скачана'"
+              : "Пометить как скачанную";
 
             return (
               <div
@@ -1030,6 +1362,42 @@ export const Dashboard = ({
                     <span className="srOnly">{playedFavoriteLabel}</span>
                   </button>
                 ) : null}
+                {showPlayedDislikedButton ? (
+                  <button
+                    className={`iconButton listItemFavoriteFloatingButton listItemPlayedDislikedFloatingButton ${
+                      card.isPlayedDisliked
+                        ? "listItemPlayedDislikedFloatingButtonActive"
+                        : ""
+                    }`}
+                    type="button"
+                    onClick={() => {
+                      togglePlayedDislikedLink(card.threadLink);
+                    }}
+                    title={playedDislikedLabel}
+                    aria-label={playedDislikedLabel}
+                  >
+                    <span aria-hidden>👎</span>
+                    <span className="srOnly">{playedDislikedLabel}</span>
+                  </button>
+                ) : null}
+                {showBookmarkedDownloadedButton ? (
+                  <button
+                    className={`iconButton listItemFavoriteFloatingButton listItemDownloadedFloatingButton ${
+                      card.isBookmarkedDownloaded
+                        ? "listItemDownloadedFloatingButtonActive"
+                        : ""
+                    }`}
+                    type="button"
+                    onClick={() => {
+                      toggleBookmarkedDownloadedLink(card.threadLink);
+                    }}
+                    title={bookmarkedDownloadedLabel}
+                    aria-label={bookmarkedDownloadedLabel}
+                  >
+                    <span aria-hidden>↓</span>
+                    <span className="srOnly">{bookmarkedDownloadedLabel}</span>
+                  </button>
+                ) : null}
                 <button
                   className="listItemOpenSurface"
                   type="button"
@@ -1037,7 +1405,10 @@ export const Dashboard = ({
                   onAuxClick={(event) => {
                     handleThreadAuxClick(event, card.threadLink);
                   }}
-                  onClick={() => setActiveGameCard(card)}
+                  onClick={() => {
+                    setActiveGameThreadLink(card.threadLink);
+                    setActiveGameModalTab("overview");
+                  }}
                 >
                   <div className="listItemCoverLink">
                     {card.coverUrl ? (
@@ -1055,11 +1426,25 @@ export const Dashboard = ({
 
                   <div className="listItemBody listItemPreviewBody">
                     <div className="listItemContent">
-                      {card.isUpdated ? (
+                      {card.isUpdated ||
+                      card.isBookmarkedDownloaded ||
+                      card.isPlayedDisliked ? (
                         <div className="listItemBadgeRow">
-                          <span className="listItemStatusBadge listItemStatusBadgeUpdated">
-                            Апдейт
-                          </span>
+                          {card.isUpdated ? (
+                            <span className="listItemStatusBadge listItemStatusBadgeUpdated">
+                              Апдейт
+                            </span>
+                          ) : null}
+                          {card.isPlayedDisliked ? (
+                            <span className="listItemStatusBadge listItemStatusBadgeDisliked">
+                              Не очень
+                            </span>
+                          ) : null}
+                          {card.isBookmarkedDownloaded ? (
+                            <span className="listItemStatusBadge listItemStatusBadgeDownloaded">
+                              Скачана
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -1151,7 +1536,7 @@ export const Dashboard = ({
             className={`button dashboardTabButton ${
               activeTab === item.id ? "dashboardTabButtonActive" : ""
             }`}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => updateDashboardViewState({ activeTab: item.id })}
           >
             {item.label}
           </button>
@@ -1182,7 +1567,11 @@ export const Dashboard = ({
                 <input
                   className="input"
                   value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
+                  onChange={(event) =>
+                    updateDashboardViewState({
+                      searchText: event.target.value,
+                    })
+                  }
                   placeholder="например: team18"
                 />
               </div>
@@ -1191,16 +1580,20 @@ export const Dashboard = ({
                 <div className="formRow dashboardSortField">
                   <div className="label">Сортировка</div>
                   <select
-                    className="input"
-                    value={sortField}
-                    onChange={(event) => {
-                      const nextSortField = event.target.value as DashboardSortField;
-                      setSortField(nextSortField);
-                      if (nextSortField === "interest") {
-                        setSortDirection("desc");
-                      }
-                    }}
-                  >
+                  className="input"
+                  value={sortField}
+                  onChange={(event) => {
+                    const nextSortField = event.target.value as DashboardSortField;
+                    updateDashboardViewState((previous) => ({
+                      ...previous,
+                      sortField: nextSortField,
+                      sortDirection:
+                        nextSortField === "interest"
+                          ? "desc"
+                          : previous.sortDirection,
+                    }));
+                  }}
+                >
                     <option value="addedAt">По дате добавления</option>
                     <option value="rating">По рейтингу</option>
                     <option value="interest">По весу</option>
@@ -1225,7 +1618,9 @@ export const Dashboard = ({
                   type="checkbox"
                   checked={onlyUpdatedTracked}
                   onChange={(event) =>
-                    setOnlyUpdatedTracked(event.target.checked)
+                    updateDashboardViewState({
+                      onlyUpdatedTracked: event.target.checked,
+                    })
                   }
                 />
                 <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
@@ -1240,7 +1635,9 @@ export const Dashboard = ({
                   type="checkbox"
                   checked={showInterestBadges}
                   onChange={(event) =>
-                    setShowInterestBadges(event.target.checked)
+                    updateDashboardViewState({
+                      showInterestBadges: event.target.checked,
+                    })
                   }
                 />
                 <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
@@ -1256,7 +1653,9 @@ export const Dashboard = ({
                     type="checkbox"
                     checked={showOnlyPlayedFavorites}
                     onChange={(event) =>
-                      setShowOnlyPlayedFavorites(event.target.checked)
+                      updateDashboardViewState({
+                        showOnlyPlayedFavorites: event.target.checked,
+                      })
                     }
                   />
                   <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
@@ -1312,7 +1711,7 @@ export const Dashboard = ({
           className="downloadModalOverlay"
           onMouseDown={(event) => {
             if (event.currentTarget === event.target) {
-              setActiveGameCard(null);
+              closeActiveGameModal();
             }
           }}
         >
@@ -1360,129 +1759,226 @@ export const Dashboard = ({
                     <div className="downloadModalMeta">
                       {activeGameCard.threadLink}
                     </div>
+                    <div className="dashboardGameHeroControls">
+                      <div className="downloadModalActions dashboardGameHeaderActions">
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => {
+                            void onOpenThread(activeGameCard.threadLink);
+                          }}
+                          onMouseDown={preventMiddleClickAutoScroll}
+                          onAuxClick={(event) => {
+                            handleThreadAuxClick(event, activeGameCard.threadLink);
+                          }}
+                        >
+                          Открыть страницу
+                        </button>
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={closeActiveGameModal}
+                        >
+                          Закрыть
+                        </button>
+                      </div>
+
+                      <div className="dashboardGameModalToolbar">
+                        {renderGameModalActions(activeGameCard)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="downloadModalActions">
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => {
-                    void onOpenThread(activeGameCard.threadLink);
-                  }}
-                  onMouseDown={preventMiddleClickAutoScroll}
-                  onAuxClick={(event) => {
-                    handleThreadAuxClick(event, activeGameCard.threadLink);
-                  }}
-                >
-                  Открыть страницу
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => setActiveGameCard(null)}
-                >
-                  Закрыть
-                </button>
               </div>
             </div>
 
             <div className="downloadModalBody">
-              <div className="swipeMetaBody">
-                <div className="cardFactRow">
-                  {activeGameFactPills.map((fact) => (
-                    <span key={fact.label} className="cardFactPill">
-                      {fact.label}: <strong>{fact.value}</strong>
-                    </span>
-                  ))}
+              <div className="dashboardGameContentTabs">
+                <div
+                  className="settingsTabBar dashboardGameTabBar"
+                  role="tablist"
+                  aria-label="Детали игры"
+                >
+                  <button
+                    className={`button settingsTabButton ${
+                      activeGameModalTab === "overview"
+                        ? "settingsTabButtonActive"
+                        : ""
+                    }`}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeGameModalTab === "overview"}
+                    onClick={() => setActiveGameModalTab("overview")}
+                  >
+                    Обзор
+                  </button>
+                  <button
+                    className={`button settingsTabButton ${
+                      activeGameModalTab === "interest"
+                        ? "settingsTabButtonActive"
+                        : ""
+                    }`}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeGameModalTab === "interest"}
+                    onClick={() => setActiveGameModalTab("interest")}
+                  >
+                    Интерес
+                  </button>
                 </div>
+              </div>
 
-                {activeGameStateBadges.length > 0 ? (
-                  <div className="cardStateBadgeRow">
-                    {activeGameStateBadges.map((badge) => (
-                      <span key={badge} className="cardStateBadge">
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-
-                {activeGamePrefixLabels.length > 0 ? (
-                  <div className="swipeMetaGroup">
-                    <div className="swipeMetaGroupLabel">Префиксы</div>
-                    <div className="tagChips">
-                      {activeGamePrefixLabels.map((prefixLabel) => (
-                        <span key={prefixLabel} className="tagChip">
-                          {prefixLabel}
+              {activeGameModalTab === "overview" ? (
+                <>
+                  <div className="swipeMetaBody">
+                    <div className="cardFactRow">
+                      {activeGameFactPills.map((fact) => (
+                        <span key={fact.label} className="cardFactPill">
+                          {fact.label}: <strong>{fact.value}</strong>
                         </span>
                       ))}
                     </div>
-                  </div>
-                ) : null}
 
-                {activeGameCard.tags.length > 0 ? (
-                  <div className="swipeMetaGroup">
-                    <div className="swipeMetaGroupLabel">Теги</div>
-                    <TagChips
-                      tags={activeGameCard.tags}
-                      tagsMap={tagsMap}
-                      maxVisible={18}
-                    />
-                  </div>
-                ) : null}
-              </div>
+                    {activeGameStateBadges.length > 0 ? (
+                      <div className="cardStateBadgeRow">
+                        {activeGameStateBadges.map((badge) => (
+                          <span key={badge} className="cardStateBadge">
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
 
-              <div className="gameSettingsInfoGrid dashboardGameInfoGrid">
-                {activeGameInfoCards.map((infoCard) => (
-                  <div
-                    key={infoCard.label}
-                    className="gameSettingsInfoCard dashboardGameInfoCard"
-                  >
-                    <div className="gameSettingsInfoLabel">{infoCard.label}</div>
-                    <div className="gameSettingsInfoValue dashboardGameInfoValue">
-                      {infoCard.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    {activeGamePrefixLabels.length > 0 ? (
+                      <div className="swipeMetaGroup">
+                        <div className="swipeMetaGroupLabel">Префиксы</div>
+                        <div className="tagChips">
+                          {activeGamePrefixLabels.map((prefixLabel) => (
+                            <span key={prefixLabel} className="tagChip">
+                              {prefixLabel}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
 
-              <div className="swipeScreensPanel">
-                <div className="swipeScreensPanelHeader">
-                  <div className="swipeMediaSectionLabel">Скриншоты</div>
-                  <div className="swipeScreensPanelMeta">
-                    {activeGameScreens.length}
-                  </div>
-                </div>
-
-                {activeGameScreens.length > 0 ? (
-                  <div className="screensGrid dashboardGameScreensGrid">
-                    {activeGameScreens.map((screenUrl, index) => (
-                      <button
-                        key={`${screenUrl}-${index}`}
-                        className="dashboardGameScreenButton"
-                        type="button"
-                        onClick={() =>
-                          onOpenImageViewer(activeGameScreens, index)
-                        }
-                      >
-                        <img
-                          className="screenImage"
-                          src={screenUrl}
-                          alt={`Скриншот ${index + 1}`}
-                          loading="lazy"
+                    {activeGameCard.tags.length > 0 ? (
+                      <div className="swipeMetaGroup">
+                        <div className="swipeMetaGroupLabel">Теги</div>
+                        <TagChips
+                          tags={activeGameCard.tags}
+                          tagsMap={tagsMap}
+                          maxVisible={18}
                         />
-                      </button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="gameSettingsInfoGrid dashboardGameInfoGrid">
+                    {activeGameInfoCards.map((infoCard) => (
+                      <div
+                        key={infoCard.label}
+                        className="gameSettingsInfoCard dashboardGameInfoCard"
+                      >
+                        <div className="gameSettingsInfoLabel">{infoCard.label}</div>
+                        <div className="gameSettingsInfoValue dashboardGameInfoValue">
+                          {infoCard.value}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="downloadEmptyState">
-                    {activeGameThreadItem
-                      ? "Для этой игры скриншоты не пришли."
-                      : "Полные метаданные и скриншоты появятся после синхронизации."}
+
+                  <div className="swipeScreensPanel">
+                    <div className="swipeScreensPanelHeader">
+                      <div className="swipeMediaSectionLabel">Скриншоты</div>
+                      <div className="swipeScreensPanelMeta">
+                        {activeGameScreens.length}
+                      </div>
+                    </div>
+
+                    {activeGameScreens.length > 0 ? (
+                      <div className="screensGrid dashboardGameScreensGrid">
+                        {activeGameScreens.map((screenUrl, index) => (
+                          <button
+                            key={`${screenUrl}-${index}`}
+                            className="dashboardGameScreenButton"
+                            type="button"
+                            onClick={() =>
+                              onOpenImageViewer(activeGameScreens, index)
+                            }
+                          >
+                            <img
+                              className="screenImage"
+                              src={screenUrl}
+                              alt={`Скриншот ${index + 1}`}
+                              loading="lazy"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="downloadEmptyState">
+                        {activeGameThreadItem
+                          ? "Для этой игры скриншоты не пришли."
+                          : "Полные метаданные и скриншоты появятся после синхронизации."}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="dashboardGameInterestPanel">
+                  {activeGameInterestAssessment ? (
+                    <>
+                      <div className="swipeInterestPanel">
+                        <div className="swipeInterestHeader">
+                          <div className="swipeMetaGroupLabel">Статус интереса</div>
+                          <span
+                            className={`swipeInterestBadge swipeInterestBadge${activeGameInterestAssessment.level[0].toUpperCase()}${activeGameInterestAssessment.level.slice(1)}`}
+                          >
+                            {activeGameInterestAssessment.label}
+                          </span>
+                        </div>
+
+                        <div className="swipeInterestSummary">
+                          {activeGameInterestAssessment.summary}
+                        </div>
+
+                        {activeGameInterestAssessment.reasons.length > 0 ? (
+                          <div className="swipeInterestReasonRow">
+                            {activeGameInterestAssessment.reasons.map((reason) => (
+                              <span
+                                key={`${reason.tone}-${reason.text}`}
+                                className={`swipeInterestReasonChip swipeInterestReasonChip${reason.tone[0].toUpperCase()}${reason.tone.slice(1)}`}
+                              >
+                                {reason.text}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="gameSettingsInfoGrid dashboardGameInfoGrid">
+                        {activeGameInterestInfoCards.map((infoCard) => (
+                          <div
+                            key={infoCard.label}
+                            className="gameSettingsInfoCard dashboardGameInfoCard"
+                          >
+                            <div className="gameSettingsInfoLabel">{infoCard.label}</div>
+                            <div className="gameSettingsInfoValue dashboardGameInfoValue">
+                              {infoCard.value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="downloadEmptyState">
+                      Данные интереса появятся после того, как для игры будут доступны
+                      метаданные и накопятся сигналы в списках.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

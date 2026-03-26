@@ -3175,11 +3175,13 @@ const isRendererNavigation = (targetUrl) => {
 const createMainWindow = async () => {
   const preloadPath = path.join(__dirname, 'preload.cjs')
   mainWindow = new BrowserWindow({
+    show: false,
     width: 1600,
     height: 980,
     minWidth: 1280,
     minHeight: 760,
     autoHideMenuBar: true,
+    backgroundColor: '#0b0f16',
     webPreferences: {
       preload: preloadPath,
       sandbox: false,
@@ -3200,6 +3202,12 @@ const createMainWindow = async () => {
     }
   })
 
+  mainWindow.once('ready-to-show', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show()
+    }
+  })
+
   const devServerUrl = await resolveRendererUrl()
   if (devServerUrl) {
     await mainWindow.loadURL(devServerUrl)
@@ -3209,7 +3217,7 @@ const createMainWindow = async () => {
   const distIndexPath = path.join(APP_ROOT, 'dist', 'index.html')
   if (!fs.existsSync(distIndexPath)) {
     throw new Error(
-      'Не найден dist/index.html. Запусти Vite dev server или собери renderer через npm run build.',
+      'Не найден dist/index.html. Запусти pnpm dev или сначала собери renderer через pnpm build.',
     )
   }
 

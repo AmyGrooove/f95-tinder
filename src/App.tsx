@@ -43,11 +43,14 @@ import {
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "./f95/utils";
 import {
   clearAllStoredData,
+  loadDashboardViewState,
   normalizeDefaultSwipeSettings,
+  normalizeDashboardViewState,
   normalizePrefixesMap,
   normalizeSessionState,
   normalizeTagsMap,
   saveDefaultSwipeSettings,
+  saveDashboardViewState,
   savePrefixesMap,
   saveSessionState,
   saveTagsMap,
@@ -63,6 +66,7 @@ import {
   buildInterestProfile,
 } from "./f95/recommendations";
 import type {
+  DashboardViewState,
   DefaultSwipeSettings,
   DownloadLink,
   ListType,
@@ -521,6 +525,7 @@ type LocalListsBackup = {
 
 type LocalSettingsBackup = {
   defaultSwipeSettings: DefaultSwipeSettings;
+  dashboardViewState: DashboardViewState;
   tagsMap: Record<string, string>;
   prefixesMap: Record<string, string>;
   preferredDownloadHosts: string[];
@@ -633,6 +638,7 @@ const extractLocalSettingsBackup = (value: unknown): LocalSettingsBackup => {
 
   return {
     defaultSwipeSettings: normalizeDefaultSwipeSettings(rawValue.defaultSwipeSettings),
+    dashboardViewState: normalizeDashboardViewState(rawValue.dashboardViewState),
     tagsMap: normalizeTagsMap(rawValue.tagsMap),
     prefixesMap: normalizePrefixesMap(rawValue.prefixesMap),
     preferredDownloadHosts: normalizeImportedStringList(
@@ -721,6 +727,8 @@ const App = () => {
     stopMetadataSync,
     moveLinkToList,
     togglePlayedFavoriteLink,
+    togglePlayedDislikedLink,
+    toggleBookmarkedDownloadedLink,
     removeLinkFromList,
   } = useF95Browser();
   const {
@@ -972,6 +980,55 @@ const App = () => {
     );
   }, [metadataSyncState.currentPage, metadataSyncState.pageLimit]);
 
+  const startupCatalogCount = Object.keys(
+    sessionState.threadItemsByIdentifier,
+  ).length;
+  const hasStartupCatalogData = startupCatalogCount > 0;
+  const shouldKeepStartupSplashVisible =
+    isLoadingPage || (metadataSyncState.isRunning && !hasStartupCatalogData);
+  const [isStartupSplashVisible, setIsStartupSplashVisible] = useState(true);
+  const startupSplashProgressPercent = metadataSyncState.isRunning
+    ? swipeSyncProgressPercent
+    : hasStartupCatalogData
+      ? 100
+      : null;
+  const startupSplashStatusText = metadataSyncState.isStopping
+    ? "Завершаю стартовую синхронизацию..."
+    : metadataSyncState.isPaused
+      ? "Стартовая синхронизация на паузе"
+      : metadataSyncState.isRunning
+        ? "Собираю стартовый каталог latest"
+        : hasStartupCatalogData
+          ? "Локальный каталог готов"
+          : "Поднимаю локальные данные";
+  const startupSplashMetaText = metadataSyncState.isRunning
+    ? `Страница ${metadataSyncState.currentPage || 0}${
+        metadataSyncState.pageLimit > 0
+          ? ` из ${metadataSyncState.pageLimit}`
+          : ""
+      } • Сохранено игр: ${metadataSyncState.syncedCount}`
+    : hasStartupCatalogData
+      ? `Загружено из локального каталога: ${startupCatalogCount}`
+      : "Читаю списки, настройки и стартовый каталог.";
+
+  useEffect(() => {
+    if (!isStartupSplashVisible || shouldKeepStartupSplashVisible) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsStartupSplashVisible(false);
+    }, hasStartupCatalogData ? 420 : 180);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    hasStartupCatalogData,
+    isStartupSplashVisible,
+    shouldKeepStartupSplashVisible,
+  ]);
+
   const isSwipeInteractionLocked =
     metadataSyncState.isRunning && !metadataSyncState.isPaused;
 
@@ -1199,6 +1256,7 @@ const App = () => {
         latestGamesSort: defaultLatestGamesSort,
         filterState: defaultFilterState,
       }),
+      dashboardViewState: loadDashboardViewState(),
       tagsMap,
       prefixesMap,
       preferredDownloadHosts,
@@ -1237,6 +1295,7 @@ const App = () => {
       }
 
       saveDefaultSwipeSettings(backup.defaultSwipeSettings);
+      saveDashboardViewState(backup.dashboardViewState);
       saveTagsMap(backup.tagsMap);
       savePrefixesMap(backup.prefixesMap);
       savePreferredDownloadHosts(backup.preferredDownloadHosts);
@@ -2514,6 +2573,7 @@ const App = () => {
     () => buildInterestProfile(sessionState),
     [
       sessionState.favoritesLinks,
+      sessionState.playedDislikedLinks,
       sessionState.playedFavoriteLinks,
       sessionState.playedLinks,
       sessionState.processedThreadItemsByLink,
@@ -2898,6 +2958,7 @@ const App = () => {
       try {
         setErrorMessage(null);
         saveDefaultSwipeSettings(undefined);
+        saveDashboardViewState(undefined);
         saveTagsMap({});
         savePrefixesMap({});
         resetPreferredDownloadHosts();
@@ -3117,7 +3178,9 @@ const App = () => {
   ) : null;
 
   const swipeView = (
-    <div className="swipeScreen">
+    <div
+      className={`swipeScreen ${isSwipeInteractionLocked ? "swipeScreenLocked" : ""}`}
+    >
       <div className="swipeSidebar swipeFiltersPanel">
         <div className="swipeSidebarContent">
           <div className="panel swipeSidebarSectionPanel">
@@ -3551,86 +3614,73 @@ const App = () => {
         )}
       </div>
 
-      <div
-        className={`panel swipeActionSidebar ${
-          isSwipeInteractionLocked ? "swipeActionSidebarLocked" : ""
-        }`}
-      >
-        {isSwipeInteractionLocked ? (
-          <div className="swipeActionLockNotice">
-            <div className="swipeActionLockTitle">Свайп заблокирован</div>
-            <div className="swipeActionLockText">
-              Дождись окончания синхронизации каталога.
-            </div>
-          </div>
-        ) : (
-          <>
-            <button
-              className={`button swipeSideActionButton swipeActionTrash ${
-                swipeHudAction?.className === "trash"
-                  ? "swipeSideActionButtonActive"
-                  : ""
-              }`}
-              type="button"
-              onClick={handleTrash}
-              disabled={!currentThreadItem}
-            >
-              <span className="swipeActionIcon" aria-hidden>
-                🗑
-              </span>
-              <span className="swipeActionLabel">В мусор</span>
-              <span className="swipeActionHint">Left</span>
-            </button>
-            <button
-              className={`button swipeSideActionButton swipeActionPlayed ${
-                swipeHudAction?.className === "played"
-                  ? "swipeSideActionButtonActive"
-                  : ""
-              }`}
-              type="button"
-              onClick={handlePlayedButtonClick}
-              onContextMenu={handlePlayedButtonContextMenu}
-              disabled={!currentThreadItem}
-              title="Клик: Играл. Shift + клик или правая кнопка мыши: Играл (любимое)"
-              aria-label="Играл. Shift + клик или правая кнопка мыши: Играл в любимое"
-            >
-              <span className="swipeActionIcon" aria-hidden>
-                🎮
-              </span>
-              <span className="swipeActionLabel">Играл</span>
-              <span className="swipeActionHint">Up • Shift / ПКМ = ♥</span>
-            </button>
-            <button
-              className={`button swipeSideActionButton swipeActionFavorite ${
-                swipeHudAction?.className === "favorite"
-                  ? "swipeSideActionButtonActive"
-                  : ""
-              }`}
-              type="button"
-              onClick={handleFavorite}
-              disabled={!currentThreadItem}
-            >
-              <span className="swipeActionIcon" aria-hidden>
-                ★
-              </span>
-              <span className="swipeActionLabel">В закладки</span>
-              <span className="swipeActionHint">Right</span>
-            </button>
-            <button
-              className="button swipeSideActionButton swipeActionUndo"
-              type="button"
-              onClick={undoLastAction}
-              disabled={!canUndo}
-            >
-              <span className="swipeActionIcon" aria-hidden>
-                ↶
-              </span>
-              <span className="swipeActionLabel">Назад</span>
-              <span className="swipeActionHint">Backspace / Z</span>
-            </button>
-          </>
-        )}
-      </div>
+      {!isSwipeInteractionLocked ? (
+        <div className="panel swipeActionSidebar">
+          <button
+            className={`button swipeSideActionButton swipeActionTrash ${
+              swipeHudAction?.className === "trash"
+                ? "swipeSideActionButtonActive"
+                : ""
+            }`}
+            type="button"
+            onClick={handleTrash}
+            disabled={!currentThreadItem}
+          >
+            <span className="swipeActionIcon" aria-hidden>
+              🗑
+            </span>
+            <span className="swipeActionLabel">В мусор</span>
+            <span className="swipeActionHint">Left</span>
+          </button>
+          <button
+            className={`button swipeSideActionButton swipeActionPlayed ${
+              swipeHudAction?.className === "played"
+                ? "swipeSideActionButtonActive"
+                : ""
+            }`}
+            type="button"
+            onClick={handlePlayedButtonClick}
+            onContextMenu={handlePlayedButtonContextMenu}
+            disabled={!currentThreadItem}
+            title="Клик: Играл. Shift + клик или правая кнопка мыши: Играл (любимое)"
+            aria-label="Играл. Shift + клик или правая кнопка мыши: Играл в любимое"
+          >
+            <span className="swipeActionIcon" aria-hidden>
+              🎮
+            </span>
+            <span className="swipeActionLabel">Играл</span>
+            <span className="swipeActionHint">Up • Shift / ПКМ = ♥</span>
+          </button>
+          <button
+            className={`button swipeSideActionButton swipeActionFavorite ${
+              swipeHudAction?.className === "favorite"
+                ? "swipeSideActionButtonActive"
+                : ""
+            }`}
+            type="button"
+            onClick={handleFavorite}
+            disabled={!currentThreadItem}
+          >
+            <span className="swipeActionIcon" aria-hidden>
+              ★
+            </span>
+            <span className="swipeActionLabel">В закладки</span>
+            <span className="swipeActionHint">Right</span>
+          </button>
+          <button
+            className="button swipeSideActionButton swipeActionUndo"
+            type="button"
+            onClick={undoLastAction}
+            disabled={!canUndo}
+          >
+            <span className="swipeActionIcon" aria-hidden>
+              ↶
+            </span>
+            <span className="swipeActionLabel">Назад</span>
+            <span className="swipeActionHint">Backspace / Z</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -3645,6 +3695,8 @@ const App = () => {
           prefixesMap={prefixesMap}
         moveLinkToList={handleMoveLinkToList}
         togglePlayedFavoriteLink={togglePlayedFavoriteLink}
+        togglePlayedDislikedLink={togglePlayedDislikedLink}
+        toggleBookmarkedDownloadedLink={toggleBookmarkedDownloadedLink}
         removeLinkFromList={removeLinkFromList}
         pickCoverForLink={pickCoverForLink}
         pickTitleForLink={pickTitleForLink}
@@ -3762,6 +3814,50 @@ const App = () => {
 
   return (
     <div className="appRoot">
+      {isStartupSplashVisible ? (
+        <div
+          className="startupSplash"
+          aria-live="polite"
+          aria-busy={shouldKeepStartupSplashVisible}
+        >
+          <div className="startupSplashPanel panel">
+            <div className="startupSplashEyebrow">Startup Sync</div>
+            <div className="startupSplashHero">
+              <div className="startupSplashPulse" aria-hidden />
+              <div className="startupSplashHeroCopy">
+                <div className="startupSplashTitle">F95 Tinder</div>
+                <div className="startupSplashSubtitle">
+                  {startupSplashStatusText}
+                </div>
+              </div>
+            </div>
+            <div className="startupSplashText">{startupSplashMetaText}</div>
+            <div className="startupSplashTrack">
+              <div
+                className={`startupSplashFill ${
+                  startupSplashProgressPercent === null
+                    ? "startupSplashFillIndeterminate"
+                    : ""
+                }`}
+                style={
+                  startupSplashProgressPercent === null
+                    ? undefined
+                    : { width: `${startupSplashProgressPercent}%` }
+                }
+              />
+            </div>
+            <div className="startupSplashMetaRow">
+              <span>
+                {startupSplashProgressPercent === null
+                  ? "Подготовка..."
+                  : `${startupSplashProgressPercent}%`}
+              </span>
+              <span>{`Игр в памяти: ${startupCatalogCount}`}</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="topBar">
         <div className="topBarGrid">
           <div />

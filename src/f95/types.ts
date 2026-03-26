@@ -35,6 +35,21 @@ type F95ApiResponse = {
 
 type LatestGamesSort = 'date' | 'views'
 type SwipeSortMode = LatestGamesSort | 'interest'
+type DashboardSortField = 'addedAt' | 'rating' | 'title' | 'interest'
+type DashboardSortDirection = 'desc' | 'asc'
+type DashboardTabId = 'bookmarks' | 'trash' | 'played'
+
+type DashboardViewState = {
+  activeTab: DashboardTabId
+  searchText: string
+  includeTags: string[]
+  excludeTags: string[]
+  onlyUpdatedTracked: boolean
+  showOnlyPlayedFavorites: boolean
+  sortField: DashboardSortField
+  sortDirection: DashboardSortDirection
+  showInterestBadges: boolean
+}
 
 type FilterState = {
   searchText: string
@@ -81,10 +96,12 @@ type SessionState = {
   threadItemsByIdentifier: Record<string, F95ThreadItem>
 
   favoritesLinks: string[]
+  bookmarkedDownloadedLinks: string[]
   trashLinks: string[]
   playedByLink: Record<string, boolean>
   playedLinks: string[]
   playedFavoriteLinks: string[]
+  playedDislikedLinks: string[]
 
   processedThreadItemsByLink: Record<string, ProcessedThreadItem>
 
@@ -156,6 +173,10 @@ export type {
   F95ApiResponse,
   LatestGamesSort,
   SwipeSortMode,
+  DashboardSortField,
+  DashboardSortDirection,
+  DashboardTabId,
+  DashboardViewState,
   FilterState,
   DefaultSwipeSettings,
   ListType,

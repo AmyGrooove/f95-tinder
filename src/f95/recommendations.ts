@@ -4,7 +4,12 @@ import { getEnginePrefixIdList } from "./prefixes";
 type InterestLevel = "top" | "good" | "neutral" | "bad" | "trash";
 type InterestTone = "positive" | "negative" | "neutral";
 type InterestReasonKind = "tag" | "prefix" | "creator" | "rating" | "freshness";
-type InterestSignalType = "playedFavorite" | "played" | "favorite" | "trash";
+type InterestSignalType =
+  | "playedFavorite"
+  | "playedDisliked"
+  | "played"
+  | "favorite"
+  | "trash";
 type InterestCandidate = Pick<
   F95ThreadItem,
   "tags" | "prefixes" | "creator" | "rating" | "new"
@@ -52,6 +57,7 @@ type ThreadInterestAssessment = {
 
 const SIGNAL_WEIGHT_BY_TYPE: Record<InterestSignalType, number> = {
   playedFavorite: 5.2,
+  playedDisliked: -1.9,
   played: 1.2,
   favorite: 2.7,
   trash: -2.8,
@@ -201,12 +207,16 @@ const addEvidence = <Key,>(
 const getSignalTypeForLink = (
   threadLink: string,
   playedFavoriteSet: Set<string>,
+  playedDislikedSet: Set<string>,
   playedSet: Set<string>,
   favoriteSet: Set<string>,
   trashSet: Set<string>,
 ): InterestSignalType | null => {
   if (playedFavoriteSet.has(threadLink)) {
     return "playedFavorite";
+  }
+  if (playedDislikedSet.has(threadLink)) {
+    return "playedDisliked";
   }
   if (trashSet.has(threadLink)) {
     return "trash";
@@ -494,7 +504,7 @@ const toReasonText = (
   if (contribution.kind === "tag") {
     return isPositive
       ? `Любимый тег: ${contribution.label}`
-      : `Часто летит в мусор: ${contribution.label}`;
+      : `Часто не заходит: ${contribution.label}`;
   }
 
   if (contribution.kind === "prefix") {
@@ -616,6 +626,7 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
   const favoriteSet = new Set(sessionState.favoritesLinks);
   const playedSet = new Set(sessionState.playedLinks);
   const playedFavoriteSet = new Set(sessionState.playedFavoriteLinks);
+  const playedDislikedSet = new Set(sessionState.playedDislikedLinks);
   const trashSet = new Set(sessionState.trashLinks);
   const trackedLinkSet = new Set<string>([
     ...favoriteSet,
@@ -629,6 +640,7 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
     const signalType = getSignalTypeForLink(
       threadLink,
       playedFavoriteSet,
+      playedDislikedSet,
       playedSet,
       favoriteSet,
       trashSet,

@@ -10,6 +10,10 @@ import {
 } from '../launcher/runtime'
 import type { LauncherLocalDataSnapshot } from '../launcher/types'
 import type {
+  DashboardSortDirection,
+  DashboardSortField,
+  DashboardTabId,
+  DashboardViewState,
   DefaultSwipeSettings,
   F95ThreadItem,
   LatestCatalogSnapshot,
@@ -25,6 +29,7 @@ import { DEFAULT_FILTER_STATE, normalizeFilterState } from './filtering'
 const STORAGE_KEYS = {
   sessionState: 'f95_tinder_session_v1',
   defaultFilterState: 'f95_tinder_default_filter_state_v1',
+  dashboardViewState: 'f95_tinder_dashboard_view_state_v1',
   cachedPagesIndexPrefix: 'f95_tinder_cached_pages_index_v2_',
   cachedPagePrefix: 'f95_tinder_cached_page_v2_',
   tagsMap: 'f95_tinder_tags_map_v1',
@@ -41,6 +46,18 @@ const BUILT_IN_DEFAULT_SWIPE_SETTINGS: DefaultSwipeSettings = {
     excludePrefixIds: [4, 1, 7, 47],
     excludeTagIds: [916],
   }),
+}
+
+const BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE: DashboardViewState = {
+  activeTab: 'bookmarks',
+  searchText: '',
+  includeTags: [],
+  excludeTags: [],
+  onlyUpdatedTracked: false,
+  showOnlyPlayedFavorites: false,
+  sortField: 'addedAt',
+  sortDirection: 'asc',
+  showInterestBadges: true,
 }
 
 const getCachedPagesIndexKey = (latestGamesSort: LatestGamesSort) =>
@@ -188,6 +205,28 @@ const normalizeSwipeSortMode = (value: unknown): SwipeSortMode => {
   return 'date'
 }
 
+const normalizeDashboardTabId = (value: unknown): DashboardTabId => {
+  if (value === 'trash' || value === 'played') {
+    return value
+  }
+
+  return 'bookmarks'
+}
+
+const normalizeDashboardSortField = (value: unknown): DashboardSortField => {
+  if (value === 'rating' || value === 'title' || value === 'interest') {
+    return value
+  }
+
+  return 'addedAt'
+}
+
+const normalizeDashboardSortDirection = (
+  value: unknown,
+): DashboardSortDirection => {
+  return value === 'desc' ? 'desc' : 'asc'
+}
+
 const normalizeFiniteNumber = (value: unknown, fallbackValue = 0) => {
   return typeof value === 'number' && Number.isFinite(value)
     ? value
@@ -332,6 +371,29 @@ const normalizeDefaultSwipeSettings = (
   }
 }
 
+const normalizeDashboardViewState = (
+  value: unknown,
+): DashboardViewState => {
+  if (!isPlainObject(value)) {
+    return { ...BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE }
+  }
+
+  return {
+    activeTab: normalizeDashboardTabId(value.activeTab),
+    searchText: typeof value.searchText === 'string' ? value.searchText : '',
+    includeTags: normalizeImportedStringList(value.includeTags),
+    excludeTags: normalizeImportedStringList(value.excludeTags),
+    onlyUpdatedTracked: value.onlyUpdatedTracked === true,
+    showOnlyPlayedFavorites: value.showOnlyPlayedFavorites === true,
+    sortField: normalizeDashboardSortField(value.sortField),
+    sortDirection: normalizeDashboardSortDirection(value.sortDirection),
+    showInterestBadges:
+      typeof value.showInterestBadges === 'boolean'
+        ? value.showInterestBadges
+        : true,
+  }
+}
+
 let launcherSnapshotCache: LauncherLocalDataSnapshot | null | undefined
 let launcherListsBackupCache:
   | {
@@ -344,6 +406,7 @@ let launcherListsBackupCache:
 let launcherSettingsBackupCache:
   | {
       defaultSwipeSettings: DefaultSwipeSettings
+      dashboardViewState: DashboardViewState
       tagsMap: Record<string, string>
       prefixesMap: Record<string, string>
       preferredDownloadHosts: string[]
@@ -471,16 +534,25 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     return null
   }
 
+  const favoritesLinks = normalizeImportedStringList(possibleSessionState.favoritesLinks)
   const filterState = normalizeFilterState(possibleSessionState.filterState)
   const playedByLinkFallback = normalizePlayedByLink(possibleSessionState.playedByLink)
   const playedLinks = normalizePlayedLinks(
     possibleSessionState.playedLinks,
     playedByLinkFallback,
   )
+  const playedDislikedLinks = normalizePlayedDislikedLinks(
+    possibleSessionState.playedDislikedLinks,
+    playedLinks,
+  )
+  const bookmarkedDownloadedLinks = normalizeBookmarkedDownloadedLinks(
+    possibleSessionState.bookmarkedDownloadedLinks,
+    favoritesLinks,
+  )
   const playedFavoriteLinks = normalizePlayedFavoriteLinks(
     possibleSessionState.playedFavoriteLinks,
     playedLinks,
-  )
+  ).filter((threadLink) => !playedDislikedLinks.includes(threadLink))
   const threadItemsByIdentifier = normalizeThreadItemsByIdentifier(
     possibleSessionState.threadItemsByIdentifier,
   )
@@ -511,11 +583,13 @@ const normalizeSessionState = (value: unknown): SessionState | null => {
     swipeSortMode,
     remainingThreadIdentifiers,
     threadItemsByIdentifier,
-    favoritesLinks: normalizeImportedStringList(possibleSessionState.favoritesLinks),
+    favoritesLinks,
+    bookmarkedDownloadedLinks,
     trashLinks: normalizeImportedStringList(possibleSessionState.trashLinks),
     playedByLink,
     playedLinks,
     playedFavoriteLinks,
+    playedDislikedLinks,
     processedThreadItemsByLink,
     viewedCount: possibleSessionState.viewedCount,
     filterState,
@@ -554,6 +628,22 @@ const loadDefaultSwipeSettingsFromLocalStorage = () => {
   return normalizeDefaultSwipeSettings(defaultFilterStateValue)
 }
 
+const loadDashboardViewStateFromLocalStorage = () => {
+  const dashboardViewStateText = readLocalStorageValue(
+    STORAGE_KEYS.dashboardViewState,
+  )
+  if (!dashboardViewStateText) {
+    return normalizeDashboardViewState(BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE)
+  }
+
+  const dashboardViewStateValue = safeJsonParse<unknown>(dashboardViewStateText)
+  if (!dashboardViewStateValue) {
+    return normalizeDashboardViewState(BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE)
+  }
+
+  return normalizeDashboardViewState(dashboardViewStateValue)
+}
+
 const createDefaultSessionState = (
   defaultSwipeSettings: DefaultSwipeSettings = normalizeDefaultSwipeSettings(
     BUILT_IN_DEFAULT_SWIPE_SETTINGS,
@@ -567,10 +657,12 @@ const createDefaultSessionState = (
     remainingThreadIdentifiers: [],
     threadItemsByIdentifier: {},
     favoritesLinks: [],
+    bookmarkedDownloadedLinks: [],
     trashLinks: [],
     playedByLink: {},
     playedLinks: [],
     playedFavoriteLinks: [],
+    playedDislikedLinks: [],
     processedThreadItemsByLink: {},
     viewedCount: 0,
     filterState: normalizeFilterState(defaultSwipeSettings.filterState),
@@ -796,6 +888,52 @@ const normalizePlayedFavoriteLinks = (
   return Array.from(new Set(normalized))
 }
 
+const normalizePlayedDislikedLinks = (
+  value: unknown,
+  playedLinks: string[],
+): string[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const playedLinkSet = new Set(playedLinks)
+  const normalized: string[] = []
+  for (const item of value) {
+    if (
+      typeof item === 'string' &&
+      item.trim().length > 0 &&
+      playedLinkSet.has(item)
+    ) {
+      normalized.push(item)
+    }
+  }
+
+  return Array.from(new Set(normalized))
+}
+
+const normalizeBookmarkedDownloadedLinks = (
+  value: unknown,
+  favoriteLinks: string[],
+): string[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const favoriteLinkSet = new Set(favoriteLinks)
+  const normalized: string[] = []
+  for (const item of value) {
+    if (
+      typeof item === 'string' &&
+      item.trim().length > 0 &&
+      favoriteLinkSet.has(item)
+    ) {
+      normalized.push(item)
+    }
+  }
+
+  return Array.from(new Set(normalized))
+}
+
 const normalizeLookupMap = (value: unknown): Record<string, string> => {
   if (!isPlainObject(value)) {
     return {}
@@ -920,6 +1058,7 @@ const loadLauncherLocalSettingsBackup = () => {
 
   launcherSettingsBackupCache = {
     defaultSwipeSettings: normalizeDefaultSwipeSettings(rawSettings.defaultSwipeSettings),
+    dashboardViewState: normalizeDashboardViewState(rawSettings.dashboardViewState),
     tagsMap: normalizeTagsMap(rawSettings.tagsMap),
     prefixesMap: normalizePrefixesMap(rawSettings.prefixesMap),
     preferredDownloadHosts: normalizeImportedStringList(
@@ -969,6 +1108,7 @@ const buildFallbackLocalSettingsBackup = () => {
   const launcherListsBackup = loadLauncherLocalListsBackup()
   return {
     defaultSwipeSettings: loadDefaultSwipeSettingsFromLocalStorage(),
+    dashboardViewState: loadDashboardViewStateFromLocalStorage(),
     tagsMap: launcherListsBackup?.tagsMap ?? loadTagsMapFromLocalStorage(),
     prefixesMap:
       launcherListsBackup?.prefixesMap ?? loadPrefixesMapFromLocalStorage(),
@@ -1010,6 +1150,15 @@ const loadDefaultSwipeSettings = () => {
   return loadDefaultSwipeSettingsFromLocalStorage()
 }
 
+const loadDashboardViewState = () => {
+  const launcherBackup = loadLauncherLocalSettingsBackup()
+  if (launcherBackup) {
+    return launcherBackup.dashboardViewState
+  }
+
+  return loadDashboardViewStateFromLocalStorage()
+}
+
 const loadLatestCatalogSnapshot = (): LatestCatalogSnapshot => {
   const launcherSnapshot = loadLauncherLatestCatalogSnapshot()
   if (launcherSnapshot) {
@@ -1036,6 +1185,27 @@ const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
 
   writeLocalStorageValue(
     STORAGE_KEYS.defaultFilterState,
+    JSON.stringify(normalizedValue),
+  )
+}
+
+const saveDashboardViewState = (dashboardViewState: unknown) => {
+  const normalizedValue = normalizeDashboardViewState(dashboardViewState)
+
+  if (isLauncherLocalDataEnabled()) {
+    const currentSettingsBackup =
+      loadLauncherLocalSettingsBackup() ?? buildFallbackLocalSettingsBackup()
+    const nextSettingsBackup = {
+      ...currentSettingsBackup,
+      dashboardViewState: normalizedValue,
+    }
+    updateLauncherSnapshotCached('settings', nextSettingsBackup)
+    saveLauncherLocalSettingsSync(nextSettingsBackup)
+    return
+  }
+
+  writeLocalStorageValue(
+    STORAGE_KEYS.dashboardViewState,
     JSON.stringify(normalizedValue),
   )
 }
@@ -1110,6 +1280,7 @@ const clearAllStoredData = () => {
 
   removeLocalStorageValue(STORAGE_KEYS.sessionState)
   removeLocalStorageValue(STORAGE_KEYS.defaultFilterState)
+  removeLocalStorageValue(STORAGE_KEYS.dashboardViewState)
   removeLocalStorageValue(STORAGE_KEYS.latestCatalog)
   clearTagsMap()
   clearPrefixesMap()
@@ -1224,10 +1395,13 @@ export {
   saveSessionState,
   createDefaultSessionState,
   loadDefaultSwipeSettings,
+  loadDashboardViewState,
   loadLatestCatalogSnapshot,
   saveDefaultSwipeSettings,
+  saveDashboardViewState,
   saveLatestCatalogState,
   normalizeDefaultSwipeSettings,
+  normalizeDashboardViewState,
   clearAllStoredData,
   clearLatestCatalogState,
   loadTagsMap,

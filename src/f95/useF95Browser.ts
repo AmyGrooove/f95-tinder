@@ -224,6 +224,14 @@ const getPlayedFavoriteLinks = (state: SessionState) => {
   return state.playedFavoriteLinks ?? []
 }
 
+const getPlayedDislikedLinks = (state: SessionState) => {
+  return state.playedDislikedLinks ?? []
+}
+
+const getBookmarkedDownloadedLinks = (state: SessionState) => {
+  return state.bookmarkedDownloadedLinks ?? []
+}
+
 const getTrackedLinkSet = (sessionState: SessionState) => {
   return new Set<string>([
     ...sessionState.favoritesLinks,
@@ -369,9 +377,22 @@ const sanitizeSwipeQueue = (sessionState: SessionState) => {
     ...sessionState.trashLinks,
     ...getPlayedLinks(sessionState),
   ])
+  const favoriteLinkSet = new Set(sessionState.favoritesLinks)
   const playedLinkSet = new Set(getPlayedLinks(sessionState))
-  const nextPlayedFavoriteLinks = getPlayedFavoriteLinks(sessionState).filter((threadLink) =>
+  const nextPlayedDislikedLinks = getPlayedDislikedLinks(sessionState).filter((threadLink) =>
     playedLinkSet.has(threadLink),
+  )
+  const nextPlayedDislikedLinkSet = new Set(nextPlayedDislikedLinks)
+  const hasPlayedDislikedChanged =
+    nextPlayedDislikedLinks.length !== getPlayedDislikedLinks(sessionState).length
+  const nextBookmarkedDownloadedLinks = getBookmarkedDownloadedLinks(sessionState).filter(
+    (threadLink) => favoriteLinkSet.has(threadLink),
+  )
+  const hasBookmarkedDownloadedChanged =
+    nextBookmarkedDownloadedLinks.length !==
+    getBookmarkedDownloadedLinks(sessionState).length
+  const nextPlayedFavoriteLinks = getPlayedFavoriteLinks(sessionState).filter((threadLink) =>
+    playedLinkSet.has(threadLink) && !nextPlayedDislikedLinkSet.has(threadLink),
   )
   const hasPlayedFavoritesChanged =
     nextPlayedFavoriteLinks.length !== getPlayedFavoriteLinks(sessionState).length
@@ -383,6 +404,8 @@ const sanitizeSwipeQueue = (sessionState: SessionState) => {
   if (
     nextRemainingThreadIdentifiers.length ===
       sessionState.remainingThreadIdentifiers.length &&
+    !hasPlayedDislikedChanged &&
+    !hasBookmarkedDownloadedChanged &&
     !hasPlayedFavoritesChanged
   ) {
     return sessionState
@@ -390,6 +413,8 @@ const sanitizeSwipeQueue = (sessionState: SessionState) => {
 
   return {
     ...sessionState,
+    playedDislikedLinks: nextPlayedDislikedLinks,
+    bookmarkedDownloadedLinks: nextBookmarkedDownloadedLinks,
     playedFavoriteLinks: nextPlayedFavoriteLinks,
     remainingThreadIdentifiers: nextRemainingThreadIdentifiers,
   }
@@ -496,6 +521,7 @@ const useF95Browser = () => {
     () => buildInterestProfile(sessionState),
     [
       sessionState.favoritesLinks,
+      sessionState.playedDislikedLinks,
       sessionState.playedFavoriteLinks,
       sessionState.playedLinks,
       sessionState.processedThreadItemsByLink,
@@ -714,6 +740,12 @@ const useF95Browser = () => {
           : resolvedListType === 'played'
           ? sessionState.playedFavoriteLinks
           : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
+      const playedDislikedLinksNext =
+        actionType === 'playedFavorite'
+          ? removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
+          : resolvedListType === 'played'
+          ? sessionState.playedDislikedLinks
+          : removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
 
       const playedByLinkNext = { ...sessionState.playedByLink }
       if (resolvedListType === 'played') {
@@ -742,6 +774,7 @@ const useF95Browser = () => {
         trashLinks: trashLinksNext,
         playedLinks: playedLinksNext,
         playedFavoriteLinks: playedFavoriteLinksNext,
+        playedDislikedLinks: playedDislikedLinksNext,
         playedByLink: playedByLinkNext,
         processedThreadItemsByLink: processedThreadItemsByLinkNext,
         viewedCount: sessionState.viewedCount + 1,
@@ -931,9 +964,11 @@ const useF95Browser = () => {
       {
         ...sessionState,
         favoritesLinks: [],
+        bookmarkedDownloadedLinks: [],
         trashLinks: [],
         playedLinks: [],
         playedFavoriteLinks: [],
+        playedDislikedLinks: [],
         playedByLink: {},
         processedThreadItemsByLink: nextProcessedThreadItems,
       },
@@ -947,6 +982,10 @@ const useF95Browser = () => {
         targetList === 'favorite'
           ? mergeUniqueStringArrays(sessionState.favoritesLinks, [threadLink])
           : removeStringFromArray(sessionState.favoritesLinks, threadLink)
+      const bookmarkedDownloadedLinks =
+        targetList === 'favorite'
+          ? sessionState.bookmarkedDownloadedLinks
+          : removeStringFromArray(sessionState.bookmarkedDownloadedLinks, threadLink)
 
       const trashLinks =
         targetList === 'trash'
@@ -961,6 +1000,10 @@ const useF95Browser = () => {
         targetList === 'played'
           ? sessionState.playedFavoriteLinks
           : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
+      const playedDislikedLinks =
+        targetList === 'played'
+          ? sessionState.playedDislikedLinks
+          : removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
 
       const playedByLink = { ...sessionState.playedByLink }
       if (targetList === 'played') {
@@ -990,9 +1033,11 @@ const useF95Browser = () => {
         {
           ...sessionState,
           favoritesLinks,
+          bookmarkedDownloadedLinks,
           trashLinks,
           playedLinks,
           playedFavoriteLinks,
+          playedDislikedLinks,
           playedByLink,
           processedThreadItemsByLink: nextProcessedThreadItems,
         },
@@ -1012,11 +1057,64 @@ const useF95Browser = () => {
       const playedFavoriteLinks = isInPlayedFavorites
         ? removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
         : mergeUniqueStringArrays(sessionState.playedFavoriteLinks, [threadLink])
+      const playedDislikedLinks = isInPlayedFavorites
+        ? sessionState.playedDislikedLinks
+        : removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
 
       persistSessionState(
         {
           ...sessionState,
           playedFavoriteLinks,
+          playedDislikedLinks,
+        },
+        { skipSanitize: true },
+      )
+    },
+    [sessionState, persistSessionState],
+  )
+
+  const togglePlayedDislikedLink = useCallback(
+    (threadLink: string) => {
+      if (!sessionState.playedLinks.includes(threadLink)) {
+        return
+      }
+
+      const isInPlayedDisliked = sessionState.playedDislikedLinks.includes(threadLink)
+      const playedDislikedLinks = isInPlayedDisliked
+        ? removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
+        : mergeUniqueStringArrays(sessionState.playedDislikedLinks, [threadLink])
+      const playedFavoriteLinks = isInPlayedDisliked
+        ? sessionState.playedFavoriteLinks
+        : removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
+
+      persistSessionState(
+        {
+          ...sessionState,
+          playedFavoriteLinks,
+          playedDislikedLinks,
+        },
+        { skipSanitize: true },
+      )
+    },
+    [sessionState, persistSessionState],
+  )
+
+  const toggleBookmarkedDownloadedLink = useCallback(
+    (threadLink: string) => {
+      if (!sessionState.favoritesLinks.includes(threadLink)) {
+        return
+      }
+
+      const isBookmarkedDownloaded =
+        sessionState.bookmarkedDownloadedLinks.includes(threadLink)
+      const bookmarkedDownloadedLinks = isBookmarkedDownloaded
+        ? removeStringFromArray(sessionState.bookmarkedDownloadedLinks, threadLink)
+        : mergeUniqueStringArrays(sessionState.bookmarkedDownloadedLinks, [threadLink])
+
+      persistSessionState(
+        {
+          ...sessionState,
+          bookmarkedDownloadedLinks,
         },
         { skipSanitize: true },
       )
@@ -1030,6 +1128,10 @@ const useF95Browser = () => {
         listType === 'favorite'
           ? removeStringFromArray(sessionState.favoritesLinks, threadLink)
           : sessionState.favoritesLinks
+      const bookmarkedDownloadedLinks =
+        listType === 'favorite'
+          ? removeStringFromArray(sessionState.bookmarkedDownloadedLinks, threadLink)
+          : sessionState.bookmarkedDownloadedLinks
 
       const trashLinks =
         listType === 'trash'
@@ -1044,6 +1146,10 @@ const useF95Browser = () => {
         listType === 'played'
           ? removeStringFromArray(sessionState.playedFavoriteLinks, threadLink)
           : sessionState.playedFavoriteLinks
+      const playedDislikedLinks =
+        listType === 'played'
+          ? removeStringFromArray(sessionState.playedDislikedLinks, threadLink)
+          : sessionState.playedDislikedLinks
 
       const playedByLink = { ...sessionState.playedByLink }
       if (listType === 'played') {
@@ -1076,9 +1182,11 @@ const useF95Browser = () => {
         {
           ...sessionState,
           favoritesLinks,
+          bookmarkedDownloadedLinks,
           trashLinks,
           playedLinks,
           playedFavoriteLinks,
+          playedDislikedLinks,
           playedByLink,
           processedThreadItemsByLink: nextProcessedThreadItems,
         },
@@ -1448,6 +1556,8 @@ const useF95Browser = () => {
     stopMetadataSync,
     moveLinkToList,
     togglePlayedFavoriteLink,
+    togglePlayedDislikedLink,
+    toggleBookmarkedDownloadedLink,
     removeLinkFromList,
     setErrorMessage,
   }
