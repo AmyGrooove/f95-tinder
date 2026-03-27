@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="28" y1="14" x2="228" y2="242" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C1222" />
+      <stop offset="1" stop-color="#3475FF" />
+    </linearGradient>
+    <linearGradient id="heart" x1="76" y1="54" x2="162" y2="194" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#BFD8FF" />
+    </linearGradient>
+    <linearGradient id="badge" x1="165" y1="165" x2="231" y2="231" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#192A4C" />
+      <stop offset="1" stop-color="#2F6DFF" />
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)" />
+  <ellipse cx="72" cy="44" rx="86" ry="56" fill="white" fill-opacity="0.14" />
+  <ellipse cx="196" cy="194" rx="88" ry="70" fill="#78ABFF" fill-opacity="0.12" />
+  <path
+    d="M128 220C121 201 99 183 78 165C51 142 34 120 34 88C34 56 56 34 84 34C103 34 121 43 128 64C135 43 153 34 172 34C200 34 222 56 222 88C222 120 205 142 178 165C157 183 135 201 128 220Z"
+    fill="url(#heart)"
+    stroke="#8DBAFF"
+    stroke-opacity="0.72"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <rect x="165" y="165" width="66" height="66" rx="23" fill="url(#badge)" />
+  <rect x="166" y="166" width="64" height="64" rx="22" stroke="#D8EBFF" stroke-opacity="0.26" stroke-width="2" />
+  <path d="M12 64C12 33.0721 37.0721 8 68 8H188C218.928 8 244 33.0721 244 64V192C244 222.928 218.928 248 188 248H68C37.0721 248 12 222.928 12 192V64Z" stroke="white" stroke-opacity="0.2" stroke-width="2" />
+  <text x="198" y="205" text-anchor="middle" dominant-baseline="middle" fill="#F4F8FF" font-size="28" font-weight="700" font-family="Segoe UI, Arial, sans-serif">95</text>
+</svg>

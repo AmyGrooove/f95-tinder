@@ -57,21 +57,25 @@ type ThreadInterestAssessment = {
 
 const SIGNAL_WEIGHT_BY_TYPE: Record<InterestSignalType, number> = {
   playedFavorite: 5.2,
-  playedDisliked: -1.9,
+  playedDisliked: -3.6,
   played: 1.2,
   favorite: 2.7,
-  trash: -2.8,
+  trash: -1.35,
 };
 
 const MIN_SIGNALS_FOR_STABLE_PROFILE = 8;
 const TAG_CONTRIBUTION_WEIGHT = 1.35;
 const PREFIX_CONTRIBUTION_WEIGHT = 0.88;
 const CREATOR_CONTRIBUTION_WEIGHT = 1.05;
+const MAX_TAG_CONTRIBUTIONS_PER_THREAD = 4;
+const MAX_TAG_CONTRIBUTION_MAGNITUDE = 1.55;
 const REASON_LIMIT = 3;
 const MIN_NEGATIVE_SIGNAL_SCALE = 0.16;
 const BASELINE_RAW_SCORE = 0.24;
 const LOW_CONFIDENCE_NEGATIVE_DAMPING = 0.42;
 const NEGATIVE_CONTRIBUTION_DAMPING = 0.58;
+const TRASH_LEVEL_MIN_CONFIDENCE = 0.72;
+const TRASH_LEVEL_MIN_EVIDENCE_MAGNITUDE = 1.7;
 const SIGNAL_RECENCY_HALF_LIFE_DAYS = 160;
 const MIN_SIGNAL_RECENCY_WEIGHT = 0.35;
 const SECONDS_PER_DAY = 24 * 60 * 60;
@@ -459,6 +463,35 @@ const clamp01 = (value: number) => {
   return Math.min(1, Math.max(0, value));
 };
 
+const clampContributionMagnitude = (
+  value: number,
+  maxMagnitude: number,
+) => {
+  if (maxMagnitude <= 0) {
+    return 0;
+  }
+
+  return Math.sign(value) * Math.min(Math.abs(value), maxMagnitude);
+};
+
+const getCappedContributionGroupTotal = (
+  contributionList: FeatureContribution[],
+  maxContributionCount: number,
+  maxMagnitude: number,
+) => {
+  if (contributionList.length === 0) {
+    return 0;
+  }
+
+  const rawTotal = contributionList
+    .slice()
+    .sort((first, second) => Math.abs(second.value) - Math.abs(first.value))
+    .slice(0, maxContributionCount)
+    .reduce((sum, contribution) => sum + contribution.value, 0);
+
+  return clampContributionMagnitude(rawTotal, maxMagnitude);
+};
+
 const getInterestConfidence = (
   profile: InterestProfile,
   evidenceMagnitude: number,
@@ -479,6 +512,23 @@ const getInterestConfidence = (
 
 const applyConfidenceToScore = (score: number, confidence: number) => {
   return Math.round(50 + (score - 50) * clamp01(confidence));
+};
+
+const resolveInterestLevel = (
+  score: number,
+  confidence: number,
+  evidenceMagnitude: number,
+) => {
+  const level = toInterestLevel(score);
+  if (
+    level === "trash" &&
+    (confidence < TRASH_LEVEL_MIN_CONFIDENCE ||
+      evidenceMagnitude < TRASH_LEVEL_MIN_EVIDENCE_MAGNITUDE)
+  ) {
+    return "bad" as const;
+  }
+
+  return level;
 };
 
 const toInterestLevel = (score: number): InterestLevel => {
@@ -731,6 +781,7 @@ const assessThreadInterest = (
   }
 
   const contributionList: FeatureContribution[] = [];
+  const tagContributionList: FeatureContribution[] = [];
   let rawScore = BASELINE_RAW_SCORE;
 
   for (const tagId of uniqueNumberList(threadItem.tags)) {
@@ -741,14 +792,20 @@ const assessThreadInterest = (
     );
 
     if (contribution !== 0) {
-      contributionList.push({
+      tagContributionList.push({
         kind: "tag",
         label: tagsMap[String(tagId)] ?? `#${tagId}`,
         value: contribution,
       });
-      rawScore += contribution;
     }
   }
+
+  contributionList.push(...tagContributionList);
+  rawScore += getCappedContributionGroupTotal(
+    tagContributionList,
+    MAX_TAG_CONTRIBUTIONS_PER_THREAD,
+    MAX_TAG_CONTRIBUTION_MAGNITUDE,
+  );
 
   for (const prefixId of getEnginePrefixIdList(threadItem.prefixes)) {
     const contribution = calculateFeatureContribution(
@@ -819,7 +876,9 @@ const assessThreadInterest = (
 
   const confidence = getInterestConfidence(profile, evidenceMagnitude);
   const score = applyConfidenceToScore(toScore100(rawScore), confidence);
-  const level = hasInsufficientData ? "neutral" : toInterestLevel(score);
+  const level = hasInsufficientData
+    ? "neutral"
+    : resolveInterestLevel(score, confidence, evidenceMagnitude);
 
   return {
     level,

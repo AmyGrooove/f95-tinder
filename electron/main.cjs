@@ -16,6 +16,11 @@ try {
 }
 
 const APP_ROOT = path.resolve(__dirname, '..')
+const APP_ICON_PATH = path.join(
+  __dirname,
+  'assets',
+  process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png',
+)
 const F95_ORIGIN = 'https://f95zone.to'
 const RECOMMENDED_COOKIE_NAMES = ['xf_user', 'xf_session', 'xf_csrf']
 const DOWNLOAD_SESSION_PARTITION = 'persist:f95-tinder-downloads'
@@ -1411,6 +1416,7 @@ const safeDestroyWindow = (targetWindow) => {
 const createDownloadWindow = (show) =>
   new BrowserWindow({
     show,
+    icon: APP_ICON_PATH,
     width: 1320,
     height: 900,
     autoHideMenuBar: true,
@@ -3176,6 +3182,7 @@ const createMainWindow = async () => {
   const preloadPath = path.join(__dirname, 'preload.cjs')
   mainWindow = new BrowserWindow({
     show: false,
+    icon: APP_ICON_PATH,
     width: 1600,
     height: 980,
     minWidth: 1280,
