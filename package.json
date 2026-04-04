@@ -1,13 +1,13 @@
 {
   "name": "f95-tinder",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "node scripts/electron-dev.cjs",
     "build": "tsc -b && vite build",
-    "start": "node scripts/electron-launch.cjs"
+    "start": "node scripts/electron-launch.cjs",
+    "dist": "pnpm build && electron-builder --win portable"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",
@@ -19,7 +19,31 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
     "typescript": "^5.9.3",
     "vite": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.f95tinder.app",
+    "productName": "F95 Tinder",
+    "artifactName": "${productName}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/7zip-bin/**"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "portable"
+      ],
+      "icon": "electron/assets/app-icon.ico"
+    }
   }
 }
