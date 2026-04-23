@@ -33,6 +33,44 @@ const isLikelyCookieRefreshErrorMessage = (
 const buildThreadLink = (threadIdentifier: number) =>
   `${F95_ORIGIN}/threads/${threadIdentifier}`
 
+const parseRetryAfterHeaderToMs = (headerValue: string | null) => {
+  if (!headerValue) {
+    return null
+  }
+
+  const trimmedValue = headerValue.trim()
+  if (!trimmedValue) {
+    return null
+  }
+
+  const secondsValue = Number(trimmedValue)
+  if (Number.isFinite(secondsValue) && secondsValue >= 0) {
+    return Math.round(secondsValue * 1_000)
+  }
+
+  const absoluteUnixMs = Date.parse(trimmedValue)
+  if (Number.isNaN(absoluteUnixMs)) {
+    return null
+  }
+
+  return Math.max(0, absoluteUnixMs - Date.now())
+}
+
+const buildNetworkErrorMessage = (
+  statusCode: number,
+  retryAfterMs: number | null,
+) => {
+  if (
+    typeof retryAfterMs === 'number' &&
+    Number.isFinite(retryAfterMs) &&
+    retryAfterMs > 0
+  ) {
+    return `Network error: ${statusCode} (retry-after-ms:${Math.round(retryAfterMs)})`
+  }
+
+  return `Network error: ${statusCode}`
+}
+
 const normalizeFiniteNumber = (value: unknown) => {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
@@ -251,7 +289,12 @@ const fetchLatestGamesPage = async (
       throw new Error(F95_COOKIE_REFRESH_ERROR_MESSAGE)
     }
 
-    throw new Error(`Network error: ${response.status}`)
+    throw new Error(
+      buildNetworkErrorMessage(
+        response.status,
+        parseRetryAfterHeaderToMs(response.headers.get('retry-after')),
+      ),
+    )
   }
 
   const responseText = await response.text()

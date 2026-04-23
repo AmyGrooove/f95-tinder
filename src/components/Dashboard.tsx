@@ -15,6 +15,7 @@ import type {
 } from "../f95/types";
 import {
   assessThreadInterest,
+  buildCatalogFeatureStats,
   buildInterestProfile,
   type InterestCandidate,
   type ThreadInterestAssessment,
@@ -322,6 +323,7 @@ export const Dashboard = ({
     includeTags,
     excludeTags,
     onlyUpdatedTracked,
+    showOnlyDownloadedBookmarks,
     showOnlyPlayedFavorites,
     sortField,
     sortDirection,
@@ -453,6 +455,13 @@ export const Dashboard = ({
     sortField === "interest" ||
     showInterestBadges ||
     activeGameThreadLink !== null;
+  const catalogFeatureStats = useMemo(
+    () =>
+      shouldComputeInterest
+        ? buildCatalogFeatureStats(sessionState.threadItemsByIdentifier)
+        : null,
+    [sessionState.threadItemsByIdentifier, shouldComputeInterest],
+  );
   const interestProfile = useMemo(
     () => (shouldComputeInterest ? buildInterestProfile(sessionState) : null),
     [
@@ -489,6 +498,7 @@ export const Dashboard = ({
           interestProfile,
           tagsMap,
           prefixesMap,
+          catalogFeatureStats,
         );
 
         return {
@@ -499,6 +509,7 @@ export const Dashboard = ({
       });
     },
     [
+      catalogFeatureStats,
       interestProfile,
       prefixesMap,
       sessionState.processedThreadItemsByLink,
@@ -514,6 +525,7 @@ export const Dashboard = ({
     includeTagNumbers,
     excludeTagNumbers,
     onlyUpdatedTracked,
+    showOnlyDownloadedBookmarks,
     showOnlyPlayedFavorites,
     sortField,
     sortDirection,
@@ -535,6 +547,9 @@ export const Dashboard = ({
     searchText.trim() ? `Поиск: ${searchText.trim()}` : null,
     `${sortFieldLabel}, ${sortDirectionLabel.toLowerCase()}`,
     onlyUpdatedTracked ? "только обновленные" : null,
+    activeTab === "bookmarks" && showOnlyDownloadedBookmarks
+      ? "только скачанные"
+      : null,
     activeTab === "played" && showOnlyPlayedFavorites ? "только любимые" : null,
     showInterestBadges ? null : "оценки скрыты",
   ]
@@ -687,6 +702,14 @@ export const Dashboard = ({
         continue;
       }
 
+      if (
+        sectionKey === "favorite" &&
+        showOnlyDownloadedBookmarks &&
+        !card.isBookmarkedDownloaded
+      ) {
+        continue;
+      }
+
       if (sectionKey === "played" && showOnlyPlayedFavorites && !card.isPlayedFavorite) {
         continue;
       }
@@ -720,6 +743,7 @@ export const Dashboard = ({
     sortDirection,
     normalizedSearchText,
     onlyUpdatedTracked,
+    showOnlyDownloadedBookmarks,
     includeTagNumbers,
     excludeTagNumbers,
     showOnlyPlayedFavorites,
@@ -898,7 +922,9 @@ export const Dashboard = ({
   const activeTabItem =
     tabItems.find((item) => item.id === activeTab) ?? tabItems[0];
   const activeCardsCountLabel =
-    activeTabItem.id === "played" && showOnlyPlayedFavorites
+    activeTabItem.id === "bookmarks" && showOnlyDownloadedBookmarks
+      ? `${activeCards.length} из ${sessionState.favoritesLinks.length} игр`
+      : activeTabItem.id === "played" && showOnlyPlayedFavorites
       ? `${activeCards.length} из ${playedLinks.length} игр`
       : `${activeCards.length} игр`;
   const showActiveUpdatedCount =
@@ -927,9 +953,11 @@ export const Dashboard = ({
       interestProfile,
       tagsMap,
       prefixesMap,
+      catalogFeatureStats,
     );
   }, [
     activeGameCard,
+    catalogFeatureStats,
     activeGameProcessedItem,
     activeGameThreadItem,
     interestProfile,
@@ -1300,7 +1328,9 @@ export const Dashboard = ({
             В этом списке пока ничего нет
           </div>
           <div className="mutedText">
-            {tabId === "played" && showOnlyPlayedFavorites
+            {tabId === "bookmarks" && showOnlyDownloadedBookmarks
+              ? "В закладках пока нет игр, помеченных как скачанные."
+              : tabId === "played" && showOnlyPlayedFavorites
               ? "Во вкладке Играл пока нет игр, отмеченных как любимые."
               : onlyUpdatedTracked && tabId !== "trash"
               ? "Сейчас нет карточек с апдейтом. Попробуй снять фильтр или дождаться следующей синхронизации."
@@ -1422,27 +1452,24 @@ export const Dashboard = ({
                     ) : (
                       <div className="listItemCover" />
                     )}
+                    {card.isUpdated ? (
+                      <span
+                        className="listItemCoverUpdateBadge"
+                        title="Есть апдейт"
+                      >
+                        <span aria-hidden>🔄</span>
+                        <span className="srOnly">Есть апдейт</span>
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="listItemBody listItemPreviewBody">
                     <div className="listItemContent">
-                      {card.isUpdated ||
-                      card.isBookmarkedDownloaded ||
-                      card.isPlayedDisliked ? (
+                      {card.isPlayedDisliked ? (
                         <div className="listItemBadgeRow">
-                          {card.isUpdated ? (
-                            <span className="listItemStatusBadge listItemStatusBadgeUpdated">
-                              Апдейт
-                            </span>
-                          ) : null}
                           {card.isPlayedDisliked ? (
                             <span className="listItemStatusBadge listItemStatusBadgeDisliked">
                               Не очень
-                            </span>
-                          ) : null}
-                          {card.isBookmarkedDownloaded ? (
-                            <span className="listItemStatusBadge listItemStatusBadgeDownloaded">
-                              Скачана
                             </span>
                           ) : null}
                         </div>
@@ -1628,6 +1655,25 @@ export const Dashboard = ({
                 </span>
                 <span>Только обновленные в закладках и Играл</span>
               </label>
+
+              {activeTab === "bookmarks" ? (
+                <label className="dashboardPlayedFilterSwitch">
+                  <input
+                    className="dashboardPlayedFilterSwitchInput"
+                    type="checkbox"
+                    checked={showOnlyDownloadedBookmarks}
+                    onChange={(event) =>
+                      updateDashboardViewState({
+                        showOnlyDownloadedBookmarks: event.target.checked,
+                      })
+                    }
+                  />
+                  <span className="dashboardPlayedFilterSwitchTrack" aria-hidden>
+                    <span className="dashboardPlayedFilterSwitchThumb" />
+                  </span>
+                  <span>Только скачанные</span>
+                </label>
+              ) : null}
 
               <label className="dashboardPlayedFilterSwitch">
                 <input

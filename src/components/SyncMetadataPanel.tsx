@@ -17,6 +17,9 @@ const SyncMetadataPanel = ({
   onResumeSync,
   onStopSync,
 }: SyncMetadataPanelProps) => {
+  const hasInlineRetryWait =
+    metadataSyncState.isRunning && metadataSyncState.nextRetryAtUnixMs !== null
+  const hasScheduledRetry = metadataSyncState.nextRetryAtUnixMs !== null
   const hasSyncResult =
     metadataSyncState.syncedCount > 0 || metadataSyncState.currentPage > 0
   const progressPercent =
@@ -36,12 +39,18 @@ const SyncMetadataPanel = ({
     ? 'Останавливаю синхронизацию...'
     : metadataSyncState.isPaused
     ? `Пауза на ${metadataSyncState.currentPage} / ${metadataSyncState.pageLimit || '-'}`
+    : hasInlineRetryWait
+    ? 'Жду окно для повторной попытки синхронизации'
     : metadataSyncState.isRunning
     ? `Сканирую ${metadataSyncState.currentPage} / ${metadataSyncState.pageLimit || '-'}`
+    : hasScheduledRetry
+    ? 'Автоповтор синхронизации уже запланирован'
     : metadataSyncState.lastOutcome === 'stopped'
     ? 'Синхронизация остановлена пользователем'
     : metadataSyncState.error
     ? 'Ошибка синхронизации'
+    : hasSyncResult && !metadataSyncState.isComplete
+    ? 'Есть сохраненный прогресс, синхронизация будет продолжена'
     : hasSyncResult
     ? autoSyncEnabled
       ? 'Каталог latest синхронизирован'

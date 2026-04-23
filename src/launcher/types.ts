@@ -100,9 +100,11 @@ type LauncherLocalDataSnapshot = {
   listsFile: LauncherLocalDataFile
   settingsFile: LauncherLocalDataFile
   catalogFile: LauncherLocalDataFile
+  catalogCheckpointFile: LauncherLocalDataFile
   lists: unknown | null
   settings: unknown | null
   catalog: unknown | null
+  catalogCheckpoint: unknown | null
 }
 
 export type {

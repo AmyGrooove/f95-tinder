@@ -68,6 +68,7 @@ type SettingsPageProps = {
     listsPath: string;
     settingsPath: string;
     catalogPath: string;
+    catalogCheckpointPath: string;
   } | null;
   onOpenLocalDataFiles: () => void;
   onClearGameFolders: () => void;
@@ -1003,6 +1004,11 @@ export const SettingsPage = ({
                   {localDataFiles ? (
                     <div className="smallText">
                       {`Файл каталога latest: ${localDataFiles.catalogPath}`}
+                    </div>
+                  ) : null}
+                  {localDataFiles ? (
+                    <div className="smallText">
+                      {`Файл checkpoint latest: ${localDataFiles.catalogCheckpointPath}`}
                     </div>
                   ) : null}
                 </div>

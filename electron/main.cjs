@@ -212,6 +212,9 @@ const getLocalSettingsStatePath = () =>
 const getLatestCatalogStatePath = () =>
   path.join(app.getPath('userData'), 'latest-catalog.json')
 
+const getLatestCatalogCheckpointStatePath = () =>
+  path.join(app.getPath('userData'), 'latest-catalog-checkpoint.json')
+
 const getDefaultLibraryRoot = () => path.join(app.getPath('userData'), 'games')
 
 const readJsonFile = (targetPath) => {
@@ -405,6 +408,9 @@ const loadLocalDataFilesState = () => ({
   lists: readJsonFileWithMetadata(getLocalListsStatePath()),
   settings: readJsonFileWithMetadata(getLocalSettingsStatePath()),
   catalog: readJsonFileWithMetadata(getLatestCatalogStatePath()),
+  catalogCheckpoint: readJsonFileWithMetadata(
+    getLatestCatalogCheckpointStatePath(),
+  ),
 })
 
 const buildLocalDataFileDescriptor = (targetPath, entry) => ({
@@ -424,12 +430,19 @@ const buildLocalDataFilesSnapshot = () => ({
     getLatestCatalogStatePath(),
     localDataFilesState?.catalog,
   ),
+  catalogCheckpointFile: buildLocalDataFileDescriptor(
+    getLatestCatalogCheckpointStatePath(),
+    localDataFilesState?.catalogCheckpoint,
+  ),
   lists: localDataFilesState?.lists?.value ? toJsonClone(localDataFilesState.lists.value) : null,
   settings: localDataFilesState?.settings?.value
     ? toJsonClone(localDataFilesState.settings.value)
     : null,
   catalog: localDataFilesState?.catalog?.value
     ? toJsonClone(localDataFilesState.catalog.value)
+    : null,
+  catalogCheckpoint: localDataFilesState?.catalogCheckpoint?.value
+    ? toJsonClone(localDataFilesState.catalogCheckpoint.value)
     : null,
 })
 
@@ -439,6 +452,8 @@ const writeLocalDataFileValue = (fileKind, value) => {
       ? getLocalListsStatePath()
       : fileKind === 'catalog'
         ? getLatestCatalogStatePath()
+        : fileKind === 'catalogCheckpoint'
+          ? getLatestCatalogCheckpointStatePath()
         : getLocalSettingsStatePath()
 
   if (value === null || value === undefined) {
@@ -1308,6 +1323,41 @@ const buildLatestGamesEndpointUrl = (pageNumber, latestGamesSort = 'date', filte
   )}`
 }
 
+const parseRetryAfterHeaderToMs = (headerValue) => {
+  if (typeof headerValue !== 'string') {
+    return null
+  }
+
+  const trimmedValue = headerValue.trim()
+  if (!trimmedValue) {
+    return null
+  }
+
+  const secondsValue = Number(trimmedValue)
+  if (Number.isFinite(secondsValue) && secondsValue >= 0) {
+    return Math.round(secondsValue * 1000)
+  }
+
+  const absoluteUnixMs = Date.parse(trimmedValue)
+  if (Number.isNaN(absoluteUnixMs)) {
+    return null
+  }
+
+  return Math.max(0, absoluteUnixMs - Date.now())
+}
+
+const buildNetworkErrorMessage = (statusCode, retryAfterMs) => {
+  if (
+    typeof retryAfterMs === 'number' &&
+    Number.isFinite(retryAfterMs) &&
+    retryAfterMs > 0
+  ) {
+    return `Network error: ${statusCode} (retry-after-ms:${Math.round(retryAfterMs)})`
+  }
+
+  return `Network error: ${statusCode}`
+}
+
 const fetchLatestGamesPage = async (
   pageNumber,
   latestGamesSort = 'date',
@@ -1331,7 +1381,12 @@ const fetchLatestGamesPage = async (
       )
     }
 
-    throw new Error(`Network error: ${response.status}`)
+    throw new Error(
+      buildNetworkErrorMessage(
+        response.status,
+        parseRetryAfterHeaderToMs(response.headers.get('retry-after')),
+      ),
+    )
   }
 
   const responseText = await response.text()
@@ -3256,6 +3311,13 @@ const registerIpcHandlers = () => {
     writeLocalDataFileValue('catalog', value)
     return true
   })
+  ipcMain.on('localData:saveCatalogCheckpointSync', (event, value) => {
+    event.returnValue = writeLocalDataFileValue('catalogCheckpoint', value)
+  })
+  ipcMain.handle('localData:saveCatalogCheckpoint', async (_event, value) => {
+    writeLocalDataFileValue('catalogCheckpoint', value)
+    return true
+  })
   ipcMain.on('localData:clearListsSync', (event) => {
     event.returnValue = writeLocalDataFileValue('lists', null)
   })
@@ -3275,6 +3337,13 @@ const registerIpcHandlers = () => {
   })
   ipcMain.handle('localData:clearCatalog', async () => {
     writeLocalDataFileValue('catalog', null)
+    return true
+  })
+  ipcMain.on('localData:clearCatalogCheckpointSync', (event) => {
+    event.returnValue = writeLocalDataFileValue('catalogCheckpoint', null)
+  })
+  ipcMain.handle('localData:clearCatalogCheckpoint', async () => {
+    writeLocalDataFileValue('catalogCheckpoint', null)
     return true
   })
   ipcMain.handle('localData:openFolder', async () => {

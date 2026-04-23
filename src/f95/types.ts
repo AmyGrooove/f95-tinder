@@ -45,6 +45,7 @@ type DashboardViewState = {
   includeTags: string[]
   excludeTags: string[]
   onlyUpdatedTracked: boolean
+  showOnlyDownloadedBookmarks: boolean
   showOnlyPlayedFavorites: boolean
   sortField: DashboardSortField
   sortDirection: DashboardSortDirection
@@ -118,6 +119,8 @@ type MetadataSyncState = {
   isRunning: boolean
   isPaused: boolean
   isStopping: boolean
+  isComplete: boolean
+  nextRetryAtUnixMs: number | null
   currentPage: number
   pageLimit: number
   syncedCount: number
@@ -130,6 +133,11 @@ type LatestCatalogState = {
   threadItemsByIdentifier: Record<string, F95ThreadItem>
   orderedThreadIdentifiers: number[]
   pageCount: number
+  totalPages: number
+  isComplete: boolean
+  updatedTrackedCount: number
+  lastError: string | null
+  nextRetryAtUnixMs: number | null
   sourceLatestGamesSort: LatestGamesSort
   sourceFilterState: FilterState
 }

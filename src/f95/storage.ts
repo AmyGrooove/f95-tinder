@@ -1,10 +1,12 @@
 import { safeJsonParse } from './utils'
 import {
   clearLauncherLocalCatalogSync,
+  clearLauncherLocalCatalogCheckpointSync,
   clearLauncherLocalLists,
   clearLauncherLocalSettingsSync,
   getLauncherLocalDataSnapshotSync,
   saveLauncherLocalCatalogSync,
+  saveLauncherLocalCatalogCheckpointSync,
   saveLauncherLocalLists,
   saveLauncherLocalSettingsSync,
 } from '../launcher/runtime'
@@ -35,6 +37,7 @@ const STORAGE_KEYS = {
   tagsMap: 'f95_tinder_tags_map_v1',
   prefixesMap: 'f95_tinder_prefixes_map_v1',
   latestCatalog: 'f95_tinder_latest_catalog_v1',
+  latestCatalogCheckpoint: 'f95_tinder_latest_catalog_checkpoint_v1',
 }
 
 const LATEST_GAMES_SORTS: LatestGamesSort[] = ['date', 'views']
@@ -54,6 +57,7 @@ const BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE: DashboardViewState = {
   includeTags: [],
   excludeTags: [],
   onlyUpdatedTracked: false,
+  showOnlyDownloadedBookmarks: false,
   showOnlyPlayedFavorites: false,
   sortField: 'addedAt',
   sortDirection: 'asc',
@@ -384,6 +388,7 @@ const normalizeDashboardViewState = (
     includeTags: normalizeImportedStringList(value.includeTags),
     excludeTags: normalizeImportedStringList(value.excludeTags),
     onlyUpdatedTracked: value.onlyUpdatedTracked === true,
+    showOnlyDownloadedBookmarks: value.showOnlyDownloadedBookmarks === true,
     showOnlyPlayedFavorites: value.showOnlyPlayedFavorites === true,
     sortField: normalizeDashboardSortField(value.sortField),
     sortDirection: normalizeDashboardSortDirection(value.sortDirection),
@@ -417,6 +422,10 @@ let launcherSettingsBackupCache:
   | null
   | undefined
 let launcherCatalogSnapshotCache: LatestCatalogSnapshot | null | undefined
+let launcherCatalogCheckpointSnapshotCache:
+  | LatestCatalogSnapshot
+  | null
+  | undefined
 
 const getLauncherSnapshotCached = () => {
   if (launcherSnapshotCache !== undefined) {
@@ -431,6 +440,7 @@ const resetLauncherBackupCaches = () => {
   launcherListsBackupCache = undefined
   launcherSettingsBackupCache = undefined
   launcherCatalogSnapshotCache = undefined
+  launcherCatalogCheckpointSnapshotCache = undefined
 }
 
 const setLauncherSnapshotCached = (value: LauncherLocalDataSnapshot | null) => {
@@ -439,7 +449,7 @@ const setLauncherSnapshotCached = (value: LauncherLocalDataSnapshot | null) => {
 }
 
 const updateLauncherSnapshotCached = (
-  fileKind: 'lists' | 'settings' | 'catalog',
+  fileKind: 'lists' | 'settings' | 'catalog' | 'catalogCheckpoint',
   value: unknown,
 ) => {
   const currentSnapshot = getLauncherSnapshotCached()
@@ -454,7 +464,9 @@ const updateLauncherSnapshotCached = (
       ? currentSnapshot.listsFile
       : fileKind === 'settings'
         ? currentSnapshot.settingsFile
-        : currentSnapshot.catalogFile),
+        : fileKind === 'catalog'
+          ? currentSnapshot.catalogFile
+          : currentSnapshot.catalogCheckpointFile),
     exists: value !== null && value !== undefined,
     updatedAtUnixMs: nextUpdatedAtUnixMs,
   }
@@ -465,6 +477,10 @@ const updateLauncherSnapshotCached = (
     settings:
       fileKind === 'settings' ? value ?? null : currentSnapshot.settings,
     catalog: fileKind === 'catalog' ? value ?? null : currentSnapshot.catalog,
+    catalogCheckpoint:
+      fileKind === 'catalogCheckpoint'
+        ? value ?? null
+        : currentSnapshot.catalogCheckpoint,
     listsFile: fileKind === 'lists' ? nextFileDescriptor : currentSnapshot.listsFile,
     settingsFile:
       fileKind === 'settings'
@@ -472,6 +488,10 @@ const updateLauncherSnapshotCached = (
         : currentSnapshot.settingsFile,
     catalogFile:
       fileKind === 'catalog' ? nextFileDescriptor : currentSnapshot.catalogFile,
+    catalogCheckpointFile:
+      fileKind === 'catalogCheckpoint'
+        ? nextFileDescriptor
+        : currentSnapshot.catalogCheckpointFile,
   })
 }
 
@@ -694,11 +714,42 @@ const normalizeLatestCatalogState = (
     0,
     Math.floor(normalizeFiniteNumber(rawValue.pageCount)),
   )
+  const totalPagesValue = Math.max(
+    0,
+    Math.floor(normalizeFiniteNumber(rawValue.totalPages)),
+  )
+  const hasExplicitCompleteFlag =
+    rawValue.isComplete === true || rawValue.isComplete === false
+  const isComplete =
+    rawValue.isComplete === true ||
+    (!hasExplicitCompleteFlag && pageCount > 0)
+  const totalPages = isComplete
+    ? Math.max(pageCount, totalPagesValue)
+    : totalPagesValue
+  const updatedTrackedCount = Math.max(
+    0,
+    Math.floor(normalizeFiniteNumber(rawValue.updatedTrackedCount)),
+  )
+  const lastError =
+    typeof rawValue.lastError === 'string' && rawValue.lastError.trim().length > 0
+      ? rawValue.lastError
+      : null
+  const nextRetryAtUnixMs =
+    typeof rawValue.nextRetryAtUnixMs === 'number' &&
+    Number.isFinite(rawValue.nextRetryAtUnixMs) &&
+    rawValue.nextRetryAtUnixMs > 0
+      ? Math.round(rawValue.nextRetryAtUnixMs)
+      : null
 
   return {
     threadItemsByIdentifier,
     orderedThreadIdentifiers,
     pageCount,
+    totalPages,
+    isComplete,
+    updatedTrackedCount,
+    lastError,
+    nextRetryAtUnixMs,
     sourceLatestGamesSort: normalizeLatestGamesSort(rawValue.sourceLatestGamesSort),
     sourceFilterState: normalizeFilterState(rawValue.sourceFilterState),
   }
@@ -1094,6 +1145,28 @@ const loadLauncherLatestCatalogSnapshot = (): LatestCatalogSnapshot | null => {
   return launcherCatalogSnapshotCache
 }
 
+const loadLauncherLatestCatalogCheckpointSnapshot = ():
+  | LatestCatalogSnapshot
+  | null => {
+  if (launcherCatalogCheckpointSnapshotCache !== undefined) {
+    return launcherCatalogCheckpointSnapshotCache
+  }
+
+  const launcherSnapshot = getLauncherSnapshotCached()
+  if (!launcherSnapshot) {
+    launcherCatalogCheckpointSnapshotCache = null
+    return launcherCatalogCheckpointSnapshotCache
+  }
+
+  launcherCatalogCheckpointSnapshotCache = {
+    catalog: normalizeLatestCatalogState(launcherSnapshot.catalogCheckpoint),
+    updatedAtUnixMs: launcherSnapshot.catalogCheckpointFile.updatedAtUnixMs,
+    path: launcherSnapshot.catalogCheckpointFile.path,
+  }
+
+  return launcherCatalogCheckpointSnapshotCache
+}
+
 const buildFallbackLocalListsBackup = () => {
   const launcherSettingsBackup = loadLauncherLocalSettingsBackup()
   return {
@@ -1132,6 +1205,24 @@ const loadLatestCatalogSnapshotFromLocalStorage = (): LatestCatalogSnapshot => {
   return normalizeLatestCatalogSnapshot(safeJsonParse<unknown>(latestCatalogText))
 }
 
+const loadLatestCatalogCheckpointSnapshotFromLocalStorage =
+  (): LatestCatalogSnapshot => {
+    const latestCatalogCheckpointText = readLocalStorageValue(
+      STORAGE_KEYS.latestCatalogCheckpoint,
+    )
+    if (!latestCatalogCheckpointText) {
+      return {
+        catalog: null,
+        updatedAtUnixMs: null,
+        path: null,
+      }
+    }
+
+    return normalizeLatestCatalogSnapshot(
+      safeJsonParse<unknown>(latestCatalogCheckpointText),
+    )
+  }
+
 const loadSessionState = (): SessionState | null => {
   const launcherBackup = loadLauncherLocalListsBackup()
   if (launcherBackup) {
@@ -1166,6 +1257,15 @@ const loadLatestCatalogSnapshot = (): LatestCatalogSnapshot => {
   }
 
   return loadLatestCatalogSnapshotFromLocalStorage()
+}
+
+const loadLatestCatalogCheckpointSnapshot = (): LatestCatalogSnapshot => {
+  const launcherSnapshot = loadLauncherLatestCatalogCheckpointSnapshot()
+  if (launcherSnapshot) {
+    return launcherSnapshot
+  }
+
+  return loadLatestCatalogCheckpointSnapshotFromLocalStorage()
 }
 
 const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
@@ -1216,16 +1316,51 @@ const saveLatestCatalogState = (latestCatalogState: LatestCatalogState) => {
     return
   }
 
+  const completedValue = {
+    ...normalizedValue,
+    totalPages: Math.max(normalizedValue.pageCount, normalizedValue.totalPages),
+    isComplete: true,
+    lastError: null,
+    nextRetryAtUnixMs: null,
+  }
+
   if (isLauncherLocalDataEnabled()) {
-    updateLauncherSnapshotCached('catalog', normalizedValue)
-    saveLauncherLocalCatalogSync(normalizedValue)
+    updateLauncherSnapshotCached('catalog', completedValue)
+    saveLauncherLocalCatalogSync(completedValue)
     return
   }
 
   writeLocalStorageValue(
     STORAGE_KEYS.latestCatalog,
     JSON.stringify({
-      catalog: normalizedValue,
+      catalog: completedValue,
+      updatedAtUnixMs: Date.now(),
+      path: null,
+    }),
+  )
+}
+
+const saveLatestCatalogCheckpointState = (latestCatalogState: LatestCatalogState) => {
+  const normalizedValue = normalizeLatestCatalogState(latestCatalogState)
+  if (!normalizedValue) {
+    return
+  }
+
+  const checkpointValue = {
+    ...normalizedValue,
+    isComplete: false,
+  }
+
+  if (isLauncherLocalDataEnabled()) {
+    updateLauncherSnapshotCached('catalogCheckpoint', checkpointValue)
+    saveLauncherLocalCatalogCheckpointSync(checkpointValue)
+    return
+  }
+
+  writeLocalStorageValue(
+    STORAGE_KEYS.latestCatalogCheckpoint,
+    JSON.stringify({
+      catalog: checkpointValue,
       updatedAtUnixMs: Date.now(),
       path: null,
     }),
@@ -1240,6 +1375,16 @@ const clearLatestCatalogState = () => {
   }
 
   removeLocalStorageValue(STORAGE_KEYS.latestCatalog)
+}
+
+const clearLatestCatalogCheckpointState = () => {
+  if (isLauncherLocalDataEnabled()) {
+    updateLauncherSnapshotCached('catalogCheckpoint', null)
+    clearLauncherLocalCatalogCheckpointSync()
+    return
+  }
+
+  removeLocalStorageValue(STORAGE_KEYS.latestCatalogCheckpoint)
 }
 
 const saveSessionState = (sessionState: SessionState) => {
@@ -1272,9 +1417,11 @@ const clearAllStoredData = () => {
     updateLauncherSnapshotCached('lists', null)
     updateLauncherSnapshotCached('settings', null)
     updateLauncherSnapshotCached('catalog', null)
+    updateLauncherSnapshotCached('catalogCheckpoint', null)
     void clearLauncherLocalLists()
     clearLauncherLocalSettingsSync()
     clearLauncherLocalCatalogSync()
+    clearLauncherLocalCatalogCheckpointSync()
     return
   }
 
@@ -1282,6 +1429,7 @@ const clearAllStoredData = () => {
   removeLocalStorageValue(STORAGE_KEYS.defaultFilterState)
   removeLocalStorageValue(STORAGE_KEYS.dashboardViewState)
   removeLocalStorageValue(STORAGE_KEYS.latestCatalog)
+  removeLocalStorageValue(STORAGE_KEYS.latestCatalogCheckpoint)
   clearTagsMap()
   clearPrefixesMap()
 }
@@ -1397,13 +1545,16 @@ export {
   loadDefaultSwipeSettings,
   loadDashboardViewState,
   loadLatestCatalogSnapshot,
+  loadLatestCatalogCheckpointSnapshot,
   saveDefaultSwipeSettings,
   saveDashboardViewState,
   saveLatestCatalogState,
+  saveLatestCatalogCheckpointState,
   normalizeDefaultSwipeSettings,
   normalizeDashboardViewState,
   clearAllStoredData,
   clearLatestCatalogState,
+  clearLatestCatalogCheckpointState,
   loadTagsMap,
   loadPrefixesMap,
   saveTagsMap,

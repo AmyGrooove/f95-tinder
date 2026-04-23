@@ -44,6 +44,13 @@ type InterestProfile = {
   negativeSignalsCount: number;
 };
 
+type CatalogFeatureStats = {
+  threadCount: number;
+  tagThreadCountById: Map<number, number>;
+  prefixThreadCountById: Map<number, number>;
+  creatorThreadCountByName: Map<string, number>;
+};
+
 type ThreadInterestAssessment = {
   level: InterestLevel;
   label: string;
@@ -79,6 +86,7 @@ const TRASH_LEVEL_MIN_EVIDENCE_MAGNITUDE = 1.7;
 const SIGNAL_RECENCY_HALF_LIFE_DAYS = 160;
 const MIN_SIGNAL_RECENCY_WEIGHT = 0.35;
 const SECONDS_PER_DAY = 24 * 60 * 60;
+const MIN_CATALOG_THREADS_FOR_PREVALENCE_WEIGHT = 96;
 const FEATURE_POLICY_BY_KIND: Record<
   FeatureSignalKind,
   {
@@ -111,6 +119,26 @@ const FEATURE_POLICY_BY_KIND: Record<
     coveragePenaltyExponent: 1.1,
   },
 };
+const CATALOG_PREVALENCE_POLICY_BY_KIND: Record<
+  FeatureSignalKind,
+  {
+    minimumWeight: number;
+    maximumWeight: number;
+  }
+> = {
+  tag: {
+    minimumWeight: 0.62,
+    maximumWeight: 1.08,
+  },
+  prefix: {
+    minimumWeight: 0.74,
+    maximumWeight: 1.04,
+  },
+  creator: {
+    minimumWeight: 0.84,
+    maximumWeight: 1.02,
+  },
+};
 
 type InterestSignalEntry = {
   creatorName: string;
@@ -127,6 +155,13 @@ const createEmptyInterestProfile = (): InterestProfile => ({
   trackedSignalsCount: 0,
   positiveSignalsCount: 0,
   negativeSignalsCount: 0,
+});
+
+const createEmptyCatalogFeatureStats = (): CatalogFeatureStats => ({
+  threadCount: 0,
+  tagThreadCountById: new Map<number, number>(),
+  prefixThreadCountById: new Map<number, number>(),
+  creatorThreadCountByName: new Map<string, number>(),
 });
 
 const normalizeCreatorName = (value: unknown) => {
@@ -190,6 +225,13 @@ const getOrCreateEvidence = <Key,>(
   };
   map.set(key, nextEvidence);
   return nextEvidence;
+};
+
+const incrementCount = <Key,>(
+  map: Map<Key, number>,
+  key: Key,
+) => {
+  map.set(key, (map.get(key) ?? 0) + 1);
 };
 
 const addEvidence = <Key,>(
@@ -459,8 +501,63 @@ const toScore100 = (rawScore: number) => {
   return Math.round(normalizedValue * 100);
 };
 
+const buildCatalogFeatureStats = (
+  threadItemsByIdentifier: Record<string, F95ThreadItem>,
+): CatalogFeatureStats => {
+  const stats = createEmptyCatalogFeatureStats();
+  const threadItemList = Object.values(threadItemsByIdentifier);
+  stats.threadCount = threadItemList.length;
+
+  for (const threadItem of threadItemList) {
+    for (const tagId of uniqueNumberList(threadItem.tags)) {
+      incrementCount(stats.tagThreadCountById, tagId);
+    }
+
+    for (const prefixId of getEnginePrefixIdList(threadItem.prefixes)) {
+      incrementCount(stats.prefixThreadCountById, prefixId);
+    }
+
+    const creatorName = normalizeCreatorName(threadItem.creator);
+    if (creatorName) {
+      incrementCount(
+        stats.creatorThreadCountByName,
+        creatorName.toLowerCase(),
+      );
+    }
+  }
+
+  return stats;
+};
+
 const clamp01 = (value: number) => {
   return Math.min(1, Math.max(0, value));
+};
+
+const getCatalogFeaturePrevalenceWeight = (
+  occurrenceCount: number | undefined,
+  catalogFeatureStats: CatalogFeatureStats | null | undefined,
+  featureKind: FeatureSignalKind,
+) => {
+  if (
+    !catalogFeatureStats ||
+    catalogFeatureStats.threadCount < MIN_CATALOG_THREADS_FOR_PREVALENCE_WEIGHT ||
+    typeof occurrenceCount !== "number" ||
+    !Number.isFinite(occurrenceCount) ||
+    occurrenceCount <= 0
+  ) {
+    return 1;
+  }
+
+  const policy = CATALOG_PREVALENCE_POLICY_BY_KIND[featureKind];
+  const rarityWeight = clamp01(
+    Math.log1p(catalogFeatureStats.threadCount / occurrenceCount) /
+      Math.log1p(catalogFeatureStats.threadCount),
+  );
+
+  return (
+    policy.minimumWeight +
+    rarityWeight * (policy.maximumWeight - policy.minimumWeight)
+  );
 };
 
 const clampContributionMagnitude = (
@@ -510,8 +607,15 @@ const getInterestConfidence = (
   );
 };
 
-const applyConfidenceToScore = (score: number, confidence: number) => {
-  return Math.round(50 + (score - 50) * clamp01(confidence));
+const blendScoreByConfidence = (
+  baselineScore: number,
+  personalizedScore: number,
+  confidence: number,
+) => {
+  return Math.round(
+    baselineScore +
+      (personalizedScore - baselineScore) * clamp01(confidence),
+  );
 };
 
 const resolveInterestLevel = (
@@ -775,6 +879,7 @@ const assessThreadInterest = (
   profile: InterestProfile,
   tagsMap: Record<string, string>,
   prefixesMap: Record<string, string>,
+  catalogFeatureStats?: CatalogFeatureStats | null,
 ): ThreadInterestAssessment | null => {
   if (!threadItem) {
     return null;
@@ -783,13 +888,22 @@ const assessThreadInterest = (
   const contributionList: FeatureContribution[] = [];
   const tagContributionList: FeatureContribution[] = [];
   let rawScore = BASELINE_RAW_SCORE;
+  let baselineRawScore = 0;
 
   for (const tagId of uniqueNumberList(threadItem.tags)) {
-    const contribution = calculateFeatureContribution(
+    const baseContribution = calculateFeatureContribution(
       profile.tagEvidenceById.get(tagId),
       profile.trackedSignalsCount,
       "tag",
     );
+
+    const contribution =
+      baseContribution *
+      getCatalogFeaturePrevalenceWeight(
+        catalogFeatureStats?.tagThreadCountById.get(tagId),
+        catalogFeatureStats,
+        "tag",
+      );
 
     if (contribution !== 0) {
       tagContributionList.push({
@@ -808,11 +922,19 @@ const assessThreadInterest = (
   );
 
   for (const prefixId of getEnginePrefixIdList(threadItem.prefixes)) {
-    const contribution = calculateFeatureContribution(
+    const baseContribution = calculateFeatureContribution(
       profile.prefixEvidenceById.get(prefixId),
       profile.trackedSignalsCount,
       "prefix",
     );
+
+    const contribution =
+      baseContribution *
+      getCatalogFeaturePrevalenceWeight(
+        catalogFeatureStats?.prefixThreadCountById.get(prefixId),
+        catalogFeatureStats,
+        "prefix",
+      );
 
     if (contribution !== 0) {
       contributionList.push({
@@ -826,11 +948,20 @@ const assessThreadInterest = (
 
   const creatorName = normalizeCreatorName(threadItem.creator);
   if (creatorName) {
-    const creatorContribution = calculateFeatureContribution(
+    const baseCreatorContribution = calculateFeatureContribution(
       profile.creatorEvidenceByName.get(creatorName.toLowerCase()),
       profile.trackedSignalsCount,
       "creator",
     );
+    const creatorContribution =
+      baseCreatorContribution *
+      getCatalogFeaturePrevalenceWeight(
+        catalogFeatureStats?.creatorThreadCountByName.get(
+          creatorName.toLowerCase(),
+        ),
+        catalogFeatureStats,
+        "creator",
+      );
 
     if (creatorContribution !== 0) {
       contributionList.push({
@@ -850,6 +981,7 @@ const assessThreadInterest = (
       value: ratingBonus,
     });
     rawScore += ratingBonus;
+    baselineRawScore += ratingBonus;
   }
 
   const freshnessBonus = getFreshnessBonus(threadItem);
@@ -860,6 +992,7 @@ const assessThreadInterest = (
       value: freshnessBonus,
     });
     rawScore += freshnessBonus;
+    baselineRawScore += freshnessBonus;
   }
 
   const evidenceMagnitude = contributionList.reduce((sum, contribution) => {
@@ -875,7 +1008,11 @@ const assessThreadInterest = (
       evidenceMagnitude < 0.9);
 
   const confidence = getInterestConfidence(profile, evidenceMagnitude);
-  const score = applyConfidenceToScore(toScore100(rawScore), confidence);
+  const score = blendScoreByConfidence(
+    toScore100(baselineRawScore),
+    toScore100(rawScore),
+    confidence,
+  );
   const level = hasInsufficientData
     ? "neutral"
     : resolveInterestLevel(score, confidence, evidenceMagnitude);
@@ -899,10 +1036,12 @@ const assessThreadInterest = (
 
 export {
   assessThreadInterest,
+  buildCatalogFeatureStats,
   buildInterestProfile,
 };
 
 export type {
+  CatalogFeatureStats,
   InterestCandidate,
   InterestLevel,
   InterestProfile,

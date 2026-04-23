@@ -58,9 +58,14 @@ const normalizeLauncherLocalDataSnapshot = (
     listsFile: normalizeLauncherLocalDataFile(value.listsFile),
     settingsFile: normalizeLauncherLocalDataFile(value.settingsFile),
     catalogFile: normalizeLauncherLocalDataFile(value.catalogFile),
+    catalogCheckpointFile: normalizeLauncherLocalDataFile(
+      value.catalogCheckpointFile,
+    ),
     lists: 'lists' in value ? value.lists ?? null : null,
     settings: 'settings' in value ? value.settings ?? null : null,
     catalog: 'catalog' in value ? value.catalog ?? null : null,
+    catalogCheckpoint:
+      'catalogCheckpoint' in value ? value.catalogCheckpoint ?? null : null,
   }
 }
 
@@ -170,6 +175,44 @@ const saveLauncherLocalCatalog = async (value: unknown) => {
   }
 }
 
+const saveLauncherLocalCatalogCheckpointSync = (
+  value: unknown,
+): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  try {
+    if (typeof launcherBridge.saveLocalCatalogCheckpointSync !== 'function') {
+      return getLauncherLocalDataSnapshotSync()
+    }
+
+    return normalizeLauncherLocalDataSnapshot(
+      launcherBridge.saveLocalCatalogCheckpointSync(value),
+    )
+  } catch {
+    return getLauncherLocalDataSnapshotSync()
+  }
+}
+
+const saveLauncherLocalCatalogCheckpoint = async (value: unknown) => {
+  const launcherBridge = getLauncherBridge()
+  if (
+    !launcherBridge ||
+    typeof launcherBridge.saveLocalCatalogCheckpoint !== 'function'
+  ) {
+    return false
+  }
+
+  try {
+    await launcherBridge.saveLocalCatalogCheckpoint(value)
+    return true
+  } catch {
+    return false
+  }
+}
+
 const clearLauncherLocalListsSync = (): LauncherLocalDataSnapshot | null => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
@@ -253,6 +296,42 @@ const clearLauncherLocalCatalog = async () => {
 
   try {
     await launcherBridge.clearLocalCatalog()
+    return true
+  } catch {
+    return false
+  }
+}
+
+const clearLauncherLocalCatalogCheckpointSync = (): LauncherLocalDataSnapshot | null => {
+  const launcherBridge = getLauncherBridge()
+  if (!launcherBridge) {
+    return null
+  }
+
+  try {
+    if (typeof launcherBridge.clearLocalCatalogCheckpointSync !== 'function') {
+      return getLauncherLocalDataSnapshotSync()
+    }
+
+    return normalizeLauncherLocalDataSnapshot(
+      launcherBridge.clearLocalCatalogCheckpointSync(),
+    )
+  } catch {
+    return getLauncherLocalDataSnapshotSync()
+  }
+}
+
+const clearLauncherLocalCatalogCheckpoint = async () => {
+  const launcherBridge = getLauncherBridge()
+  if (
+    !launcherBridge ||
+    typeof launcherBridge.clearLocalCatalogCheckpoint !== 'function'
+  ) {
+    return false
+  }
+
+  try {
+    await launcherBridge.clearLocalCatalogCheckpoint()
     return true
   } catch {
     return false
@@ -552,6 +631,8 @@ const requestLauncherLibraryClear = async () => {
 
 export {
   clearLauncherLocalCatalog,
+  clearLauncherLocalCatalogCheckpoint,
+  clearLauncherLocalCatalogCheckpointSync,
   clearLauncherLocalListsSync,
   clearLauncherLocalLists,
   clearLauncherLocalSettingsSync,
@@ -582,6 +663,8 @@ export {
   requestLauncherMirrorOpen,
   requestLauncherRevealGame,
   saveLauncherLocalCatalog,
+  saveLauncherLocalCatalogCheckpoint,
+  saveLauncherLocalCatalogCheckpointSync,
   saveLauncherLocalListsSync,
   saveLauncherLocalLists,
   saveLauncherLocalSettingsSync,

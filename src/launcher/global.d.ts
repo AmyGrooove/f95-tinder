@@ -31,12 +31,16 @@ type LauncherBridge = {
   saveLocalSettings: (value: unknown) => Promise<boolean>
   saveLocalCatalogSync: (value: unknown) => LauncherLocalDataSnapshot
   saveLocalCatalog: (value: unknown) => Promise<boolean>
+  saveLocalCatalogCheckpointSync: (value: unknown) => LauncherLocalDataSnapshot
+  saveLocalCatalogCheckpoint: (value: unknown) => Promise<boolean>
   clearLocalListsSync: () => LauncherLocalDataSnapshot
   clearLocalLists: () => Promise<boolean>
   clearLocalSettingsSync: () => LauncherLocalDataSnapshot
   clearLocalSettings: () => Promise<boolean>
   clearLocalCatalogSync: () => LauncherLocalDataSnapshot
   clearLocalCatalog: () => Promise<boolean>
+  clearLocalCatalogCheckpointSync: () => LauncherLocalDataSnapshot
+  clearLocalCatalogCheckpoint: () => Promise<boolean>
   openLocalDataFolder: () => Promise<boolean>
   openExternal: (
     targetUrl: string,

@@ -11,12 +11,20 @@ contextBridge.exposeInMainWorld('f95Launcher', {
   saveLocalSettings: (value) => ipcRenderer.invoke('localData:saveSettings', value),
   saveLocalCatalogSync: (value) => ipcRenderer.sendSync('localData:saveCatalogSync', value),
   saveLocalCatalog: (value) => ipcRenderer.invoke('localData:saveCatalog', value),
+  saveLocalCatalogCheckpointSync: (value) =>
+    ipcRenderer.sendSync('localData:saveCatalogCheckpointSync', value),
+  saveLocalCatalogCheckpoint: (value) =>
+    ipcRenderer.invoke('localData:saveCatalogCheckpoint', value),
   clearLocalListsSync: () => ipcRenderer.sendSync('localData:clearListsSync'),
   clearLocalLists: () => ipcRenderer.invoke('localData:clearLists'),
   clearLocalSettingsSync: () => ipcRenderer.sendSync('localData:clearSettingsSync'),
   clearLocalSettings: () => ipcRenderer.invoke('localData:clearSettings'),
   clearLocalCatalogSync: () => ipcRenderer.sendSync('localData:clearCatalogSync'),
   clearLocalCatalog: () => ipcRenderer.invoke('localData:clearCatalog'),
+  clearLocalCatalogCheckpointSync: () =>
+    ipcRenderer.sendSync('localData:clearCatalogCheckpointSync'),
+  clearLocalCatalogCheckpoint: () =>
+    ipcRenderer.invoke('localData:clearCatalogCheckpoint'),
   openLocalDataFolder: () => ipcRenderer.invoke('localData:openFolder'),
   openExternal: (targetUrl, options) =>
     ipcRenderer.invoke('app:openExternal', targetUrl, options),
