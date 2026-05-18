@@ -17,6 +17,7 @@ import {
   fetchLatestGamesPage,
 } from './api'
 import {
+  clearLatestCatalogState,
   clearLatestCatalogCheckpointState,
   createDefaultSessionState,
   loadDefaultSwipeSettings,
@@ -44,12 +45,16 @@ import {
   hasProcessedThreadItemUpdate,
   isUpdateTrackedListType,
 } from './updateTracking'
+import { getEnginePrefixIdList } from './prefixes'
 import { mergeUniqueStringArrays, removeStringFromArray } from './utils'
 
-const CATALOG_SYNC_BATCH_SIZE = 10
-const CATALOG_SYNC_BATCH_DELAY_MS = 10_000
-const LATEST_CATALOG_MAX_AGE_MS = 2 * 24 * 60 * 60 * 1_000
+const LATEST_CATALOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1_000
+const METADATA_SYNC_READY_SWIPE_COUNT = 20
+const METADATA_SYNC_SUCCESS_DELAY_MS = 700
 const METADATA_SYNC_CONTROL_POLL_MS = 250
+const METADATA_SYNC_MAX_PAGE_COUNT = 2_000
+const METADATA_SYNC_MAX_EMPTY_PAGE_COUNT = 2
+const METADATA_SYNC_MAX_DUPLICATE_PAGE_COUNT = 3
 const METADATA_SYNC_RETRY_DELAY_MS_LIST = [15_000, 30_000, 60_000, 120_000]
 const MAX_METADATA_SYNC_RETRY_ATTEMPTS = METADATA_SYNC_RETRY_DELAY_MS_LIST.length
 const DEFAULT_RATE_LIMIT_RETRY_DELAY_MS = 30_000
@@ -57,6 +62,9 @@ const MAX_RATE_LIMIT_RETRY_DELAY_MS = 5 * 60 * 1_000
 const METADATA_SYNC_RETRY_JITTER_RATIO = 0.12
 const METADATA_SYNC_RETRY_MIN_JITTER_MS = 750
 const METADATA_SYNC_RETRY_MAX_JITTER_MS = 5_000
+const INTEREST_DIVERSITY_SCORE_WINDOW = 4
+const INTEREST_DIVERSITY_LOOKAHEAD = 18
+const INTEREST_DIVERSITY_RECENT_WINDOW = 5
 const METADATA_SYNC_RETRYABLE_STATUS_CODE_SET = new Set([
   408,
   429,
@@ -68,6 +76,15 @@ const METADATA_SYNC_RETRYABLE_STATUS_CODE_SET = new Set([
 const EMPTY_LOOKUP_MAP: Record<string, string> = {}
 
 type ActionType = ListType | 'playedFavorite'
+
+type InterestSortedThreadItem = {
+  creatorName: string
+  prefixIdList: number[]
+  score: number
+  sortValue: number
+  tagIdList: number[]
+  threadIdentifier: number
+}
 
 const resolveListTypeFromAction = (actionType: ActionType): ListType => {
   if (actionType === 'playedFavorite') {
@@ -209,6 +226,18 @@ const formatMetadataSyncRetryDelay = (durationMs: number) => {
   return remainingSeconds > 0
     ? `${minutes} мин. ${remainingSeconds} сек.`
     : `${minutes} мин.`
+}
+
+const appendMetadataSyncDiagnostic = (
+  diagnostics: string[],
+  message: string,
+) => {
+  const timestamp = new Date().toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+  return [...diagnostics, `${timestamp} ${message}`].slice(-30)
 }
 
 const resolveListTypeFromMembership = (
@@ -407,6 +436,95 @@ const sortThreadIdentifiersForSwipe = (
   })
 }
 
+const normalizeCreatorNameForDiversity = (value: unknown) => {
+  return typeof value === 'string' ? value.trim().toLowerCase() : ''
+}
+
+const getNumberListOverlapCount = (firstList: number[], secondList: number[]) => {
+  if (firstList.length === 0 || secondList.length === 0) {
+    return 0
+  }
+
+  const secondSet = new Set(secondList)
+  return firstList.reduce(
+    (count, value) => count + (secondSet.has(value) ? 1 : 0),
+    0,
+  )
+}
+
+const getInterestDiversityPenalty = (
+  item: InterestSortedThreadItem,
+  recentItems: InterestSortedThreadItem[],
+) => {
+  return recentItems.reduce((penalty, recentItem, index) => {
+    const recencyWeight = (recentItems.length - index) / recentItems.length
+    const sharedTagCount = getNumberListOverlapCount(
+      item.tagIdList,
+      recentItem.tagIdList,
+    )
+    const sharedPrefixCount = getNumberListOverlapCount(
+      item.prefixIdList,
+      recentItem.prefixIdList,
+    )
+    const tagPenalty =
+      sharedTagCount > 0
+        ? Math.min(
+            2.4,
+            sharedTagCount / Math.max(1, Math.min(item.tagIdList.length, 8)),
+          ) * 2.4
+        : 0
+    const prefixPenalty = Math.min(1.4, sharedPrefixCount * 0.7)
+    const creatorPenalty =
+      item.creatorName &&
+      recentItem.creatorName &&
+      item.creatorName === recentItem.creatorName
+        ? 2.1
+        : 0
+
+    return penalty + (tagPenalty + prefixPenalty + creatorPenalty) * recencyWeight
+  }, 0)
+}
+
+const diversifyInterestSortedItems = (
+  sortedItems: InterestSortedThreadItem[],
+) => {
+  const remainingItems = [...sortedItems]
+  const result: InterestSortedThreadItem[] = []
+  const recentItems: InterestSortedThreadItem[] = []
+
+  while (remainingItems.length > 0) {
+    const topScore = remainingItems[0].score
+    const candidateLimit = Math.min(
+      remainingItems.length,
+      INTEREST_DIVERSITY_LOOKAHEAD,
+    )
+    let bestIndex = 0
+    let bestPenalty = Number.POSITIVE_INFINITY
+
+    for (let index = 0; index < candidateLimit; index += 1) {
+      const candidate = remainingItems[index]
+      if (topScore - candidate.score > INTEREST_DIVERSITY_SCORE_WINDOW) {
+        break
+      }
+
+      const penalty = getInterestDiversityPenalty(candidate, recentItems)
+      if (penalty < bestPenalty) {
+        bestPenalty = penalty
+        bestIndex = index
+      }
+    }
+
+    const [nextItem] = remainingItems.splice(bestIndex, 1)
+    result.push(nextItem)
+    recentItems.push(nextItem)
+    if (recentItems.length > INTEREST_DIVERSITY_RECENT_WINDOW) {
+      recentItems.shift()
+    }
+  }
+
+  return result
+}
+
 const resolveStoredSwipeSortMode = (
   swipeSortMode: SwipeSortMode,
   latestGamesSort: LatestGamesSort,
@@ -442,12 +560,21 @@ const buildCatalogSessionState = (
     nextThreadItemsByIdentifier[threadIdentifier] = threadItem
   }
 
-  const remainingThreadIdentifiers = sortThreadIdentifiersForSwipe(
+  const sortedAvailableThreadIdentifiers = sortThreadIdentifiersForSwipe(
     orderedThreadIdentifierList.filter(
       (threadIdentifier) => !trackedLinkSet.has(buildThreadLink(threadIdentifier)),
     ),
     nextThreadItemsByIdentifier,
     resolveStoredSwipeSortMode(sessionState.swipeSortMode, sessionState.latestGamesSort),
+  )
+  const availableThreadIdentifierSet = new Set(sortedAvailableThreadIdentifiers)
+  const stableRemainingThreadIdentifiers =
+    sessionState.remainingThreadIdentifiers.filter((threadIdentifier) =>
+      availableThreadIdentifierSet.has(threadIdentifier),
+    )
+  const stableRemainingThreadIdentifierSet = new Set(stableRemainingThreadIdentifiers)
+  const appendedThreadIdentifiers = sortedAvailableThreadIdentifiers.filter(
+    (threadIdentifier) => !stableRemainingThreadIdentifierSet.has(threadIdentifier),
   )
 
   return {
@@ -455,7 +582,10 @@ const buildCatalogSessionState = (
     currentPageNumber: syncedPageNumber,
     nextPageToFetchNumber: syncedPageNumber + 1,
     threadItemsByIdentifier: nextThreadItemsByIdentifier,
-    remainingThreadIdentifiers,
+    remainingThreadIdentifiers: [
+      ...stableRemainingThreadIdentifiers,
+      ...appendedThreadIdentifiers,
+    ],
   }
 }
 
@@ -522,24 +652,40 @@ const isLatestCatalogFresh = (
 
 const resolveInitialSessionCatalogState = (
   latestCatalogState: LatestCatalogState | null,
+  latestCatalogUpdatedAtUnixMs: number | null,
   latestCatalogCheckpointState: LatestCatalogState | null,
+  latestCatalogCheckpointUpdatedAtUnixMs: number | null,
   defaultSwipeSettings: DefaultSwipeSettings,
 ) => {
-  if (latestCatalogState) {
+  if (
+    latestCatalogState &&
+    isLatestCatalogFresh(
+      latestCatalogUpdatedAtUnixMs,
+      getLatestCatalogSourceSignature(latestCatalogState),
+      defaultSwipeSettings,
+      latestCatalogState.isComplete,
+    )
+  ) {
     return latestCatalogState
   }
 
-  return canResumeLatestCatalog(latestCatalogCheckpointState, defaultSwipeSettings)
+  return canResumeLatestCatalog(latestCatalogCheckpointState, defaultSwipeSettings) &&
+    latestCatalogCheckpointUpdatedAtUnixMs !== null &&
+    Date.now() - latestCatalogCheckpointUpdatedAtUnixMs <= LATEST_CATALOG_MAX_AGE_MS
     ? latestCatalogCheckpointState
     : null
 }
 
 const resolveInitialMetadataCatalogState = (
   latestCatalogState: LatestCatalogState | null,
+  latestCatalogUpdatedAtUnixMs: number | null,
   latestCatalogCheckpointState: LatestCatalogState | null,
+  latestCatalogCheckpointUpdatedAtUnixMs: number | null,
   defaultSwipeSettings: DefaultSwipeSettings,
 ) => {
-  return canResumeLatestCatalog(latestCatalogCheckpointState, defaultSwipeSettings)
+  return canResumeLatestCatalog(latestCatalogCheckpointState, defaultSwipeSettings) &&
+    latestCatalogCheckpointUpdatedAtUnixMs !== null &&
+    Date.now() - latestCatalogCheckpointUpdatedAtUnixMs <= LATEST_CATALOG_MAX_AGE_MS
     ? latestCatalogCheckpointState
     : latestCatalogState
 }
@@ -571,23 +717,35 @@ const buildLatestCatalogStateSnapshot = (
 
 const buildMetadataSyncStateFromCatalogState = (
   latestCatalogState: LatestCatalogState | null,
+  updatedAtUnixMs: number | null = null,
 ): MetadataSyncState => {
+  const isCatalogStale =
+    updatedAtUnixMs !== null && Date.now() - updatedAtUnixMs > LATEST_CATALOG_MAX_AGE_MS
+  const isComplete = latestCatalogState?.isComplete === true && !isCatalogStale
   return {
+    phase: isCatalogStale ? 'stale' : isComplete ? 'completed' : 'idle',
     isRunning: false,
     isPaused: false,
     isStopping: false,
-    isComplete: latestCatalogState?.isComplete === true,
+    isComplete,
     nextRetryAtUnixMs:
-      latestCatalogState?.isComplete === true
+      isComplete
         ? null
         : latestCatalogState?.nextRetryAtUnixMs ?? null,
     currentPage: latestCatalogState?.pageCount ?? 0,
     pageLimit: latestCatalogState?.totalPages ?? latestCatalogState?.pageCount ?? 0,
     syncedCount: Object.keys(latestCatalogState?.threadItemsByIdentifier ?? {}).length,
+    swipableCount: latestCatalogState?.orderedThreadIdentifiers.length ?? 0,
     updatedTrackedCount: latestCatalogState?.updatedTrackedCount ?? 0,
-    lastOutcome: latestCatalogState?.isComplete === true ? 'completed' : null,
+    duplicateCount: 0,
+    lastCompletedAtUnixMs: isComplete ? updatedAtUnixMs : null,
+    isCatalogStale,
+    diagnostics: isCatalogStale
+      ? ['Каталог старше 7 дней и будет пересинхронизирован.']
+      : [],
+    lastOutcome: isComplete ? 'completed' : null,
     error:
-      latestCatalogState?.isComplete === true
+      isComplete
         ? null
         : latestCatalogState?.lastError ?? null,
   }
@@ -689,6 +847,29 @@ const pickCurrentThreadIdentifier = (
   return null
 }
 
+const countSwipableThreadIdentifiers = (
+  threadIdentifierList: number[],
+  sessionState: SessionState,
+) => {
+  let count = 0
+  for (const threadIdentifier of threadIdentifierList) {
+    const threadItem = sessionState.threadItemsByIdentifier[String(threadIdentifier)]
+    if (!threadItem) {
+      continue
+    }
+
+    const threadLink = buildThreadLink(threadIdentifier)
+    if (isThreadLinkTrackedInDashboard(sessionState, threadLink)) {
+      continue
+    }
+
+    if (threadMatchesFilter(threadItem, sessionState.filterState)) {
+      count += 1
+    }
+  }
+  return count
+}
+
 type PersistSessionStateOptions = {
   skipSanitize?: boolean
 }
@@ -714,8 +895,13 @@ const useF95Browser = () => {
     )
     const latestCatalog = resolveInitialSessionCatalogState(
       initialLatestCatalogSnapshotRef.current.catalog,
+      initialLatestCatalogSnapshotRef.current.updatedAtUnixMs,
       initialLatestCatalogCheckpointSnapshotRef.current.catalog,
-      defaultSwipeSettingsRef.current,
+      initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs,
+      {
+        latestGamesSort: baseState.latestGamesSort,
+        filterState: baseState.filterState,
+      },
     )
     const initialState = latestCatalog
       ? sanitizeSwipeQueue(
@@ -743,15 +929,27 @@ const useF95Browser = () => {
     buildMetadataSyncStateFromCatalogState(
       resolveInitialMetadataCatalogState(
         initialLatestCatalogSnapshotRef.current.catalog,
+        initialLatestCatalogSnapshotRef.current.updatedAtUnixMs,
         initialLatestCatalogCheckpointSnapshotRef.current.catalog,
+        initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs,
         defaultSwipeSettingsRef.current,
       ),
+      initialLatestCatalogSnapshotRef.current.updatedAtUnixMs ??
+        initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs,
     ),
   )
   const hasStartedInitialMetadataSyncRef = useRef(false)
+  const metadataSourceSignatureRef = useRef(
+    createCatalogSourceSignatureFromValues(
+      sessionState.latestGamesSort,
+      sessionState.filterState,
+    ),
+  )
   const isMetadataSyncRunningRef = useRef(false)
   const isMetadataSyncPausedRef = useRef(false)
   const isMetadataSyncStopRequestedRef = useRef(false)
+  const metadataSyncRunIdRef = useRef(0)
+  const pendingMetadataSyncRestartRef = useRef(false)
   const metadataSyncAbortControllerRef = useRef<AbortController | null>(null)
   const interestProfile = useMemo(
     () => buildInterestProfile(sessionState),
@@ -809,14 +1007,26 @@ const useF95Browser = () => {
       sessionState.latestGamesSort,
     )
 
-    return sessionState.remainingThreadIdentifiers
+    const sortedItems = sessionState.remainingThreadIdentifiers
       .map((threadIdentifier) => {
         const threadItem =
           sessionState.threadItemsByIdentifier[String(threadIdentifier)]
 
         return {
+          creatorName: normalizeCreatorNameForDiversity(threadItem?.creator),
+          prefixIdList: getEnginePrefixIdList(threadItem?.prefixes),
           threadIdentifier,
           sortValue: getThreadSortValue(threadItem, stableSortMode),
+          tagIdList: Array.isArray(threadItem?.tags)
+            ? Array.from(
+                new Set(
+                  threadItem.tags.filter(
+                    (tagId): tagId is number =>
+                      Number.isInteger(tagId) && Number.isFinite(tagId),
+                  ),
+                ),
+              )
+            : [],
           score:
             assessThreadInterest(
               threadItem,
@@ -838,6 +1048,8 @@ const useF95Browser = () => {
 
         return secondItem.threadIdentifier - firstItem.threadIdentifier
       })
+
+    return diversifyInterestSortedItems(sortedItems)
       .map((item) => item.threadIdentifier)
   }, [
     catalogFeatureStats,
@@ -909,6 +1121,15 @@ const useF95Browser = () => {
   const clearPersistedLatestCatalogCheckpointSnapshot = useCallback(() => {
     clearLatestCatalogCheckpointState()
     initialLatestCatalogCheckpointSnapshotRef.current = {
+      catalog: null,
+      updatedAtUnixMs: null,
+      path: null,
+    }
+  }, [])
+
+  const clearPersistedLatestCatalogSnapshot = useCallback(() => {
+    clearLatestCatalogState()
+    initialLatestCatalogSnapshotRef.current = {
       catalog: null,
       updatedAtUnixMs: null,
       path: null,
@@ -1181,6 +1402,7 @@ const useF95Browser = () => {
     setTagsMapState({})
     setPrefixesMapState({})
     setMetadataSyncState({
+      phase: 'idle',
       isRunning: false,
       isPaused: false,
       isStopping: false,
@@ -1189,7 +1411,12 @@ const useF95Browser = () => {
       currentPage: 0,
       pageLimit: 0,
       syncedCount: 0,
+      swipableCount: 0,
       updatedTrackedCount: 0,
+      duplicateCount: 0,
+      lastCompletedAtUnixMs: null,
+      isCatalogStale: false,
+      diagnostics: [],
       lastOutcome: null,
       error: null,
     })
@@ -1476,29 +1703,60 @@ const useF95Browser = () => {
   }, [])
 
   const startMetadataSync = useCallback(
-    async () => {
+    async (options?: { restartFromScratch?: boolean }) => {
+      const shouldRestartFromScratch = options?.restartFromScratch === true
       if (isMetadataSyncRunningRef.current) {
+        if (shouldRestartFromScratch) {
+          pendingMetadataSyncRestartRef.current = true
+          metadataSyncRunIdRef.current += 1
+          isMetadataSyncStopRequestedRef.current = true
+          isMetadataSyncPausedRef.current = false
+          metadataSyncAbortControllerRef.current?.abort()
+          setMetadataSyncState((previousState) => ({
+            ...previousState,
+            phase: 'stopping',
+            isStopping: true,
+            diagnostics: appendMetadataSyncDiagnostic(
+              previousState.diagnostics,
+              'Текущая синхронизация остановлена для перезапуска.',
+            ),
+          }))
+        }
         return
       }
 
+      const runId = metadataSyncRunIdRef.current + 1
+      metadataSyncRunIdRef.current = runId
       isMetadataSyncRunningRef.current = true
       isMetadataSyncPausedRef.current = false
       isMetadataSyncStopRequestedRef.current = false
+
       const initialState = sessionStateRef.current ?? sessionState
-      const syncSettings = createSavedDefaultSwipeSettings(
-        defaultSwipeSettingsRef.current,
-      )
+      const syncSettings = createSavedDefaultSwipeSettings({
+        latestGamesSort: initialState.latestGamesSort,
+        filterState: initialState.filterState,
+      })
       const savedCatalogCheckpoint =
         initialLatestCatalogCheckpointSnapshotRef.current.catalog
-      const resumableCatalogCheckpoint =
+      const canResumeCheckpoint =
+        !shouldRestartFromScratch &&
         savedCatalogCheckpoint &&
-        canResumeLatestCatalog(savedCatalogCheckpoint, syncSettings)
-          ? savedCatalogCheckpoint
-          : null
+        canResumeLatestCatalog(savedCatalogCheckpoint, syncSettings) &&
+        initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs !== null &&
+        Date.now() -
+          initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs <=
+          LATEST_CATALOG_MAX_AGE_MS
+      const resumableCatalogCheckpoint = canResumeCheckpoint
+        ? savedCatalogCheckpoint
+        : null
+
+      if (shouldRestartFromScratch) {
+        clearPersistedLatestCatalogCheckpointSnapshot()
+      } else if (savedCatalogCheckpoint && !resumableCatalogCheckpoint) {
+        clearPersistedLatestCatalogCheckpointSnapshot()
+      }
+
       const resumePageCount = resumableCatalogCheckpoint?.pageCount ?? 0
-      const shouldShowInitialLoader =
-        Object.keys(initialState.threadItemsByIdentifier).length === 0 &&
-        !resumableCatalogCheckpoint
       const catalogThreadItemsByIdentifier: Record<string, F95ThreadItem> = {}
       const orderedThreadIdentifierList: number[] = []
 
@@ -1510,17 +1768,33 @@ const useF95Browser = () => {
         orderedThreadIdentifierList.push(
           ...resumableCatalogCheckpoint.orderedThreadIdentifiers,
         )
-      } else if (savedCatalogCheckpoint) {
-        clearPersistedLatestCatalogCheckpointSnapshot()
       }
 
       const seenThreadIdentifierSet = new Set<number>(orderedThreadIdentifierList)
       const countedUpdatedTrackedLinkSet = new Set<string>()
+      let diagnostics = appendMetadataSyncDiagnostic(
+        [],
+        shouldRestartFromScratch
+          ? 'Синхронизация запущена заново с первой страницы.'
+          : resumableCatalogCheckpoint
+            ? `Синхронизация продолжена со страницы ${resumePageCount + 1}.`
+            : 'Синхронизация запущена с первой страницы.',
+      )
       let currentState = initialState
       let syncedPageNumber = resumePageCount
       let totalPages = resumableCatalogCheckpoint?.totalPages ?? 0
       let updatedTrackedCount = resumableCatalogCheckpoint?.updatedTrackedCount ?? 0
+      let duplicateCount = 0
+      let duplicatePageCount = 0
+      let emptyPageCount = 0
+      let hasAnnouncedSwipeReady = false
       let nextRetryAtUnixMs: number | null = null
+
+      const assertCurrentRun = () => {
+        if (metadataSyncRunIdRef.current !== runId) {
+          throw createMetadataSyncStoppedError()
+        }
+      }
 
       const persistCatalogCheckpoint = (
         pageCount: number,
@@ -1550,30 +1824,51 @@ const useF95Browser = () => {
         )
       }
 
-      setErrorMessage(null)
-      setIsLoadingPage(shouldShowInitialLoader)
+      const publishMetadataState = (
+        phase: MetadataSyncState['phase'],
+        pageCount: number,
+        swipableCount: number,
+        error: string | null,
+      ) => {
+        setMetadataSyncState({
+          phase,
+          isRunning: true,
+          isPaused: isMetadataSyncPausedRef.current,
+          isStopping: isMetadataSyncStopRequestedRef.current,
+          isComplete: false,
+          nextRetryAtUnixMs,
+          currentPage: pageCount,
+          pageLimit: totalPages,
+          syncedCount: orderedThreadIdentifierList.length,
+          swipableCount,
+          updatedTrackedCount,
+          duplicateCount,
+          lastCompletedAtUnixMs: null,
+          isCatalogStale: false,
+          diagnostics,
+          lastOutcome: null,
+          error,
+        })
+      }
 
+      setErrorMessage(null)
+      setIsLoadingPage(Object.keys(initialState.threadItemsByIdentifier).length === 0)
       if (resumableCatalogCheckpoint) {
         persistCatalogCheckpoint(resumePageCount)
       }
-
-      setMetadataSyncState({
-        isRunning: true,
-        isPaused: false,
-        isStopping: false,
-        isComplete: false,
-        nextRetryAtUnixMs: null,
-        currentPage: resumePageCount,
-        pageLimit: totalPages,
-        syncedCount: orderedThreadIdentifierList.length,
-        updatedTrackedCount,
-        lastOutcome: null,
-        error: null,
-      })
+      publishMetadataState('warming', resumePageCount, 0, null)
 
       try {
         for (let pageNumber = resumePageCount + 1; ; pageNumber += 1) {
+          assertCurrentRun()
+          if (pageNumber > METADATA_SYNC_MAX_PAGE_COUNT) {
+            throw new Error(
+              `Синхронизация остановлена: превышен лимит ${METADATA_SYNC_MAX_PAGE_COUNT} страниц.`,
+            )
+          }
+
           await waitForMetadataSyncReady()
+          assertCurrentRun()
 
           let pageResult: Awaited<ReturnType<typeof fetchLatestGamesPage>> | null = null
           let retryAttemptCount = 0
@@ -1590,14 +1885,15 @@ const useF95Browser = () => {
                 syncSettings.filterState,
               )
               metadataSyncAbortControllerRef.current = null
+              assertCurrentRun()
               break
             } catch (error) {
               metadataSyncAbortControllerRef.current = null
 
               if (
-                abortController.signal.aborted &&
-                (isMetadataSyncStopRequestedRef.current ||
-                  isMetadataSyncStoppedError(error))
+                abortController.signal.aborted ||
+                isMetadataSyncStopRequestedRef.current ||
+                isMetadataSyncStoppedError(error)
               ) {
                 throw error
               }
@@ -1614,28 +1910,28 @@ const useF95Browser = () => {
               const retryDelayMs = addMetadataSyncRetryJitter(
                 resolveMetadataSyncRetryDelayMs(error, retryAttemptCount),
               )
-              const pageRetryAtUnixMs = Date.now() + retryDelayMs
+              nextRetryAtUnixMs = Date.now() + retryDelayMs
+              diagnostics = appendMetadataSyncDiagnostic(
+                diagnostics,
+                `Повтор страницы ${pageNumber} через ${formatMetadataSyncRetryDelay(retryDelayMs)}: ${errorMessage}`,
+              )
 
               persistCatalogCheckpoint(syncedPageNumber, {
                 lastError: errorMessage,
-                nextRetryAtUnixMs: pageRetryAtUnixMs,
+                nextRetryAtUnixMs,
               })
-
-              setMetadataSyncState({
-                isRunning: true,
-                isPaused: false,
-                isStopping: false,
-                isComplete: false,
-                nextRetryAtUnixMs: pageRetryAtUnixMs,
-                currentPage: syncedPageNumber,
-                pageLimit: totalPages,
-                syncedCount: orderedThreadIdentifierList.length,
-                updatedTrackedCount,
-                lastOutcome: null,
-                error: errorMessage,
-              })
+              publishMetadataState(
+                'retrying',
+                syncedPageNumber,
+                countSwipableThreadIdentifiers(
+                  currentState.remainingThreadIdentifiers,
+                  currentState,
+                ),
+                errorMessage,
+              )
 
               await waitForMetadataSyncDelay(retryDelayMs)
+              assertCurrentRun()
             }
           }
 
@@ -1643,28 +1939,43 @@ const useF95Browser = () => {
             throw new Error('Не удалось синхронизировать каталог latest_data.php')
           }
 
+          if (
+            typeof pageResult.pageFromResponse === 'number' &&
+            pageResult.pageFromResponse !== pageNumber
+          ) {
+            throw new Error(
+              `F95 вернул страницу ${pageResult.pageFromResponse} вместо ${pageNumber}.`,
+            )
+          }
+
           if (pageResult.totalPages > 0) {
             totalPages = pageResult.totalPages
           }
 
-          if (
-            pageResult.threadItemList.length === 0 &&
-            totalPages > 0 &&
-            pageNumber > totalPages
-          ) {
-            break
-          }
-
+          let newItemCount = 0
           for (const threadItem of pageResult.threadItemList) {
             const threadIdentifier = threadItem.thread_id
             catalogThreadItemsByIdentifier[String(threadIdentifier)] = threadItem
 
             if (seenThreadIdentifierSet.has(threadIdentifier)) {
+              duplicateCount += 1
               continue
             }
 
+            newItemCount += 1
             seenThreadIdentifierSet.add(threadIdentifier)
             orderedThreadIdentifierList.push(threadIdentifier)
+          }
+
+          duplicatePageCount =
+            pageResult.threadItemList.length > 0 && newItemCount === 0
+              ? duplicatePageCount + 1
+              : 0
+          emptyPageCount =
+            pageResult.threadItemList.length === 0 ? emptyPageCount + 1 : 0
+
+          if (duplicatePageCount >= METADATA_SYNC_MAX_DUPLICATE_PAGE_COUNT) {
+            throw new Error('Сервер несколько раз подряд вернул уже известные страницы.')
           }
 
           const activeState = sessionStateRef.current ?? currentState
@@ -1720,52 +2031,61 @@ const useF95Browser = () => {
             orderedThreadIdentifierList,
             pageNumber,
           )
+          const swipableCount = countSwipableThreadIdentifiers(
+            nextStateAfterPage.remainingThreadIdentifiers,
+            nextStateAfterPage,
+          )
 
           persistSessionState(nextStateAfterPage, { skipSanitize: true })
           currentState = nextStateAfterPage
           syncedPageNumber = pageNumber
           persistCatalogCheckpoint(pageNumber)
-          setMetadataSyncState({
-            isRunning: true,
-            isPaused: isMetadataSyncPausedRef.current,
-            isStopping: isMetadataSyncStopRequestedRef.current,
-            isComplete: false,
-            nextRetryAtUnixMs: null,
-            currentPage: pageNumber,
-            pageLimit: totalPages,
-            syncedCount: orderedThreadIdentifierList.length,
-            updatedTrackedCount,
-            lastOutcome: null,
-            error: null,
-          })
+          if (
+            swipableCount >= METADATA_SYNC_READY_SWIPE_COUNT &&
+            !hasAnnouncedSwipeReady
+          ) {
+            hasAnnouncedSwipeReady = true
+            diagnostics = appendMetadataSyncDiagnostic(
+              diagnostics,
+              `Свайпер готов: доступно ${swipableCount} карточек.`,
+            )
+          }
+          publishMetadataState(
+            swipableCount >= METADATA_SYNC_READY_SWIPE_COUNT
+              ? 'running'
+              : 'warming',
+            pageNumber,
+            swipableCount,
+            null,
+          )
 
           const isLastPage =
             pageResult.threadItemList.length === 0 ||
+            emptyPageCount >= METADATA_SYNC_MAX_EMPTY_PAGE_COUNT ||
             (pageResult.totalPages > 0 && pageNumber >= pageResult.totalPages)
 
           if (isLastPage) {
             break
           }
 
-          if (pageNumber % CATALOG_SYNC_BATCH_SIZE === 0) {
-            await waitForMetadataSyncDelay(CATALOG_SYNC_BATCH_DELAY_MS)
-          }
+          nextRetryAtUnixMs = Date.now() + METADATA_SYNC_SUCCESS_DELAY_MS
+          publishMetadataState('throttled', pageNumber, swipableCount, null)
+          await waitForMetadataSyncDelay(METADATA_SYNC_SUCCESS_DELAY_MS)
+          nextRetryAtUnixMs = null
         }
 
-        persistSessionState(
-          {
-            ...(sessionStateRef.current ?? currentState),
-            lastMetadataSyncAtUnixMs: Date.now(),
-          },
-          { skipSanitize: true },
-        )
-
+        const completedAtUnixMs = Date.now()
         const completedPageCount =
           totalPages > 0
             ? totalPages
             : (sessionStateRef.current ?? currentState).currentPageNumber
         syncedPageNumber = completedPageCount
         totalPages = Math.max(totalPages, completedPageCount)
+        const finalState = {
+          ...(sessionStateRef.current ?? currentState),
+          lastMetadataSyncAtUnixMs: completedAtUnixMs,
+        }
+        persistSessionState(finalState, { skipSanitize: true })
         persistLatestCatalogSnapshot(
           buildLatestCatalogStateSnapshot(
             catalogThreadItemsByIdentifier,
@@ -1780,8 +2100,13 @@ const useF95Browser = () => {
           ),
         )
         clearPersistedLatestCatalogCheckpointSnapshot()
+        diagnostics = appendMetadataSyncDiagnostic(
+          diagnostics,
+          `Синхронизация завершена: ${orderedThreadIdentifierList.length} игр.`,
+        )
 
         setMetadataSyncState({
+          phase: 'completed',
           isRunning: false,
           isPaused: false,
           isStopping: false,
@@ -1790,7 +2115,15 @@ const useF95Browser = () => {
           currentPage: completedPageCount,
           pageLimit: totalPages > 0 ? totalPages : completedPageCount,
           syncedCount: orderedThreadIdentifierList.length,
+          swipableCount: countSwipableThreadIdentifiers(
+            finalState.remainingThreadIdentifiers,
+            finalState,
+          ),
           updatedTrackedCount,
+          duplicateCount,
+          lastCompletedAtUnixMs: completedAtUnixMs,
+          isCatalogStale: false,
+          diagnostics,
           lastOutcome: 'completed',
           error: null,
         })
@@ -1803,12 +2136,16 @@ const useF95Browser = () => {
           isMetadataSyncStopRequestedRef.current ||
           isMetadataSyncStoppedError(error)
         ) {
-          if (syncedPageNumber > 0 || resumableCatalogCheckpoint) {
+          if (
+            metadataSyncRunIdRef.current === runId &&
+            (syncedPageNumber > 0 || resumableCatalogCheckpoint)
+          ) {
             persistCatalogCheckpoint(syncedPageNumber)
           }
 
           setMetadataSyncState((previousState) => ({
             ...previousState,
+            phase: 'idle',
             isRunning: false,
             isPaused: false,
             isStopping: false,
@@ -1816,6 +2153,10 @@ const useF95Browser = () => {
             nextRetryAtUnixMs: null,
             lastOutcome: 'stopped',
             error: null,
+            diagnostics: appendMetadataSyncDiagnostic(
+              diagnostics,
+              'Синхронизация остановлена.',
+            ),
           }))
           return
         }
@@ -1830,6 +2171,11 @@ const useF95Browser = () => {
               ),
             )
           : null
+        nextRetryAtUnixMs = scheduledRetryAtUnixMs
+        diagnostics = appendMetadataSyncDiagnostic(
+          diagnostics,
+          `Ошибка синхронизации: ${errorMessage}`,
+        )
 
         if (syncedPageNumber > 0 || resumableCatalogCheckpoint) {
           persistCatalogCheckpoint(syncedPageNumber, {
@@ -1840,20 +2186,31 @@ const useF95Browser = () => {
 
         setMetadataSyncState((previousState) => ({
           ...previousState,
+          phase: 'failed',
           isRunning: false,
           isPaused: false,
           isStopping: false,
           isComplete: false,
           nextRetryAtUnixMs: scheduledRetryAtUnixMs,
+          duplicateCount,
+          diagnostics,
           lastOutcome: null,
           error: errorMessage,
         }))
       } finally {
+        const shouldRestart = pendingMetadataSyncRestartRef.current
+        pendingMetadataSyncRestartRef.current = false
         isMetadataSyncRunningRef.current = false
         isMetadataSyncPausedRef.current = false
         isMetadataSyncStopRequestedRef.current = false
         metadataSyncAbortControllerRef.current = null
         setIsLoadingPage(false)
+
+        if (shouldRestart) {
+          window.setTimeout(() => {
+            void startMetadataSync({ restartFromScratch: true })
+          }, 0)
+        }
       }
     },
     [
@@ -1879,6 +2236,7 @@ const useF95Browser = () => {
     isMetadataSyncPausedRef.current = true
     setMetadataSyncState((previousState) => ({
       ...previousState,
+      phase: 'paused',
       isRunning: true,
       isPaused: true,
       isStopping: false,
@@ -1899,6 +2257,10 @@ const useF95Browser = () => {
     isMetadataSyncPausedRef.current = false
     setMetadataSyncState((previousState) => ({
       ...previousState,
+      phase:
+        previousState.swipableCount >= METADATA_SYNC_READY_SWIPE_COUNT
+          ? 'running'
+          : 'warming',
       isRunning: true,
       isPaused: false,
       isStopping: false,
@@ -1917,6 +2279,7 @@ const useF95Browser = () => {
     metadataSyncAbortControllerRef.current?.abort()
     setMetadataSyncState((previousState) => ({
       ...previousState,
+      phase: 'stopping',
       isRunning: true,
       isPaused: false,
       isStopping: true,
@@ -1924,6 +2287,63 @@ const useF95Browser = () => {
       error: null,
     }))
   }, [])
+
+  const clearMetadataCatalogData = useCallback(() => {
+    if (isMetadataSyncRunningRef.current) {
+      pendingMetadataSyncRestartRef.current = false
+      metadataSyncRunIdRef.current += 1
+      isMetadataSyncStopRequestedRef.current = true
+      isMetadataSyncPausedRef.current = false
+      metadataSyncAbortControllerRef.current?.abort()
+    }
+
+    clearPersistedLatestCatalogSnapshot()
+    clearPersistedLatestCatalogCheckpointSnapshot()
+    const liveSessionState = sessionStateRef.current ?? sessionState
+    const trackedOnlyState = buildCatalogSessionState(
+      liveSessionState,
+      {},
+      [],
+      0,
+    )
+    persistSessionState(
+      {
+        ...trackedOnlyState,
+        currentPageNumber: 0,
+        nextPageToFetchNumber: 1,
+        lastMetadataSyncAtUnixMs: null,
+      },
+      { skipSanitize: true },
+    )
+    setMetadataSyncState((previousState) => ({
+      phase: 'idle',
+      isRunning: false,
+      isPaused: false,
+      isStopping: false,
+      isComplete: false,
+      nextRetryAtUnixMs: null,
+      currentPage: 0,
+      pageLimit: 0,
+      syncedCount: 0,
+      swipableCount: 0,
+      updatedTrackedCount: 0,
+      duplicateCount: 0,
+      lastCompletedAtUnixMs: null,
+      isCatalogStale: false,
+      diagnostics: appendMetadataSyncDiagnostic(
+        previousState.diagnostics,
+        'Данные парсера очищены.',
+      ),
+      lastOutcome: null,
+      error: null,
+    }))
+    setIsLoadingPage(false)
+  }, [
+    clearPersistedLatestCatalogCheckpointSnapshot,
+    clearPersistedLatestCatalogSnapshot,
+    persistSessionState,
+    sessionState,
+  ])
 
   useEffect(() => {
     if (hasStartedInitialMetadataSyncRef.current) {
@@ -1936,9 +2356,26 @@ const useF95Browser = () => {
       }
 
       hasStartedInitialMetadataSyncRef.current = true
-      const initialSyncSettings = createSavedDefaultSwipeSettings(
-        defaultSwipeSettingsRef.current,
-      )
+      const liveSessionState = sessionStateRef.current ?? sessionState
+      const initialSyncSettings = createSavedDefaultSwipeSettings({
+        latestGamesSort: liveSessionState.latestGamesSort,
+        filterState: liveSessionState.filterState,
+      })
+      if (
+        initialLatestCatalogSnapshotRef.current.updatedAtUnixMs !== null &&
+        Date.now() - initialLatestCatalogSnapshotRef.current.updatedAtUnixMs >
+          LATEST_CATALOG_MAX_AGE_MS
+      ) {
+        clearPersistedLatestCatalogSnapshot()
+      }
+      if (
+        initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs !== null &&
+        Date.now() -
+          initialLatestCatalogCheckpointSnapshotRef.current.updatedAtUnixMs >
+          LATEST_CATALOG_MAX_AGE_MS
+      ) {
+        clearPersistedLatestCatalogCheckpointSnapshot()
+      }
       const initialCatalogCheckpoint =
         initialLatestCatalogCheckpointSnapshotRef.current.catalog
       const resumableCatalogCheckpoint =
@@ -1968,13 +2405,35 @@ const useF95Browser = () => {
         return
       }
 
-      void startMetadataSync()
+      void startMetadataSync({ restartFromScratch: true })
     }, 0)
 
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [startMetadataSync])
+  }, [
+    clearPersistedLatestCatalogCheckpointSnapshot,
+    clearPersistedLatestCatalogSnapshot,
+    sessionState,
+    startMetadataSync,
+  ])
+
+  useEffect(() => {
+    const nextSourceSignature = createCatalogSourceSignatureFromValues(
+      sessionState.latestGamesSort,
+      sessionState.filterState,
+    )
+    if (metadataSourceSignatureRef.current === nextSourceSignature) {
+      return
+    }
+
+    metadataSourceSignatureRef.current = nextSourceSignature
+    void startMetadataSync({ restartFromScratch: true })
+  }, [
+    sessionState.filterState,
+    sessionState.latestGamesSort,
+    startMetadataSync,
+  ])
 
   useEffect(() => {
     if (
@@ -2038,6 +2497,7 @@ const useF95Browser = () => {
     pauseMetadataSync,
     resumeMetadataSync,
     stopMetadataSync,
+    clearMetadataCatalogData,
     moveLinkToList,
     togglePlayedFavoriteLink,
     togglePlayedDislikedLink,

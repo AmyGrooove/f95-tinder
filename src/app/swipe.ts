@@ -1,6 +1,5 @@
 import type { ListType, SwipeSortMode } from "../f95/types";
 
-const DOWNLOAD_PRELOAD_LIMIT = 4;
 const SWIPE_HORIZONTAL_THRESHOLD_PX = 120;
 const SWIPE_VERTICAL_THRESHOLD_PX = 110;
 const SWIPE_MAX_TILT_DEG = 12;
@@ -154,7 +153,6 @@ export {
   clamp,
   createIdleSwipeGestureState,
   createIdleSwipePointerState,
-  DOWNLOAD_PRELOAD_LIMIT,
   formatCompactNumber,
   formatThreadDateLabel,
   getSwipeActionCopy,

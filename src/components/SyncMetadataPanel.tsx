@@ -7,6 +7,7 @@ type SyncMetadataPanelProps = {
   onPauseSync?: () => void
   onResumeSync?: () => void
   onStopSync?: () => void
+  onClearCatalogData?: () => void
 }
 
 const SyncMetadataPanel = ({
@@ -16,9 +17,12 @@ const SyncMetadataPanel = ({
   onPauseSync,
   onResumeSync,
   onStopSync,
+  onClearCatalogData,
 }: SyncMetadataPanelProps) => {
   const hasInlineRetryWait =
-    metadataSyncState.isRunning && metadataSyncState.nextRetryAtUnixMs !== null
+    metadataSyncState.isRunning &&
+    metadataSyncState.phase === 'retrying' &&
+    metadataSyncState.nextRetryAtUnixMs !== null
   const hasScheduledRetry = metadataSyncState.nextRetryAtUnixMs !== null
   const hasSyncResult =
     metadataSyncState.syncedCount > 0 || metadataSyncState.currentPage > 0
@@ -39,6 +43,10 @@ const SyncMetadataPanel = ({
     ? 'Останавливаю синхронизацию...'
     : metadataSyncState.isPaused
     ? `Пауза на ${metadataSyncState.currentPage} / ${metadataSyncState.pageLimit || '-'}`
+    : metadataSyncState.phase === 'warming'
+    ? `Набираю первые карточки ${metadataSyncState.swipableCount} / 20`
+    : metadataSyncState.phase === 'throttled'
+    ? 'Короткая пауза между страницами'
     : hasInlineRetryWait
     ? 'Жду окно для повторной попытки синхронизации'
     : metadataSyncState.isRunning
@@ -49,6 +57,8 @@ const SyncMetadataPanel = ({
     ? 'Синхронизация остановлена пользователем'
     : metadataSyncState.error
     ? 'Ошибка синхронизации'
+    : metadataSyncState.isCatalogStale
+    ? 'Каталог устарел'
     : hasSyncResult && !metadataSyncState.isComplete
     ? 'Есть сохраненный прогресс, синхронизация будет продолжена'
     : hasSyncResult
@@ -66,14 +76,14 @@ const SyncMetadataPanel = ({
       </div>
       <div className="smallText" style={{ marginTop: 8 }}>
         {autoSyncEnabled
-          ? "При запуске приложение проходит `latest_data.php` по дефолтным фильтрам, собирает локальный каталог для свайпа и обновляет tracked-игры."
+          ? "При запуске и изменении фильтров приложение проходит `latest_data.php` с начала, собирает локальный каталог для свайпа и обновляет tracked-игры."
           : "Полный проход `latest_data.php` запускается вручную и обновляет локальный каталог свайпа с throttling по страницам."}
       </div>
       <div className="smallText" style={{ marginTop: 4 }}>
-        Внутри блока страницы идут подряд, а после каждого блока из 10 страниц делается пауза 10 секунд, чтобы не упираться в rate limit F95.
+        Страницы идут последовательно с короткой адаптивной паузой; при rate limit используется Retry-After или backoff.
       </div>
       <div className="smallText" style={{ marginTop: 4 }}>
-        Актуальность каталога держится 2 дня: если `latest-catalog.json` свежее, при запуске повторный полный обход не нужен.
+        Актуальность каталога держится 7 дней. Старые данные парсера очищаются и собираются заново, списки пользователя не трогаются.
       </div>
       {!autoSyncEnabled ? (
         <div className="smallText" style={{ marginTop: 4 }}>
@@ -111,6 +121,15 @@ const SyncMetadataPanel = ({
               {metadataSyncState.isStopping ? "Останавливаю..." : "Остановить"}
             </button>
           ) : null}
+          {!metadataSyncState.isRunning && onClearCatalogData ? (
+            <button
+              className="button buttonDanger"
+              type="button"
+              onClick={onClearCatalogData}
+            >
+              Очистить данные парсера
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -144,6 +163,16 @@ const SyncMetadataPanel = ({
           Сохранено игр: {metadataSyncState.syncedCount}
         </div>
       ) : null}
+      {metadataSyncState.isRunning || hasSyncResult ? (
+        <div className="smallText" style={{ marginTop: 4 }}>
+          Доступно для свайпа: {metadataSyncState.swipableCount}
+        </div>
+      ) : null}
+      {metadataSyncState.duplicateCount > 0 ? (
+        <div className="smallText" style={{ marginTop: 4 }}>
+          Дубликатов страниц/игр: {metadataSyncState.duplicateCount}
+        </div>
+      ) : null}
       {metadataSyncState.isRunning || metadataSyncState.updatedTrackedCount > 0 ? (
         <div className="smallText" style={{ marginTop: 4 }}>
           Обновлено tracked-игр: {metadataSyncState.updatedTrackedCount}
@@ -152,6 +181,13 @@ const SyncMetadataPanel = ({
       {metadataSyncState.error ? (
         <div className="smallText" style={{ color: 'var(--danger)', marginTop: 4 }}>
           {metadataSyncState.error}
+        </div>
+      ) : null}
+      {metadataSyncState.diagnostics.length > 0 ? (
+        <div className="smallText" style={{ marginTop: 8 }}>
+          {metadataSyncState.diagnostics.slice(-5).map((message) => (
+            <div key={message}>{message}</div>
+          ))}
         </div>
       ) : null}
     </div>

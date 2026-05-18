@@ -8,25 +8,18 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
-} from "react";
-import {
-  buildLatestGamesDataRequestUrl,
-  buildThreadLink,
-} from "../f95/api";
-import {
-  loadCachedThreadDownloads,
-  loadOrFetchThreadDownloads,
-} from "../f95/downloads";
+} from "react"
+import { buildLatestGamesDataRequestUrl, buildThreadLink } from "../f95/api"
 import {
   MAX_TAG_FILTERS_PER_GROUP,
   normalizeText,
   threadMatchesFilter,
-} from "../f95/filtering";
+} from "../f95/filtering"
 import {
   assessThreadInterest,
   buildCatalogFeatureStats,
   buildInterestProfile,
-} from "../f95/recommendations";
+} from "../f95/recommendations"
 import type {
   F95ThreadItem,
   FilterState,
@@ -34,14 +27,13 @@ import type {
   MetadataSyncState,
   SessionState,
   SwipeSortMode,
-} from "../f95/types";
-import { TagChips } from "./TagChips";
-import { SwipeFilterModal } from "./SwipeFilterModal";
+} from "../f95/types"
+import { TagChips } from "./TagChips"
+import { SwipeFilterModal } from "./SwipeFilterModal"
 import {
   clamp,
   createIdleSwipeGestureState,
   createIdleSwipePointerState,
-  DOWNLOAD_PRELOAD_LIMIT,
   formatCompactNumber,
   formatThreadDateLabel,
   getSwipeActionCopy,
@@ -54,48 +46,43 @@ import {
   type SwipeGestureState,
   type SwipePointerState,
   type SwipeQueueSnapshot,
-} from "../app/swipe";
-import { parseThreadIdentifierFromLink } from "../app/threadSelectors";
-import { openLinkInNewTab } from "../app/linking";
+} from "../app/swipe"
+import { parseThreadIdentifierFromLink } from "../app/threadSelectors"
+import { openLinkInNewTab } from "../app/linking"
 
 type SwipePageProps = {
-  sessionState: SessionState;
-  orderedSwipeThreadIdentifiers: number[];
-  currentThreadIdentifier: number | null;
-  currentThreadItem: F95ThreadItem | null;
-  currentThreadLink: string | null;
-  isLoadingPage: boolean;
-  canUndo: boolean;
-  metadataSyncState: MetadataSyncState;
-  tagsMap: Record<string, string>;
-  prefixesMap: Record<string, string>;
-  defaultFilterState: FilterState;
-  defaultLatestGamesSort: LatestGamesSort;
-  updateFilterState: (partialFilterState: Partial<FilterState>) => void;
-  setLatestGamesSort: (latestGamesSort: LatestGamesSort) => void;
-  setSwipeSortMode: (swipeSortMode: SwipeSortMode) => void;
-  resetFilterState: () => void;
-  undoLastAction: () => void;
+  sessionState: SessionState
+  orderedSwipeThreadIdentifiers: number[]
+  currentThreadIdentifier: number | null
+  currentThreadItem: F95ThreadItem | null
+  currentThreadLink: string | null
+  isLoadingPage: boolean
+  canUndo: boolean
+  metadataSyncState: MetadataSyncState
+  tagsMap: Record<string, string>
+  prefixesMap: Record<string, string>
+  defaultFilterState: FilterState
+  defaultLatestGamesSort: LatestGamesSort
+  updateFilterState: (partialFilterState: Partial<FilterState>) => void
+  setLatestGamesSort: (latestGamesSort: LatestGamesSort) => void
+  setSwipeSortMode: (swipeSortMode: SwipeSortMode) => void
+  resetFilterState: () => void
+  undoLastAction: () => void
   setErrorMessage: (
-    value:
-      | string
-      | null
-      | ((previousValue: string | null) => string | null),
-  ) => void;
-  onFavorite: () => void;
-  onTrash: () => void;
-  onPlayed: () => void;
-  onPlayedFavorite: () => void;
-  onOpenViewer: (imageUrlList: string[], startIndex: number) => void;
-  onOpenCurrentThread: () => void;
-  onOpenCurrentThreadInBackground: () => void;
-  onPauseMetadataSync: () => void;
-  onResumeMetadataSync: () => void;
-  onStopMetadataSync: () => void;
-  isViewerOpen: boolean;
-  isDownloadModalOpen: boolean;
-  isCookiePromptOpen: boolean;
-};
+    value: string | null | ((previousValue: string | null) => string | null),
+  ) => void
+  onFavorite: () => void
+  onTrash: () => void
+  onPlayed: () => void
+  onPlayedFavorite: () => void
+  onOpenViewer: (imageUrlList: string[], startIndex: number) => void
+  onOpenCurrentThread: () => void
+  onOpenCurrentThreadInBackground: () => void
+  onPauseMetadataSync: () => void
+  onResumeMetadataSync: () => void
+  onStopMetadataSync: () => void
+  isViewerOpen: boolean
+}
 
 const SwipePage = ({
   sessionState,
@@ -127,65 +114,70 @@ const SwipePage = ({
   onResumeMetadataSync,
   onStopMetadataSync,
   isViewerOpen,
-  isDownloadModalOpen,
-  isCookiePromptOpen,
 }: SwipePageProps) => {
-  const [swipeGestureState, setSwipeGestureState] = useState<SwipeGestureState>(() =>
-    createIdleSwipeGestureState(),
-  );
-  const [isSwipeFilterModalOpen, setIsSwipeFilterModalOpen] = useState(false);
-  const [swipeTagSearchText, setSwipeTagSearchText] = useState("");
-  const [swipePrefixSearchText, setSwipePrefixSearchText] = useState("");
+  const [swipeGestureState, setSwipeGestureState] = useState<SwipeGestureState>(
+    () => createIdleSwipeGestureState(),
+  )
+  const [isSwipeFilterModalOpen, setIsSwipeFilterModalOpen] = useState(false)
+  const [swipeTagSearchText, setSwipeTagSearchText] = useState("")
+  const [swipePrefixSearchText, setSwipePrefixSearchText] = useState("")
 
   const swipeGestureStateRef = useRef<SwipeGestureState>(
     createIdleSwipeGestureState(),
-  );
+  )
   const swipePointerStateRef = useRef<SwipePointerState>(
     createIdleSwipePointerState(),
-  );
+  )
 
   const deferredOrderedSwipeThreadIdentifiers = useDeferredValue(
     orderedSwipeThreadIdentifiers,
-  );
-  const deferredSwipeFilterState = useDeferredValue(sessionState.filterState);
+  )
+  const deferredSwipeFilterState = useDeferredValue(sessionState.filterState)
   const deferredSwipeThreadItemsByIdentifier = useDeferredValue(
     sessionState.threadItemsByIdentifier,
-  );
+  )
   const isSwipeInteractionLocked =
-    metadataSyncState.isRunning && !metadataSyncState.isPaused;
-  const shouldBuildSwipeFilterOptions = isSwipeFilterModalOpen;
+    metadataSyncState.isRunning &&
+    !metadataSyncState.isPaused &&
+    metadataSyncState.swipableCount < 20
+  const shouldBuildSwipeFilterOptions = isSwipeFilterModalOpen
 
   const swipeQueueSnapshot = useMemo<SwipeQueueSnapshot>(() => {
-    const tagCounts = shouldBuildSwipeFilterOptions ? new Map<number, number>() : null;
+    const tagCounts = shouldBuildSwipeFilterOptions
+      ? new Map<number, number>()
+      : null
     const prefixCounts = shouldBuildSwipeFilterOptions
       ? new Map<number, number>()
-      : null;
+      : null
 
     if (prefixCounts) {
       for (const [prefixIdText] of Object.entries(prefixesMap)) {
-        const prefixId = Number(prefixIdText);
+        const prefixId = Number(prefixIdText)
         if (Number.isInteger(prefixId)) {
-          prefixCounts.set(prefixId, 0);
+          prefixCounts.set(prefixId, 0)
         }
       }
     }
 
-    let visibleCount = 0;
+    let visibleCount = 0
 
     for (const threadIdentifier of deferredOrderedSwipeThreadIdentifiers) {
       const threadItem =
-        deferredSwipeThreadItemsByIdentifier[String(threadIdentifier)];
-      if (!threadItem || !threadMatchesFilter(threadItem, deferredSwipeFilterState)) {
-        continue;
+        deferredSwipeThreadItemsByIdentifier[String(threadIdentifier)]
+      if (
+        !threadItem ||
+        !threadMatchesFilter(threadItem, deferredSwipeFilterState)
+      ) {
+        continue
       }
 
-      visibleCount += 1;
+      visibleCount += 1
 
       if (tagCounts && Array.isArray(threadItem.tags)) {
         for (const tagId of new Set(
           threadItem.tags.filter((tagId) => typeof tagId === "number"),
         )) {
-          tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
+          tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1)
         }
       }
 
@@ -197,7 +189,7 @@ const SwipePage = ({
               typeof prefixesMap[String(prefixId)] === "string",
           ),
         )) {
-          prefixCounts.set(prefixId, (prefixCounts.get(prefixId) ?? 0) + 1);
+          prefixCounts.set(prefixId, (prefixCounts.get(prefixId) ?? 0) + 1)
         }
       }
     }
@@ -205,13 +197,13 @@ const SwipePage = ({
     if (tagCounts) {
       for (const tagId of sessionState.filterState.includeTagIds) {
         if (!tagCounts.has(tagId)) {
-          tagCounts.set(tagId, 0);
+          tagCounts.set(tagId, 0)
         }
       }
 
       for (const tagId of sessionState.filterState.excludeTagIds) {
         if (!tagCounts.has(tagId)) {
-          tagCounts.set(tagId, 0);
+          tagCounts.set(tagId, 0)
         }
       }
     }
@@ -219,13 +211,13 @@ const SwipePage = ({
     if (prefixCounts) {
       for (const prefixId of sessionState.filterState.includePrefixIds) {
         if (!prefixCounts.has(prefixId)) {
-          prefixCounts.set(prefixId, 0);
+          prefixCounts.set(prefixId, 0)
         }
       }
 
       for (const prefixId of sessionState.filterState.excludePrefixIds) {
         if (!prefixCounts.has(prefixId)) {
-          prefixCounts.set(prefixId, 0);
+          prefixCounts.set(prefixId, 0)
         }
       }
     }
@@ -237,8 +229,10 @@ const SwipePage = ({
             label: tagsMap[String(tagId)] ?? `#${tagId}`,
             count,
           }))
-          .sort((first, second) => first.label.localeCompare(second.label, "ru"))
-      : [];
+          .sort((first, second) =>
+            first.label.localeCompare(second.label, "ru"),
+          )
+      : []
 
     const prefixOptions = prefixCounts
       ? Array.from(prefixCounts.entries())
@@ -247,14 +241,16 @@ const SwipePage = ({
             label: prefixesMap[String(prefixId)] ?? `#${prefixId}`,
             count,
           }))
-          .sort((first, second) => first.label.localeCompare(second.label, "ru"))
-      : [];
+          .sort((first, second) =>
+            first.label.localeCompare(second.label, "ru"),
+          )
+      : []
 
     return {
       visibleCount,
       tagOptions,
       prefixOptions,
-    };
+    }
   }, [
     deferredOrderedSwipeThreadIdentifiers,
     deferredSwipeFilterState,
@@ -266,24 +262,24 @@ const SwipePage = ({
     sessionState.filterState.includeTagIds,
     shouldBuildSwipeFilterOptions,
     tagsMap,
-  ]);
+  ])
 
-  const visibleSwipeQueueCount = swipeQueueSnapshot.visibleCount;
+  const visibleSwipeQueueCount = swipeQueueSnapshot.visibleCount
   const swipeProgressPills = useMemo(() => {
     return [
       { label: "Страниц", value: sessionState.currentPageNumber },
       { label: "В очереди", value: visibleSwipeQueueCount },
       { label: "Просмотрено", value: sessionState.viewedCount },
-    ];
+    ]
   }, [
     sessionState.currentPageNumber,
     sessionState.viewedCount,
     visibleSwipeQueueCount,
-  ]);
+  ])
 
   const swipeSyncProgressPercent = useMemo(() => {
     if (metadataSyncState.pageLimit <= 0) {
-      return null;
+      return null
     }
 
     return clamp(
@@ -292,182 +288,180 @@ const SwipePage = ({
       ),
       0,
       100,
-    );
-  }, [metadataSyncState.currentPage, metadataSyncState.pageLimit]);
+    )
+  }, [metadataSyncState.currentPage, metadataSyncState.pageLimit])
 
-  const availableSwipeTagOptions = swipeQueueSnapshot.tagOptions;
-  const availableSwipePrefixOptions = swipeQueueSnapshot.prefixOptions;
+  const availableSwipeTagOptions = swipeQueueSnapshot.tagOptions
+  const availableSwipePrefixOptions = swipeQueueSnapshot.prefixOptions
 
   const normalizedSwipeTagSearchText = useMemo(
     () => normalizeText(swipeTagSearchText),
     [swipeTagSearchText],
-  );
+  )
 
   const normalizedSwipePrefixSearchText = useMemo(
     () => normalizeText(swipePrefixSearchText),
     [swipePrefixSearchText],
-  );
+  )
 
   const filteredSwipeTagOptions = useMemo(() => {
     if (!normalizedSwipeTagSearchText) {
-      return availableSwipeTagOptions;
+      return availableSwipeTagOptions
     }
 
     return availableSwipeTagOptions.filter((option) => {
       return (
         normalizeText(option.label).includes(normalizedSwipeTagSearchText) ||
         String(option.id).includes(normalizedSwipeTagSearchText)
-      );
-    });
-  }, [availableSwipeTagOptions, normalizedSwipeTagSearchText]);
+      )
+    })
+  }, [availableSwipeTagOptions, normalizedSwipeTagSearchText])
 
   const filteredSwipePrefixOptions = useMemo(() => {
     if (!normalizedSwipePrefixSearchText) {
-      return availableSwipePrefixOptions;
+      return availableSwipePrefixOptions
     }
 
     return availableSwipePrefixOptions.filter((option) => {
       return (
         normalizeText(option.label).includes(normalizedSwipePrefixSearchText) ||
         String(option.id).includes(normalizedSwipePrefixSearchText)
-      );
-    });
-  }, [availableSwipePrefixOptions, normalizedSwipePrefixSearchText]);
+      )
+    })
+  }, [availableSwipePrefixOptions, normalizedSwipePrefixSearchText])
 
   const hasActiveSwipeFilterSelections =
     sessionState.filterState.includeTagIds.length > 0 ||
     sessionState.filterState.excludeTagIds.length > 0 ||
     sessionState.filterState.includePrefixIds.length > 0 ||
-    sessionState.filterState.excludePrefixIds.length > 0;
+    sessionState.filterState.excludePrefixIds.length > 0
   const selectedSwipeFilterCount =
     sessionState.filterState.includeTagIds.length +
     sessionState.filterState.excludeTagIds.length +
     sessionState.filterState.includePrefixIds.length +
-    sessionState.filterState.excludePrefixIds.length;
+    sessionState.filterState.excludePrefixIds.length
   const selectedSwipePrefixCount =
     sessionState.filterState.includePrefixIds.length +
-    sessionState.filterState.excludePrefixIds.length;
+    sessionState.filterState.excludePrefixIds.length
 
-  const updateSwipeGestureState = useCallback((nextState: SwipeGestureState) => {
-    swipeGestureStateRef.current = nextState;
-    setSwipeGestureState(nextState);
-  }, []);
+  const updateSwipeGestureState = useCallback(
+    (nextState: SwipeGestureState) => {
+      swipeGestureStateRef.current = nextState
+      setSwipeGestureState(nextState)
+    },
+    [],
+  )
 
   const resetSwipeGesture = useCallback(() => {
-    swipePointerStateRef.current = createIdleSwipePointerState();
-    updateSwipeGestureState(createIdleSwipeGestureState());
-  }, [updateSwipeGestureState]);
+    swipePointerStateRef.current = createIdleSwipePointerState()
+    updateSwipeGestureState(createIdleSwipeGestureState())
+  }, [updateSwipeGestureState])
 
   const performSwipeAction = useCallback(
     (action: "favorite" | "trash" | "played") => {
       if (action === "favorite") {
-        onFavorite();
-        return;
+        onFavorite()
+        return
       }
 
       if (action === "trash") {
-        onTrash();
-        return;
+        onTrash()
+        return
       }
 
-      onPlayed();
+      onPlayed()
     },
     [onFavorite, onPlayed, onTrash],
-  );
+  )
 
   const handlePlayedButtonClick = useCallback(
     (event: ReactMouseEvent<HTMLButtonElement>) => {
       if (event.shiftKey) {
-        onPlayedFavorite();
-        return;
+        onPlayedFavorite()
+        return
       }
-      onPlayed();
+      onPlayed()
     },
     [onPlayed, onPlayedFavorite],
-  );
+  )
 
   const handlePlayedButtonContextMenu = useCallback(
     (event: ReactMouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      onPlayedFavorite();
+      event.preventDefault()
+      onPlayedFavorite()
     },
     [onPlayedFavorite],
-  );
+  )
 
   const handleSwipePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (
         !currentThreadItem ||
         isSwipeInteractionLocked ||
-        isDownloadModalOpen ||
         isViewerOpen ||
         isSwipeFilterModalOpen
       ) {
-        return;
+        return
       }
 
       if (event.pointerType === "mouse" && event.button !== 0) {
-        return;
+        return
       }
 
       if (isInteractiveSwipeTarget(event.target)) {
-        return;
+        return
       }
 
       swipePointerStateRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
-      };
+      }
 
-      event.currentTarget.setPointerCapture(event.pointerId);
+      event.currentTarget.setPointerCapture(event.pointerId)
       updateSwipeGestureState({
         isDragging: true,
         offsetX: 0,
         offsetY: 0,
-      });
+      })
     },
     [
       currentThreadItem,
-      isDownloadModalOpen,
       isSwipeInteractionLocked,
       isSwipeFilterModalOpen,
       isViewerOpen,
       updateSwipeGestureState,
     ],
-  );
+  )
 
   const handleSwipePointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      const activePointerId = swipePointerStateRef.current.pointerId;
+      const activePointerId = swipePointerStateRef.current.pointerId
       if (activePointerId !== event.pointerId) {
-        return;
+        return
       }
 
-      const offsetX = event.clientX - swipePointerStateRef.current.startX;
-      const rawOffsetY = event.clientY - swipePointerStateRef.current.startY;
-      const offsetY = rawOffsetY > 0 ? rawOffsetY * 0.18 : rawOffsetY;
+      const offsetX = event.clientX - swipePointerStateRef.current.startX
+      const rawOffsetY = event.clientY - swipePointerStateRef.current.startY
+      const offsetY = rawOffsetY > 0 ? rawOffsetY * 0.18 : rawOffsetY
 
       updateSwipeGestureState({
         isDragging: true,
         offsetX,
         offsetY,
-      });
+      })
     },
     [updateSwipeGestureState],
-  );
+  )
 
   const releaseSwipePointer = useCallback(
-    (
-      event: ReactPointerEvent<HTMLDivElement>,
-      shouldApplyAction: boolean,
-    ) => {
+    (event: ReactPointerEvent<HTMLDivElement>, shouldApplyAction: boolean) => {
       if (swipePointerStateRef.current.pointerId !== event.pointerId) {
-        return;
+        return
       }
 
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
+        event.currentTarget.releasePointerCapture(event.pointerId)
       }
 
       const resolvedAction = shouldApplyAction
@@ -475,144 +469,92 @@ const SwipePage = ({
             swipeGestureStateRef.current.offsetX,
             swipeGestureStateRef.current.offsetY,
           )
-        : null;
+        : null
 
-      resetSwipeGesture();
+      resetSwipeGesture()
 
       if (resolvedAction) {
-        performSwipeAction(resolvedAction);
+        performSwipeAction(resolvedAction)
       }
     },
     [performSwipeAction, resetSwipeGesture],
-  );
+  )
 
   const handleSwipePointerUp = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      releaseSwipePointer(event, true);
+      releaseSwipePointer(event, true)
     },
     [releaseSwipePointer],
-  );
+  )
 
   const handleSwipePointerCancel = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      releaseSwipePointer(event, false);
+      releaseSwipePointer(event, false)
     },
     [releaseSwipePointer],
-  );
-
-  const preloadThreadLinks = useMemo(() => {
-    const threadLinkList: string[] = [];
-
-    if (currentThreadLink) {
-      threadLinkList.push(currentThreadLink);
-    }
-
-    for (const threadIdentifier of orderedSwipeThreadIdentifiers) {
-      const threadLink = buildThreadLink(threadIdentifier);
-      if (threadLinkList.includes(threadLink)) {
-        continue;
-      }
-
-      threadLinkList.push(threadLink);
-      if (threadLinkList.length >= DOWNLOAD_PRELOAD_LIMIT) {
-        break;
-      }
-    }
-
-    return threadLinkList;
-  }, [currentThreadLink, orderedSwipeThreadIdentifiers]);
-
-  useEffect(() => {
-    if (isSwipeInteractionLocked || preloadThreadLinks.length === 0) {
-      return;
-    }
-
-    let isCancelled = false;
-    const preloadTimeoutId = window.setTimeout(() => {
-      void (async () => {
-        for (const threadLink of preloadThreadLinks) {
-          if (isCancelled || loadCachedThreadDownloads(threadLink)) {
-            continue;
-          }
-
-          try {
-            await loadOrFetchThreadDownloads(threadLink);
-          } catch {
-            // ignore preload failures
-          }
-        }
-      })();
-    }, 450);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(preloadTimeoutId);
-    };
-  }, [isSwipeInteractionLocked, preloadThreadLinks]);
+  )
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isSwipeFilterModalOpen) {
         if (event.key === "Escape") {
-          event.preventDefault();
-          setIsSwipeFilterModalOpen(false);
+          event.preventDefault()
+          setIsSwipeFilterModalOpen(false)
         }
-        return;
+        return
       }
 
-      if (isDownloadModalOpen || isCookiePromptOpen || isViewerOpen) {
-        return;
+      if (isViewerOpen) {
+        return
       }
 
       if (isTextInputFocused() || isSwipeInteractionLocked) {
-        return;
+        return
       }
 
       if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        onTrash();
-        return;
+        event.preventDefault()
+        onTrash()
+        return
       }
 
       if (event.key === "ArrowRight") {
-        event.preventDefault();
-        onFavorite();
-        return;
+        event.preventDefault()
+        onFavorite()
+        return
       }
 
       if (event.key === "ArrowUp") {
-        event.preventDefault();
+        event.preventDefault()
         if (event.shiftKey) {
-          onPlayedFavorite();
-          return;
+          onPlayedFavorite()
+          return
         }
-        onPlayed();
-        return;
+        onPlayed()
+        return
       }
 
       if (event.key === "Enter") {
         if (currentThreadLink) {
-          event.preventDefault();
-          onOpenCurrentThread();
+          event.preventDefault()
+          onOpenCurrentThread()
         }
-        return;
+        return
       }
 
       if (event.key === "Backspace" || event.key.toLowerCase() === "z") {
         if (canUndo) {
-          event.preventDefault();
-          undoLastAction();
+          event.preventDefault()
+          undoLastAction()
         }
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
   }, [
     canUndo,
     currentThreadLink,
-    isCookiePromptOpen,
-    isDownloadModalOpen,
     isSwipeFilterModalOpen,
     isSwipeInteractionLocked,
     isViewerOpen,
@@ -622,45 +564,50 @@ const SwipePage = ({
     onPlayedFavorite,
     onTrash,
     undoLastAction,
-  ]);
+  ])
 
   useEffect(() => {
-    resetSwipeGesture();
-  }, [currentThreadIdentifier, isSwipeInteractionLocked, resetSwipeGesture]);
+    resetSwipeGesture()
+  }, [currentThreadIdentifier, isSwipeInteractionLocked, resetSwipeGesture])
 
   useEffect(() => {
     if (!isSwipeInteractionLocked || !isSwipeFilterModalOpen) {
-      return;
+      return
     }
 
-    setIsSwipeFilterModalOpen(false);
-  }, [isSwipeFilterModalOpen, isSwipeInteractionLocked]);
+    setIsSwipeFilterModalOpen(false)
+  }, [isSwipeFilterModalOpen, isSwipeInteractionLocked])
 
   const getTagsForLink = useCallback(
     (threadLink: string) => {
-      const processedTags = sessionState.processedThreadItemsByLink[threadLink]?.tags;
+      const processedTags =
+        sessionState.processedThreadItemsByLink[threadLink]?.tags
       if (Array.isArray(processedTags) && processedTags.length > 0) {
-        return processedTags;
+        return processedTags
       }
-      const threadIdentifier = parseThreadIdentifierFromLink(threadLink);
+      const threadIdentifier = parseThreadIdentifierFromLink(threadLink)
       if (threadIdentifier === null) {
-        return [];
+        return []
       }
-      const threadItem = sessionState.threadItemsByIdentifier[String(threadIdentifier)];
+      const threadItem =
+        sessionState.threadItemsByIdentifier[String(threadIdentifier)]
       if (!threadItem || !Array.isArray(threadItem.tags)) {
-        return [];
+        return []
       }
-      return threadItem.tags;
+      return threadItem.tags
     },
-    [sessionState.processedThreadItemsByLink, sessionState.threadItemsByIdentifier],
-  );
+    [
+      sessionState.processedThreadItemsByLink,
+      sessionState.threadItemsByIdentifier,
+    ],
+  )
 
   const currentThreadTags = useMemo(() => {
     if (!currentThreadLink) {
-      return [];
+      return []
     }
-    return getTagsForLink(currentThreadLink);
-  }, [currentThreadLink, getTagsForLink]);
+    return getTagsForLink(currentThreadLink)
+  }, [currentThreadLink, getTagsForLink])
 
   const interestProfile = useMemo(
     () => buildInterestProfile(sessionState),
@@ -672,11 +619,11 @@ const SwipePage = ({
       sessionState.processedThreadItemsByLink,
       sessionState.trashLinks,
     ],
-  );
+  )
   const catalogFeatureStats = useMemo(
     () => buildCatalogFeatureStats(sessionState.threadItemsByIdentifier),
     [sessionState.threadItemsByIdentifier],
-  );
+  )
 
   const currentThreadInterestAssessment = useMemo(
     () =>
@@ -694,35 +641,35 @@ const SwipePage = ({
       prefixesMap,
       tagsMap,
     ],
-  );
+  )
 
   const toggleSwipeIncludeTag = useCallback(
     (tagId: number) => {
-      const hasTag = sessionState.filterState.includeTagIds.includes(tagId);
+      const hasTag = sessionState.filterState.includeTagIds.includes(tagId)
       const isAtLimit =
         !hasTag &&
         sessionState.filterState.includeTagIds.length >=
-          MAX_TAG_FILTERS_PER_GROUP;
+          MAX_TAG_FILTERS_PER_GROUP
 
       if (isAtLimit) {
         setErrorMessage(
           `Для tags[] можно выбрать максимум ${MAX_TAG_FILTERS_PER_GROUP} тегов.`,
-        );
-        return;
+        )
+        return
       }
 
       const nextIncludeTagIds = hasTag
         ? sessionState.filterState.includeTagIds.filter(
             (value) => value !== tagId,
           )
-        : [...sessionState.filterState.includeTagIds, tagId];
+        : [...sessionState.filterState.includeTagIds, tagId]
 
       updateFilterState({
         includeTagIds: nextIncludeTagIds,
         excludeTagIds: sessionState.filterState.excludeTagIds.filter(
           (value) => value !== tagId,
         ),
-      });
+      })
     },
     [
       sessionState.filterState.excludeTagIds,
@@ -730,35 +677,35 @@ const SwipePage = ({
       setErrorMessage,
       updateFilterState,
     ],
-  );
+  )
 
   const toggleSwipeExcludeTag = useCallback(
     (tagId: number) => {
-      const hasTag = sessionState.filterState.excludeTagIds.includes(tagId);
+      const hasTag = sessionState.filterState.excludeTagIds.includes(tagId)
       const isAtLimit =
         !hasTag &&
         sessionState.filterState.excludeTagIds.length >=
-          MAX_TAG_FILTERS_PER_GROUP;
+          MAX_TAG_FILTERS_PER_GROUP
 
       if (isAtLimit) {
         setErrorMessage(
           `Для notags[] можно выбрать максимум ${MAX_TAG_FILTERS_PER_GROUP} тегов.`,
-        );
-        return;
+        )
+        return
       }
 
       const nextExcludeTagIds = hasTag
         ? sessionState.filterState.excludeTagIds.filter(
             (value) => value !== tagId,
           )
-        : [...sessionState.filterState.excludeTagIds, tagId];
+        : [...sessionState.filterState.excludeTagIds, tagId]
 
       updateFilterState({
         includeTagIds: sessionState.filterState.includeTagIds.filter(
           (value) => value !== tagId,
         ),
         excludeTagIds: nextExcludeTagIds,
-      });
+      })
     },
     [
       sessionState.filterState.excludeTagIds,
@@ -766,53 +713,55 @@ const SwipePage = ({
       setErrorMessage,
       updateFilterState,
     ],
-  );
+  )
 
   const toggleSwipeIncludePrefix = useCallback(
     (prefixId: number) => {
-      const hasPrefix = sessionState.filterState.includePrefixIds.includes(prefixId);
+      const hasPrefix =
+        sessionState.filterState.includePrefixIds.includes(prefixId)
       const nextIncludePrefixIds = hasPrefix
         ? sessionState.filterState.includePrefixIds.filter(
             (value) => value !== prefixId,
           )
-        : [...sessionState.filterState.includePrefixIds, prefixId];
+        : [...sessionState.filterState.includePrefixIds, prefixId]
 
       updateFilterState({
         includePrefixIds: nextIncludePrefixIds,
         excludePrefixIds: sessionState.filterState.excludePrefixIds.filter(
           (value) => value !== prefixId,
         ),
-      });
+      })
     },
     [
       sessionState.filterState.excludePrefixIds,
       sessionState.filterState.includePrefixIds,
       updateFilterState,
     ],
-  );
+  )
 
   const toggleSwipeExcludePrefix = useCallback(
     (prefixId: number) => {
-      const hasPrefix = sessionState.filterState.excludePrefixIds.includes(prefixId);
+      const hasPrefix =
+        sessionState.filterState.excludePrefixIds.includes(prefixId)
       const nextExcludePrefixIds = hasPrefix
         ? sessionState.filterState.excludePrefixIds.filter(
             (value) => value !== prefixId,
           )
-        : [...sessionState.filterState.excludePrefixIds, prefixId];
+        : [...sessionState.filterState.excludePrefixIds, prefixId]
 
       updateFilterState({
         includePrefixIds: sessionState.filterState.includePrefixIds.filter(
           (value) => value !== prefixId,
         ),
         excludePrefixIds: nextExcludePrefixIds,
-      });
+      })
     },
     [
       sessionState.filterState.excludePrefixIds,
       sessionState.filterState.includePrefixIds,
       updateFilterState,
     ],
-  );
+  )
 
   const clearSwipeTagFilters = useCallback(() => {
     updateFilterState({
@@ -820,47 +769,50 @@ const SwipePage = ({
       excludeTagIds: [],
       includePrefixIds: [],
       excludePrefixIds: [],
-    });
-  }, [updateFilterState]);
+    })
+  }, [updateFilterState])
 
   const currentThreadFactPills = useMemo(() => {
     if (!currentThreadItem) {
-      return [];
+      return []
     }
 
     return [
       { label: "Рейтинг", value: String(currentThreadItem.rating ?? 0) },
       { label: "Лайки", value: formatCompactNumber(currentThreadItem.likes) },
-      { label: "Просмотры", value: formatCompactNumber(currentThreadItem.views) },
+      {
+        label: "Просмотры",
+        value: formatCompactNumber(currentThreadItem.views),
+      },
       { label: "Дата", value: formatThreadDateLabel(currentThreadItem.date) },
-    ];
-  }, [currentThreadItem]);
+    ]
+  }, [currentThreadItem])
 
   const currentThreadStateBadges = useMemo(() => {
     if (!currentThreadItem) {
-      return [];
+      return []
     }
 
     return [
       currentThreadItem.new ? "New" : null,
       currentThreadItem.watched ? "Watched" : null,
       currentThreadItem.ignored ? "Ignored" : null,
-    ].filter((value): value is string => Boolean(value));
-  }, [currentThreadItem]);
+    ].filter((value): value is string => Boolean(value))
+  }, [currentThreadItem])
 
   const getSwipeTagLabel = useCallback(
     (tagId: number) => tagsMap[String(tagId)] ?? `#${tagId}`,
     [tagsMap],
-  );
+  )
 
   const getSwipePrefixLabel = useCallback(
     (prefixId: number) => prefixesMap[String(prefixId)] ?? `#${prefixId}`,
     [prefixesMap],
-  );
+  )
 
   const currentThreadPrefixLabels = useMemo(() => {
     if (!currentThreadItem || !Array.isArray(currentThreadItem.prefixes)) {
-      return [];
+      return []
     }
 
     return Array.from(
@@ -871,44 +823,44 @@ const SwipePage = ({
             typeof prefixesMap[String(prefixId)] === "string",
         ),
       ),
-    ).map((prefixId) => getSwipePrefixLabel(prefixId));
-  }, [currentThreadItem, getSwipePrefixLabel, prefixesMap]);
+    ).map((prefixId) => getSwipePrefixLabel(prefixId))
+  }, [currentThreadItem, getSwipePrefixLabel, prefixesMap])
 
   const currentThreadInfoCards = useMemo(() => {
     if (!currentThreadItem) {
-      return [];
+      return []
     }
 
     const creator =
       typeof currentThreadItem.creator === "string"
         ? currentThreadItem.creator.trim()
-        : "";
+        : ""
     const version =
       typeof currentThreadItem.version === "string"
         ? currentThreadItem.version.trim()
-        : "";
+        : ""
 
     return [
       { label: "Автор", value: creator || "Не указан" },
       { label: "Версия", value: version ? `v${version}` : "Не указана" },
-    ];
-  }, [currentThreadItem]);
+    ]
+  }, [currentThreadItem])
 
   const currentThreadPreviewScreens = useMemo(() => {
     if (!currentThreadItem) {
-      return [];
+      return []
     }
 
-    return currentThreadItem.screens;
-  }, [currentThreadItem]);
+    return currentThreadItem.screens
+  }, [currentThreadItem])
 
   const swipeDataRequestUrl = useMemo(() => {
     return buildLatestGamesDataRequestUrl(
       1,
       defaultLatestGamesSort,
       defaultFilterState,
-    );
-  }, [defaultFilterState, defaultLatestGamesSort]);
+    )
+  }, [defaultFilterState, defaultLatestGamesSort])
 
   const swipeHudAction = useMemo(() => {
     return getSwipeActionCopy(
@@ -916,32 +868,32 @@ const SwipePage = ({
         swipeGestureState.offsetX,
         swipeGestureState.offsetY,
       ),
-    );
-  }, [swipeGestureState.offsetX, swipeGestureState.offsetY]);
+    )
+  }, [swipeGestureState.offsetX, swipeGestureState.offsetY])
 
   const swipeCardStyle = useMemo<CSSProperties | undefined>(() => {
     if (!currentThreadItem) {
-      return undefined;
+      return undefined
     }
 
     const tilt = clamp(
       swipeGestureState.offsetX / 26,
       -SWIPE_MAX_TILT_DEG,
       SWIPE_MAX_TILT_DEG,
-    );
+    )
 
     return {
       transform: `translate3d(${swipeGestureState.offsetX}px, ${swipeGestureState.offsetY}px, 0) rotate(${tilt}deg)`,
       transition: swipeGestureState.isDragging
         ? "none"
         : "transform 180ms ease, box-shadow 180ms ease",
-    };
+    }
   }, [
     currentThreadItem,
     swipeGestureState.isDragging,
     swipeGestureState.offsetX,
     swipeGestureState.offsetY,
-  ]);
+  ])
 
   const swipeMetaContent = currentThreadItem ? (
     <div className="swipeMetaBody">
@@ -1020,7 +972,11 @@ const SwipePage = ({
       {currentThreadTags.length > 0 ? (
         <div className="swipeMetaGroup">
           <div className="swipeMetaGroupLabel">Теги</div>
-          <TagChips tags={currentThreadTags} tagsMap={tagsMap} maxVisible={12} />
+          <TagChips
+            tags={currentThreadTags}
+            tagsMap={tagsMap}
+            maxVisible={12}
+          />
         </div>
       ) : null}
 
@@ -1028,7 +984,7 @@ const SwipePage = ({
         <div className="swipeMetaLink">{currentThreadLink}</div>
       ) : null}
     </div>
-  ) : null;
+  ) : null
 
   return (
     <>
@@ -1058,7 +1014,9 @@ const SwipePage = ({
                         ? "Останавливаю синхронизацию"
                         : metadataSyncState.isPaused
                           ? "Синхронизация на паузе"
-                          : "Каталог обновляется в фоне"}
+                          : metadataSyncState.swipableCount < 20
+                            ? "Набираю первые карточки"
+                            : "Каталог обновляется в фоне"}
                     </span>
                     <span>
                       {swipeSyncProgressPercent === null
@@ -1214,17 +1172,19 @@ const SwipePage = ({
                     <div className="swipeTagSelectionGroup">
                       <div className="swipeTagSelectionLabel">prefixes[]</div>
                       <div className="tagFilterChips">
-                        {sessionState.filterState.includePrefixIds.map((prefixId) => (
-                          <button
-                            key={`selected-prefix-include-${prefixId}`}
-                            type="button"
-                            className="tagFilterChip tagFilterChipActive"
-                            disabled={isSwipeInteractionLocked}
-                            onClick={() => toggleSwipeIncludePrefix(prefixId)}
-                          >
-                            {getSwipePrefixLabel(prefixId)}
-                          </button>
-                        ))}
+                        {sessionState.filterState.includePrefixIds.map(
+                          (prefixId) => (
+                            <button
+                              key={`selected-prefix-include-${prefixId}`}
+                              type="button"
+                              className="tagFilterChip tagFilterChipActive"
+                              disabled={isSwipeInteractionLocked}
+                              onClick={() => toggleSwipeIncludePrefix(prefixId)}
+                            >
+                              {getSwipePrefixLabel(prefixId)}
+                            </button>
+                          ),
+                        )}
                       </div>
                     </div>
                   ) : null}
@@ -1233,17 +1193,19 @@ const SwipePage = ({
                     <div className="swipeTagSelectionGroup">
                       <div className="swipeTagSelectionLabel">noprefixes[]</div>
                       <div className="tagFilterChips">
-                        {sessionState.filterState.excludePrefixIds.map((prefixId) => (
-                          <button
-                            key={`selected-prefix-exclude-${prefixId}`}
-                            type="button"
-                            className="tagFilterChip tagFilterChipExcludeActive"
-                            disabled={isSwipeInteractionLocked}
-                            onClick={() => toggleSwipeExcludePrefix(prefixId)}
-                          >
-                            {getSwipePrefixLabel(prefixId)}
-                          </button>
-                        ))}
+                        {sessionState.filterState.excludePrefixIds.map(
+                          (prefixId) => (
+                            <button
+                              key={`selected-prefix-exclude-${prefixId}`}
+                              type="button"
+                              className="tagFilterChip tagFilterChipExcludeActive"
+                              disabled={isSwipeInteractionLocked}
+                              onClick={() => toggleSwipeExcludePrefix(prefixId)}
+                            >
+                              {getSwipePrefixLabel(prefixId)}
+                            </button>
+                          ),
+                        )}
                       </div>
                     </div>
                   ) : null}
@@ -1273,8 +1235,8 @@ const SwipePage = ({
                   {sessionState.filterState.excludeTagIds.length > 0 ? (
                     <div className="swipeTagSelectionGroup">
                       <div className="swipeTagSelectionLabel">
-                        notags[] {sessionState.filterState.excludeTagIds.length}/
-                        {MAX_TAG_FILTERS_PER_GROUP}
+                        notags[] {sessionState.filterState.excludeTagIds.length}
+                        /{MAX_TAG_FILTERS_PER_GROUP}
                       </div>
                       <div className="tagFilterChips">
                         {sessionState.filterState.excludeTagIds.map((tagId) => (
@@ -1300,7 +1262,7 @@ const SwipePage = ({
                     className="swipeDataRequestLabelButton"
                     type="button"
                     onClick={() => {
-                      openLinkInNewTab(swipeDataRequestUrl);
+                      openLinkInNewTab(swipeDataRequestUrl)
                     }}
                   >
                     Источник latest_data.php
@@ -1320,7 +1282,7 @@ const SwipePage = ({
               <div className="mutedText">
                 {metadataSyncState.isStopping
                   ? "Синхронизация завершает текущий проход. Свайп откроется сразу после остановки."
-                  : "Каталог обновляется. Карточки снова станут доступны после завершения синхронизации или после паузы."}
+                  : "Каталог обновляется. Свайп откроется, когда будет доступно минимум 20 карточек."}
               </div>
               <div className="syncProgressPanel">
                 <div className="syncProgressHeader">
@@ -1352,14 +1314,16 @@ const SwipePage = ({
                 </div>
               </div>
               <div className="smallText">
-                Сохранено в каталог: {metadataSyncState.syncedCount}. Обновлено
-                отслеживаемых: {metadataSyncState.updatedTrackedCount}.
+                Сохранено в каталог: {metadataSyncState.syncedCount}. Доступно
+                для свайпа: {metadataSyncState.swipableCount}/20.
               </div>
             </div>
           ) : !currentThreadItem ? (
             <div className="statusBox">
               <div style={{ fontWeight: 900, fontSize: 20 }}>
-                {isLoadingPage ? "Синхронизация latest..." : "Нет карточек для показа"}
+                {isLoadingPage
+                  ? "Синхронизация latest..."
+                  : "Нет карточек для показа"}
               </div>
               <div className="mutedText">
                 Если включены фильтры, возможно, они отфильтровали все. Попробуй
@@ -1377,12 +1341,17 @@ const SwipePage = ({
               >
                 <div className="swipeFocusCardHeader" data-no-swipe="true">
                   <div className="swipeFocusCardTitleBlock">
-                    <div className="swipeFocusCardTitle">{currentThreadItem.title}</div>
+                    <div className="swipeFocusCardTitle">
+                      {currentThreadItem.title}
+                    </div>
                   </div>
                 </div>
 
                 <div className="swipeFocusCardBody">
-                  <div className="swipeHeroPanel swipeScrollablePanel" data-no-swipe="true">
+                  <div
+                    className="swipeHeroPanel swipeScrollablePanel"
+                    data-no-swipe="true"
+                  >
                     <div className="swipeHeroScrollArea swipeHiddenScrollbar">
                       <div
                         className="cardGestureSurface swipeCoverGestureSurface"
@@ -1400,13 +1369,18 @@ const SwipePage = ({
                               loading="eager"
                               onClick={() =>
                                 onOpenViewer(
-                                  [currentThreadItem.cover, ...currentThreadItem.screens],
+                                  [
+                                    currentThreadItem.cover,
+                                    ...currentThreadItem.screens,
+                                  ],
                                   0,
                                 )
                               }
                             />
                           ) : (
-                            <div className="coverImageFallback">Нет обложки</div>
+                            <div className="coverImageFallback">
+                              Нет обложки
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1418,16 +1392,16 @@ const SwipePage = ({
                           onClick={onOpenCurrentThread}
                           onMouseDown={(event) => {
                             if (event.button === 1) {
-                              event.preventDefault();
+                              event.preventDefault()
                             }
                           }}
                           onAuxClick={(event) => {
                             if (event.button !== 1) {
-                              return;
+                              return
                             }
 
-                            event.preventDefault();
-                            onOpenCurrentThreadInBackground();
+                            event.preventDefault()
+                            onOpenCurrentThreadInBackground()
                           }}
                           disabled={!currentThreadLink}
                         >
@@ -1439,25 +1413,32 @@ const SwipePage = ({
                     </div>
                   </div>
 
-                  <div className="swipeScreensPanel swipeScrollablePanel" data-no-swipe="true">
+                  <div
+                    className="swipeScreensPanel swipeScrollablePanel"
+                    data-no-swipe="true"
+                  >
                     <div className="swipeScreensScrollArea swipeHiddenScrollbar">
                       {currentThreadPreviewScreens.length > 0 ? (
                         <div className="swipeCompactScreens">
-                          {currentThreadPreviewScreens.map((screenUrl, index) => (
-                            <button
-                              key={screenUrl}
-                              type="button"
-                              className="swipeScreenTile"
-                              onClick={() => onOpenViewer(currentThreadItem.screens, index)}
-                            >
-                              <img
-                                className="screenImage swipeCompactScreenImage"
-                                src={screenUrl}
-                                alt="screen"
-                                loading="lazy"
-                              />
-                            </button>
-                          ))}
+                          {currentThreadPreviewScreens.map(
+                            (screenUrl, index) => (
+                              <button
+                                key={screenUrl}
+                                type="button"
+                                className="swipeScreenTile"
+                                onClick={() =>
+                                  onOpenViewer(currentThreadItem.screens, index)
+                                }
+                              >
+                                <img
+                                  className="screenImage swipeCompactScreenImage"
+                                  src={screenUrl}
+                                  alt="screen"
+                                  loading="lazy"
+                                />
+                              </button>
+                            ),
+                          )}
                         </div>
                       ) : (
                         <div className="swipeScreensEmpty">Нет скриншотов</div>
@@ -1483,7 +1464,7 @@ const SwipePage = ({
               disabled={!currentThreadItem}
             >
               <span className="swipeActionIcon" aria-hidden>
-                🗑
+                🗑️
               </span>
               <span className="swipeActionLabel">В мусор</span>
               <span className="swipeActionHint">Left</span>
@@ -1518,7 +1499,7 @@ const SwipePage = ({
               disabled={!currentThreadItem}
             >
               <span className="swipeActionIcon" aria-hidden>
-                ★
+                🔖
               </span>
               <span className="swipeActionLabel">В закладки</span>
               <span className="swipeActionHint">Right</span>
@@ -1530,7 +1511,7 @@ const SwipePage = ({
               disabled={!canUndo}
             >
               <span className="swipeActionIcon" aria-hidden>
-                ↶
+                ↩️
               </span>
               <span className="swipeActionLabel">Назад</span>
               <span className="swipeActionHint">Backspace / Z</span>
@@ -1561,7 +1542,7 @@ const SwipePage = ({
         onToggleSwipeExcludeTag={toggleSwipeExcludeTag}
       />
     </>
-  );
-};
+  )
+}
 
-export { SwipePage };
+export { SwipePage }

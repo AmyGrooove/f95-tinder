@@ -1,4 +1,4 @@
-import type { ViewerState } from "../app/downloadState";
+import type { ViewerState } from "../app/viewerState";
 
 type ImageViewerOverlayProps = {
   viewerState: ViewerState;

@@ -10,18 +10,17 @@
     "dist": "pnpm build && electron-builder --win portable"
   },
   "dependencies": {
-    "7zip-bin": "^5.2.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "electron": "^41.0.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "electron": "^42.1.0",
     "electron-builder": "^26.8.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.1"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13"
   },
   "build": {
     "appId": "com.f95tinder.app",
@@ -34,9 +33,6 @@
       "dist/**",
       "electron/**",
       "package.json"
-    ],
-    "asarUnpack": [
-      "node_modules/7zip-bin/**"
     ],
     "win": {
       "signAndEditExecutable": false,

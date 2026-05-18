@@ -14,10 +14,6 @@ import type { MetadataSyncState } from "../f95/types";
 type SettingsTab = "cookies" | "filters" | "tags" | "data";
 
 type SettingsPageProps = {
-  preferredDownloadHosts: string[];
-  disabledDownloadHosts: Record<string, number>;
-  hiddenDownloadHosts: string[];
-  knownDownloadHosts: string[];
   tagsCount: number;
   prefixesCount: number;
   metadataSyncState: MetadataSyncState;
@@ -35,19 +31,13 @@ type SettingsPageProps = {
   onPauseMetadataSync: () => void;
   onResumeMetadataSync: () => void;
   onStopMetadataSync: () => void;
+  onClearMetadataCatalogData: () => void;
   onUpdateDefaultFilterState: (partialFilterState: Partial<FilterState>) => void;
   onUpdateDefaultLatestGamesSort: (latestGamesSort: LatestGamesSort) => void;
   onResetDefaultFilterState: () => void;
   onImportBundledDefaultFilterState: () => void;
   onSaveCurrentFiltersAsDefault: () => void;
   onApplyDefaultFiltersToSwipe: () => void;
-  onMoveDownloadHost: (hostLabel: string, direction: -1 | 1) => void;
-  onDisableDownloadHostTemporarily: (hostLabel: string) => void;
-  onEnableDownloadHost: (hostLabel: string) => void;
-  onShowDownloadHost: (hostLabel: string) => void;
-  onResetPreferredDownloadHosts: () => void;
-  onClearDisabledDownloadHosts: () => void;
-  onClearHiddenDownloadHosts: () => void;
   onImportBundledTagsMap: () => void;
   onOpenImportTagsMap: () => void;
   onImportTagsMapChange: () => void;
@@ -63,7 +53,6 @@ type SettingsPageProps = {
   onImportSettingsBackupChange: () => void;
   onOpenImportListsBackup: () => void;
   onImportListsBackupChange: () => void;
-  onOpenGameFolders: () => void;
   localDataFiles: {
     listsPath: string;
     settingsPath: string;
@@ -71,12 +60,9 @@ type SettingsPageProps = {
     catalogCheckpointPath: string;
   } | null;
   onOpenLocalDataFiles: () => void;
-  onClearGameFolders: () => void;
   onClearAllLocalData: () => void;
   onResetLocalSettings: () => void;
   onClearDashboardLists: () => void;
-  isLauncherAvailable: boolean;
-  libraryRootPath: string;
   importAllBackupInputRef: RefObject<HTMLInputElement | null>;
   importSettingsBackupInputRef: RefObject<HTMLInputElement | null>;
   importListsBackupInputRef: RefObject<HTMLInputElement | null>;
@@ -93,10 +79,6 @@ const DEFAULT_SWIPE_SORT_OPTIONS = [
 ] as const;
 
 export const SettingsPage = ({
-  preferredDownloadHosts,
-  disabledDownloadHosts,
-  hiddenDownloadHosts,
-  knownDownloadHosts,
   tagsCount,
   prefixesCount,
   metadataSyncState,
@@ -110,19 +92,13 @@ export const SettingsPage = ({
   onPauseMetadataSync,
   onResumeMetadataSync,
   onStopMetadataSync,
+  onClearMetadataCatalogData,
   onUpdateDefaultFilterState,
   onUpdateDefaultLatestGamesSort,
   onResetDefaultFilterState,
   onImportBundledDefaultFilterState,
   onSaveCurrentFiltersAsDefault,
   onApplyDefaultFiltersToSwipe,
-  onMoveDownloadHost,
-  onDisableDownloadHostTemporarily,
-  onEnableDownloadHost,
-  onShowDownloadHost,
-  onResetPreferredDownloadHosts,
-  onClearDisabledDownloadHosts,
-  onClearHiddenDownloadHosts,
   onImportBundledTagsMap,
   onOpenImportTagsMap,
   onImportTagsMapChange,
@@ -138,15 +114,11 @@ export const SettingsPage = ({
   onImportSettingsBackupChange,
   onOpenImportListsBackup,
   onImportListsBackupChange,
-  onOpenGameFolders,
   localDataFiles,
   onOpenLocalDataFiles,
-  onClearGameFolders,
   onClearAllLocalData,
   onResetLocalSettings,
   onClearDashboardLists,
-  isLauncherAvailable,
-  libraryRootPath,
   importAllBackupInputRef,
   importSettingsBackupInputRef,
   importListsBackupInputRef,
@@ -728,11 +700,11 @@ export const SettingsPage = ({
               ) : null}
 
               {cookieProxyErrorMessage ? (
-                <div className="downloadEmptyState">{cookieProxyErrorMessage}</div>
+                <div className="errorMessage">{cookieProxyErrorMessage}</div>
               ) : null}
 
               {cookieProxySuccessMessage ? (
-                <div className="downloadNotice">{cookieProxySuccessMessage}</div>
+                <div className="noticeMessage">{cookieProxySuccessMessage}</div>
               ) : null}
             </div>
 
@@ -816,6 +788,7 @@ export const SettingsPage = ({
               onPauseSync={onPauseMetadataSync}
               onResumeSync={onResumeMetadataSync}
               onStopSync={onStopMetadataSync}
+              onClearCatalogData={onClearMetadataCatalogData}
             />
 
             <div className="panel">

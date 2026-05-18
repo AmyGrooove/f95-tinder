@@ -1,20 +1,17 @@
 import { safeJsonParse } from './utils'
 import {
-  clearLauncherLocalCatalogSync,
-  clearLauncherLocalCatalogCheckpointSync,
+  clearLauncherLocalCatalog,
+  clearLauncherLocalCatalogCheckpoint,
   clearLauncherLocalLists,
-  clearLauncherLocalSettingsSync,
+  clearLauncherLocalSettings,
   getLauncherLocalDataSnapshotSync,
-  saveLauncherLocalCatalogSync,
-  saveLauncherLocalCatalogCheckpointSync,
+  saveLauncherLocalCatalog,
+  saveLauncherLocalCatalogCheckpoint,
   saveLauncherLocalLists,
-  saveLauncherLocalSettingsSync,
+  saveLauncherLocalSettings,
 } from '../launcher/runtime'
 import type { LauncherLocalDataSnapshot } from '../launcher/types'
 import type {
-  DashboardSortDirection,
-  DashboardSortField,
-  DashboardTabId,
   DashboardViewState,
   DefaultSwipeSettings,
   F95ThreadItem,
@@ -24,9 +21,21 @@ import type {
   ListType,
   ProcessedThreadItem,
   SessionState,
-  SwipeSortMode,
 } from './types'
 import { DEFAULT_FILTER_STATE, normalizeFilterState } from './filtering'
+import {
+  isPlainObject,
+  normalizeDashboardViewState as normalizeDashboardViewStateValue,
+  normalizeDefaultSwipeSettings as normalizeDefaultSwipeSettingsValue,
+  normalizeFiniteNumber,
+  normalizeImportedStringList,
+  normalizeLatestGamesSort,
+  normalizeNumericIdList,
+  normalizePrefixesMap,
+  normalizeTagsMap,
+  normalizeThreadItemsByIdentifier,
+  normalizeSwipeSortMode,
+} from './normalizers'
 
 const STORAGE_KEYS = {
   sessionState: 'f95_tinder_session_v1',
@@ -63,6 +72,12 @@ const BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE: DashboardViewState = {
   sortDirection: 'asc',
   showInterestBadges: true,
 }
+
+const normalizeDefaultSwipeSettings = (value: unknown): DefaultSwipeSettings =>
+  normalizeDefaultSwipeSettingsValue(value, BUILT_IN_DEFAULT_SWIPE_SETTINGS)
+
+const normalizeDashboardViewState = (value: unknown): DashboardViewState =>
+  normalizeDashboardViewStateValue(value, BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE)
 
 const getCachedPagesIndexKey = (latestGamesSort: LatestGamesSort) =>
   `${STORAGE_KEYS.cachedPagesIndexPrefix}${latestGamesSort}`
@@ -194,211 +209,6 @@ const markPageAsCached = (latestGamesSort: LatestGamesSort, pageNumber: number) 
   saveCachedPagesIndex(latestGamesSort, updatedCachedPageNumberList)
 }
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-const normalizeLatestGamesSort = (value: unknown): LatestGamesSort =>
-  value === 'date' ? 'date' : 'views'
-
-const normalizeSwipeSortMode = (value: unknown): SwipeSortMode => {
-  if (value === 'views' || value === 'interest') {
-    return value
-  }
-
-  return 'date'
-}
-
-const normalizeDashboardTabId = (value: unknown): DashboardTabId => {
-  if (value === 'trash' || value === 'played') {
-    return value
-  }
-
-  return 'bookmarks'
-}
-
-const normalizeDashboardSortField = (value: unknown): DashboardSortField => {
-  if (value === 'rating' || value === 'title' || value === 'interest') {
-    return value
-  }
-
-  return 'addedAt'
-}
-
-const normalizeDashboardSortDirection = (
-  value: unknown,
-): DashboardSortDirection => {
-  return value === 'desc' ? 'desc' : 'asc'
-}
-
-const normalizeFiniteNumber = (value: unknown, fallbackValue = 0) => {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value
-    : fallbackValue
-}
-
-const normalizeBoolean = (value: unknown) => value === true
-
-const normalizeStringArray = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.filter((item): item is string => typeof item === 'string')
-}
-
-const normalizeNumericIdList = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  const normalized: number[] = []
-  const seenValues = new Set<number>()
-
-  for (const item of value) {
-    if (
-      typeof item !== 'number' ||
-      !Number.isFinite(item) ||
-      !Number.isInteger(item) ||
-      seenValues.has(item)
-    ) {
-      continue
-    }
-
-    seenValues.add(item)
-    normalized.push(item)
-  }
-
-  return normalized
-}
-
-const normalizeThreadItem = (value: unknown): F95ThreadItem | null => {
-  if (!isPlainObject(value)) {
-    return null
-  }
-
-  const threadItem = value as Partial<F95ThreadItem>
-  if (
-    typeof threadItem.thread_id !== 'number' ||
-    !Number.isFinite(threadItem.thread_id) ||
-    !Number.isInteger(threadItem.thread_id) ||
-    typeof threadItem.title !== 'string'
-  ) {
-    return null
-  }
-
-  return {
-    thread_id: threadItem.thread_id,
-    title: threadItem.title,
-    creator: typeof threadItem.creator === 'string' ? threadItem.creator : '',
-    version: typeof threadItem.version === 'string' ? threadItem.version : '',
-    views: normalizeFiniteNumber(threadItem.views),
-    likes: normalizeFiniteNumber(threadItem.likes),
-    prefixes: normalizeNumericIdList(threadItem.prefixes),
-    tags: normalizeNumericIdList(threadItem.tags),
-    rating: normalizeFiniteNumber(threadItem.rating),
-    cover: typeof threadItem.cover === 'string' ? threadItem.cover : '',
-    screens: normalizeStringArray(threadItem.screens),
-    date: typeof threadItem.date === 'string' ? threadItem.date : '',
-    watched: normalizeBoolean(threadItem.watched),
-    ignored: normalizeBoolean(threadItem.ignored),
-    new: normalizeBoolean(threadItem.new),
-    ts: normalizeFiniteNumber(threadItem.ts),
-  }
-}
-
-const normalizeThreadItemsByIdentifier = (value: unknown) => {
-  if (!isPlainObject(value)) {
-    return {}
-  }
-
-  const normalized: Record<string, F95ThreadItem> = {}
-  for (const [entryKey, entryValue] of Object.entries(value)) {
-    const threadItem = normalizeThreadItem(entryValue)
-    if (!threadItem) {
-      continue
-    }
-
-    normalized[entryKey] = threadItem
-  }
-
-  return normalized
-}
-
-const normalizeImportedStringList = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.filter((item): item is string => typeof item === 'string')
-}
-
-const normalizeImportedDisabledDownloadHosts = (value: unknown) => {
-  if (!isPlainObject(value)) {
-    return {}
-  }
-
-  const normalizedMap: Record<string, number> = {}
-  for (const [hostLabel, expiresAtUnixMs] of Object.entries(value)) {
-    if (
-      typeof hostLabel === 'string' &&
-      typeof expiresAtUnixMs === 'number' &&
-      Number.isFinite(expiresAtUnixMs)
-    ) {
-      normalizedMap[hostLabel] = expiresAtUnixMs
-    }
-  }
-
-  return normalizedMap
-}
-
-const normalizeDefaultSwipeSettings = (
-  value: unknown,
-): DefaultSwipeSettings => {
-  if (!isPlainObject(value)) {
-    return {
-      latestGamesSort: BUILT_IN_DEFAULT_SWIPE_SETTINGS.latestGamesSort,
-      filterState: normalizeFilterState(
-        BUILT_IN_DEFAULT_SWIPE_SETTINGS.filterState,
-      ),
-    }
-  }
-
-  const rawValue = value as Record<string, unknown>
-  const rawFilterState = isPlainObject(rawValue.filterState)
-    ? rawValue.filterState
-    : value
-
-  return {
-    latestGamesSort: normalizeLatestGamesSort(rawValue.latestGamesSort),
-    filterState: normalizeFilterState(rawFilterState),
-  }
-}
-
-const normalizeDashboardViewState = (
-  value: unknown,
-): DashboardViewState => {
-  if (!isPlainObject(value)) {
-    return { ...BUILT_IN_DEFAULT_DASHBOARD_VIEW_STATE }
-  }
-
-  return {
-    activeTab: normalizeDashboardTabId(value.activeTab),
-    searchText: typeof value.searchText === 'string' ? value.searchText : '',
-    includeTags: normalizeImportedStringList(value.includeTags),
-    excludeTags: normalizeImportedStringList(value.excludeTags),
-    onlyUpdatedTracked: value.onlyUpdatedTracked === true,
-    showOnlyDownloadedBookmarks: value.showOnlyDownloadedBookmarks === true,
-    showOnlyPlayedFavorites: value.showOnlyPlayedFavorites === true,
-    sortField: normalizeDashboardSortField(value.sortField),
-    sortDirection: normalizeDashboardSortDirection(value.sortDirection),
-    showInterestBadges:
-      typeof value.showInterestBadges === 'boolean'
-        ? value.showInterestBadges
-        : true,
-  }
-}
-
 let launcherSnapshotCache: LauncherLocalDataSnapshot | null | undefined
 let launcherListsBackupCache:
   | {
@@ -414,9 +224,6 @@ let launcherSettingsBackupCache:
       dashboardViewState: DashboardViewState
       tagsMap: Record<string, string>
       prefixesMap: Record<string, string>
-      preferredDownloadHosts: string[]
-      disabledDownloadHosts: Record<string, number>
-      hiddenDownloadHosts: string[]
       cookieProxy: unknown
     }
   | null
@@ -985,46 +792,6 @@ const normalizeBookmarkedDownloadedLinks = (
   return Array.from(new Set(normalized))
 }
 
-const normalizeLookupMap = (value: unknown): Record<string, string> => {
-  if (!isPlainObject(value)) {
-    return {}
-  }
-
-  const normalized: Record<string, string> = {}
-  for (const key of Object.keys(value)) {
-    const rawValue = (value as Record<string, unknown>)[key]
-    if (typeof rawValue !== 'string') {
-      continue
-    }
-    normalized[key] = rawValue
-  }
-
-  return normalized
-}
-
-const normalizeTagsMap = (value: unknown): Record<string, string> => {
-  return normalizeLookupMap(value)
-}
-
-const PREFIXES_LOOKUP_GROUP_KEYS = ['prefixes', 'engines'] as const
-
-const normalizePrefixesMap = (value: unknown): Record<string, string> => {
-  if (!isPlainObject(value)) {
-    return {}
-  }
-
-  // prefixes.json can now be grouped into regular prefixes and engine labels.
-  const groupedMapList = PREFIXES_LOOKUP_GROUP_KEYS.map((groupKey) =>
-    normalizeLookupMap((value as Record<string, unknown>)[groupKey]),
-  ).filter((lookupMap) => Object.keys(lookupMap).length > 0)
-
-  if (groupedMapList.length === 0) {
-    return normalizeLookupMap(value)
-  }
-
-  return Object.assign({}, ...groupedMapList)
-}
-
 const loadTagsMapFromLocalStorage = (): Record<string, string> => {
   const tagsMapText = readLocalStorageValue(STORAGE_KEYS.tagsMap)
   if (!tagsMapText) {
@@ -1112,13 +879,6 @@ const loadLauncherLocalSettingsBackup = () => {
     dashboardViewState: normalizeDashboardViewState(rawSettings.dashboardViewState),
     tagsMap: normalizeTagsMap(rawSettings.tagsMap),
     prefixesMap: normalizePrefixesMap(rawSettings.prefixesMap),
-    preferredDownloadHosts: normalizeImportedStringList(
-      rawSettings.preferredDownloadHosts,
-    ),
-    disabledDownloadHosts: normalizeImportedDisabledDownloadHosts(
-      rawSettings.disabledDownloadHosts,
-    ),
-    hiddenDownloadHosts: normalizeImportedStringList(rawSettings.hiddenDownloadHosts),
     cookieProxy: 'cookieProxy' in rawSettings ? rawSettings.cookieProxy : null,
   }
 
@@ -1185,9 +945,6 @@ const buildFallbackLocalSettingsBackup = () => {
     tagsMap: launcherListsBackup?.tagsMap ?? loadTagsMapFromLocalStorage(),
     prefixesMap:
       launcherListsBackup?.prefixesMap ?? loadPrefixesMapFromLocalStorage(),
-    preferredDownloadHosts: [],
-    disabledDownloadHosts: {},
-    hiddenDownloadHosts: [],
     cookieProxy: null,
   }
 }
@@ -1279,7 +1036,7 @@ const saveDefaultSwipeSettings = (defaultSwipeSettings: unknown) => {
       defaultSwipeSettings: normalizedValue,
     }
     updateLauncherSnapshotCached('settings', nextSettingsBackup)
-    saveLauncherLocalSettingsSync(nextSettingsBackup)
+    void saveLauncherLocalSettings(nextSettingsBackup)
     return
   }
 
@@ -1300,7 +1057,7 @@ const saveDashboardViewState = (dashboardViewState: unknown) => {
       dashboardViewState: normalizedValue,
     }
     updateLauncherSnapshotCached('settings', nextSettingsBackup)
-    saveLauncherLocalSettingsSync(nextSettingsBackup)
+    void saveLauncherLocalSettings(nextSettingsBackup)
     return
   }
 
@@ -1326,7 +1083,7 @@ const saveLatestCatalogState = (latestCatalogState: LatestCatalogState) => {
 
   if (isLauncherLocalDataEnabled()) {
     updateLauncherSnapshotCached('catalog', completedValue)
-    saveLauncherLocalCatalogSync(completedValue)
+    void saveLauncherLocalCatalog(completedValue)
     return
   }
 
@@ -1353,7 +1110,7 @@ const saveLatestCatalogCheckpointState = (latestCatalogState: LatestCatalogState
 
   if (isLauncherLocalDataEnabled()) {
     updateLauncherSnapshotCached('catalogCheckpoint', checkpointValue)
-    saveLauncherLocalCatalogCheckpointSync(checkpointValue)
+    void saveLauncherLocalCatalogCheckpoint(checkpointValue)
     return
   }
 
@@ -1370,7 +1127,7 @@ const saveLatestCatalogCheckpointState = (latestCatalogState: LatestCatalogState
 const clearLatestCatalogState = () => {
   if (isLauncherLocalDataEnabled()) {
     updateLauncherSnapshotCached('catalog', null)
-    clearLauncherLocalCatalogSync()
+    void clearLauncherLocalCatalog()
     return
   }
 
@@ -1380,7 +1137,7 @@ const clearLatestCatalogState = () => {
 const clearLatestCatalogCheckpointState = () => {
   if (isLauncherLocalDataEnabled()) {
     updateLauncherSnapshotCached('catalogCheckpoint', null)
-    clearLauncherLocalCatalogCheckpointSync()
+    void clearLauncherLocalCatalogCheckpoint()
     return
   }
 
@@ -1419,9 +1176,9 @@ const clearAllStoredData = () => {
     updateLauncherSnapshotCached('catalog', null)
     updateLauncherSnapshotCached('catalogCheckpoint', null)
     void clearLauncherLocalLists()
-    clearLauncherLocalSettingsSync()
-    clearLauncherLocalCatalogSync()
-    clearLauncherLocalCatalogCheckpointSync()
+    void clearLauncherLocalSettings()
+    void clearLauncherLocalCatalog()
+    void clearLauncherLocalCatalogCheckpoint()
     return
   }
 
@@ -1481,7 +1238,7 @@ const saveTagsMap = (tagsMap: Record<string, string>) => {
     updateLauncherSnapshotCached('lists', nextListsBackup)
     updateLauncherSnapshotCached('settings', nextSettingsBackup)
     void saveLauncherLocalLists(nextListsBackup)
-    saveLauncherLocalSettingsSync(nextSettingsBackup)
+    void saveLauncherLocalSettings(nextSettingsBackup)
     return
   }
 
@@ -1507,7 +1264,7 @@ const savePrefixesMap = (prefixesMap: Record<string, string>) => {
     updateLauncherSnapshotCached('lists', nextListsBackup)
     updateLauncherSnapshotCached('settings', nextSettingsBackup)
     void saveLauncherLocalLists(nextListsBackup)
-    saveLauncherLocalSettingsSync(nextSettingsBackup)
+    void saveLauncherLocalSettings(nextSettingsBackup)
     return
   }
 

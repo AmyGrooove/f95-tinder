@@ -3,7 +3,13 @@ import { getEnginePrefixIdList } from "./prefixes";
 
 type InterestLevel = "top" | "good" | "neutral" | "bad" | "trash";
 type InterestTone = "positive" | "negative" | "neutral";
-type InterestReasonKind = "tag" | "prefix" | "creator" | "rating" | "freshness";
+type InterestReasonKind =
+  | "tag"
+  | "prefix"
+  | "creator"
+  | "rating"
+  | "freshness"
+  | "popularity";
 type InterestSignalType =
   | "playedFavorite"
   | "playedDisliked"
@@ -12,7 +18,7 @@ type InterestSignalType =
   | "trash";
 type InterestCandidate = Pick<
   F95ThreadItem,
-  "tags" | "prefixes" | "creator" | "rating" | "new"
+  "tags" | "prefixes" | "creator" | "rating" | "new" | "likes" | "views"
 >;
 
 type FeatureEvidence = {
@@ -63,11 +69,11 @@ type ThreadInterestAssessment = {
 };
 
 const SIGNAL_WEIGHT_BY_TYPE: Record<InterestSignalType, number> = {
-  playedFavorite: 5.2,
-  playedDisliked: -3.6,
-  played: 1.2,
-  favorite: 2.7,
-  trash: -1.35,
+  playedFavorite: 5.8,
+  playedDisliked: -4.4,
+  played: 1.05,
+  favorite: 1.85,
+  trash: -1.05,
 };
 
 const MIN_SIGNALS_FOR_STABLE_PROFILE = 8;
@@ -471,7 +477,7 @@ const getSignalRecencyWeight = (
   return Math.max(MIN_SIGNAL_RECENCY_WEIGHT, decayedWeight);
 };
 
-const getRatingBonus = (rating: number | undefined) => {
+const getRatingContribution = (rating: number | undefined) => {
   if (typeof rating !== "number" || !Number.isFinite(rating)) {
     return 0;
   }
@@ -488,8 +494,37 @@ const getRatingBonus = (rating: number | undefined) => {
   if (rating >= 3.6) {
     return 0.12;
   }
+  if (rating >= 3.2) {
+    return 0;
+  }
+  if (rating >= 2.8) {
+    return -0.14;
+  }
+  if (rating >= 2.4) {
+    return -0.28;
+  }
 
-  return 0;
+  return -0.42;
+};
+
+const getPopularityBonus = (threadItem: InterestCandidate) => {
+  const likes =
+    typeof threadItem.likes === "number" && Number.isFinite(threadItem.likes)
+      ? Math.max(0, threadItem.likes)
+      : 0;
+  const views =
+    typeof threadItem.views === "number" && Number.isFinite(threadItem.views)
+      ? Math.max(0, threadItem.views)
+      : 0;
+
+  if (likes <= 0 && views <= 0) {
+    return 0;
+  }
+
+  const likesScore = clamp01(Math.log1p(likes) / Math.log1p(1_200));
+  const viewsScore = clamp01(Math.log1p(views) / Math.log1p(850_000));
+
+  return likesScore * 0.2 + viewsScore * 0.1;
 };
 
 const getFreshnessBonus = (threadItem: InterestCandidate) => {
@@ -674,7 +709,11 @@ const toReasonText = (
   }
 
   if (contribution.kind === "rating") {
-    return "Высокий рейтинг";
+    return isPositive ? "Высокий рейтинг" : "Низкий рейтинг";
+  }
+
+  if (contribution.kind === "popularity") {
+    return "Хорошая реакция аудитории";
   }
 
   return "Свежая новинка";
@@ -785,6 +824,8 @@ const buildInterestProfile = (sessionState: SessionState): InterestProfile => {
   const trackedLinkSet = new Set<string>([
     ...favoriteSet,
     ...playedSet,
+    ...playedFavoriteSet,
+    ...playedDislikedSet,
     ...trashSet,
   ]);
   const signalEntryList: InterestSignalEntry[] = [];
@@ -973,15 +1014,26 @@ const assessThreadInterest = (
     }
   }
 
-  const ratingBonus = getRatingBonus(threadItem.rating);
-  if (ratingBonus > 0) {
+  const ratingContribution = getRatingContribution(threadItem.rating);
+  if (ratingContribution !== 0) {
     contributionList.push({
       kind: "rating",
       label: "rating",
-      value: ratingBonus,
+      value: ratingContribution,
     });
-    rawScore += ratingBonus;
-    baselineRawScore += ratingBonus;
+    rawScore += ratingContribution;
+    baselineRawScore += ratingContribution;
+  }
+
+  const popularityBonus = getPopularityBonus(threadItem);
+  if (popularityBonus > 0) {
+    contributionList.push({
+      kind: "popularity",
+      label: "popularity",
+      value: popularityBonus,
+    });
+    rawScore += popularityBonus;
+    baselineRawScore += popularityBonus;
   }
 
   const freshnessBonus = getFreshnessBonus(threadItem);
@@ -996,7 +1048,11 @@ const assessThreadInterest = (
   }
 
   const evidenceMagnitude = contributionList.reduce((sum, contribution) => {
-    if (contribution.kind === "rating" || contribution.kind === "freshness") {
+    if (
+      contribution.kind === "rating" ||
+      contribution.kind === "freshness" ||
+      contribution.kind === "popularity"
+    ) {
       return sum;
     }
     return sum + Math.abs(contribution.value);

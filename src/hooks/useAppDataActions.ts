@@ -24,15 +24,6 @@ import {
   fetchCookieProxyBackup,
   saveCookieProxyInput,
 } from "../f95/cookieProxy";
-import {
-  clearAllCachedThreadDownloads,
-  clearDisabledDownloadHosts,
-  clearHiddenDownloadHosts,
-  resetPreferredDownloadHosts,
-  saveDisabledDownloadHosts,
-  saveHiddenDownloadHosts,
-  savePreferredDownloadHosts,
-} from "../f95/downloads";
 import { downloadJsonFile, readFileAsText, safeJsonParse } from "../f95/utils";
 import { openLauncherLocalDataFolder } from "../launcher/runtime";
 import {
@@ -64,9 +55,6 @@ type UseAppDataActionsOptions = {
   defaultLatestGamesSort: LatestGamesSort;
   tagsMap: Record<string, string>;
   prefixesMap: Record<string, string>;
-  preferredDownloadHosts: string[];
-  disabledDownloadHosts: Record<string, number>;
-  hiddenDownloadHosts: string[];
   replaceDefaultSwipeSettings: (settings: DefaultSwipeSettings) => void;
   updateTagsMap: (nextMap: Record<string, string>) => void;
   updatePrefixesMap: (nextMap: Record<string, string>) => void;
@@ -86,9 +74,6 @@ const useAppDataActions = ({
   defaultLatestGamesSort,
   tagsMap,
   prefixesMap,
-  preferredDownloadHosts,
-  disabledDownloadHosts,
-  hiddenDownloadHosts,
   replaceDefaultSwipeSettings,
   updateTagsMap,
   updatePrefixesMap,
@@ -150,18 +135,12 @@ const useAppDataActions = ({
       dashboardViewState: loadDashboardViewState(),
       tagsMap,
       prefixesMap,
-      preferredDownloadHosts,
-      disabledDownloadHosts,
-      hiddenDownloadHosts,
       cookieProxy: await fetchCookieProxyBackup(),
     };
   }, [
     defaultFilterState,
     defaultLatestGamesSort,
-    disabledDownloadHosts,
-    hiddenDownloadHosts,
     prefixesMap,
-    preferredDownloadHosts,
     tagsMap,
   ]);
 
@@ -189,9 +168,6 @@ const useAppDataActions = ({
       saveDashboardViewState(backup.dashboardViewState);
       saveTagsMap(backup.tagsMap);
       savePrefixesMap(backup.prefixesMap);
-      savePreferredDownloadHosts(backup.preferredDownloadHosts);
-      saveDisabledDownloadHosts(backup.disabledDownloadHosts);
-      saveHiddenDownloadHosts(backup.hiddenDownloadHosts);
     },
     [],
   );
@@ -669,9 +645,6 @@ const useAppDataActions = ({
         saveDashboardViewState(undefined);
         saveTagsMap({});
         savePrefixesMap({});
-        resetPreferredDownloadHosts();
-        clearDisabledDownloadHosts();
-        clearHiddenDownloadHosts();
         await clearCookieProxyInput();
         await restartApplicationWindow();
       } catch (error) {
@@ -694,10 +667,6 @@ const useAppDataActions = ({
       try {
         setErrorMessage(null);
         clearAllStoredData();
-        clearAllCachedThreadDownloads();
-        resetPreferredDownloadHosts();
-        clearDisabledDownloadHosts();
-        clearHiddenDownloadHosts();
         await clearCookieProxyInput();
         await restartApplicationWindow();
       } catch (error) {

@@ -1,18 +1,10 @@
 import type {
   LauncherCookieBackup,
   LauncherCookieStatus,
-  LauncherDownloadRequest,
-  LauncherInstallFolderRequest,
   LauncherLatestGamesResult,
   LauncherLocalDataSnapshot,
-  LauncherLibrarySnapshot,
 } from './types'
 import type { FilterState, LatestGamesSort } from '../f95/types'
-
-const createEmptyLibrarySnapshot = (): LauncherLibrarySnapshot => ({
-  libraryRootPath: '',
-  gamesByThreadLink: {},
-})
 
 const getLauncherBridge = () => {
   if (typeof window === 'undefined') {
@@ -82,261 +74,45 @@ const getLauncherLocalDataSnapshotSync = (): LauncherLocalDataSnapshot | null =>
   }
 }
 
-const saveLauncherLocalListsSync = (value: unknown): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    return normalizeLauncherLocalDataSnapshot(launcherBridge.saveLocalListsSync(value))
-  } catch {
-    return null
-  }
-}
-
-const saveLauncherLocalLists = async (value: unknown) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.saveLocalLists !== 'function') {
+const invokeBoolean = async (
+  fn: ((value?: unknown) => Promise<boolean>) | undefined,
+  value?: unknown,
+) => {
+  if (typeof fn !== 'function') {
     return false
   }
 
   try {
-    await launcherBridge.saveLocalLists(value)
+    await fn(value)
     return true
   } catch {
     return false
   }
 }
 
-const saveLauncherLocalSettingsSync = (
-  value: unknown,
-): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
+const saveLauncherLocalLists = async (value: unknown) =>
+  invokeBoolean(getLauncherBridge()?.saveLocalLists, value)
 
-  try {
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.saveLocalSettingsSync(value),
-    )
-  } catch {
-    return null
-  }
-}
+const saveLauncherLocalSettings = async (value: unknown) =>
+  invokeBoolean(getLauncherBridge()?.saveLocalSettings, value)
 
-const saveLauncherLocalSettings = async (value: unknown) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.saveLocalSettings !== 'function') {
-    return false
-  }
+const saveLauncherLocalCatalog = async (value: unknown) =>
+  invokeBoolean(getLauncherBridge()?.saveLocalCatalog, value)
 
-  try {
-    await launcherBridge.saveLocalSettings(value)
-    return true
-  } catch {
-    return false
-  }
-}
+const saveLauncherLocalCatalogCheckpoint = async (value: unknown) =>
+  invokeBoolean(getLauncherBridge()?.saveLocalCatalogCheckpoint, value)
 
-const saveLauncherLocalCatalogSync = (
-  value: unknown,
-): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
+const clearLauncherLocalLists = async () =>
+  invokeBoolean(getLauncherBridge()?.clearLocalLists)
 
-  try {
-    if (typeof launcherBridge.saveLocalCatalogSync !== 'function') {
-      return getLauncherLocalDataSnapshotSync()
-    }
+const clearLauncherLocalSettings = async () =>
+  invokeBoolean(getLauncherBridge()?.clearLocalSettings)
 
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.saveLocalCatalogSync(value),
-    )
-  } catch {
-    return getLauncherLocalDataSnapshotSync()
-  }
-}
+const clearLauncherLocalCatalog = async () =>
+  invokeBoolean(getLauncherBridge()?.clearLocalCatalog)
 
-const saveLauncherLocalCatalog = async (value: unknown) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.saveLocalCatalog !== 'function') {
-    return false
-  }
-
-  try {
-    await launcherBridge.saveLocalCatalog(value)
-    return true
-  } catch {
-    return false
-  }
-}
-
-const saveLauncherLocalCatalogCheckpointSync = (
-  value: unknown,
-): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    if (typeof launcherBridge.saveLocalCatalogCheckpointSync !== 'function') {
-      return getLauncherLocalDataSnapshotSync()
-    }
-
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.saveLocalCatalogCheckpointSync(value),
-    )
-  } catch {
-    return getLauncherLocalDataSnapshotSync()
-  }
-}
-
-const saveLauncherLocalCatalogCheckpoint = async (value: unknown) => {
-  const launcherBridge = getLauncherBridge()
-  if (
-    !launcherBridge ||
-    typeof launcherBridge.saveLocalCatalogCheckpoint !== 'function'
-  ) {
-    return false
-  }
-
-  try {
-    await launcherBridge.saveLocalCatalogCheckpoint(value)
-    return true
-  } catch {
-    return false
-  }
-}
-
-const clearLauncherLocalListsSync = (): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    return normalizeLauncherLocalDataSnapshot(launcherBridge.clearLocalListsSync())
-  } catch {
-    return null
-  }
-}
-
-const clearLauncherLocalLists = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.clearLocalLists !== 'function') {
-    return false
-  }
-
-  try {
-    await launcherBridge.clearLocalLists()
-    return true
-  } catch {
-    return false
-  }
-}
-
-const clearLauncherLocalSettingsSync = (): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.clearLocalSettingsSync(),
-    )
-  } catch {
-    return null
-  }
-}
-
-const clearLauncherLocalSettings = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.clearLocalSettings !== 'function') {
-    return false
-  }
-
-  try {
-    await launcherBridge.clearLocalSettings()
-    return true
-  } catch {
-    return false
-  }
-}
-
-const clearLauncherLocalCatalogSync = (): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    if (typeof launcherBridge.clearLocalCatalogSync !== 'function') {
-      return getLauncherLocalDataSnapshotSync()
-    }
-
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.clearLocalCatalogSync(),
-    )
-  } catch {
-    return getLauncherLocalDataSnapshotSync()
-  }
-}
-
-const clearLauncherLocalCatalog = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge || typeof launcherBridge.clearLocalCatalog !== 'function') {
-    return false
-  }
-
-  try {
-    await launcherBridge.clearLocalCatalog()
-    return true
-  } catch {
-    return false
-  }
-}
-
-const clearLauncherLocalCatalogCheckpointSync = (): LauncherLocalDataSnapshot | null => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  try {
-    if (typeof launcherBridge.clearLocalCatalogCheckpointSync !== 'function') {
-      return getLauncherLocalDataSnapshotSync()
-    }
-
-    return normalizeLauncherLocalDataSnapshot(
-      launcherBridge.clearLocalCatalogCheckpointSync(),
-    )
-  } catch {
-    return getLauncherLocalDataSnapshotSync()
-  }
-}
-
-const clearLauncherLocalCatalogCheckpoint = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (
-    !launcherBridge ||
-    typeof launcherBridge.clearLocalCatalogCheckpoint !== 'function'
-  ) {
-    return false
-  }
-
-  try {
-    await launcherBridge.clearLocalCatalogCheckpoint()
-    return true
-  } catch {
-    return false
-  }
-}
+const clearLauncherLocalCatalogCheckpoint = async () =>
+  invokeBoolean(getLauncherBridge()?.clearLocalCatalogCheckpoint)
 
 const openLauncherLocalDataFolder = async () => {
   const launcherBridge = getLauncherBridge()
@@ -446,15 +222,6 @@ const fetchLatestGamesPageViaLauncher = async (
   )
 }
 
-const fetchThreadPageHtmlViaLauncher = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.fetchThreadPageHtml(threadLink)
-}
-
 const getCookieStatusViaLauncher = async (): Promise<LauncherCookieStatus | null> => {
   const launcherBridge = getLauncherBridge()
   if (!launcherBridge) {
@@ -511,165 +278,26 @@ const loadBundledPrefixesMapViaLauncher = async () => {
   return launcherBridge.loadBundledPrefixesMap()
 }
 
-const getLauncherLibrarySnapshot = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return createEmptyLibrarySnapshot()
-  }
-
-  return launcherBridge.getLibrarySnapshot()
-}
-
-const subscribeToLauncherLibrarySnapshot = (
-  listener: (snapshot: LauncherLibrarySnapshot) => void,
-) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return () => {
-      // noop
-    }
-  }
-
-  return launcherBridge.onLibrarySnapshot(listener)
-}
-
-const requestLauncherDownload = async (request: LauncherDownloadRequest) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.downloadGame(request)
-}
-
-const requestLauncherDownloadCancel = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.cancelDownloadGame(threadLink)
-}
-
-const requestLauncherInstallFolderChoice = async (
-  request: LauncherInstallFolderRequest,
-) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.chooseInstallFolder(request)
-}
-
-const requestLauncherGameLaunch = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return false
-  }
-
-  await launcherBridge.launchGame(threadLink)
-  return true
-}
-
-const requestLauncherRevealGame = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return false
-  }
-
-  await launcherBridge.revealGame(threadLink)
-  return true
-}
-
-const requestLauncherGameDeletion = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.deleteGameFiles(threadLink)
-}
-
-const requestLauncherLaunchTargetChoice = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.chooseLaunchTarget(threadLink)
-}
-
-const requestLauncherLibraryFolderOpen = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return false
-  }
-
-  await launcherBridge.openLibraryFolder()
-  return true
-}
-
-const requestLauncherMirrorOpen = async (threadLink: string) => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return false
-  }
-
-  await launcherBridge.openMirrorForGame(threadLink)
-  return true
-}
-
-const requestLauncherLibraryClear = async () => {
-  const launcherBridge = getLauncherBridge()
-  if (!launcherBridge) {
-    return null
-  }
-
-  return launcherBridge.clearLibrary()
-}
-
 export {
   clearLauncherLocalCatalog,
   clearLauncherLocalCatalogCheckpoint,
-  clearLauncherLocalCatalogCheckpointSync,
-  clearLauncherLocalListsSync,
   clearLauncherLocalLists,
-  clearLauncherLocalSettingsSync,
   clearLauncherLocalSettings,
-  clearLauncherLocalCatalogSync,
   clearCookieInputViaLauncher,
   getCookieBackupViaLauncher,
   getLauncherLocalDataSnapshotSync,
   fetchLatestGamesPageViaLauncher,
-  fetchThreadPageHtmlViaLauncher,
   getCookieStatusViaLauncher,
   getLauncherBridge,
-  getLauncherLibrarySnapshot,
   isLauncherBridgeAvailable,
   loadBundledPrefixesMapViaLauncher,
   loadBundledTagsMapViaLauncher,
   openExternalUrl,
   openLauncherLocalDataFolder,
   restartLauncherApp,
-  requestLauncherDownload,
-  requestLauncherDownloadCancel,
-  requestLauncherInstallFolderChoice,
-  requestLauncherGameDeletion,
-  requestLauncherGameLaunch,
-  requestLauncherLibraryClear,
-  requestLauncherLibraryFolderOpen,
-  requestLauncherLaunchTargetChoice,
-  requestLauncherMirrorOpen,
-  requestLauncherRevealGame,
   saveLauncherLocalCatalog,
   saveLauncherLocalCatalogCheckpoint,
-  saveLauncherLocalCatalogCheckpointSync,
-  saveLauncherLocalListsSync,
   saveLauncherLocalLists,
-  saveLauncherLocalSettingsSync,
   saveLauncherLocalSettings,
-  saveLauncherLocalCatalogSync,
   saveCookieInputViaLauncher,
-  subscribeToLauncherLibrarySnapshot,
 }

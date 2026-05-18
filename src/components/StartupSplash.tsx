@@ -1,11 +1,13 @@
 type StartupSplashProps = {
-  isVisible: boolean;
-  isBusy: boolean;
-  statusText: string;
-  metaText: string;
-  progressPercent: number | null;
-  catalogCount: number;
-};
+  isVisible: boolean
+  isBusy: boolean
+  statusText: string
+  metaText: string
+  progressPercent: number | null
+  catalogCount: number
+  canDismiss: boolean
+  onDismiss: () => void
+}
 
 const StartupSplash = ({
   isVisible,
@@ -14,15 +16,31 @@ const StartupSplash = ({
   metaText,
   progressPercent,
   catalogCount,
+  canDismiss,
+  onDismiss,
 }: StartupSplashProps) => {
   if (!isVisible) {
-    return null;
+    return null
   }
 
   return (
     <div className="startupSplash" aria-live="polite" aria-busy={isBusy}>
       <div className="startupSplashPanel panel">
-        <div className="startupSplashEyebrow">Startup Sync</div>
+        <div className="startupSplashHeader">
+          <div className="startupSplashEyebrow">Startup Sync</div>
+
+          {canDismiss ? (
+            <button
+              className="startupSplashDismissButton"
+              type="button"
+              onClick={onDismiss}
+              aria-label="Скрыть стартовую синхронизацию"
+              title="Скрыть"
+            >
+              ✕
+            </button>
+          ) : null}
+        </div>
         <div className="startupSplashHero">
           <div className="startupSplashPulse" aria-hidden />
           <div className="startupSplashHeroCopy">
@@ -49,9 +67,21 @@ const StartupSplash = ({
           </span>
           <span>{`Игр в памяти: ${catalogCount}`}</span>
         </div>
+
+        {canDismiss ? (
+          <div className="startupSplashActions">
+            <button
+              className="startupSplashContinueButton"
+              type="button"
+              onClick={onDismiss}
+            >
+              Продолжить в приложение
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export { StartupSplash };
+export { StartupSplash }

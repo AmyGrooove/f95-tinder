@@ -24,7 +24,7 @@ const ElectronOnlyNotice = () => (
       <h1 className="appCrashTitle">F95 Tinder больше не запускается как обычный сайт</h1>
       <p className="appCrashText">
         Renderer теперь поддерживается только внутри Electron, чтобы сохранить
-        launcher bridge, загрузки и локальные JSON-файлы состояния.
+        launcher bridge и локальные JSON-файлы состояния.
       </p>
       <div className="appCrashMessage">
         Для разработки запусти <code>pnpm dev</code>. Для собранной версии:

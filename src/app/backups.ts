@@ -23,9 +23,6 @@ type LocalSettingsBackup = {
   dashboardViewState: DashboardViewState;
   tagsMap: Record<string, string>;
   prefixesMap: Record<string, string>;
-  preferredDownloadHosts: string[];
-  disabledDownloadHosts: Record<string, number>;
-  hiddenDownloadHosts: string[];
   cookieProxy: CookieProxyBackup | null;
 };
 
@@ -51,33 +48,6 @@ const isLocalBackupFile = (value: unknown): value is LocalBackupFile => {
       value.exportType === "settings" ||
       value.exportType === "lists")
   );
-};
-
-const normalizeImportedStringList = (value: unknown) => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string => typeof item === "string");
-};
-
-const normalizeImportedDisabledDownloadHosts = (value: unknown) => {
-  if (!isRecord(value)) {
-    return {};
-  }
-
-  const normalizedMap: Record<string, number> = {};
-  for (const [hostLabel, expiresAtUnixMs] of Object.entries(value)) {
-    if (
-      typeof hostLabel === "string" &&
-      typeof expiresAtUnixMs === "number" &&
-      Number.isFinite(expiresAtUnixMs)
-    ) {
-      normalizedMap[hostLabel] = expiresAtUnixMs;
-    }
-  }
-
-  return normalizedMap;
 };
 
 const normalizeCookieProxyBackup = (value: unknown): CookieProxyBackup => {
@@ -136,13 +106,6 @@ const extractLocalSettingsBackup = (value: unknown): LocalSettingsBackup => {
     dashboardViewState: normalizeDashboardViewState(rawValue.dashboardViewState),
     tagsMap: normalizeTagsMap(rawValue.tagsMap),
     prefixesMap: normalizePrefixesMap(rawValue.prefixesMap),
-    preferredDownloadHosts: normalizeImportedStringList(
-      rawValue.preferredDownloadHosts,
-    ),
-    disabledDownloadHosts: normalizeImportedDisabledDownloadHosts(
-      rawValue.disabledDownloadHosts,
-    ),
-    hiddenDownloadHosts: normalizeImportedStringList(rawValue.hiddenDownloadHosts),
     cookieProxy:
       "cookieProxy" in rawValue ? normalizeCookieProxyBackup(rawValue.cookieProxy) : null,
   };

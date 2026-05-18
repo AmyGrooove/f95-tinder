@@ -116,6 +116,17 @@ type UndoSnapshot = {
 }
 
 type MetadataSyncState = {
+  phase:
+    | 'idle'
+    | 'warming'
+    | 'running'
+    | 'throttled'
+    | 'retrying'
+    | 'paused'
+    | 'stopping'
+    | 'completed'
+    | 'failed'
+    | 'stale'
   isRunning: boolean
   isPaused: boolean
   isStopping: boolean
@@ -124,7 +135,12 @@ type MetadataSyncState = {
   currentPage: number
   pageLimit: number
   syncedCount: number
+  swipableCount: number
   updatedTrackedCount: number
+  duplicateCount: number
+  lastCompletedAtUnixMs: number | null
+  isCatalogStale: boolean
+  diagnostics: string[]
   lastOutcome: 'completed' | 'stopped' | null
   error: string | null
 }
@@ -148,34 +164,6 @@ type LatestCatalogSnapshot = {
   path: string | null
 }
 
-type DownloadLink = {
-  label: string
-  url: string | null
-  isMasked: boolean
-}
-
-type DownloadGroup = {
-  label: string
-  links: DownloadLink[]
-}
-
-type DownloadChoice = {
-  key: string
-  label: string
-  contextLabel: string | null
-  links: DownloadLink[]
-}
-
-type ThreadDownloadsStatus = 'available' | 'login_required' | 'not_found'
-
-type ThreadDownloadsData = {
-  status: ThreadDownloadsStatus
-  groups: DownloadGroup[]
-  requiresAuth: boolean
-  threadLink: string
-  fetchedAtUnixMs: number
-}
-
 export type {
   F95ThreadItem,
   F95ApiResponse,
@@ -194,9 +182,4 @@ export type {
   MetadataSyncState,
   LatestCatalogState,
   LatestCatalogSnapshot,
-  DownloadLink,
-  DownloadGroup,
-  DownloadChoice,
-  ThreadDownloadsStatus,
-  ThreadDownloadsData,
 }
