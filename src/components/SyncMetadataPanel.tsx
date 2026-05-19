@@ -4,6 +4,7 @@ type SyncMetadataPanelProps = {
   metadataSyncState: MetadataSyncState
   autoSyncEnabled?: boolean
   onStartSync?: () => void
+  onContinueSync?: () => void
   onPauseSync?: () => void
   onResumeSync?: () => void
   onStopSync?: () => void
@@ -14,6 +15,7 @@ const SyncMetadataPanel = ({
   metadataSyncState,
   autoSyncEnabled = true,
   onStartSync,
+  onContinueSync,
   onPauseSync,
   onResumeSync,
   onStopSync,
@@ -80,7 +82,8 @@ const SyncMetadataPanel = ({
           : "Полный проход `latest_data.php` запускается вручную и обновляет локальный каталог свайпа с throttling по страницам."}
       </div>
       <div className="smallText" style={{ marginTop: 4 }}>
-        Страницы идут последовательно с короткой адаптивной паузой; при rate limit используется Retry-After или backoff.
+        Страницы идут последовательно с короткой адаптивной паузой; при 429
+        текущий проход завершается с сохранением прогресса.
       </div>
       <div className="smallText" style={{ marginTop: 4 }}>
         Актуальность каталога держится 7 дней. Старые данные парсера очищаются и собираются заново, списки пользователя не трогаются.
@@ -97,6 +100,16 @@ const SyncMetadataPanel = ({
           {!metadataSyncState.isRunning ? (
             <button className="button" type="button" onClick={onStartSync}>
               Запустить синхронизацию
+            </button>
+          ) : null}
+          {!metadataSyncState.isRunning && onContinueSync ? (
+            <button
+              className="button"
+              type="button"
+              onClick={onContinueSync}
+              disabled={metadataSyncState.isComplete}
+            >
+              Продолжить синхронизацию
             </button>
           ) : null}
           {metadataSyncState.isRunning && onPauseSync && onResumeSync ? (

@@ -1011,7 +1011,6 @@ export const Dashboard = ({
     : []
   const activeGameStateBadges = activeGameCard
     ? [
-        activeGameCard.isUpdated ? "Есть апдейт" : null,
         activeGameCard.listType === "favorite" &&
         activeGameCard.isBookmarkedDownloaded
           ? "Скачана"

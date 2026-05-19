@@ -174,6 +174,9 @@ const isRetryableMetadataSyncError = (error: unknown) => {
   )
 }
 
+const isMetadataSyncRateLimitError = (error: unknown) =>
+  error instanceof Error && parseMetadataSyncStatusCode(error.message) === 429
+
 const resolveMetadataSyncRetryDelayMs = (
   error: unknown,
   attemptNumber: number,
@@ -1899,6 +1902,7 @@ const useF95Browser = () => {
               }
 
               if (
+                isMetadataSyncRateLimitError(error) ||
                 !isRetryableMetadataSyncError(error) ||
                 retryAttemptCount >= MAX_METADATA_SYNC_RETRY_ATTEMPTS
               ) {
@@ -2162,7 +2166,10 @@ const useF95Browser = () => {
         }
 
         const errorMessage = getMetadataSyncErrorMessage(error)
-        const scheduledRetryAtUnixMs = isRetryableMetadataSyncError(error)
+        const shouldScheduleRetry =
+          isRetryableMetadataSyncError(error) &&
+          !isMetadataSyncRateLimitError(error)
+        const scheduledRetryAtUnixMs = shouldScheduleRetry
           ? Date.now() +
             addMetadataSyncRetryJitter(
               resolveMetadataSyncRetryDelayMs(

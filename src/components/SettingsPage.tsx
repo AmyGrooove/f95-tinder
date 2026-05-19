@@ -28,6 +28,7 @@ type SettingsPageProps = {
   tagsMap: Record<string, string>;
   prefixesMap: Record<string, string>;
   onStartMetadataSync: () => void;
+  onContinueMetadataSync: () => void;
   onPauseMetadataSync: () => void;
   onResumeMetadataSync: () => void;
   onStopMetadataSync: () => void;
@@ -89,6 +90,7 @@ export const SettingsPage = ({
   tagsMap,
   prefixesMap,
   onStartMetadataSync,
+  onContinueMetadataSync,
   onPauseMetadataSync,
   onResumeMetadataSync,
   onStopMetadataSync,
@@ -785,6 +787,7 @@ export const SettingsPage = ({
               metadataSyncState={metadataSyncState}
               autoSyncEnabled
               onStartSync={onStartMetadataSync}
+              onContinueSync={onContinueMetadataSync}
               onPauseSync={onPauseMetadataSync}
               onResumeSync={onResumeMetadataSync}
               onStopSync={onStopMetadataSync}

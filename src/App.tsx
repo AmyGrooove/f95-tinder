@@ -154,6 +154,10 @@ const App = () => {
     void startMetadataSync({ restartFromScratch: true })
   }, [startMetadataSync])
 
+  const handleContinueMetadataSync = useCallback(() => {
+    void startMetadataSync()
+  }, [startMetadataSync])
+
   const handlePauseMetadataSync = useCallback(() => {
     pauseMetadataSync()
   }, [pauseMetadataSync])
@@ -367,6 +371,7 @@ const App = () => {
         tagsMap={tagsMap}
         prefixesMap={prefixesMap}
         onStartMetadataSync={handleManualMetadataSync}
+        onContinueMetadataSync={handleContinueMetadataSync}
         onPauseMetadataSync={handlePauseMetadataSync}
         onResumeMetadataSync={handleResumeMetadataSync}
         onStopMetadataSync={handleStopMetadataSync}
