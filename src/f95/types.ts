@@ -113,6 +113,7 @@ type SessionState = {
 
 type UndoSnapshot = {
   sessionStateBefore: SessionState
+  threadIdentifier: number
 }
 
 type MetadataSyncState = {

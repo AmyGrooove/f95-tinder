@@ -968,6 +968,8 @@ body {
 }
 
 .swipeFocusCard {
+  --swipe-cover-height: 220px;
+
   height: 100%;
   min-height: 0;
   display: grid;
@@ -1112,15 +1114,16 @@ body {
 }
 
 .swipeCoverGestureSurface {
-  height: 220px;
+  height: var(--swipe-cover-height, 220px);
+  min-height: var(--swipe-cover-height, 220px);
   padding: 0;
   display: grid;
 }
 
 .swipeHeroCover {
   width: 100%;
-  height: 220px;
-  min-height: 220px;
+  height: var(--swipe-cover-height, 220px);
+  min-height: var(--swipe-cover-height, 220px);
   aspect-ratio: auto;
 }
 
@@ -1191,6 +1194,125 @@ body {
   border-radius: 0;
 }
 
+.swipeImageFrame {
+  position: relative;
+  isolation: isolate;
+}
+
+.swipeCoverImageFrame {
+  width: 100%;
+  height: var(--swipe-cover-height, 220px);
+  min-height: var(--swipe-cover-height, 220px);
+}
+
+.swipeCoverImageLoadingFrame {
+  display: grid;
+  place-items: center;
+}
+
+.swipeImageLoadingFrame {
+  background:
+    linear-gradient(
+      110deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.04)
+    ),
+    rgba(10, 16, 26, 0.86);
+  background-size: 220% 100%;
+  animation: swipeImageLoadingShimmer 1.05s linear infinite;
+}
+
+.swipeLoadableImage {
+  transition:
+    opacity 0.18s ease,
+    filter 0.18s ease;
+}
+
+.swipeLoadableImagePending {
+  opacity: 0.18;
+  filter: blur(8px);
+}
+
+.swipeCoverLoadableImagePending {
+  opacity: 0;
+  filter: none;
+}
+
+.swipeCoverImageLoadingOverlay {
+  min-height: var(--swipe-cover-height, 220px);
+}
+
+.swipeImageLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 14px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    rgba(8, 13, 22, 0.18),
+    rgba(8, 13, 22, 0.42)
+  );
+  color: rgba(233, 237, 245, 0.82);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.swipeScreenImageLoadingOverlay {
+  gap: 0;
+  padding: 0;
+  background: rgba(8, 13, 22, 0.28);
+}
+
+.swipeImageLoadingSpinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(233, 237, 245, 0.22);
+  border-top-color: rgba(233, 237, 245, 0.88);
+  animation: swipeImageLoadingSpinner 0.72s linear infinite;
+}
+
+.swipeImageLoadingText {
+  text-shadow: 0 1px 10px rgba(2, 8, 18, 0.5);
+}
+
+.swipeScreenTileLoading {
+  cursor: default;
+}
+
+@keyframes swipeImageLoadingShimmer {
+  from {
+    background-position: 220% 0;
+  }
+
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes swipeImageLoadingSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeImageLoadingFrame,
+  .swipeImageLoadingSpinner {
+    animation: none;
+  }
+
+  .swipeLoadableImage {
+    transition: none;
+  }
+}
+
 .swipeScreensEmpty {
   min-height: 0;
   border-radius: 14px;
@@ -1223,6 +1345,81 @@ body {
   background:
     linear-gradient(145deg, rgba(67, 86, 123, 0.18), rgba(10, 15, 25, 0.94)),
     rgba(10, 15, 25, 0.84);
+}
+
+.interestScoreBreakdownPanel {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(92, 154, 255, 0.28);
+  background:
+    linear-gradient(145deg, rgba(57, 104, 180, 0.14), rgba(10, 15, 25, 0.86)),
+    rgba(10, 15, 25, 0.78);
+}
+
+.swipeInterestScorePanel {
+  padding: 9px 10px;
+}
+
+.swipeInterestScorePanel .interestScoreBreakdown {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.swipeInterestScorePanel .interestScoreBreakdownItem {
+  min-height: 26px;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+
+.swipeInterestScorePanel .interestScoreBreakdownItem strong {
+  font-size: 12px;
+}
+
+.interestScoreBreakdownHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.interestScoreBreakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.interestScoreBreakdownItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 112, 146, 0.42);
+  background: rgba(22, 30, 47, 0.86);
+  color: rgba(233, 237, 245, 0.82);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.interestScoreBreakdownItem strong {
+  color: #f7fbff;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.interestScoreBreakdownItemAi {
+  border-color: rgba(163, 101, 247, 0.38);
+  background: rgba(79, 42, 133, 0.42);
+}
+
+.interestScoreBreakdownItemTotal {
+  border-color: rgba(72, 179, 124, 0.4);
+  background: rgba(16, 53, 36, 0.78);
 }
 
 .swipeInterestHeader {
@@ -2635,6 +2832,10 @@ body {
     min-height: 0;
   }
 
+  .swipeFocusCard {
+    --swipe-cover-height: 200px;
+  }
+
   .swipeFocusCardBody {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
@@ -2718,13 +2919,14 @@ body {
 }
 
 .cardGestureSurface.swipeCoverGestureSurface {
-  height: 100%;
+  height: var(--swipe-cover-height, 220px);
+  min-height: var(--swipe-cover-height, 220px);
   padding: 0;
 }
 
 .coverImageBack.swipeHeroCover {
-  height: 100%;
-  min-height: 0;
+  height: var(--swipe-cover-height, 220px);
+  min-height: var(--swipe-cover-height, 220px);
   aspect-ratio: auto;
 }
 
@@ -4749,4 +4951,328 @@ body {
 .navButtonActive {
   border-color: rgba(47, 125, 255, 0.85);
   background: rgba(47, 125, 255, 0.25);
+}
+
+.aiTasteDashboardPanel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.aiTasteDashboardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.aiTasteDashboardSummary {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.aiTasteModal {
+  width: min(940px, 100%);
+}
+
+.aiTasteModalBody {
+  gap: 16px;
+}
+
+.aiTasteStepCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 18px;
+  background: rgba(15, 21, 32, 0.84);
+}
+
+.aiTasteStepHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.aiTasteStepBadge {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid rgba(163, 101, 247, 0.42);
+  background: rgba(163, 101, 247, 0.14);
+  color: #eadcff;
+  font-weight: 900;
+}
+
+.aiTasteStepTitle {
+  font-weight: 900;
+}
+
+.aiTasteStepMeta {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.aiTasteModeGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aiTasteModeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 14px;
+  background: rgba(18, 26, 40, 0.72);
+  cursor: pointer;
+}
+
+.aiTasteModeOption input {
+  margin-top: 3px;
+}
+
+.aiTasteModeOption span {
+  display: grid;
+  gap: 4px;
+}
+
+.aiTasteModeOption small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.aiTasteDropZone {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed rgba(163, 101, 247, 0.42);
+  border-radius: 18px;
+  background: rgba(10, 14, 26, 0.64);
+  text-align: center;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.aiTasteDropZoneActive {
+  border-color: rgba(163, 101, 247, 0.9);
+  background: rgba(163, 101, 247, 0.1);
+  box-shadow: 0 0 0 3px rgba(163, 101, 247, 0.12);
+}
+
+.aiTasteDropTitle {
+  font-weight: 800;
+}
+
+.aiTasteImportTextarea {
+  min-height: 160px;
+  resize: vertical;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .aiTasteModeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .aiTasteDashboardActions {
+    justify-content: stretch;
+  }
+
+  .aiTasteDashboardActions .button {
+    width: 100%;
+  }
+}
+
+.dashboardOverviewTabBar {
+  margin-bottom: 14px;
+}
+
+.dashboardOverviewEmptyBox {
+  margin-top: 12px;
+}
+
+.dashboardOverviewEmptyTitle {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.aiTasteDashboardControlRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 16px;
+  background: rgba(10, 14, 26, 0.48);
+}
+
+.aiTasteToggle:has(.dashboardPlayedFilterSwitchInput:disabled) {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.aiTasteDashboardStatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.aiTasteDashboardStatCard {
+  min-height: 96px;
+}
+
+.aiTasteFreshnessGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.aiTasteFreshnessGrid > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 14px;
+  background: rgba(15, 21, 32, 0.72);
+}
+
+.aiTasteFreshnessGrid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.aiTasteFreshnessGrid strong {
+  font-size: 20px;
+}
+
+.aiTasteHighlightsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aiTasteHighlightPanel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(34, 48, 74, 0.95);
+  border-radius: 16px;
+  background: rgba(15, 21, 32, 0.72);
+}
+
+.aiTasteHighlightPanelWide {
+  grid-column: 1 / -1;
+}
+
+.aiTasteHighlightList {
+  display: grid;
+  gap: 8px;
+}
+
+.aiTasteHighlightItem {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(10, 14, 26, 0.58);
+  color: rgba(233, 237, 245, 0.84);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.aiTasteWeightGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.aiTasteWeightCard {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(86, 138, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(10, 14, 26, 0.58);
+}
+
+.aiTasteWeightPositive {
+  border-color: rgba(72, 179, 124, 0.28);
+  background: rgba(16, 53, 36, 0.42);
+}
+
+.aiTasteWeightNegative {
+  border-color: rgba(220, 108, 108, 0.28);
+  background: rgba(73, 23, 23, 0.44);
+}
+
+.aiTasteWeightHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.aiTasteWeightHeader span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.swipeAiInfluenceBox {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(163, 101, 247, 0.32);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(163, 101, 247, 0.12), rgba(10, 15, 25, 0.82)),
+    rgba(10, 15, 25, 0.78);
+}
+
+.swipeAiInfluenceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-weight: 900;
+}
+
+.swipeAiInfluenceMeta {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .aiTasteDashboardControlRow {
+    align-items: stretch;
+  }
+
+  .aiTasteHighlightsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .aiTasteWeightHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

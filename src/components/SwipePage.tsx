@@ -20,6 +20,11 @@ import {
   buildCatalogFeatureStats,
   buildInterestProfile,
 } from "../f95/recommendations"
+import {
+  assessThreadAiTaste,
+  combineAppAndAiInterestScore,
+} from "../f95/aiTasteProfile"
+import type { AiTasteFreshness, AiTasteProfileFile } from "../f95/aiTasteProfile"
 import type {
   F95ThreadItem,
   FilterState,
@@ -82,6 +87,9 @@ type SwipePageProps = {
   onResumeMetadataSync: () => void
   onStopMetadataSync: () => void
   isViewerOpen: boolean
+  aiTasteProfile: AiTasteProfileFile | null
+  aiTasteFreshness: AiTasteFreshness | null
+  isAiTasteEnabled: boolean
 }
 
 const SwipePage = ({
@@ -114,6 +122,9 @@ const SwipePage = ({
   onResumeMetadataSync,
   onStopMetadataSync,
   isViewerOpen,
+  aiTasteProfile,
+  aiTasteFreshness,
+  isAiTasteEnabled,
 }: SwipePageProps) => {
   const [swipeGestureState, setSwipeGestureState] = useState<SwipeGestureState>(
     () => createIdleSwipeGestureState(),
@@ -121,6 +132,9 @@ const SwipePage = ({
   const [isSwipeFilterModalOpen, setIsSwipeFilterModalOpen] = useState(false)
   const [swipeTagSearchText, setSwipeTagSearchText] = useState("")
   const [swipePrefixSearchText, setSwipePrefixSearchText] = useState("")
+  const [loadedSwipeImageUrls, setLoadedSwipeImageUrls] = useState<
+    Record<string, boolean>
+  >({})
 
   const swipeGestureStateRef = useRef<SwipeGestureState>(
     createIdleSwipeGestureState(),
@@ -570,6 +584,30 @@ const SwipePage = ({
     resetSwipeGesture()
   }, [currentThreadIdentifier, isSwipeInteractionLocked, resetSwipeGesture])
 
+  const markSwipeImageAsLoaded = useCallback((imageUrl: string) => {
+    setLoadedSwipeImageUrls((previousLoadedSwipeImageUrls) => {
+      if (previousLoadedSwipeImageUrls[imageUrl]) {
+        return previousLoadedSwipeImageUrls
+      }
+
+      return {
+        ...previousLoadedSwipeImageUrls,
+        [imageUrl]: true,
+      }
+    })
+  }, [])
+
+  const markSwipeImageAsLoadedIfReady = useCallback(
+    (imageElement: HTMLImageElement | null, imageUrl: string) => {
+      if (!imageElement || !imageElement.complete) {
+        return
+      }
+
+      markSwipeImageAsLoaded(imageUrl)
+    },
+    [markSwipeImageAsLoaded],
+  )
+
   useEffect(() => {
     if (!isSwipeInteractionLocked || !isSwipeFilterModalOpen) {
       return
@@ -642,7 +680,31 @@ const SwipePage = ({
       tagsMap,
     ],
   )
+  const currentThreadAiTasteAssessment = useMemo(() => {
+    if (!isAiTasteEnabled || !currentThreadItem || !aiTasteProfile) {
+      return null
+    }
 
+    return assessThreadAiTaste(
+      currentThreadItem,
+      aiTasteProfile,
+      tagsMap,
+      prefixesMap,
+    )
+  }, [
+    aiTasteProfile,
+    currentThreadItem,
+    isAiTasteEnabled,
+    prefixesMap,
+    tagsMap,
+  ])
+
+  const currentThreadCombinedInterestScore = combineAppAndAiInterestScore(
+    currentThreadInterestAssessment?.score ?? 50,
+    currentThreadAiTasteAssessment?.score,
+    aiTasteFreshness?.percent,
+    isAiTasteEnabled,
+  )
   const toggleSwipeIncludeTag = useCallback(
     (tagId: number) => {
       const hasTag = sessionState.filterState.includeTagIds.includes(tagId)
@@ -854,6 +916,10 @@ const SwipePage = ({
     return currentThreadItem.screens
   }, [currentThreadItem])
 
+  const isSwipeCoverImageLoading = Boolean(
+    currentThreadItem?.cover && !loadedSwipeImageUrls[currentThreadItem.cover],
+  )
+
   const swipeDataRequestUrl = useMemo(() => {
     return buildLatestGamesDataRequestUrl(
       1,
@@ -898,32 +964,20 @@ const SwipePage = ({
   const swipeMetaContent = currentThreadItem ? (
     <div className="swipeMetaBody">
       {currentThreadInterestAssessment ? (
-        <div className="swipeInterestPanel">
-          <div className="swipeInterestHeader">
-            <div className="swipeMetaGroupLabel">Статус интереса</div>
-            <span
-              className={`swipeInterestBadge swipeInterestBadge${currentThreadInterestAssessment.level[0].toUpperCase()}${currentThreadInterestAssessment.level.slice(1)}`}
-            >
-              {currentThreadInterestAssessment.label}
+        <div className="interestScoreBreakdownPanel swipeInterestScorePanel">
+          <div className="interestScoreBreakdown">
+            <span className="interestScoreBreakdownItem">
+              Приложение <strong>{currentThreadInterestAssessment.score}/100</strong>
+            </span>
+            {currentThreadAiTasteAssessment ? (
+              <span className="interestScoreBreakdownItem interestScoreBreakdownItemAi">
+                ИИ <strong>{currentThreadAiTasteAssessment.score}/100</strong>
+              </span>
+            ) : null}
+            <span className="interestScoreBreakdownItem interestScoreBreakdownItemTotal">
+              Итог <strong>{currentThreadCombinedInterestScore}/100</strong>
             </span>
           </div>
-
-          <div className="swipeInterestSummary">
-            {currentThreadInterestAssessment.summary}
-          </div>
-
-          {currentThreadInterestAssessment.reasons.length > 0 ? (
-            <div className="swipeInterestReasonRow">
-              {currentThreadInterestAssessment.reasons.map((reason) => (
-                <span
-                  key={`${reason.tone}-${reason.text}`}
-                  className={`swipeInterestReasonChip swipeInterestReasonChip${reason.tone[0].toUpperCase()}${reason.tone.slice(1)}`}
-                >
-                  {reason.text}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </div>
       ) : null}
 
@@ -1360,23 +1414,56 @@ const SwipePage = ({
                         onPointerUp={handleSwipePointerUp}
                         onPointerCancel={handleSwipePointerCancel}
                       >
-                        <div className="coverImageBack swipeHeroCover">
+                        <div
+                          className={`coverImageBack swipeHeroCover swipeImageFrame swipeCoverImageFrame ${
+                            isSwipeCoverImageLoading
+                              ? "swipeImageLoadingFrame swipeCoverImageLoadingFrame"
+                              : ""
+                          }`}
+                        >
                           {currentThreadItem.cover ? (
-                            <img
-                              className="coverImage swipeHeroImage"
-                              src={currentThreadItem.cover}
-                              alt="cover"
-                              loading="eager"
-                              onClick={() =>
-                                onOpenViewer(
-                                  [
+                            <>
+                              <img
+                                key={`swipe-cover-${currentThreadIdentifier}-${currentThreadItem.cover}`}
+                                ref={(imageElement) =>
+                                  markSwipeImageAsLoadedIfReady(
+                                    imageElement,
                                     currentThreadItem.cover,
-                                    ...currentThreadItem.screens,
-                                  ],
-                                  0,
-                                )
-                              }
-                            />
+                                  )
+                                }
+                                className={`coverImage swipeHeroImage swipeLoadableImage swipeCoverLoadableImage ${
+                                  isSwipeCoverImageLoading
+                                    ? "swipeLoadableImagePending swipeCoverLoadableImagePending"
+                                    : ""
+                                }`}
+                                src={currentThreadItem.cover}
+                                alt="cover"
+                                loading="eager"
+                                onLoad={() =>
+                                  markSwipeImageAsLoaded(currentThreadItem.cover)
+                                }
+                                onError={() =>
+                                  markSwipeImageAsLoaded(currentThreadItem.cover)
+                                }
+                                onClick={() =>
+                                  onOpenViewer(
+                                    [
+                                      currentThreadItem.cover,
+                                      ...currentThreadItem.screens,
+                                    ],
+                                    0,
+                                  )
+                                }
+                              />
+                              {isSwipeCoverImageLoading ? (
+                                <div className="swipeImageLoadingOverlay swipeCoverImageLoadingOverlay">
+                                  <span className="swipeImageLoadingSpinner" />
+                                  <span className="swipeImageLoadingText">
+                                    Загружаем обложку
+                                  </span>
+                                </div>
+                              ) : null}
+                            </>
                           ) : (
                             <div className="coverImageFallback">
                               Нет обложки
@@ -1423,19 +1510,44 @@ const SwipePage = ({
                           {currentThreadPreviewScreens.map(
                             (screenUrl, index) => (
                               <button
-                                key={screenUrl}
+                                key={`${currentThreadIdentifier}-${index}-${screenUrl}`}
                                 type="button"
-                                className="swipeScreenTile"
+                                className={`swipeScreenTile swipeImageFrame ${
+                                  loadedSwipeImageUrls[screenUrl]
+                                    ? ""
+                                    : "swipeImageLoadingFrame swipeScreenTileLoading"
+                                }`}
                                 onClick={() =>
                                   onOpenViewer(currentThreadItem.screens, index)
                                 }
                               >
                                 <img
-                                  className="screenImage swipeCompactScreenImage"
+                                  ref={(imageElement) =>
+                                    markSwipeImageAsLoadedIfReady(
+                                      imageElement,
+                                      screenUrl,
+                                    )
+                                  }
+                                  className={`screenImage swipeCompactScreenImage swipeLoadableImage ${
+                                    loadedSwipeImageUrls[screenUrl]
+                                      ? ""
+                                      : "swipeLoadableImagePending"
+                                  }`}
                                   src={screenUrl}
                                   alt="screen"
                                   loading="lazy"
+                                  onLoad={() =>
+                                    markSwipeImageAsLoaded(screenUrl)
+                                  }
+                                  onError={() =>
+                                    markSwipeImageAsLoaded(screenUrl)
+                                  }
                                 />
+                                {!loadedSwipeImageUrls[screenUrl] ? (
+                                  <span className="swipeImageLoadingOverlay swipeScreenImageLoadingOverlay">
+                                    <span className="swipeImageLoadingSpinner" />
+                                  </span>
+                                ) : null}
                               </button>
                             ),
                           )}

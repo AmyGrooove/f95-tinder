@@ -1,4 +1,6 @@
 import { safeJsonParse } from './utils'
+import type { AiTasteProfileFile } from './aiTasteProfile'
+import { parseAiTasteProfileValue } from './aiTasteProfile'
 import {
   clearLauncherLocalCatalog,
   clearLauncherLocalCatalogCheckpoint,
@@ -47,6 +49,8 @@ const STORAGE_KEYS = {
   prefixesMap: 'f95_tinder_prefixes_map_v1',
   latestCatalog: 'f95_tinder_latest_catalog_v1',
   latestCatalogCheckpoint: 'f95_tinder_latest_catalog_checkpoint_v1',
+  aiTasteProfile: 'f95_tinder_ai_taste_profile_v1',
+  aiTasteIsEnabled: 'f95_tinder_ai_taste_is_enabled_v1',
 }
 
 const LATEST_GAMES_SORTS: LatestGamesSort[] = ['date', 'views']
@@ -469,6 +473,38 @@ const loadDashboardViewStateFromLocalStorage = () => {
   }
 
   return normalizeDashboardViewState(dashboardViewStateValue)
+}
+
+
+const loadAiTasteProfile = (): AiTasteProfileFile | null => {
+  const profileText = readLocalStorageValue(STORAGE_KEYS.aiTasteProfile)
+  if (!profileText) {
+    return null
+  }
+
+  return parseAiTasteProfileValue(safeJsonParse<unknown>(profileText))
+}
+
+const saveAiTasteProfile = (profile: AiTasteProfileFile) => {
+  writeLocalStorageValue(STORAGE_KEYS.aiTasteProfile, JSON.stringify(profile))
+}
+
+const clearAiTasteProfile = () => {
+  removeLocalStorageValue(STORAGE_KEYS.aiTasteProfile)
+}
+
+
+const loadAiTasteIsEnabled = () => {
+  const storedValue = readLocalStorageValue(STORAGE_KEYS.aiTasteIsEnabled)
+  if (storedValue === 'false') {
+    return false
+  }
+
+  return true
+}
+
+const saveAiTasteIsEnabled = (isEnabled: boolean) => {
+  writeLocalStorageValue(STORAGE_KEYS.aiTasteIsEnabled, isEnabled ? 'true' : 'false')
 }
 
 const createDefaultSessionState = (
@@ -1161,6 +1197,9 @@ const saveSessionState = (sessionState: SessionState) => {
 }
 
 const clearAllStoredData = () => {
+  clearAiTasteProfile()
+  removeLocalStorageValue(STORAGE_KEYS.aiTasteIsEnabled)
+
   for (const latestGamesSort of LATEST_GAMES_SORTS) {
     const cachedPageNumberList = loadCachedPagesIndex(latestGamesSort)
     for (const pageNumber of cachedPageNumberList) {
@@ -1316,6 +1355,11 @@ export {
   loadPrefixesMap,
   saveTagsMap,
   savePrefixesMap,
+  loadAiTasteProfile,
+  saveAiTasteProfile,
+  clearAiTasteProfile,
+  loadAiTasteIsEnabled,
+  saveAiTasteIsEnabled,
   normalizeSessionState,
   normalizeTagsMap,
   normalizePrefixesMap,

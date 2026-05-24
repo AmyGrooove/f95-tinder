@@ -47,6 +47,12 @@ const App = () => {
     setErrorMessage,
     tagsMap,
     prefixesMap,
+    aiTasteProfile,
+    aiTasteFreshness,
+    isAiTasteEnabled,
+    setIsAiTasteEnabled,
+    saveAiTasteProfile,
+    clearAiTasteProfile,
     updateTagsMap,
     updatePrefixesMap,
     metadataSyncState,
@@ -150,12 +156,12 @@ const App = () => {
     applyActionToCurrentCard("playedFavorite")
   }, [applyActionToCurrentCard, isSwipeInteractionLocked])
 
-  const handleManualMetadataSync = useCallback(() => {
-    void startMetadataSync({ restartFromScratch: true })
-  }, [startMetadataSync])
-
   const handleContinueMetadataSync = useCallback(() => {
     void startMetadataSync()
+  }, [startMetadataSync])
+
+  const handleRefreshMetadataSync = useCallback(() => {
+    void startMetadataSync({ refreshLatest: true })
   }, [startMetadataSync])
 
   const handlePauseMetadataSync = useCallback(() => {
@@ -349,6 +355,9 @@ const App = () => {
           pickTitleForLink={pickTitleForLink}
           pickCreatorForLink={pickCreatorForLink}
           pickRatingForLink={pickRatingForLink}
+          aiTasteProfile={aiTasteProfile}
+          aiTasteFreshness={aiTasteFreshness}
+          isAiTasteEnabled={isAiTasteEnabled}
         />
       </div>
     ) : pageType === "dashboard" ? (
@@ -357,6 +366,12 @@ const App = () => {
           sessionState={sessionState}
           tagsMap={tagsMap}
           prefixesMap={prefixesMap}
+          aiTasteProfile={aiTasteProfile}
+          aiTasteFreshness={aiTasteFreshness}
+          isAiTasteEnabled={isAiTasteEnabled}
+          onAiTasteEnabledChange={setIsAiTasteEnabled}
+          onSaveAiTasteProfile={saveAiTasteProfile}
+          onClearAiTasteProfile={clearAiTasteProfile}
         />
       </div>
     ) : pageType === "settings" ? (
@@ -370,8 +385,8 @@ const App = () => {
         defaultLatestGamesSort={defaultLatestGamesSort}
         tagsMap={tagsMap}
         prefixesMap={prefixesMap}
-        onStartMetadataSync={handleManualMetadataSync}
         onContinueMetadataSync={handleContinueMetadataSync}
+        onRefreshMetadataSync={handleRefreshMetadataSync}
         onPauseMetadataSync={handlePauseMetadataSync}
         onResumeMetadataSync={handleResumeMetadataSync}
         onStopMetadataSync={handleStopMetadataSync}
@@ -466,6 +481,9 @@ const App = () => {
         onResumeMetadataSync={handleResumeMetadataSync}
         onStopMetadataSync={handleStopMetadataSync}
         isViewerOpen={viewerState.isOpen}
+        aiTasteProfile={aiTasteProfile}
+        aiTasteFreshness={aiTasteFreshness}
+        isAiTasteEnabled={isAiTasteEnabled}
       />
     )
 

@@ -1,83 +1,84 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import { useEffect, useMemo, useRef, useState } from "react"
+import type { RefObject } from "react"
 import {
   clearCookieProxyInput,
   fetchCookieProxyStatus,
   saveCookieProxyInput,
   type CookieProxyStatus,
-} from "../f95/cookieProxy";
-import { MAX_TAG_FILTERS_PER_GROUP } from "../f95/filtering";
-import type { FilterState, LatestGamesSort } from "../f95/types";
-import { SyncMetadataPanel } from "./SyncMetadataPanel";
-import type { MetadataSyncState } from "../f95/types";
+} from "../f95/cookieProxy"
+import { MAX_TAG_FILTERS_PER_GROUP } from "../f95/filtering"
+import type { FilterState, LatestGamesSort } from "../f95/types"
+import { SyncMetadataPanel } from "./SyncMetadataPanel"
+import type { MetadataSyncState } from "../f95/types"
 
-type SettingsTab = "cookies" | "filters" | "tags" | "data";
+type SettingsTab = "cookies" | "filters" | "tags" | "data"
 
 type SettingsPageProps = {
-  tagsCount: number;
-  prefixesCount: number;
-  metadataSyncState: MetadataSyncState;
+  tagsCount: number
+  prefixesCount: number
+  metadataSyncState: MetadataSyncState
   bundledDefaultFiltersStatus:
     | "checking"
     | "loaded"
     | "not_loaded"
-    | "unavailable";
-  currentFilterState: FilterState;
-  defaultFilterState: FilterState;
-  defaultLatestGamesSort: LatestGamesSort;
-  tagsMap: Record<string, string>;
-  prefixesMap: Record<string, string>;
-  onStartMetadataSync: () => void;
-  onContinueMetadataSync: () => void;
-  onPauseMetadataSync: () => void;
-  onResumeMetadataSync: () => void;
-  onStopMetadataSync: () => void;
-  onClearMetadataCatalogData: () => void;
-  onUpdateDefaultFilterState: (partialFilterState: Partial<FilterState>) => void;
-  onUpdateDefaultLatestGamesSort: (latestGamesSort: LatestGamesSort) => void;
-  onResetDefaultFilterState: () => void;
-  onImportBundledDefaultFilterState: () => void;
-  onSaveCurrentFiltersAsDefault: () => void;
-  onApplyDefaultFiltersToSwipe: () => void;
-  onImportBundledTagsMap: () => void;
-  onOpenImportTagsMap: () => void;
-  onImportTagsMapChange: () => void;
-  onImportBundledPrefixesMap: () => void;
-  onOpenImportPrefixesMap: () => void;
-  onImportPrefixesMapChange: () => void;
-  onExportAllBackup: () => void;
-  onExportSettingsBackup: () => void;
-  onExportListsBackup: () => void;
-  onOpenImportAllBackup: () => void;
-  onImportAllBackupChange: () => void;
-  onOpenImportSettingsBackup: () => void;
-  onImportSettingsBackupChange: () => void;
-  onOpenImportListsBackup: () => void;
-  onImportListsBackupChange: () => void;
+    | "unavailable"
+  currentFilterState: FilterState
+  defaultFilterState: FilterState
+  defaultLatestGamesSort: LatestGamesSort
+  tagsMap: Record<string, string>
+  prefixesMap: Record<string, string>
+  onContinueMetadataSync: () => void
+  onRefreshMetadataSync: () => void
+  onPauseMetadataSync: () => void
+  onResumeMetadataSync: () => void
+  onStopMetadataSync: () => void
+  onClearMetadataCatalogData: () => void
+  onUpdateDefaultFilterState: (partialFilterState: Partial<FilterState>) => void
+  onUpdateDefaultLatestGamesSort: (latestGamesSort: LatestGamesSort) => void
+  onResetDefaultFilterState: () => void
+  onImportBundledDefaultFilterState: () => void
+  onSaveCurrentFiltersAsDefault: () => void
+  onApplyDefaultFiltersToSwipe: () => void
+  onImportBundledTagsMap: () => void
+  onOpenImportTagsMap: () => void
+  onImportTagsMapChange: () => void
+  onImportBundledPrefixesMap: () => void
+  onOpenImportPrefixesMap: () => void
+  onImportPrefixesMapChange: () => void
+  onExportAllBackup: () => void
+  onExportSettingsBackup: () => void
+  onExportListsBackup: () => void
+  onOpenImportAllBackup: () => void
+  onImportAllBackupChange: () => void
+  onOpenImportSettingsBackup: () => void
+  onImportSettingsBackupChange: () => void
+  onOpenImportListsBackup: () => void
+  onImportListsBackupChange: () => void
   localDataFiles: {
-    listsPath: string;
-    settingsPath: string;
-    catalogPath: string;
-    catalogCheckpointPath: string;
-  } | null;
-  onOpenLocalDataFiles: () => void;
-  onClearAllLocalData: () => void;
-  onResetLocalSettings: () => void;
-  onClearDashboardLists: () => void;
-  importAllBackupInputRef: RefObject<HTMLInputElement | null>;
-  importSettingsBackupInputRef: RefObject<HTMLInputElement | null>;
-  importListsBackupInputRef: RefObject<HTMLInputElement | null>;
-  importTagsMapInputRef: RefObject<HTMLInputElement | null>;
-  importPrefixesMapInputRef: RefObject<HTMLInputElement | null>;
-  requestedTab?: SettingsTab | null;
-};
+    listsPath: string
+    settingsPath: string
+    catalogPath: string
+    catalogCheckpointPath: string
+  } | null
+  onOpenLocalDataFiles: () => void
+  onClearAllLocalData: () => void
+  onResetLocalSettings: () => void
+  onClearDashboardLists: () => void
+  importAllBackupInputRef: RefObject<HTMLInputElement | null>
+  importSettingsBackupInputRef: RefObject<HTMLInputElement | null>
+  importListsBackupInputRef: RefObject<HTMLInputElement | null>
+  importTagsMapInputRef: RefObject<HTMLInputElement | null>
+  importPrefixesMapInputRef: RefObject<HTMLInputElement | null>
+  requestedTab?: SettingsTab | null
+}
 
-const normalizeSettingsSearchText = (value: string) => value.trim().toLowerCase();
+const normalizeSettingsSearchText = (value: string) =>
+  value.trim().toLowerCase()
 
 const DEFAULT_SWIPE_SORT_OPTIONS = [
   { value: "date", label: "По дате" },
   { value: "views", label: "По просмотрам" },
-] as const;
+] as const
 
 export const SettingsPage = ({
   tagsCount,
@@ -89,8 +90,8 @@ export const SettingsPage = ({
   defaultLatestGamesSort,
   tagsMap,
   prefixesMap,
-  onStartMetadataSync,
   onContinueMetadataSync,
+  onRefreshMetadataSync,
   onPauseMetadataSync,
   onResumeMetadataSync,
   onStopMetadataSync,
@@ -130,20 +131,20 @@ export const SettingsPage = ({
 }: SettingsPageProps) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     requestedTab ?? "filters",
-  );
+  )
   const [cookieProxyStatus, setCookieProxyStatus] =
-    useState<CookieProxyStatus | null>(null);
-  const [cookieProxyDraft, setCookieProxyDraft] = useState("");
+    useState<CookieProxyStatus | null>(null)
+  const [cookieProxyDraft, setCookieProxyDraft] = useState("")
   const [cookieProxyErrorMessage, setCookieProxyErrorMessage] = useState<
     string | null
-  >(null);
+  >(null)
   const [cookieProxySuccessMessage, setCookieProxySuccessMessage] = useState<
     string | null
-  >(null);
-  const [isCookieProxyBusy, setIsCookieProxyBusy] = useState(false);
-  const [defaultTagSearchText, setDefaultTagSearchText] = useState("");
-  const [defaultPrefixSearchText, setDefaultPrefixSearchText] = useState("");
-  const cookieFileInputRef = useRef<HTMLInputElement | null>(null);
+  >(null)
+  const [isCookieProxyBusy, setIsCookieProxyBusy] = useState(false)
+  const [defaultTagSearchText, setDefaultTagSearchText] = useState("")
+  const [defaultPrefixSearchText, setDefaultPrefixSearchText] = useState("")
+  const cookieFileInputRef = useRef<HTMLInputElement | null>(null)
   const bundledDefaultFiltersStatusText =
     bundledDefaultFiltersStatus === "loaded"
       ? "загружен"
@@ -151,7 +152,7 @@ export const SettingsPage = ({
         ? "не загружен"
         : bundledDefaultFiltersStatus === "unavailable"
           ? "недоступен"
-          : "проверяю...";
+          : "проверяю..."
 
   const defaultTagOptions = useMemo(() => {
     return Object.entries(tagsMap)
@@ -163,8 +164,8 @@ export const SettingsPage = ({
         (option): option is { id: number; label: string } =>
           Number.isInteger(option.id) && typeof option.label === "string",
       )
-      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
-  }, [tagsMap]);
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"))
+  }, [tagsMap])
 
   const defaultPrefixOptions = useMemo(() => {
     return Object.entries(prefixesMap)
@@ -176,112 +177,121 @@ export const SettingsPage = ({
         (option): option is { id: number; label: string } =>
           Number.isInteger(option.id) && typeof option.label === "string",
       )
-      .sort((first, second) => first.label.localeCompare(second.label, "ru"));
-  }, [prefixesMap]);
+      .sort((first, second) => first.label.localeCompare(second.label, "ru"))
+  }, [prefixesMap])
 
   const filteredDefaultTagOptions = useMemo(() => {
-    const normalizedSearchText = normalizeSettingsSearchText(defaultTagSearchText);
+    const normalizedSearchText =
+      normalizeSettingsSearchText(defaultTagSearchText)
     if (!normalizedSearchText) {
-      return defaultTagOptions;
+      return defaultTagOptions
     }
 
     return defaultTagOptions.filter((option) => {
       return (
-        normalizeSettingsSearchText(option.label).includes(normalizedSearchText) ||
-        String(option.id).includes(normalizedSearchText)
-      );
-    });
-  }, [defaultTagOptions, defaultTagSearchText]);
+        normalizeSettingsSearchText(option.label).includes(
+          normalizedSearchText,
+        ) || String(option.id).includes(normalizedSearchText)
+      )
+    })
+  }, [defaultTagOptions, defaultTagSearchText])
 
   const filteredDefaultPrefixOptions = useMemo(() => {
-    const normalizedSearchText = normalizeSettingsSearchText(defaultPrefixSearchText);
+    const normalizedSearchText = normalizeSettingsSearchText(
+      defaultPrefixSearchText,
+    )
     if (!normalizedSearchText) {
-      return defaultPrefixOptions;
+      return defaultPrefixOptions
     }
 
     return defaultPrefixOptions.filter((option) => {
       return (
-        normalizeSettingsSearchText(option.label).includes(normalizedSearchText) ||
-        String(option.id).includes(normalizedSearchText)
-      );
-    });
-  }, [defaultPrefixOptions, defaultPrefixSearchText]);
+        normalizeSettingsSearchText(option.label).includes(
+          normalizedSearchText,
+        ) || String(option.id).includes(normalizedSearchText)
+      )
+    })
+  }, [defaultPrefixOptions, defaultPrefixSearchText])
 
   const selectedDefaultPrefixCount =
     defaultFilterState.includePrefixIds.length +
-    defaultFilterState.excludePrefixIds.length;
+    defaultFilterState.excludePrefixIds.length
 
   const toggleDefaultIncludePrefix = (prefixId: number) => {
-    const hasPrefix = defaultFilterState.includePrefixIds.includes(prefixId);
+    const hasPrefix = defaultFilterState.includePrefixIds.includes(prefixId)
     const nextIncludePrefixIds = hasPrefix
-      ? defaultFilterState.includePrefixIds.filter((value) => value !== prefixId)
-      : [...defaultFilterState.includePrefixIds, prefixId];
+      ? defaultFilterState.includePrefixIds.filter(
+          (value) => value !== prefixId,
+        )
+      : [...defaultFilterState.includePrefixIds, prefixId]
 
     onUpdateDefaultFilterState({
       includePrefixIds: nextIncludePrefixIds,
       excludePrefixIds: defaultFilterState.excludePrefixIds.filter(
         (value) => value !== prefixId,
       ),
-    });
-  };
+    })
+  }
 
   const toggleDefaultExcludePrefix = (prefixId: number) => {
-    const hasPrefix = defaultFilterState.excludePrefixIds.includes(prefixId);
+    const hasPrefix = defaultFilterState.excludePrefixIds.includes(prefixId)
     const nextExcludePrefixIds = hasPrefix
-      ? defaultFilterState.excludePrefixIds.filter((value) => value !== prefixId)
-      : [...defaultFilterState.excludePrefixIds, prefixId];
+      ? defaultFilterState.excludePrefixIds.filter(
+          (value) => value !== prefixId,
+        )
+      : [...defaultFilterState.excludePrefixIds, prefixId]
 
     onUpdateDefaultFilterState({
       includePrefixIds: defaultFilterState.includePrefixIds.filter(
         (value) => value !== prefixId,
       ),
       excludePrefixIds: nextExcludePrefixIds,
-    });
-  };
+    })
+  }
 
   const toggleDefaultIncludeTag = (tagId: number) => {
-    const hasTag = defaultFilterState.includeTagIds.includes(tagId);
+    const hasTag = defaultFilterState.includeTagIds.includes(tagId)
     const isAtLimit =
       !hasTag &&
-      defaultFilterState.includeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP;
+      defaultFilterState.includeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP
 
     if (isAtLimit) {
-      return;
+      return
     }
 
     const nextIncludeTagIds = hasTag
       ? defaultFilterState.includeTagIds.filter((value) => value !== tagId)
-      : [...defaultFilterState.includeTagIds, tagId];
+      : [...defaultFilterState.includeTagIds, tagId]
 
     onUpdateDefaultFilterState({
       includeTagIds: nextIncludeTagIds,
       excludeTagIds: defaultFilterState.excludeTagIds.filter(
         (value) => value !== tagId,
       ),
-    });
-  };
+    })
+  }
 
   const toggleDefaultExcludeTag = (tagId: number) => {
-    const hasTag = defaultFilterState.excludeTagIds.includes(tagId);
+    const hasTag = defaultFilterState.excludeTagIds.includes(tagId)
     const isAtLimit =
       !hasTag &&
-      defaultFilterState.excludeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP;
+      defaultFilterState.excludeTagIds.length >= MAX_TAG_FILTERS_PER_GROUP
 
     if (isAtLimit) {
-      return;
+      return
     }
 
     const nextExcludeTagIds = hasTag
       ? defaultFilterState.excludeTagIds.filter((value) => value !== tagId)
-      : [...defaultFilterState.excludeTagIds, tagId];
+      : [...defaultFilterState.excludeTagIds, tagId]
 
     onUpdateDefaultFilterState({
       includeTagIds: defaultFilterState.includeTagIds.filter(
         (value) => value !== tagId,
       ),
       excludeTagIds: nextExcludeTagIds,
-    });
-  };
+    })
+  }
 
   const renderDefaultFilterOptionGroup = (
     title: string,
@@ -307,12 +317,12 @@ export const SettingsPage = ({
         <div className="tagFilterChips swipeFilterModalChipGrid settingsDefaultFilterChipGrid">
           {options.length > 0 ? (
             options.map((option) => {
-              const isActive = selectedIds.includes(option.id);
+              const isActive = selectedIds.includes(option.id)
               const activeClassName = isActive
                 ? variant === "exclude"
                   ? "tagFilterChipExcludeActive"
                   : "tagFilterChipActive"
-                : "";
+                : ""
 
               return (
                 <button
@@ -323,15 +333,15 @@ export const SettingsPage = ({
                 >
                   {option.label}
                 </button>
-              );
+              )
             })
           ) : (
             <span className="smallText">Ничего не найдено</span>
           )}
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   const defaultFiltersPanel = (
     <>
@@ -359,9 +369,9 @@ export const SettingsPage = ({
         </div>
 
         <div className="smallText">
-          Теги ограничены до {MAX_TAG_FILTERS_PER_GROUP} в каждой группе.
-          Если выбрать один и тот же тег или префикс в противоположной
-          группе, он автоматически уберется оттуда.
+          Теги ограничены до {MAX_TAG_FILTERS_PER_GROUP} в каждой группе. Если
+          выбрать один и тот же тег или префикс в противоположной группе, он
+          автоматически уберется оттуда.
         </div>
       </div>
 
@@ -448,9 +458,7 @@ export const SettingsPage = ({
             <input
               className="input"
               value={defaultTagSearchText}
-              onChange={(event) =>
-                setDefaultTagSearchText(event.target.value)
-              }
+              onChange={(event) => setDefaultTagSearchText(event.target.value)}
               placeholder="например: sandbox, corruption"
             />
           </div>
@@ -478,16 +486,16 @@ export const SettingsPage = ({
         </div>
       </div>
     </>
-  );
+  )
 
   useEffect(() => {
-    let isCancelled = false;
+    let isCancelled = false
 
     void (async () => {
       try {
-        const nextStatus = await fetchCookieProxyStatus();
+        const nextStatus = await fetchCookieProxyStatus()
         if (!isCancelled) {
-          setCookieProxyStatus(nextStatus);
+          setCookieProxyStatus(nextStatus)
         }
       } catch (error) {
         if (!isCancelled) {
@@ -495,82 +503,82 @@ export const SettingsPage = ({
             error instanceof Error
               ? error.message
               : "Не удалось получить статус cookie proxy",
-          );
+          )
         }
       }
-    })();
+    })()
 
     return () => {
-      isCancelled = true;
-    };
-  }, []);
+      isCancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (requestedTab) {
-      setActiveTab(requestedTab);
+      setActiveTab(requestedTab)
     }
-  }, [requestedTab]);
+  }, [requestedTab])
 
   const handleSaveCookieProxyInput = async () => {
     try {
-      setIsCookieProxyBusy(true);
-      setCookieProxyErrorMessage(null);
-      setCookieProxySuccessMessage(null);
-      const nextStatus = await saveCookieProxyInput(cookieProxyDraft);
-      setCookieProxyStatus(nextStatus);
+      setIsCookieProxyBusy(true)
+      setCookieProxyErrorMessage(null)
+      setCookieProxySuccessMessage(null)
+      const nextStatus = await saveCookieProxyInput(cookieProxyDraft)
+      setCookieProxyStatus(nextStatus)
       setCookieProxySuccessMessage(
         "Куки сохранены. Proxy начнет использовать их без перезапуска dev-сервера.",
-      );
+      )
     } catch (error) {
       setCookieProxyErrorMessage(
         error instanceof Error ? error.message : "Не удалось сохранить куки",
-      );
+      )
     } finally {
-      setIsCookieProxyBusy(false);
+      setIsCookieProxyBusy(false)
     }
-  };
+  }
 
   const handleClearCookieProxyInput = async () => {
     try {
-      setIsCookieProxyBusy(true);
-      setCookieProxyErrorMessage(null);
-      setCookieProxySuccessMessage(null);
-      const nextStatus = await clearCookieProxyInput();
-      setCookieProxyStatus(nextStatus);
-      setCookieProxyDraft("");
+      setIsCookieProxyBusy(true)
+      setCookieProxyErrorMessage(null)
+      setCookieProxySuccessMessage(null)
+      const nextStatus = await clearCookieProxyInput()
+      setCookieProxyStatus(nextStatus)
+      setCookieProxyDraft("")
       setCookieProxySuccessMessage(
         nextStatus.source === "env"
           ? "Сохраненные через приложение куки удалены. Proxy снова использует F95_COOKIE из .env."
           : "Сохраненные через приложение куки удалены.",
-      );
+      )
     } catch (error) {
       setCookieProxyErrorMessage(
         error instanceof Error ? error.message : "Не удалось очистить куки",
-      );
+      )
     } finally {
-      setIsCookieProxyBusy(false);
+      setIsCookieProxyBusy(false)
     }
-  };
+  }
 
   const handleCookieFileChange = async () => {
-    const file = cookieFileInputRef.current?.files?.[0];
+    const file = cookieFileInputRef.current?.files?.[0]
     if (!file) {
-      return;
+      return
     }
 
     try {
-      const fileText = await file.text();
-      setCookieProxyDraft(fileText);
-      setCookieProxyErrorMessage(null);
+      const fileText = await file.text()
+      setCookieProxyDraft(fileText)
+      setCookieProxyErrorMessage(null)
       setCookieProxySuccessMessage(
         `Файл ${file.name} загружен в поле. Теперь нажми "Сохранить в proxy".`,
-      );
+      )
     } catch (error) {
       setCookieProxyErrorMessage(
         error instanceof Error ? error.message : "Не удалось прочитать файл",
-      );
+      )
     }
-  };
+  }
 
   return (
     <div className="settingsPage">
@@ -578,8 +586,8 @@ export const SettingsPage = ({
         <div className="settingsPageIntro">
           <h3 className="panelTitle settingsPageTitle">Настройки</h3>
           <div className="smallText">
-            Разделы вынесены во вкладки: куки для proxy, фильтры,
-            метаданные и локальное хранилище.
+            Разделы вынесены во вкладки: куки для proxy, фильтры, метаданные и
+            локальное хранилище.
           </div>
         </div>
 
@@ -588,10 +596,10 @@ export const SettingsPage = ({
             className={`button settingsTabButton ${
               activeTab === "cookies" ? "settingsTabButtonActive" : ""
             }`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "cookies"}
-              onClick={() => setActiveTab("cookies")}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "cookies"}
+            onClick={() => setActiveTab("cookies")}
           >
             Куки
           </button>
@@ -621,7 +629,7 @@ export const SettingsPage = ({
             className={`button settingsTabButton ${
               activeTab === "data" ? "settingsTabButtonActive" : ""
             }`}
-              type="button"
+            type="button"
             role="tab"
             aria-selected={activeTab === "data"}
             onClick={() => setActiveTab("data")}
@@ -668,7 +676,8 @@ export const SettingsPage = ({
                 <div className="metricCard">
                   <div className="metricLabel">Не хватает</div>
                   <div className="metricValue settingsMetricValue">
-                    {cookieProxyStatus?.missingRecommendedCookieNames.length ?? 3}
+                    {cookieProxyStatus?.missingRecommendedCookieNames.length ??
+                      3}
                   </div>
                 </div>
               </div>
@@ -723,9 +732,11 @@ export const SettingsPage = ({
                   className="button buttonPrimary"
                   type="button"
                   onClick={() => {
-                    void handleSaveCookieProxyInput();
+                    void handleSaveCookieProxyInput()
                   }}
-                  disabled={isCookieProxyBusy || cookieProxyDraft.trim().length === 0}
+                  disabled={
+                    isCookieProxyBusy || cookieProxyDraft.trim().length === 0
+                  }
                 >
                   Сохранить в proxy
                 </button>
@@ -741,7 +752,7 @@ export const SettingsPage = ({
                   className="button"
                   type="button"
                   onClick={() => {
-                    void handleClearCookieProxyInput();
+                    void handleClearCookieProxyInput()
                   }}
                   disabled={isCookieProxyBusy}
                 >
@@ -763,7 +774,7 @@ export const SettingsPage = ({
                 accept=".txt,.json,.cookies,text/plain,application/json"
                 hidden
                 onChange={() => {
-                  void handleCookieFileChange();
+                  void handleCookieFileChange()
                 }}
               />
 
@@ -786,8 +797,9 @@ export const SettingsPage = ({
             <SyncMetadataPanel
               metadataSyncState={metadataSyncState}
               autoSyncEnabled
-              onStartSync={onStartMetadataSync}
+              hasConfiguredCookies={cookieProxyStatus?.configured}
               onContinueSync={onContinueMetadataSync}
+              onRefreshSync={onRefreshMetadataSync}
               onPauseSync={onPauseMetadataSync}
               onResumeSync={onResumeMetadataSync}
               onStopSync={onStopMetadataSync}
@@ -818,9 +830,8 @@ export const SettingsPage = ({
 
               <div className="settingsDataNote">
                 <div className="smallText">
-                  Берет локальный `/default-filters.json` из проекта и
-                  обновляет дефолтные фильтры и сортировку на вкладке
-                  `Фильтры`.
+                  Берет локальный `/default-filters.json` из проекта и обновляет
+                  дефолтные фильтры и сортировку на вкладке `Фильтры`.
                 </div>
               </div>
             </div>
@@ -937,7 +948,8 @@ export const SettingsPage = ({
                   Поддерживается и старый плоский формат {"`id -> label`"}.
                 </div>
                 <div className="smallText">
-                  Эти данные сохраняются локально и экспортируются вместе с сессией.
+                  Эти данные сохраняются локально и экспортируются вместе с
+                  сессией.
                 </div>
               </div>
             </div>
@@ -1072,7 +1084,7 @@ export const SettingsPage = ({
                   accept="application/json"
                   hidden
                   onChange={() => {
-                    void onImportAllBackupChange();
+                    void onImportAllBackupChange()
                   }}
                 />
                 <input
@@ -1081,7 +1093,7 @@ export const SettingsPage = ({
                   accept="application/json"
                   hidden
                   onChange={() => {
-                    void onImportSettingsBackupChange();
+                    void onImportSettingsBackupChange()
                   }}
                 />
                 <input
@@ -1090,7 +1102,7 @@ export const SettingsPage = ({
                   accept="application/json"
                   hidden
                   onChange={() => {
-                    void onImportListsBackupChange();
+                    void onImportListsBackupChange()
                   }}
                 />
 
@@ -1160,7 +1172,7 @@ export const SettingsPage = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export type { SettingsTab };
+export type { SettingsTab }

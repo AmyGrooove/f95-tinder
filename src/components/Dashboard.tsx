@@ -24,6 +24,15 @@ import {
   type ThreadInterestAssessment,
 } from "../f95/recommendations"
 import {
+  assessThreadAiTaste,
+  combineAppAndAiInterestScore,
+} from "../f95/aiTasteProfile"
+import type {
+  AiTasteAssessment,
+  AiTasteFreshness,
+  AiTasteProfileFile,
+} from "../f95/aiTasteProfile"
+import {
   countUpdatedTrackedItems,
   getProcessedThreadItemUpdateLabel,
   hasProcessedThreadItemUpdate,
@@ -50,6 +59,7 @@ type DashboardCard = {
   listType: ListType | null
   sectionKey: "favorite" | "trash" | "played"
   interestAssessment: ThreadInterestAssessment | null
+  aiTasteAssessment: AiTasteAssessment | null
   interestScore: number
 }
 
@@ -87,6 +97,9 @@ type DashboardProps = {
     processedThreadItemsByLink: Record<string, ProcessedThreadItem>,
     threadItemsByIdentifier: Record<string, { rating?: number }>,
   ) => number
+  aiTasteProfile: AiTasteProfileFile | null
+  aiTasteFreshness: AiTasteFreshness | null
+  isAiTasteEnabled: boolean
 }
 
 const parseThreadIdentifierFromLink = (threadLink: string) => {
@@ -207,6 +220,26 @@ const formatPercentLabel = (value: number | undefined) => {
   return `${Math.round(value * 100)}%`
 }
 
+const resolveDashboardInterestBadge = (score: number) => {
+  if (score >= 80) {
+    return { level: "top", label: "Топ" }
+  }
+
+  if (score >= 63) {
+    return { level: "good", label: "Хорошая" }
+  }
+
+  if (score >= 34) {
+    return { level: "neutral", label: "Нейтрал" }
+  }
+
+  if (score >= 16) {
+    return { level: "bad", label: "Не очень" }
+  }
+
+  return { level: "trash", label: "Туфта" }
+}
+
 const formatRawScoreLabel = (value: number | undefined) => {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return "0.00"
@@ -309,6 +342,9 @@ export const Dashboard = ({
   pickTitleForLink,
   pickCreatorForLink,
   pickRatingForLink,
+  aiTasteProfile,
+  aiTasteFreshness,
+  isAiTasteEnabled,
 }: DashboardProps) => {
   const [dashboardViewState, setDashboardViewState] =
     useState<DashboardViewState>(() => loadDashboardViewState())
@@ -500,22 +536,41 @@ export const Dashboard = ({
             : null
         const processedItem =
           sessionState.processedThreadItemsByLink[card.threadLink] ?? null
+        const interestCandidate = buildInterestCandidate(processedItem, threadItem)
         const interestAssessment = assessThreadInterest(
-          buildInterestCandidate(processedItem, threadItem),
+          interestCandidate,
           interestProfile,
           tagsMap,
           prefixesMap,
           catalogFeatureStats,
         )
+        const aiTasteAssessment = isAiTasteEnabled
+          ? assessThreadAiTaste(
+              interestCandidate,
+              aiTasteProfile,
+              tagsMap,
+              prefixesMap,
+            )
+          : null
+        const interestScore = combineAppAndAiInterestScore(
+          interestAssessment?.score ?? 50,
+          aiTasteAssessment?.score,
+          aiTasteFreshness?.percent,
+          isAiTasteEnabled,
+        )
 
         return {
           ...card,
           interestAssessment,
-          interestScore: interestAssessment?.score ?? 50,
+          aiTasteAssessment,
+          interestScore,
         }
       })
     },
     [
+      aiTasteFreshness?.percent,
+      aiTasteProfile,
+      isAiTasteEnabled,
       catalogFeatureStats,
       interestProfile,
       prefixesMap,
@@ -544,7 +599,9 @@ export const Dashboard = ({
       : sortField === "rating"
         ? "Рейтинг"
         : sortField === "interest"
-          ? "Вес"
+          ? aiTasteProfile && isAiTasteEnabled
+            ? "Интерес + ИИ"
+            : "Интерес"
           : "Название"
 
   const sortDirectionLabel =
@@ -655,6 +712,7 @@ export const Dashboard = ({
         listType: sectionKey,
         sectionKey,
         interestAssessment: null,
+        aiTasteAssessment: null,
         interestScore: 50,
       }
     },
@@ -986,6 +1044,35 @@ export const Dashboard = ({
     prefixesMap,
     tagsMap,
   ])
+  const activeGameAiTasteAssessment = useMemo(() => {
+    if (!activeGameCard || !aiTasteProfile || !isAiTasteEnabled) {
+      return null
+    }
+
+    return assessThreadAiTaste(
+      buildInterestCandidate(activeGameProcessedItem, activeGameThreadItem),
+      aiTasteProfile,
+      tagsMap,
+      prefixesMap,
+    )
+  }, [
+    activeGameCard,
+    activeGameProcessedItem,
+    activeGameThreadItem,
+    aiTasteProfile,
+    isAiTasteEnabled,
+    prefixesMap,
+    tagsMap,
+  ])
+  const activeGameCombinedInterestScore = combineAppAndAiInterestScore(
+    activeGameInterestAssessment?.score ?? 50,
+    activeGameAiTasteAssessment?.score,
+    aiTasteFreshness?.percent,
+    isAiTasteEnabled,
+  )
+  const activeGameCombinedInterestBadge = resolveDashboardInterestBadge(
+    activeGameCombinedInterestScore,
+  )
   const activeGamePrefixLabels = buildPrefixLabels(
     Array.isArray(activeGameThreadItem?.prefixes)
       ? activeGameThreadItem.prefixes
@@ -1029,10 +1116,12 @@ export const Dashboard = ({
   const activeGameInterestInfoCards =
     activeGameInterestAssessment && interestProfile
       ? [
-          {
-            label: "Скор",
-            value: `${activeGameInterestAssessment.score}/100`,
-          },
+          activeGameAiTasteAssessment
+            ? {
+                label: "Свежесть ИИ",
+                value: `${aiTasteFreshness?.percent ?? 0}%`,
+              }
+            : null,
           {
             label: "Уверенность",
             value: formatPercentLabel(activeGameInterestAssessment.confidence),
@@ -1053,7 +1142,7 @@ export const Dashboard = ({
             label: "Минус-сигналы",
             value: String(interestProfile.negativeSignalsCount),
           },
-        ]
+        ].filter((item): item is { label: string; value: string } => Boolean(item))
       : []
   const activeGameInfoCards = activeGameCard
     ? [
@@ -1373,6 +1462,10 @@ export const Dashboard = ({
             const bookmarkedDownloadedLabel = card.isBookmarkedDownloaded
               ? "Снять отметку 'Скачана'"
               : "Пометить как скачанную"
+            const cardInterestBadge =
+              showInterestBadges && card.interestAssessment
+                ? resolveDashboardInterestBadge(card.interestScore)
+                : null
 
             return (
               <div
@@ -1381,12 +1474,12 @@ export const Dashboard = ({
                   card.isUpdated ? "listItemCardUpdated" : ""
                 }`}
               >
-                {showInterestBadges && card.interestAssessment ? (
+                {cardInterestBadge && card.interestAssessment ? (
                   <div
-                    className={`dashboardInterestBadge swipeInterestBadge swipeInterestBadge${card.interestAssessment.level[0].toUpperCase()}${card.interestAssessment.level.slice(1)}`}
-                    title={`${card.interestAssessment.label} · ${card.interestScore}/100 · уверенность ${Math.round(card.interestAssessment.confidence * 100)}%. ${card.interestAssessment.summary}`}
+                    className={`dashboardInterestBadge swipeInterestBadge swipeInterestBadge${cardInterestBadge.level[0].toUpperCase()}${cardInterestBadge.level.slice(1)}`}
+                    title={`${cardInterestBadge.label} · итог ${card.interestScore}/100 · приложение ${card.interestAssessment.score}/100${card.aiTasteAssessment ? ` · ИИ ${card.aiTasteAssessment.score}/100` : ""}`}
                   >
-                    {card.interestAssessment.label}
+                    {cardInterestBadge.label}
                   </div>
                 ) : null}
                 {showPlayedFavoriteButton ? (
@@ -1583,6 +1676,7 @@ export const Dashboard = ({
         ))}
       </div>
 
+
       <div className="dashboardFilters">
         <div className="tagFilterPanel dashboardFilterPanel">
           <button
@@ -1639,7 +1733,7 @@ export const Dashboard = ({
                   >
                     <option value="addedAt">По дате добавления</option>
                     <option value="rating">По рейтингу</option>
-                    <option value="interest">По весу</option>
+                    <option value="interest">По интересу</option>
                     <option value="title">По названию</option>
                   </select>
                 </div>
@@ -2001,20 +2095,35 @@ export const Dashboard = ({
                 <div className="dashboardGameInterestPanel">
                   {activeGameInterestAssessment ? (
                     <>
+                      <div className="interestScoreBreakdownPanel">
+                        <div className="interestScoreBreakdownHeader">
+                          <div className="swipeMetaGroupLabel">Расчет интереса</div>
+                          <span
+                            className={`swipeInterestBadge swipeInterestBadge${activeGameCombinedInterestBadge.level[0].toUpperCase()}${activeGameCombinedInterestBadge.level.slice(1)}`}
+                          >
+                            {activeGameCombinedInterestBadge.label}
+                          </span>
+                        </div>
+                        <div className="interestScoreBreakdown">
+                          <span className="interestScoreBreakdownItem">
+                            Приложение <strong>{activeGameInterestAssessment.score}/100</strong>
+                          </span>
+                          {activeGameAiTasteAssessment ? (
+                            <span className="interestScoreBreakdownItem interestScoreBreakdownItemAi">
+                              ИИ <strong>{activeGameAiTasteAssessment.score}/100</strong>
+                            </span>
+                          ) : null}
+                          <span className="interestScoreBreakdownItem interestScoreBreakdownItemTotal">
+                            Итог <strong>{activeGameCombinedInterestScore}/100</strong>
+                          </span>
+                        </div>
+                      </div>
+
                       <div className="swipeInterestPanel">
                         <div className="swipeInterestHeader">
                           <div className="swipeMetaGroupLabel">
-                            Статус интереса
+                            Приложение-профиль
                           </div>
-                          <span
-                            className={`swipeInterestBadge swipeInterestBadge${activeGameInterestAssessment.level[0].toUpperCase()}${activeGameInterestAssessment.level.slice(1)}`}
-                          >
-                            {activeGameInterestAssessment.label}
-                          </span>
-                        </div>
-
-                        <div className="swipeInterestSummary">
-                          {activeGameInterestAssessment.summary}
                         </div>
 
                         {activeGameInterestAssessment.reasons.length > 0 ? (
@@ -2032,6 +2141,24 @@ export const Dashboard = ({
                           </div>
                         ) : null}
                       </div>
+
+                      {activeGameAiTasteAssessment?.reasons.length ? (
+                        <div className="swipeAiInfluenceBox">
+                          <div className="swipeAiInfluenceHeader">
+                            <strong>ИИ-профиль</strong>
+                          </div>
+                          <div className="swipeInterestReasonRow">
+                            {activeGameAiTasteAssessment.reasons.map((reason) => (
+                              <span
+                                key={`ai-${reason.tone}-${reason.text}`}
+                                className={`swipeInterestReasonChip swipeInterestReasonChip${reason.tone[0].toUpperCase()}${reason.tone.slice(1)}`}
+                              >
+                                {reason.text}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div className="gameSettingsInfoGrid dashboardGameInfoGrid">
                         {activeGameInterestInfoCards.map((infoCard) => (
@@ -2061,6 +2188,7 @@ export const Dashboard = ({
           </div>
         </div>
       ) : null}
+
     </div>
   )
 }
