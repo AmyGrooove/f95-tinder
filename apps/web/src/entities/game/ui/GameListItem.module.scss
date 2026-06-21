@@ -1,0 +1,151 @@
+.item {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(15, 20, 32, 0.9);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+}
+
+.cover {
+  min-height: 250px;
+  border: 0;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(7, 11, 20, 0.9);
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform var(--transition-fast);
+  }
+
+  &:hover:not(:disabled) img {
+    transform: scale(1.025);
+  }
+}
+
+.content {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+
+  p {
+    margin-bottom: 5px;
+    color: #c4b5fd;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    line-height: 1.1;
+  }
+
+  a {
+    flex: 0 0 auto;
+    color: #93c5fd;
+    font-weight: 800;
+  }
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  span {
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 6px 9px;
+    color: var(--color-text-muted);
+    font-size: 0.76rem;
+  }
+}
+
+.screenshots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+
+  button {
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 0;
+    overflow: hidden;
+    background: var(--color-surface-raised);
+    cursor: pointer;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+
+  label {
+    display: grid;
+    gap: 5px;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  select,
+  button {
+    min-height: 40px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    background: rgba(7, 11, 20, 0.8);
+    color: var(--color-text);
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+.deleteButton {
+  border-color: rgba(255, 51, 102, 0.4) !important;
+  color: #ff9ab3 !important;
+}
+
+@media (max-width: 720px) {
+  .item {
+    grid-template-columns: 1fr;
+  }
+
+  .cover {
+    max-height: 360px;
+  }
+
+  .screenshots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

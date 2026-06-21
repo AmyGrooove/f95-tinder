@@ -1,4 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
 allowBuilds:
-  electron: true
-  electron-winstaller: true
+  '@parcel/watcher': true
+  '@scarf/scarf': true
+  electron: set this to true or false
+  electron-winstaller: set this to true or false
   esbuild: true
+  msgpackr-extract: true
