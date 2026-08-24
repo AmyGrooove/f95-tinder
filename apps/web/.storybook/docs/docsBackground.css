@@ -1,0 +1,71 @@
+.sbdocs-wrapper {
+  background-color: #171717 !important;
+  color: #f8f8f8;
+}
+
+.sbdocs-content {
+  color: #f8f8f8;
+}
+
+.sbdocs-preview,
+.docs-story {
+  background-color: #242424 !important;
+  border-color: #3d3d3d !important;
+}
+
+.sbdocs-preview {
+  box-shadow: 0 16px 40px #11111152;
+}
+
+.docblock-argstable,
+.docblock-argstable thead,
+.docblock-argstable tbody,
+.docblock-argstable tr,
+.docblock-argstable td,
+.docblock-argstable th {
+  background-color: #2d2d2d !important;
+  color: #f8f8f8 !important;
+}
+
+.docblock-argstable thead th {
+  background-color: #242424 !important;
+}
+
+.docblock-argstable tbody td:nth-child(2),
+.docblock-argstable tbody td:nth-child(2) *,
+.docblock-argstable tbody td:nth-child(3),
+.docblock-argstable tbody td:nth-child(3) * {
+  color: #f8f8f8 !important;
+}
+
+.sbdocs-content h1,
+.sbdocs-content h2,
+.sbdocs-content h3,
+.sbdocs-content h4,
+.sbdocs-content h5,
+.sbdocs-content h6,
+.sbdocs-content p,
+.sbdocs-content li,
+.sbdocs-content td,
+.sbdocs-content th {
+  color: inherit;
+}
+
+.sbdocs-content code {
+  background-color: #2d2d2d;
+  border: 1px solid #3d3d3d;
+  color: #f8f8f8;
+}
+
+.sbdocs-content pre {
+  background-color: #2d2d2d;
+  border: 1px solid #3d3d3d;
+  color: #f8f8f8;
+}
+
+.sbdocs-content table,
+.sbdocs-content tr,
+.sbdocs-content td,
+.sbdocs-content th {
+  border-color: #3d3d3d;
+}

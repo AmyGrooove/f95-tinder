@@ -1,0 +1,61 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  @include interactive(
+    (background-color, border-color, outline-color),
+    '.switch'
+  );
+
+  &_disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+.switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 60px;
+  height: 32px;
+  border-radius: var(--border-radius-100);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  background-color: var(--color-dark-lightest);
+  @include transition((background-color, border-color, outline-color));
+
+  &[data-checked] {
+    background-color: var(--color-accent-deep);
+
+    .thumb {
+      inset-inline-start: 32px;
+      background-color: var(--color-accent-lightest);
+    }
+  }
+}
+
+.thumb {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-start: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-accent-deep);
+  @include transition((inset-inline-start, background-color));
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.hintText {
+  color: var(--color-light-deepest);
+}

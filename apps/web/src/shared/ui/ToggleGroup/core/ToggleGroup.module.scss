@@ -1,0 +1,44 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  height: 32px;
+  padding: 0 12px;
+  border: 2px solid var(--color-dark-lightest);
+  border-radius: var(--border-radius-12);
+  background-color: var(--color-dark-deep);
+  color: var(--color-light-lightest);
+  font-weight: 700;
+  @include interactive((background-color, border-color));
+  @include text-style(16);
+
+  &[data-pressed] {
+    background-color: var(--color-accent-deep);
+    border-color: transparent;
+  }
+
+  &_disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.hintText {
+  color: var(--color-light-deepest);
+}

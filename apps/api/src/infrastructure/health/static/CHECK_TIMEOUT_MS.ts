@@ -1,0 +1,3 @@
+const CHECK_TIMEOUT_MS = 1_500
+
+export { CHECK_TIMEOUT_MS }

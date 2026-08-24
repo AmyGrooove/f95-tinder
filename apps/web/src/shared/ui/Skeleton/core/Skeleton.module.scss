@@ -1,0 +1,11 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  background-color: var(--color-dark-light);
+  flex-shrink: 0;
+  @include shimmer(var(--color-dark-lightest));
+
+  &_flexShrinkDisabled {
+    flex-shrink: unset;
+  }
+}

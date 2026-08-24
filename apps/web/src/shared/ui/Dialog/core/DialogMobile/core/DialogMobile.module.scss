@@ -1,0 +1,92 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.backdrop {
+  position: fixed;
+  background-color: color-alpha(var(--color-dark-deepest), medium);
+  inset: 0;
+  backdrop-filter: blur(4px);
+  @include transition((opacity, backdrop-filter));
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+.viewport {
+  position: fixed;
+  display: flex;
+  align-items: flex-end;
+  inset: 0;
+}
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 16px;
+  max-height: 90%;
+  padding: 20px 20px 0;
+  border-radius: var(--border-radius-20) var(--border-radius-20) 0 0;
+  background-color: var(--color-dark-light);
+  box-shadow: 0 0 32px color-alpha(var(--color-dark-deepest), medium);
+  transform: translateY(var(--drawer-swipe-movement-y, 0));
+  @include transition((transform), (320ms));
+
+  &::after {
+    content: '';
+    background-color: var(--color-dark-light);
+    width: 100%;
+    height: 20px;
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    right: 0;
+  }
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    transform: translateY(100%);
+  }
+
+  &[data-swiping] {
+    @include transition(transform, 0ms);
+  }
+
+  &[data-swipe-dismiss] {
+    @include transition(
+      transform,
+      calc(200ms * var(--drawer-swipe-strength, 1))
+    );
+  }
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.dragHandle {
+  margin: 0 auto;
+  width: 100px;
+  height: 4px;
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-dark-lightest);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  overflow-y: auto;
+  padding-bottom: 40px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

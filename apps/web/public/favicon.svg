@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"
+  fill="none">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="40" x2="900" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101827" />
+      <stop offset="0.58" stop-color="#0B1120" />
+      <stop offset="1" stop-color="#080D18" />
+    </linearGradient>
+
+    <linearGradient id="heart" x1="300" y1="220" x2="710" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F7FF" stop-opacity="0.96" />
+      <stop offset="0.12" stop-color="#FF3366" />
+      <stop offset="0.58" stop-color="#FF3366" />
+      <stop offset="1" stop-color="#A855F7" />
+    </linearGradient>
+
+    <linearGradient id="badgeStroke" x1="690" y1="700" x2="920" y2="920"
+      gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8" />
+      <stop offset="0.5" stop-color="#6366F1" />
+      <stop offset="1" stop-color="#A855F7" />
+    </linearGradient>
+
+    <radialGradient id="badgeFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(758 752) rotate(43) scale(260)">
+      <stop stop-color="#182236" />
+      <stop offset="1" stop-color="#080D18" />
+    </radialGradient>
+
+    <linearGradient id="rim" x1="70" y1="50" x2="950" y2="950" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#64748B" stop-opacity="0.42" />
+      <stop offset="0.52" stop-color="#22304A" stop-opacity="0.72" />
+      <stop offset="1" stop-color="#101827" stop-opacity="0.9" />
+    </linearGradient>
+
+    <filter id="heartShadow" x="80" y="100" width="864" height="820" filterUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000000" flood-opacity="0.35" />
+      <feDropShadow dx="0" dy="0" stdDeviation="18" flood-color="#A855F7" flood-opacity="0.18" />
+    </filter>
+
+    <filter id="badgeShadow" x="620" y="650" width="360" height="340" filterUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <rect x="8" y="8" width="1008" height="1008" rx="220" fill="url(#bg)" />
+  <rect x="12" y="12" width="1000" height="1000" rx="216" stroke="url(#rim)" stroke-width="16" />
+
+  <path
+    d="M512 850C481 792 402 724 331 661C245 585 190 505 190 397C190 285 269 207 374 207C440 207 489 240 512 298C535 240 584 207 650 207C755 207 834 285 834 397C834 505 779 585 693 661C622 724 543 792 512 850Z"
+    fill="url(#heart)" filter="url(#heartShadow)" />
+
+  <path d="M308 323C336 269 402 247 460 279" stroke="#F4F7FF" stroke-opacity="0.42"
+    stroke-width="26" stroke-linecap="round" />
+
+  <g filter="url(#badgeShadow)">
+    <rect x="664" y="692" width="256" height="228" rx="82" fill="url(#badgeFill)" />
+    <rect x="670" y="698" width="244" height="216" rx="76" stroke="url(#badgeStroke)"
+      stroke-width="12" />
+  </g>
+
+  <text x="792" y="812" text-anchor="middle" dominant-baseline="middle" fill="#F4F7FF"
+    font-size="104" font-weight="800" font-family="Segoe UI, Arial, sans-serif">95</text>
+</svg>

@@ -1,0 +1,73 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.backdrop {
+  position: fixed;
+  background-color: color-alpha(var(--color-dark-deepest), medium);
+  inset: 0;
+  backdrop-filter: blur(4px);
+  @include transition((opacity, backdrop-filter));
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+.viewport {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+}
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  min-width: 500px;
+  max-width: 50%;
+  max-height: 50%;
+  border-radius: var(--border-radius-20);
+  background-color: var(--color-dark-light);
+  box-shadow: 0 0 32px color-alpha(var(--color-dark-deepest), medium);
+  padding: 20px;
+  gap: 16px;
+  @include transition((opacity, transform));
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton {
+  position: absolute;
+  top: 8px;
+  right: -56px;
+  padding: 4px;
+  background-color: transparent;
+  border: 0;
+  width: 48px;
+  height: 48px;
+  color: var(--color-light-deepest);
+  border-radius: var(--border-radius-12);
+  @include interactive;
+}
+
+.content {
+  overflow-y: auto;
+}

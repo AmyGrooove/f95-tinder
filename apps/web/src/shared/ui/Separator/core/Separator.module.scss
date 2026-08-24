@@ -1,0 +1,16 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  flex-shrink: 0;
+  background-color: color-alpha(var(--color-dark-lightest), medium);
+
+  &[data-orientation='horizontal'] {
+    width: 100%;
+    height: 1px;
+  }
+
+  &[data-orientation='vertical'] {
+    align-self: stretch;
+    width: 1px;
+  }
+}

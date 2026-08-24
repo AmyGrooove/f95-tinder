@@ -1,0 +1,47 @@
+{
+  "name": "@f95-tinder/web",
+  "type": "module",
+  "version": "2.0.0",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start --webpack",
+    "storybook": "storybook dev -p 6006",
+    "type-check": "tsc --noEmit",
+    "lint:fix": "eslint . --fix",
+    "stylelint:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@floating-ui/react": "^0.27.20",
+    "@tanstack/react-query": "^5.101.4",
+    "dayjs": "^1.11.23",
+    "effector": "^23.4.4",
+    "effector-react": "^23.3.0",
+    "embla-carousel-react": "^8.6.0",
+    "lucide-react": "^1.31.0",
+    "next": "^16.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "use-debounce": "^10.1.1"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.5.9",
+    "@storybook/nextjs-vite": "^10.5.9",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "sass": "^1.102.0",
+    "sass-embedded": "^1.102.0",
+    "storybook": "^10.5.9",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard-scss": "^17.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.1"
+  }
+}

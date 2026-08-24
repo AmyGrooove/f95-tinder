@@ -1,0 +1,64 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option {
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  @include interactive((background-color, border-color), '.radio');
+
+  &_disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--border-radius-100);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  background-color: var(--color-dark-lightest);
+  flex-shrink: 0;
+
+  &[data-checked] {
+    background-color: var(--color-accent-deep);
+  }
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-light-deep);
+
+  @include transition(opacity);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+  }
+}
+
+.hintText {
+  color: var(--color-light-deepest);
+}

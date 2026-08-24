@@ -1,0 +1,12 @@
+@use './reusable' as *;
+@use './variables/borderRadiuses';
+@use './variables/colors';
+@use './reset';
+
+body {
+  background-color: var(--color-dark-deepest);
+  color: var(--color-light-lightest);
+  font-family: Roboto, sans-serif;
+  overflow-x: hidden;
+  @extend %colors, %border-radiuses;
+}

@@ -1,0 +1,31 @@
+@use '@shared/styles/reusable.scss' as *;
+
+$font-size-variants: 12, 16, 20, 24, 28, 32, 40;
+$font-weight-variants: 400, 700;
+
+.root {
+  margin: 0;
+  color: inherit;
+
+  &_fontSize {
+    @each $variant in $font-size-variants {
+      &_#{$variant} {
+        @include text-style($variant);
+      }
+    }
+  }
+
+  &_weight {
+    @each $variant in $font-weight-variants {
+      &_#{$variant} {
+        font-weight: $variant;
+      }
+    }
+  }
+
+  &_clamped {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+}

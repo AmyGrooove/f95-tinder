@@ -1,0 +1,63 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.positioner {
+  z-index: 20;
+}
+
+.trigger {
+  display: inline-flex;
+}
+
+.root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: min(280px, var(--available-width));
+  padding: 8px;
+  border-radius: var(--border-radius-12);
+  background-color: var(--color-dark-lightest);
+  box-shadow: 0 0 32px color-alpha(var(--color-dark-deepest), medium);
+  isolation: isolate;
+  pointer-events: none;
+  transform: translate(0, 0);
+  transform-origin: var(--transform-origin);
+  @include text-style(12);
+  @include transition((opacity, transform));
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+  }
+
+  &[data-instant] {
+    transition: none;
+  }
+
+  &[data-side='top'] {
+    &[data-starting-style],
+    &[data-ending-style] {
+      transform: translateY(2px);
+    }
+  }
+
+  &[data-side='bottom'] {
+    &[data-starting-style],
+    &[data-ending-style] {
+      transform: translateY(-2px);
+    }
+  }
+
+  &[data-side='left'] {
+    &[data-starting-style],
+    &[data-ending-style] {
+      transform: translateX(2px);
+    }
+  }
+
+  &[data-side='right'] {
+    &[data-starting-style],
+    &[data-ending-style] {
+      transform: translateX(-2px);
+    }
+  }
+}

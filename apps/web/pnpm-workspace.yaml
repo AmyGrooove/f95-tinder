@@ -1,0 +1,7 @@
+allowBuilds:
+  '@parcel/watcher': false
+  core-js-pure: false
+  esbuild: true
+  unrs-resolver: true
+
+autoInstallPeers: false

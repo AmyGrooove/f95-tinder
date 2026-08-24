@@ -1,0 +1,7 @@
+.next
+dist
+node_modules
+coverage
+storybook-static
+tsconfig.tsbuildinfo
+*.min.*

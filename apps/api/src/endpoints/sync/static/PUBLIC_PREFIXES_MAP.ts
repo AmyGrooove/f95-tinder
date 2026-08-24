@@ -1,0 +1,30 @@
+import type { TPrefixGroup } from "@entities/prefix/types/TPrefixGroup"
+
+const PUBLIC_PREFIXES_MAP = {
+  prefix: {
+    13: "VN",
+    18: "Completed",
+    19: "Collection",
+    20: "OnHold",
+    22: "Ongoing",
+    23: "SiteRip",
+  },
+  engine: {
+    1: "QSP",
+    2: "RPGM",
+    3: "Unity",
+    4: "HTML",
+    5: "RAGS",
+    6: "Java",
+    7: "Ren'Py",
+    8: "Flash",
+    12: "ADRIFT",
+    14: "Other",
+    17: "Tads",
+    30: "Wolf RPG",
+    31: "Unreal Engine",
+    47: "WbGL",
+  },
+} as const satisfies Record<TPrefixGroup, Record<number, string>>
+
+export { PUBLIC_PREFIXES_MAP }

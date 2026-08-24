@@ -1,0 +1,8 @@
+.next
+dist
+node_modules
+coverage
+storybook-static
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
+*.min.*

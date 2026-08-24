@@ -1,0 +1,97 @@
+@use 'sass:map';
+@use '@shared/styles/reusable.scss' as *;
+
+$size-variants: (
+  small: (
+    height: 24px,
+    padding: 0 8px,
+    borderRadius: var(--border-radius-8),
+    textStyle: 12,
+  ),
+  medium: (
+    height: 32px,
+    padding: 0 12px,
+    borderRadius: var(--border-radius-12),
+    textStyle: 16,
+  ),
+  large: (
+    height: 40px,
+    padding: 0 16px,
+    borderRadius: var(--border-radius-16),
+    textStyle: 20,
+  ),
+);
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+  border: 2px solid transparent;
+  font-weight: 600;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  color: var(--color-light-lightest);
+  @include interactive((background-color, border-color, color));
+
+  &_size {
+    @each $variantName, $variantValues in $size-variants {
+      &_#{$variantName} {
+        height: map.get($variantValues, height);
+        padding: map.get($variantValues, padding);
+        border-radius: map.get($variantValues, borderRadius);
+
+        @include text-style(map.get($variantValues, textStyle));
+
+        &.root_iconOnly {
+          width: map.get($variantValues, height);
+        }
+      }
+    }
+  }
+
+  &_variant {
+    &_primary {
+      background-color: var(--color-accent-deep);
+    }
+
+    &_outlined {
+      border-color: var(--color-accent-deep);
+      background-color: var(--color-dark-deep);
+    }
+
+    &_secondary {
+      background-color: var(--color-dark-lightest);
+    }
+
+    &_ghost {
+      background-color: transparent;
+    }
+  }
+
+  &_iconOnly {
+    padding: 0;
+  }
+
+  &_loading {
+    .content {
+      opacity: 0;
+    }
+  }
+}
+
+.content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.loadingIcon {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+}

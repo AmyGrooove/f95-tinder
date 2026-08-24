@@ -1,0 +1,3 @@
+const JWT_ACCESS_EXPIRATION = "15m"
+
+export { JWT_ACCESS_EXPIRATION }

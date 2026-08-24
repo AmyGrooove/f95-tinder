@@ -1,0 +1,23 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.content {
+  width: 300px;
+  padding: 32px;
+  border-radius: var(--border-radius-20);
+  background-color: var(--color-dark-light);
+}
+
+.code {
+  padding: 4px;
+  border-radius: var(--border-radius-12);
+  background-color: var(--color-system-error);
+}
+
+.button {
+  width: 100%;
+}

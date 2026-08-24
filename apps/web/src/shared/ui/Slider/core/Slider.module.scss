@@ -1,0 +1,93 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &_disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  &_error {
+    .indicator {
+      background-color: var(--color-system-error);
+    }
+
+    .thumb {
+      background-color: var(--color-system-error);
+    }
+
+    .hintText {
+      color: var(--color-system-error);
+    }
+  }
+}
+
+.slider {
+  width: 100%;
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 20px;
+  touch-action: none;
+  user-select: none;
+}
+
+.track {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-dark-lightest);
+}
+
+.indicator {
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-accent-deep);
+  height: 100%;
+
+  &[data-dragging] {
+    @include transition((inset-inline-start, width), 50ms, linear);
+  }
+}
+
+.thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--border-radius-100);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  background-color: var(--color-accent-deep);
+  cursor: grab;
+
+  @include transition((outline-color, transform));
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline-color: var(--color-accent-lightest);
+  }
+
+  &[data-dragging] {
+    cursor: grabbing;
+
+    @include transition(
+      (outline-color, transform, inset-inline-start),
+      (200ms, 200ms, 50ms),
+      (ease-in-out, ease-in-out, linear)
+    );
+  }
+}
+
+.hintText {
+  color: var(--color-light-deepest);
+}

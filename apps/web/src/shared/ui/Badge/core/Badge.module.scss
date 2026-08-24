@@ -1,0 +1,76 @@
+@use 'sass:map';
+@use '@shared/styles/reusable.scss' as *;
+
+$size-variants: (
+  small: (
+    height: 20px,
+    padding: 0 8px,
+    borderRadius: var(--border-radius-12),
+    textStyle: 12,
+  ),
+  medium: (
+    height: 24px,
+    padding: 0 8px,
+    borderRadius: var(--border-radius-16),
+    textStyle: 12,
+  ),
+  large: (
+    height: 28px,
+    padding: 0 12px,
+    borderRadius: var(--border-radius-20),
+    textStyle: 16,
+  ),
+);
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: max-content;
+  border: 2px solid transparent;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &_size {
+    @each $variantName, $variantValues in $size-variants {
+      &_#{$variantName} {
+        height: map.get($variantValues, height);
+        padding: map.get($variantValues, padding);
+        border-radius: map.get($variantValues, borderRadius);
+
+        @include text-style(map.get($variantValues, textStyle));
+
+        &.root_iconOnly {
+          width: map.get($variantValues, height);
+        }
+      }
+    }
+  }
+
+  &_variant {
+    &_primary {
+      background-color: var(--color-accent-deep);
+    }
+
+    &_outlined {
+      border-color: var(--color-accent-deep);
+      background-color: var(--color-dark-deep);
+    }
+
+    &_secondary {
+      background-color: var(--color-dark-lightest);
+    }
+  }
+
+  &_iconOnly {
+    padding: 0;
+  }
+}
+
+.content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}

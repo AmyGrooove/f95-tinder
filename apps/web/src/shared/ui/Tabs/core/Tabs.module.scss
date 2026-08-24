@@ -1,0 +1,52 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.list {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  width: fit-content;
+  background-color: var(--color-dark-light);
+  border-radius: var(--border-radius-12);
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: 32px;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--border-radius-12);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  background-color: transparent;
+  color: var(--color-light-lightest);
+  font-weight: 700;
+  @include text-style(16);
+  @include interactive;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indicator {
+  position: absolute;
+  z-index: 0;
+  left: var(--active-tab-left);
+  top: var(--active-tab-top);
+  width: var(--active-tab-width);
+  height: var(--active-tab-height);
+  border-radius: var(--border-radius-12);
+  background-color: var(--color-accent-light);
+  pointer-events: none;
+  @include transition((left, top, width, height, background-color));
+}

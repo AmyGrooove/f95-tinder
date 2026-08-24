@@ -1,0 +1,6 @@
+export { Box } from './core/Box'
+export type { TBoxAlign } from './types/TBoxAlign'
+export type { TBoxDirection } from './types/TBoxDirection'
+export type { TBoxGap } from './types/TBoxGap'
+export type { TBoxJustify } from './types/TBoxJustify'
+export type { TBoxWrap } from './types/TBoxWrap'

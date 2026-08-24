@@ -1,0 +1,63 @@
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks'
+import { Text } from '../../src/shared/ui/Text'
+import './docsBackground.css'
+
+<Meta title="Main/Typography" />
+
+# Typography
+
+export const TEXT_FONT_SIZES = [12, 16, 20, 24, 28, 32, 40]
+export const TEXT_WEIGHTS = [400, 700]
+export const SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog.'
+export const CARD_STYLE = {
+  background: 'rgba(255, 255, 255, 0.03)',
+  border: '1px solid rgba(244, 247, 255, 0.12)',
+  borderRadius: 12,
+  padding: '16px 20px',
+}
+
+## Font Sizes
+
+<Unstyled>
+  <div style={{ display: 'grid', gap: 10 }}>
+    {TEXT_FONT_SIZES.map((fontSize) => (
+      <div key={fontSize} style={CARD_STYLE}>
+        <div
+          style={{
+            color: 'rgba(248, 248, 248, 0.56)',
+            fontSize: 12,
+            marginBottom: 8,
+          }}
+        >
+          {fontSize}px
+        </div>
+        <Text as="div" fontSize={fontSize}>
+          {SAMPLE_TEXT}
+        </Text>
+      </div>
+    ))}
+  </div>
+</Unstyled>
+
+## Weights
+
+<Unstyled>
+  <div style={{ display: 'grid', gap: 10 }}>
+    {TEXT_WEIGHTS.map((weight) => (
+      <div key={weight} style={CARD_STYLE}>
+        <div
+          style={{
+            color: 'rgba(248, 248, 248, 0.56)',
+            fontSize: 12,
+            marginBottom: 8,
+          }}
+        >
+          {weight}
+        </div>
+        <Text as="div" fontSize={20} weight={weight}>
+          {SAMPLE_TEXT}
+        </Text>
+      </div>
+    ))}
+  </div>
+</Unstyled>

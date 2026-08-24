@@ -1,0 +1,75 @@
+@use '@shared/styles/reusable.scss' as *;
+
+$flex-direction-variants: (
+  row: row,
+  rowReverse: row-reverse,
+  column: column,
+  columnReverse: column-reverse,
+);
+$align-items-variants: (
+  normal: normal,
+  start: flex-start,
+  center: center,
+  end: flex-end,
+  stretch: stretch,
+  baseline: baseline,
+);
+$justify-content-variants: (
+  normal: normal,
+  start: flex-start,
+  center: center,
+  end: flex-end,
+  spaceBetween: space-between,
+  spaceAround: space-around,
+  spaceEvenly: space-evenly,
+);
+$gap-variants: 0, 4, 8, 12, 16, 20, 24, 32, 40, 64;
+$flex-wrap-variants: (
+  nowrap: nowrap,
+  wrap: wrap,
+  wrapReverse: wrap-reverse,
+);
+
+.root {
+  display: flex;
+
+  &_flexDirection {
+    @each $variantName, $variantValue in $flex-direction-variants {
+      &_#{$variantName} {
+        flex-direction: $variantValue;
+      }
+    }
+  }
+
+  &_alignItems {
+    @each $variantName, $variantValue in $align-items-variants {
+      &_#{$variantName} {
+        align-items: $variantValue;
+      }
+    }
+  }
+
+  &_justifyContent {
+    @each $variantName, $variantValue in $justify-content-variants {
+      &_#{$variantName} {
+        justify-content: $variantValue;
+      }
+    }
+  }
+
+  &_gap {
+    @each $variant in $gap-variants {
+      &_#{$variant} {
+        gap: #{$variant}px;
+      }
+    }
+  }
+
+  &_flexWrap {
+    @each $variantName, $variantValue in $flex-wrap-variants {
+      &_#{$variantName} {
+        flex-wrap: $variantValue;
+      }
+    }
+  }
+}

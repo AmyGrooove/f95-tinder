@@ -1,0 +1,67 @@
+@use 'sass:list';
+@use './transition' as *;
+
+@mixin interactive($properties: (), $target: null) {
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+
+  @if $target {
+    #{$target} {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+
+      @include transition(
+        list.join(
+          (filter, transform, outline-color, box-shadow, opacity),
+          $properties
+        )
+      );
+    }
+
+    &:hover #{$target} {
+      filter: brightness(1.2);
+    }
+
+    &:active #{$target} {
+      transform: scale(0.95);
+      filter: brightness(0.8);
+    }
+
+    #{$target}:focus-visible {
+      outline-color: var(--color-accent-lightest);
+    }
+  } @else {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+
+    @include transition(
+      list.join(
+        (filter, transform, outline-color, box-shadow, opacity),
+        $properties
+      )
+    );
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+
+    &:active {
+      transform: scale(0.95);
+      filter: brightness(0.8);
+    }
+
+    &:focus-visible {
+      outline-color: var(--color-accent-lightest);
+    }
+  }
+
+  &_disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  &_loading {
+    pointer-events: none;
+  }
+}

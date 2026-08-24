@@ -1,0 +1,44 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+import { ICON_COMPONENTS } from '../../src/shared/ui/Icon/static/ICON_COMPONENTS'
+import './docsBackground.css'
+
+<Meta title="Main/Icons" />
+
+# Icons
+
+export const ICON_NAMES = Object.keys(ICON_COMPONENTS)
+
+<div
+  style={{
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gap: 12,
+  }}
+>
+  {ICON_NAMES.map((name) => {
+    const IconComponent = ICON_COMPONENTS[name];
+
+    return (
+      <div
+        key={name}
+        style={{
+          alignItems: 'center',
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(244, 247, 255, 0.12)',
+          borderRadius: 12,
+          display: 'flex',
+          gap: 14,
+          minHeight: 64,
+          padding: '14px 16px',
+        }}
+      >
+        {name === 'loading' ? <IconComponent size={22} /> : <IconComponent height={22} width={22} />}
+        <span style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' }}>
+          {name}
+        </span>
+      </div>
+    )
+
+})}
+
+</div>

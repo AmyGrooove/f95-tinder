@@ -1,0 +1,20 @@
+@use 'sass:map';
+
+$text-line-heights: (
+  12: 16px,
+  16: 24px,
+  20: 28px,
+  24: 32px,
+  28: 36px,
+  32: 40px,
+  40: 48px,
+);
+
+@mixin text-style($size) {
+  @if not map.has-key($text-line-heights, $size) {
+    @error 'Unknown text style size: #{$size}.';
+  }
+
+  font-size: #{$size}px;
+  line-height: map.get($text-line-heights, $size);
+}

@@ -1,0 +1,52 @@
+import {
+  AlertCircle,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsUpDown,
+  CircleCheck,
+  CircleX,
+  Download,
+  Ellipsis,
+  ExternalLink,
+  Eye,
+  Filter,
+  Info,
+  Loader,
+  Plus,
+  Search,
+  X,
+  Image,
+  ImageOff,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { LoadingIcon } from '../icons/LoadingIcon'
+
+const ICON_COMPONENTS = {
+  alertCircle: AlertCircle,
+  check: Check,
+  chevronDown: ChevronDown,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  chevronUp: ChevronUp,
+  chevronsUpDown: ChevronsUpDown,
+  circleCheck: CircleCheck,
+  circleX: CircleX,
+  download: Download,
+  ellipsis: Ellipsis,
+  externalLink: ExternalLink,
+  eye: Eye,
+  filter: Filter,
+  image: Image,
+  imageOff: ImageOff,
+  info: Info,
+  loader: Loader,
+  loading: LoadingIcon,
+  plus: Plus,
+  search: Search,
+  x: X,
+} as const satisfies Record<string, LucideIcon | typeof LoadingIcon>
+
+export { ICON_COMPONENTS }

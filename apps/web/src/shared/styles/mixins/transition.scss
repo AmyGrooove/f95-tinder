@@ -1,0 +1,33 @@
+@use 'sass:list';
+
+@mixin transition(
+  $properties,
+  $duration: 200ms,
+  $easing: ease-in-out,
+  $delay: 0ms
+) {
+  $transition-list: ();
+
+  @for $index from 1 through list.length($properties) {
+    $property: list.nth($properties, $index);
+    $resolved-duration: if(
+      sass(list.length($duration) >= $index): list.nth($duration, $index);
+        else: list.nth($duration, -1)
+    );
+    $resolved-easing: if(
+      sass(list.length($easing) >= $index): list.nth($easing, $index);
+        else: list.nth($easing, -1)
+    );
+    $resolved-delay: if(
+      sass(list.length($delay) >= $index): list.nth($delay, $index);
+        else: list.nth($delay, -1)
+    );
+    $transition-list: list.append(
+      $transition-list,
+      $property $resolved-duration $resolved-easing $resolved-delay,
+      $separator: comma
+    );
+  }
+
+  transition: $transition-list;
+}

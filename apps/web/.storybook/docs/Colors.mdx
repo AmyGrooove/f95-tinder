@@ -1,0 +1,78 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+import './docsBackground.css'
+
+<Meta title="Main/Colors" />
+
+# Colors
+
+export const colorGroups = [
+  {
+    title: 'Dark',
+    colors: [
+      '--color-dark-lightest',
+      '--color-dark-light',
+      '--color-dark-deep',
+      '--color-dark-deepest',
+    ],
+  },
+  {
+    title: 'Light',
+    colors: [
+      '--color-light-lightest',
+      '--color-light-light',
+      '--color-light-deep',
+      '--color-light-deepest',
+    ],
+  },
+  {
+    title: 'Accent',
+    colors: [
+      '--color-accent-lightest',
+      '--color-accent-light',
+      '--color-accent-deep',
+      '--color-accent-deepest',
+    ],
+  },
+  {
+    title: 'System',
+    colors: [
+      '--color-system-success',
+      '--color-system-error',
+      '--color-system-warning',
+      '--color-system-disabled',
+    ],
+  },
+  {
+    title: 'Specific',
+    colors: [
+      '--color-specific-alpha',
+      '--color-specific-beta',
+      '--color-specific-gamma',
+      '--color-specific-delta',
+    ],
+  },
+]
+
+{colorGroups.map((group) => (
+
+  <section key={group.title}>
+    <h2>{group.title}</h2>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: 16,
+      marginBottom: 24
+    }}>
+      {group.colors.map((name) => (
+        <div key={name}>
+          <div style={{   
+            borderRadius: 16,
+            height: 56,
+            backgroundColor: `var(${name})` 
+          }} />
+          <div>{name}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+))}

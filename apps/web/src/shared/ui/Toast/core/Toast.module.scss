@@ -1,0 +1,23 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 1100;
+  width: min(420px, calc(100vw - 32px));
+  height: var(--toast-frontmost-height, 0);
+  pointer-events: none;
+
+  &[data-expanded] {
+    pointer-events: auto;
+  }
+}
+
+@media (width <= 600px) {
+  .root {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    width: calc(100vw - 32px);
+  }
+}

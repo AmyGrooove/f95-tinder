@@ -1,0 +1,156 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    env_file:
+      - ./apps/api/.env
+    environment:
+      NODE_ENV: production
+      APP_NAME: ${APP_NAME:-f95-tinder}
+      PORT: 3000
+      MONGO_URL: mongodb://mongo:27017/f95-tinder
+      REDIS_URL: redis://redis:6379
+      MINIO_URL: http://minio:9000
+      MEILISEARCH_URL: http://meilisearch:7700
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:${WEB_PORT:-8080}}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      meilisearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_URL: ${WEB_API_URL:-http://api:3000}
+    ports:
+      - "${WEB_PORT:-8080}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    env_file:
+      - ./apps/api/.env
+    command:
+      - sh
+      - -c
+      - |
+        export MINIO_ROOT_USER="$${MINIO_ACCESS_KEY}"
+        export MINIO_ROOT_PASSWORD="$${MINIO_ACCESS_SECRET}"
+        exec minio server /data --console-address ":9001"
+    restart: unless-stopped
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    env_file:
+      - ./apps/api/.env
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$${MINIO_ACCESS_KEY}" "$${MINIO_ACCESS_SECRET}"
+        mc mb --ignore-existing "local/$${APP_NAME}"
+        mc anonymous set download "local/$${APP_NAME}"
+    restart: "no"
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    env_file:
+      - ./apps/api/.env
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export MEILI_MASTER_KEY="$${MEILISEARCH_ACCESS_SECRET}"
+        exec meilisearch
+    environment:
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: "true"
+    restart: unless-stopped
+    volumes:
+      - meilisearch-data:/meili_data
+    ports:
+      - "127.0.0.1:${MEILISEARCH_PORT:-7700}:7700"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongo-data:
+  redis-data:
+  minio-data:
+  meilisearch-data:

@@ -1,0 +1,18 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  width: fit-content;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: var(--border-radius-8);
+  background-color: var(--color-dark-lightest);
+  color: var(--color-light-deep);
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  @include text-style(12);
+}

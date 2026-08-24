@@ -1,0 +1,61 @@
+@use '@shared/styles/reusable.scss' as *;
+
+$carousel-gaps: 12, 16, 20, 24;
+
+.root {
+  position: relative;
+  width: 100%;
+
+  &_draggable {
+    .viewport {
+      cursor: grab;
+
+      &:active {
+        cursor: grabbing;
+      }
+    }
+  }
+
+  &_gap {
+    @each $gap in $carousel-gaps {
+      &_#{$gap} {
+        .track {
+          margin-left: $gap * -1px;
+        }
+
+        .slide {
+          margin-left: $gap * 1px;
+        }
+      }
+    }
+  }
+}
+
+.viewport {
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+}
+
+.slide {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.navigation {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.previousNavigation {
+  left: 8px;
+}
+
+.nextNavigation {
+  right: 8px;
+}

@@ -1,0 +1,18 @@
+@use 'sass:map';
+
+$color-alpha-percentages: (
+  minimal: 8%,
+  medium: 48%,
+);
+
+@function color-alpha($color, $percentage) {
+  @if not map.has-key($color-alpha-percentages, $percentage) {
+    @error 'Unknown color alpha: #{$percentage}.';
+  }
+
+  @return color-mix(
+    in srgb,
+    #{$color} #{map.get($color-alpha-percentages, $percentage)},
+    transparent
+  );
+}

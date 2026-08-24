@@ -1,0 +1,28 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.item {
+  display: flex;
+}
+
+.pageButton {
+  width: 40px;
+  padding: 0;
+}
+
+.ellipsis {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+}

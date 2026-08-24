@@ -1,0 +1,3 @@
+const MOBILE_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)'
+
+export { MOBILE_VIEWPORT_MEDIA_QUERY }

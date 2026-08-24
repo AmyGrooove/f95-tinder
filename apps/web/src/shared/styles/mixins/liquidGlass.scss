@@ -1,0 +1,43 @@
+@mixin liquid-glass(
+  $blur: 3px,
+  $tint: var(--color-light-lightest),
+  $tint-opacity: 50%
+) {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 6px 6px rgb(0 0 0 / 20%),
+    0 0 20px rgb(0 0 0 / 10%);
+
+  &::before,
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    content: '';
+  }
+
+  &::before {
+    z-index: 0;
+    backdrop-filter: blur($blur);
+    filter: url('#glass-distortion');
+  }
+
+  &::after {
+    z-index: 1;
+    background-color: color-mix(
+      in srgb,
+      #{$tint} #{$tint-opacity},
+      transparent
+    );
+    box-shadow:
+      inset 2px 2px 1px 0 rgb(255 255 255 / 50%),
+      inset -1px -1px 1px 1px rgb(255 255 255 / 50%);
+  }
+
+  > * {
+    position: relative;
+    z-index: 2;
+  }
+}

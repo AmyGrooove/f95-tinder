@@ -1,0 +1,62 @@
+@use '@shared/styles/reusable.scss' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+
+  &_error {
+    .indicator {
+      background-color: var(--color-system-error);
+
+      &::after {
+        display: none;
+      }
+    }
+
+    .message {
+      color: var(--color-system-error);
+    }
+  }
+}
+
+.hint {
+  color: var(--color-light-deepest);
+}
+
+.track {
+  position: relative;
+  overflow: hidden;
+  height: 8px;
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-dark-light);
+}
+
+.indicator {
+  border-radius: var(--border-radius-100);
+  background-color: var(--color-accent-deep);
+  @include transition((width));
+  @include shimmer(var(--color-accent-lightest));
+
+  .track[data-indeterminate] & {
+    position: absolute;
+    inset-block: 0;
+    width: 40%;
+    animation: progress-indeterminate 1000ms ease-in-out infinite;
+
+    &::after {
+      display: none;
+    }
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
+}

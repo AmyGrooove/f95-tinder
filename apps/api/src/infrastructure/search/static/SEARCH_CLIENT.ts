@@ -1,0 +1,3 @@
+const SEARCH_CLIENT = Symbol("SEARCH_CLIENT")
+
+export { SEARCH_CLIENT }
