@@ -12,6 +12,25 @@ const eslintConfig = defineConfig([
       'react-hooks/rules-of-hooks': 'off',
     },
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/strict-boolean-expressions': [
+        'error',
+        {
+          allowNullableObject: false,
+          allowNumber: false,
+          allowString: false,
+        },
+      ],
+    },
+  },
   prettier,
   globalIgnores([
     '.next/**',

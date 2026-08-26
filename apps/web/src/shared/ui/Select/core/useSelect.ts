@@ -27,7 +27,9 @@ const useSelect = (props: ISelectProps) => {
       return
     }
 
-    const firstEnabledOption = options.find((option) => !option.isDisabled)
+    const firstEnabledOption = options.find(
+      (option) => isNil(option.isDisabled) || !option.isDisabled,
+    )
 
     if (!isNil(firstEnabledOption)) {
       onChange(firstEnabledOption.value)

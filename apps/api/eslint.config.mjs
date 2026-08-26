@@ -10,11 +10,25 @@ export default [
   eslint.configs.recommended,
   ...typescriptEslint.configs.recommended,
   {
-    files: ["**/*.ts"],
+    files: ["src/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.node,
       },
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/strict-boolean-expressions": [
+        "error",
+        {
+          allowNullableObject: false,
+          allowNumber: false,
+          allowString: false,
+        },
+      ],
     },
   },
   prettier,

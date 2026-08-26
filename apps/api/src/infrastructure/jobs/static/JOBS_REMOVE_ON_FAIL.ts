@@ -1,3 +1,0 @@
-const JOBS_REMOVE_ON_FAIL = 5000
-
-export { JOBS_REMOVE_ON_FAIL }

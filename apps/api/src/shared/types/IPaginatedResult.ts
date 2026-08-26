@@ -1,4 +1,4 @@
-interface IPaginatedMongoResult<T> {
+interface IPaginatedResult<T> {
   items: T[]
   page: number
   limit: number
@@ -8,4 +8,4 @@ interface IPaginatedMongoResult<T> {
   isPreviousPage: boolean
 }
 
-export type { IPaginatedMongoResult }
+export type { IPaginatedResult }

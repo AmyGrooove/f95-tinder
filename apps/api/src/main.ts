@@ -43,7 +43,7 @@ const bootstrap = async (): Promise<void> => {
   const swaggerConfig = new DocumentBuilder()
     .setTitle("F95 Tinder API")
     .setDescription("Remote backend API for F95 Tinder")
-    .setVersion(appConfiguration.version)
+    .setVersion(appConfiguration.version ?? "unknown")
     .addBearerAuth(
       {
         type: "http",

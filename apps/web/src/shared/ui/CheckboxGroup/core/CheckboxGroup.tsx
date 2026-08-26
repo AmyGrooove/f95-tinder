@@ -28,7 +28,8 @@ const CheckboxGroup = (props: ICheckboxGroupProps) => {
       )}
       <div className={st.options} ref={ref}>
         {options.map((option) => {
-          const isOptionDisabled = option.isDisabled || isDisabled
+          const isOptionDisabled =
+            (!isNil(option.isDisabled) && option.isDisabled) || isDisabled
           const isChecked = value.includes(option.value)
 
           return (

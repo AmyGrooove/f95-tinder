@@ -2,237 +2,198 @@ import { InjectQueue } from "@nestjs/bullmq"
 import { Injectable } from "@nestjs/common"
 import type { Job, JobsOptions, Queue } from "bullmq"
 
-import type { IAddJobOptions } from "../types/IAddJobOptions"
-import type { IJobContext } from "../types/IJobContext"
-import type { IJobListItem } from "../types/IJobListItem"
-import type { IJobListOptions } from "../types/IJobListOptions"
-import type { IJobListResult } from "../types/IJobListResult"
-import type { IQueuedJobData } from "../types/IQueuedJobData"
-import type { TJobState } from "../types/TJobState"
+import { isNil } from "@shared/functions/isNil"
+import { createPaginatedResult } from "@shared/functions/createPaginatedResult"
+import { normalizePagination } from "@shared/functions/normalizePagination"
+import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
+
+import { JobCancellationError } from "../errors/JobCancellationError"
 import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
-import { JOBS_ATTEMPTS } from "../static/JOBS_ATTEMPTS"
-import { JOBS_BACKOFF_DELAY } from "../static/JOBS_BACKOFF_DELAY"
-import { JOBS_REMOVE_ON_COMPLETE } from "../static/JOBS_REMOVE_ON_COMPLETE"
-import { JOBS_REMOVE_ON_FAIL } from "../static/JOBS_REMOVE_ON_FAIL"
+import type { IJobDetails } from "../types/IJobDetails"
+import type { IJobListOptions } from "../types/IJobListOptions"
+import type { IJobPayloadMap } from "../types/IJobPayloadMap"
+import type { IJobData } from "../types/IJobData"
+import type { IJobProgress } from "../types/IJobProgress"
+import type { TJobType } from "../types/IJobPayloadMap"
+import { createJobDetails } from "../functions/createJobDetails"
+import { getJobState } from "../functions/getJobState"
+import { normalizeJobProgress } from "../functions/normalizeJobProgress"
+import { JobRegistry } from "./jobRegistry.service"
 
 @Injectable()
 class JobService {
   constructor(
     @InjectQueue(JOBS_QUEUE_NAME) private readonly jobsQueue: Queue,
+    private readonly jobRegistry: JobRegistry,
   ) {}
 
-  async add<TPayload>(
-    name: string,
-    payload: TPayload,
-    options?: IAddJobOptions,
-  ): Promise<string> {
-    const jobOptions: JobsOptions = {
-      attempts: JOBS_ATTEMPTS,
-      backoff: {
-        delay: JOBS_BACKOFF_DELAY,
-        type: "exponential",
-      },
-      delay: options?.delay,
-      jobId: options?.jobId,
-      removeOnComplete: JOBS_REMOVE_ON_COMPLETE,
-      removeOnFail: JOBS_REMOVE_ON_FAIL,
+  async add<TType extends TJobType>(
+    type: TType,
+    payload: IJobPayloadMap[TType],
+  ) {
+    const registeredHandler = this.jobRegistry.get(type)
+
+    if (isNil(registeredHandler)) {
+      throw new Error(`No handler is registered for job type '${type}'`)
     }
+
     const job = await this.jobsQueue.add(
-      name,
+      type,
+      { cancellationState: "none", payload, type } satisfies IJobData<TType>,
       {
-        isCancellationRequested: false,
-        payload,
-      } satisfies IQueuedJobData<TPayload>,
-      jobOptions,
+        attempts: registeredHandler.options.attempts,
+        backoff: { delay: registeredHandler.options.retryDelay, type: "fixed" },
+        delay: 5_000,
+        removeOnComplete: { age: 60 * 60 * 24 * 7, count: 1_000 },
+        removeOnFail: { age: 60 * 60 * 24 * 14, count: 2_000 },
+      } satisfies JobsOptions,
     )
 
-    if (job.id === undefined) {
+    if (isNil(job.id)) {
       throw new Error("BullMQ did not assign an identifier to the queued job")
     }
 
     return job.id
   }
 
-  async cancel(id: string): Promise<boolean> {
+  async cancel(id: string) {
     const job = await this.jobsQueue.getJob(id)
 
-    if (job === undefined) {
+    if (isNil(job)) {
       return false
     }
 
-    const state = await job.getState()
-    const isRemovable =
-      state === "waiting" ||
-      state === "delayed" ||
-      state === "prioritized" ||
-      state === "waiting-children"
+    const state = await this.getState(job)
 
-    if (isRemovable) {
-      await job.remove()
+    if (state === "completed" || state === "failed") {
+      return false
+    }
 
+    if (state === "cancelling" || state === "cancelled") {
       return true
     }
 
-    if (state !== "active") {
-      return false
+    const data = job.data as IJobData<TJobType>
+    const cancellationState = state === "queued" ? "cancelled" : "cancelling"
+
+    if (data.cancellationState !== cancellationState) {
+      await job.updateData({ ...data, cancellationState })
     }
-
-    const queuedJobData = job.data as IQueuedJobData<unknown>
-
-    await job.updateData({
-      isCancellationRequested: true,
-      payload: queuedJobData.payload,
-      status: queuedJobData.status,
-    })
 
     return true
   }
 
-  async get(id: string): Promise<IJobListItem | null> {
+  async get(id: string) {
     const job = await this.jobsQueue.getJob(id)
 
-    if (job === undefined) {
-      return null
-    }
-
-    return this.createJobListItem(job)
+    return isNil(job) ? null : this.createJobDetails(job)
   }
 
-  async healthCheck(): Promise<boolean> {
+  async list<TType extends TJobType>(
+    type: TType,
+    options?: IJobListOptions,
+  ): Promise<IPaginatedResult<IJobDetails>> {
+    const { page, limit } = normalizePagination(options, 50)
+    const requestedStates = options?.states
+    const jobs = await this.jobsQueue.getJobs([
+      "active",
+      "completed",
+      "delayed",
+      "failed",
+      "prioritized",
+      "waiting",
+      "waiting-children",
+    ])
+    const details = await Promise.all(
+      jobs
+        .filter((job) => job.name === type)
+        .sort((firstJob, secondJob) => {
+          const timestampDifference = secondJob.timestamp - firstJob.timestamp
+
+          if (timestampDifference !== 0) {
+            return timestampDifference
+          }
+
+          return String(secondJob.id).localeCompare(
+            String(firstJob.id),
+            undefined,
+            {
+              numeric: true,
+            },
+          )
+        })
+        .map((job) => this.createJobDetails(job)),
+    )
+    const matchingDetails = details.filter(
+      (job) => !requestedStates || requestedStates.includes(job.state),
+    )
+    const total = matchingDetails.length
+    const offset = (page - 1) * limit
+
+    return createPaginatedResult(
+      matchingDetails.slice(offset, offset + limit),
+      total,
+      page,
+      limit,
+    )
+  }
+
+  async update(id: string, progress?: number, status?: string) {
+    if (isNil(progress) && isNil(status)) {
+      throw new Error("Job update must include progress or status")
+    }
+
+    if (
+      !isNil(progress) &&
+      (!Number.isInteger(progress) || progress < 0 || progress > 100)
+    ) {
+      throw new Error("Job progress must be an integer between 0 and 100")
+    }
+
+    const job = await this.jobsQueue.getJob(id)
+
+    if (isNil(job)) {
+      throw new Error(`Job '${id}' does not exist`)
+    }
+
+    const state = await this.getState(job)
+
+    if (["cancelled", "completed", "failed"].includes(state)) {
+      throw new Error(`Job '${id}' is already finished`)
+    }
+
+    if (state === "cancelling") {
+      throw new JobCancellationError(`Job '${id}' was cancelled`)
+    }
+
+    const currentProgress = normalizeJobProgress(job.progress)
+    await job.updateProgress({
+      executionState: currentProgress.executionState,
+      progress: progress ?? currentProgress.progress,
+      status: status ?? currentProgress.status,
+    } satisfies IJobProgress)
+  }
+
+  async healthCheck() {
     await this.jobsQueue.getJobCounts()
 
     return true
   }
 
-  async list(name: string, options?: IJobListOptions): Promise<IJobListResult> {
-    const offset = Math.max(0, options?.offset ?? 0)
-    const limit = Math.min(100, Math.max(1, options?.limit ?? 50))
-    const end = offset + limit - 1
-    const jobs = await this.jobsQueue.getJobs(undefined, offset, end)
-    const matchingJobs = jobs.filter((job) => {
-      return job.name === name
-    })
-    const jobListItems = await Promise.all(
-      matchingJobs.map((job) => {
-        return this.createJobListItem(job)
-      }),
-    )
-    const requestedStates = options?.states
-    const items = requestedStates
-      ? jobListItems.filter((jobListItem) => {
-          return requestedStates.includes(jobListItem.state)
-        })
-      : jobListItems
+  private async createJobDetails(job: Job): Promise<IJobDetails> {
+    const data = job.data as IJobData<TJobType>
+    const progress = normalizeJobProgress(job.progress)
+    const state = await getJobState(job, data, progress)
 
-    return {
-      items,
-      limit,
-      offset,
-    }
+    return createJobDetails(job, data, progress, state)
   }
 
-  createContext<TPayload>(job: Job<IQueuedJobData<TPayload>>): IJobContext {
-    if (job.id === undefined) {
-      throw new Error("BullMQ processor received a job without an identifier")
-    }
-
-    return {
-      jobId: job.id,
-      updateProgress: async (progress: number, status?: string): Promise<void> => {
-        await job.updateProgress(progress)
-
-        if (status === undefined) {
-          return
-        }
-
-        const currentJob = await this.jobsQueue.getJob(job.id)
-
-        if (currentJob === undefined) {
-          return
-        }
-
-        const queuedJobData = currentJob.data as IQueuedJobData<TPayload>
-
-        await job.updateData({
-          isCancellationRequested: queuedJobData.isCancellationRequested,
-          payload: queuedJobData.payload,
-          status,
-        })
-      },
-      isCancellationRequested: async (): Promise<boolean> => {
-        const currentJob = await this.jobsQueue.getJob(job.id)
-
-        if (currentJob === undefined) {
-          return true
-        }
-
-        const queuedJobData = currentJob.data as IQueuedJobData<TPayload>
-
-        return queuedJobData.isCancellationRequested
-      },
-      throwIfCancellationRequested: async (): Promise<void> => {
-        const currentJob = await this.jobsQueue.getJob(job.id)
-        const isCancellationRequested =
-          currentJob === undefined ||
-          (currentJob.data as IQueuedJobData<TPayload>)
-            .isCancellationRequested
-
-        if (isCancellationRequested) {
-          throw new Error(`Job ${job.id} was cancelled`)
-        }
-      },
-    }
-  }
-
-  private async createJobListItem(job: Job): Promise<IJobListItem> {
-    const state = await job.getState()
-    const queuedJobData = job.data as IQueuedJobData<unknown>
-
-    return {
-      attemptsMade: job.attemptsMade,
-      createdAt: new Date(job.timestamp),
-      failedReason: job.failedReason || undefined,
-      finishedAt: job.finishedOn ? new Date(job.finishedOn) : undefined,
-      id: job.id ?? "",
-      name: job.name,
-      payload: queuedJobData.payload,
-      processedAt: job.processedOn ? new Date(job.processedOn) : undefined,
-      progress: job.progress,
-      state: this.translateState(state),
-      status: queuedJobData.status,
-    }
-  }
-
-  private translateState(state: string): TJobState {
-    if (state === "active") {
-      return "active"
-    }
-
-    if (state === "completed") {
-      return "completed"
-    }
-
-    if (state === "delayed") {
-      return "delayed"
-    }
-
-    if (state === "failed") {
-      return "failed"
-    }
-
-    if (state === "prioritized") {
-      return "prioritized"
-    }
-
-    if (state === "waiting") {
-      return "waiting"
-    }
-
-    if (state === "waiting-children") {
-      return "waiting-children"
-    }
-
-    return "unknown"
+  private async getState(
+    job: Job,
+    data = job.data as IJobData<TJobType>,
+    progress = normalizeJobProgress(job.progress),
+  ) {
+    return getJobState(job, data, progress)
   }
 }
 

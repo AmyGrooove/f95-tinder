@@ -39,11 +39,11 @@ class SearchService {
     const task = await this.searchClient.index(index).addDocuments(documents)
 
     if (waitForTask) {
-      await this.searchClient.waitForTask(task.taskUid)
+      await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }
 
-  async search<TDocument>(
+  async search<TDocument extends TSearchDocument>(
     index: string,
     query: string,
     options?: ISearchQueryOptions,
@@ -68,7 +68,7 @@ class SearchService {
     const task = await this.searchClient.index(index).deleteDocument(id)
 
     if (waitForTask) {
-      await this.searchClient.waitForTask(task.taskUid)
+      await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }
 
@@ -76,7 +76,7 @@ class SearchService {
     const task = await this.searchClient.index(index).deleteAllDocuments()
 
     if (waitForTask) {
-      await this.searchClient.waitForTask(task.taskUid)
+      await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }
 
@@ -101,7 +101,7 @@ class SearchService {
         primaryKey: options.primaryKey,
       })
 
-      await this.searchClient.waitForTask(task.taskUid)
+      await this.searchClient.tasks.waitForTask(task.taskUid)
     }
 
     const task = await this.searchClient.index(name).updateSettings({
@@ -112,7 +112,7 @@ class SearchService {
       sortableAttributes: options.sortableAttributes,
     })
 
-    await this.searchClient.waitForTask(task.taskUid)
+    await this.searchClient.tasks.waitForTask(task.taskUid)
   }
 }
 

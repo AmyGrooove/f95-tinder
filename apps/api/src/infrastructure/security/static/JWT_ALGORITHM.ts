@@ -1,5 +1,3 @@
-import type { Algorithm } from "jsonwebtoken"
-
-const JWT_ALGORITHM: Algorithm = "HS256"
+const JWT_ALGORITHM = "HS256"
 
 export { JWT_ALGORITHM }

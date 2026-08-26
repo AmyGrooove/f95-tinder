@@ -25,6 +25,12 @@ const createInfrastructureConfiguration = () => {
       port: redisUrl.port ? Number(redisUrl.port) : undefined,
       database: redisDatabase,
       isTls: redisUrl.protocol === "rediss:",
+      password: redisUrl.password
+        ? decodeURIComponent(redisUrl.password)
+        : undefined,
+      username: redisUrl.username
+        ? decodeURIComponent(redisUrl.username)
+        : undefined,
     },
     jwt: {
       accessSecret: String(process.env.JWT_ACCESS_SECRET),

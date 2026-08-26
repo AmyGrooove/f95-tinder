@@ -41,11 +41,10 @@ class MailService {
       const result = await this.mailClient.emails.send({
         attachments: options.attachments,
         from: this.buildSenderAddress(options.from),
-        html: options.html,
         replyTo: options.replyTo,
         subject: options.subject,
-        text: options.text,
         to: options.to,
+        ...(options.html ? { html: options.html } : { text: options.text! }),
       })
 
       if (result.error) {

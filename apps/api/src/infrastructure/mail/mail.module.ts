@@ -5,7 +5,7 @@ import { InfrastructureConfigModule } from "@infrastructure/config/config.module
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
 
-import { MailProcessor } from "./processors/mail.processor"
+import { SendMailJobHandler } from "./handlers/sendMailJob.handler"
 import { MailService } from "./services/mail.service"
 import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
 
@@ -38,7 +38,7 @@ import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
         return new Resend(apiKey)
       },
     },
-    MailProcessor,
+    SendMailJobHandler,
     MailService,
   ],
   exports: [MAIL_CLIENT, MailService],

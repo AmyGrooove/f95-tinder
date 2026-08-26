@@ -1,3 +1,4 @@
+import { isNil } from '@shared/functions/checks/isNil'
 import { TOAST_MANAGER } from '../../../static/TOAST_MANAGER'
 import { TOAST_TYPE_TIMEOUTS } from '../../../static/TOAST_TYPE_TIMEOUTS'
 import type { IUpdateToastProps } from '../types/IUpdateToastProps'
@@ -5,7 +6,7 @@ import type { IUpdateToastProps } from '../types/IUpdateToastProps'
 const updateToast = (props: IUpdateToastProps) => {
   const { toastId, action, description, title, type } = props
 
-  const toastData = action
+  const toastData = !isNil(action)
     ? { label: action.label, onClick: action.onClick }
     : undefined
 

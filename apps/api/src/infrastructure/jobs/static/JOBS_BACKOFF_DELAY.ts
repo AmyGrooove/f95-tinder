@@ -1,3 +1,0 @@
-const JOBS_BACKOFF_DELAY = 1000
-
-export { JOBS_BACKOFF_DELAY }

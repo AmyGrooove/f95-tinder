@@ -36,7 +36,8 @@ const ToggleGroup = (props: IToggleGroupProps) => {
         value={value}
       >
         {options.map((option) => {
-          const isOptionDisabled = option.isDisabled || isDisabled
+          const isOptionDisabled =
+            (!isNil(option.isDisabled) && option.isDisabled) || isDisabled
 
           return (
             <TogglePrimitive

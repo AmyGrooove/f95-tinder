@@ -7,9 +7,11 @@ import type {
 } from "mongoose"
 
 import { isNil } from "@shared/functions/isNil"
+import { createPaginatedResult } from "@shared/functions/createPaginatedResult"
+import { normalizePagination } from "@shared/functions/normalizePagination"
+import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
 
 import type { IBaseMongoRepositoryOptions } from "../types/IBaseMongoRepositoryOptions"
-import type { IPaginatedMongoResult } from "../types/IPaginatedMongoResult"
 
 abstract class BaseMongoRepository<TSchema, TDocument, TCreatePayload> {
   protected constructor(
@@ -81,15 +83,8 @@ abstract class BaseMongoRepository<TSchema, TDocument, TCreatePayload> {
     projection?: ProjectionType<TSchema>,
     options?: QueryOptions<TSchema>,
     pagination?: { page?: number; limit?: number },
-  ): Promise<IPaginatedMongoResult<TDocument>> {
-    const requestedPage = pagination?.page ?? 1
-    const requestedLimit = pagination?.limit ?? 20
-    const page = Number.isFinite(requestedPage)
-      ? Math.max(1, Math.floor(requestedPage))
-      : 1
-    const limit = Number.isFinite(requestedLimit)
-      ? Math.min(100, Math.max(1, Math.floor(requestedLimit)))
-      : 20
+  ): Promise<IPaginatedResult<TDocument>> {
+    const { page, limit } = normalizePagination(pagination, 20)
     const skip = (page - 1) * limit
     const query = this.model
       .find(
@@ -108,17 +103,7 @@ abstract class BaseMongoRepository<TSchema, TDocument, TCreatePayload> {
       query.exec(),
       this.model.countDocuments(filter as FilterQuery<TDocument>).exec(),
     ])
-    const pages = Math.ceil(total / limit)
-
-    return {
-      items,
-      page,
-      limit,
-      total,
-      pages,
-      isNextPage: page < pages,
-      isPreviousPage: page > 1,
-    }
+    return createPaginatedResult(items, total, page, limit)
   }
 
   async checkIsExists(filter: FilterQuery<TSchema>): Promise<boolean> {

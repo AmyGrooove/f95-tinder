@@ -1,13 +1,19 @@
 import { BullModule } from "@nestjs/bullmq"
 import { Module } from "@nestjs/common"
+import { DiscoveryModule } from "@nestjs/core"
 
 import { InfrastructureConfigModule } from "../config/config.module"
 import { InfrastructureConfigService } from "../config/services/config.service"
+import { JobDispatcher } from "./services/jobDispatcher.service"
+import { JobConcurrencyService } from "./services/jobConcurrency.service"
+import { JobProcessorService } from "./services/jobProcessor.service"
+import { JobRegistry } from "./services/jobRegistry.service"
 import { JobService } from "./services/job.service"
 import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
 
 @Module({
   imports: [
+    DiscoveryModule,
     BullModule.forRootAsync({
       imports: [InfrastructureConfigModule],
       inject: [InfrastructureConfigService],
@@ -16,8 +22,10 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
           connection: {
             db: infrastructureConfigService.redis.database,
             host: infrastructureConfigService.redis.host,
+            password: infrastructureConfigService.redis.password,
             port: infrastructureConfigService.redis.port,
             tls: infrastructureConfigService.redis.isTls ? {} : undefined,
+            username: infrastructureConfigService.redis.username,
           },
           prefix: infrastructureConfigService.app.name,
         }
@@ -25,7 +33,13 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
     }),
     BullModule.registerQueue({ name: JOBS_QUEUE_NAME }),
   ],
-  providers: [JobService],
+  providers: [
+    JobConcurrencyService,
+    JobDispatcher,
+    JobProcessorService,
+    JobRegistry,
+    JobService,
+  ],
   exports: [BullModule, JobService],
 })
 class JobsModule {}

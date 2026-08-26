@@ -31,12 +31,12 @@ const fetchData = async <TResponse>(
     headers.set('Content-Type', 'application/json')
   }
 
-  if (accessToken) {
+  if (!isNil(accessToken) && accessToken !== '') {
     headers.set('Authorization', `Bearer ${accessToken}`)
   }
 
   const response = await fetch(
-    `${API_BASE_PATH}/v1${path}${queryString ? `?${queryString}` : ''}`,
+    `${API_BASE_PATH}/v1${path}${queryString !== '' ? `?${queryString}` : ''}`,
     {
       body: isNil(body) ? undefined : JSON.stringify(body),
       headers,
