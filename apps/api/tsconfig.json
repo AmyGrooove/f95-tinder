@@ -16,6 +16,7 @@
     "strictPropertyInitialization": false,
     "paths": {
       "@entities/*": ["entities/*"],
+      "@endpoints/*": ["endpoints/*"],
       "@infrastructure/*": ["infrastructure/*"],
       "@shared/*": ["shared/*"]
     }

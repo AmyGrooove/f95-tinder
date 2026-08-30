@@ -1,3 +1,0 @@
-const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken'
-
-export { REFRESH_TOKEN_STORAGE_KEY }

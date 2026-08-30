@@ -9,17 +9,6 @@ import { HealthModule } from "@infrastructure/health/health.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 
-import { GameModule } from "@entities/game/game.module"
-import { PrefixModule } from "@entities/prefix/prefix.module"
-import { TagModule } from "@entities/tag/tag.module"
-
-import { AuthModule } from "../endpoints/auth/auth.module"
-import { BootstrapModule } from "../endpoints/bootstrap/bootstrap.module"
-import { GamesModule } from "../endpoints/games/games.module"
-import { LibraryModule } from "../endpoints/library/library.module"
-import { SwipeModule } from "../endpoints/swipe/swipe.module"
-import { SyncModule } from "../endpoints/sync/sync.module"
-
 @Module({
   imports: [
     InfrastructureConfigModule,
@@ -28,15 +17,6 @@ import { SyncModule } from "../endpoints/sync/sync.module"
     CacheModule,
     SchedulerModule,
     HealthModule,
-    GameModule,
-    TagModule,
-    PrefixModule,
-    AuthModule,
-    GamesModule,
-    LibraryModule,
-    SwipeModule,
-    SyncModule,
-    BootstrapModule,
   ],
   providers: [
     {

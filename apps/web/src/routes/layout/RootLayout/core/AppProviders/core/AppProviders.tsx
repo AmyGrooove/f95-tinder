@@ -1,6 +1,5 @@
 'use client'
 
-import { AuthProvider } from '@providers/AuthProvider'
 import { DialogProvider } from '@providers/DialogProvider'
 import { QueryProvider } from '@providers/QueryProvider'
 import { ToastProvider } from '@providers/ToastProvider'
@@ -16,7 +15,6 @@ const AppProviders = (props: IAppProvidersProps) => {
   return (
     <TooltipProvider>
       <QueryProvider>
-        <AuthProvider />
         <ToastProvider>
           <DialogProvider>{children}</DialogProvider>
         </ToastProvider>

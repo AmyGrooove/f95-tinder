@@ -1,4 +1,3 @@
-import { $accessToken } from '@entities/auth/stores/accessToken'
 import { isNil } from '@shared/functions/checks/isNil'
 import { getResponseErrorMessage } from '@shared/functions/utility/getResponseErrorMessage'
 import { API_BASE_PATH } from '@shared/static/API_BASE_PATH'
@@ -24,15 +23,10 @@ const fetchData = async <TResponse>(
   })
 
   const queryString = searchParameters.toString()
-  const accessToken = $accessToken.getState()
   const headers = new Headers()
 
   if (!isNil(body)) {
     headers.set('Content-Type', 'application/json')
-  }
-
-  if (!isNil(accessToken) && accessToken !== '') {
-    headers.set('Authorization', `Bearer ${accessToken}`)
   }
 
   const response = await fetch(

@@ -1,3 +1,0 @@
-const F95_RATE_LIMIT_WAIT_MS = 600_000
-
-export { F95_RATE_LIMIT_WAIT_MS }
