@@ -1,6 +1,6 @@
 import type { Schema } from "mongoose"
 
-const applyTimestampsPlugin = (schema: Schema): void => {
+const applyTimestampsPlugin = (schema: Schema) => {
   schema.set("timestamps", true)
 }
 

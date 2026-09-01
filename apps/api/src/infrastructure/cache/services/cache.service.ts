@@ -11,21 +11,21 @@ import { isIterableCacheStore } from "../functions/isIterableCacheStore"
 class CacheService {
   constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
-  async get<TValue>(key: string): Promise<TValue | null> {
+  async get<TValue>(key: string) {
     const value = await this.cache.get<TValue>(key)
 
     return value ?? null
   }
 
-  async set<TValue>(key: string, value: TValue, ttl?: number): Promise<void> {
+  async set<TValue>(key: string, value: TValue, ttl?: number) {
     await this.cache.set(key, value, ttl)
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(key: string) {
     await this.cache.del(key)
   }
 
-  async deleteByPrefix(prefix: string): Promise<void> {
+  async deleteByPrefix(prefix: string) {
     const stores = this.getStores()
 
     for (const store of stores) {
@@ -45,7 +45,7 @@ class CacheService {
     }
   }
 
-  async healthCheck(): Promise<boolean> {
+  async healthCheck() {
     const key = `health-check:${crypto.randomUUID()}`
 
     await this.get(key)
@@ -53,7 +53,7 @@ class CacheService {
     return true
   }
 
-  private getStores(): unknown[] {
+  private getStores() {
     const cache = this.cache as unknown
 
     if (!isObject(cache) || !("stores" in cache) || !isArray(cache.stores)) {

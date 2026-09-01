@@ -1,3 +1,3 @@
-type TLogLevel = "log" | "warn" | "error" | "debug" | "verbose";
+type TLogLevel = "info" | "error"
 
-export type { TLogLevel };
+export type { TLogLevel }

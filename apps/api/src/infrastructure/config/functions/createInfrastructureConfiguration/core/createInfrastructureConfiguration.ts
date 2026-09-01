@@ -22,15 +22,17 @@ const createInfrastructureConfiguration = () => {
     redis: {
       url: redisUrl.toString(),
       host: redisUrl.hostname,
-      port: redisUrl.port ? Number(redisUrl.port) : undefined,
+      port: redisUrl.port !== "" ? Number(redisUrl.port) : undefined,
       database: redisDatabase,
       isTls: redisUrl.protocol === "rediss:",
-      password: redisUrl.password
-        ? decodeURIComponent(redisUrl.password)
-        : undefined,
-      username: redisUrl.username
-        ? decodeURIComponent(redisUrl.username)
-        : undefined,
+      password:
+        redisUrl.password !== ""
+          ? decodeURIComponent(redisUrl.password)
+          : undefined,
+      username:
+        redisUrl.username !== ""
+          ? decodeURIComponent(redisUrl.username)
+          : undefined,
     },
     jwt: {
       accessSecret: String(process.env.JWT_ACCESS_SECRET),
@@ -49,6 +51,13 @@ const createInfrastructureConfiguration = () => {
     mail: {
       apiKey: process.env.RESEND_ACCESS_SECRET,
       domain: process.env.MAIL_DOMAIN,
+    },
+    openObserve: {
+      url:
+        process.env.OPENOBSERVE_URL ??
+        `http://localhost:5080/api/default/${String(process.env.APP_NAME)}/_json`,
+      username: process.env.OPENOBSERVE_USERNAME,
+      password: process.env.OPENOBSERVE_PASSWORD,
     },
   }
 }

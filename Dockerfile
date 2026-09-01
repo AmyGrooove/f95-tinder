@@ -31,6 +31,20 @@ EXPOSE 3000
 
 CMD ["node", "dist/main.js"]
 
+FROM public.ecr.aws/zinclabs/openobserve:latest AS openobserve-source
+
+FROM debian:bookworm-slim AS openobserve
+
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends ca-certificates curl \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=openobserve-source /openobserve /openobserve
+
+EXPOSE 5080
+
+ENTRYPOINT ["/openobserve"]
+
 FROM node:22-alpine AS web-build
 
 WORKDIR /app/apps/web

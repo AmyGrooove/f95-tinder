@@ -35,6 +35,14 @@ class HealthService {
 
     return this.healthCheckService.check(checks)
   }
+
+  checkObservability(): Promise<HealthCheckResult> {
+    return this.healthCheckService.check([
+      async (): Promise<HealthIndicatorResult> => {
+        return this.infrastructureHealthService.checkOpenObserve()
+      },
+    ])
+  }
 }
 
 export { HealthService }

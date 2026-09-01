@@ -25,6 +25,15 @@ const validateEnvironment = (configuration: Record<string, unknown>) => {
   const corsOriginsValue = isString(configuration.CORS_ORIGINS)
     ? configuration.CORS_ORIGINS.trim()
     : ""
+  const openObserveUrl = isString(configuration.OPENOBSERVE_URL)
+    ? configuration.OPENOBSERVE_URL.trim()
+    : ""
+  const openObserveUsername = isString(configuration.OPENOBSERVE_USERNAME)
+    ? configuration.OPENOBSERVE_USERNAME.trim()
+    : ""
+  const openObservePassword = isString(configuration.OPENOBSERVE_PASSWORD)
+    ? configuration.OPENOBSERVE_PASSWORD.trim()
+    : ""
   const missingKeys = [
     ["APP_NAME", appName],
     ["PORT", portValue],
@@ -123,6 +132,27 @@ const validateEnvironment = (configuration: Record<string, unknown>) => {
     throw new Error("JWT secrets must be at least 32 characters long")
   }
 
+  if ((openObserveUsername === "") !== (openObservePassword === "")) {
+    throw new Error(
+      "OPENOBSERVE_USERNAME and OPENOBSERVE_PASSWORD must be provided together",
+    )
+  }
+
+  if (openObserveUrl !== "") {
+    try {
+      const openObserveUrlValue = new URL(openObserveUrl)
+
+      if (
+        openObserveUrlValue.protocol !== "http:" &&
+        openObserveUrlValue.protocol !== "https:"
+      ) {
+        throw new Error("Invalid OpenObserve protocol")
+      }
+    } catch {
+      throw new Error("Invalid environment URL: OPENOBSERVE_URL")
+    }
+  }
+
   return Object.assign({}, configuration, {
     NODE_ENV: environment,
     APP_NAME: appName,
@@ -132,6 +162,9 @@ const validateEnvironment = (configuration: Record<string, unknown>) => {
     JWT_ACCESS_SECRET: accessSecret,
     JWT_REFRESH_SECRET: refreshSecret,
     CORS_ORIGINS: corsOriginsValue,
+    OPENOBSERVE_URL: openObserveUrl,
+    OPENOBSERVE_USERNAME: openObserveUsername,
+    OPENOBSERVE_PASSWORD: openObservePassword,
   })
 }
 

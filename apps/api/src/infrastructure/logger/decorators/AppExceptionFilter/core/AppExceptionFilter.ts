@@ -2,8 +2,7 @@ import { ArgumentsHost, Catch, HttpException, HttpStatus } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core"
 import type { FastifyReply, FastifyRequest } from "fastify"
 
-import { redactLogValue } from "@infrastructure/logger/functions/redactLogValue"
-import { AppLoggerService } from "@infrastructure/logger/services/appLogger.service"
+import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { isArray } from "@shared/functions/isArray"
 import { isNil } from "@shared/functions/isNil"
 import { isObject } from "@shared/functions/isObject"
@@ -18,7 +17,7 @@ import type { TErrorCode } from "../types/TErrorCode"
 
 @Catch()
 class AppExceptionFilter extends BaseExceptionFilter {
-  constructor(private readonly appLoggerService: AppLoggerService) {
+  constructor(private readonly loggerService: LoggerService) {
     super()
   }
 
@@ -41,12 +40,17 @@ class AppExceptionFilter extends BaseExceptionFilter {
       },
     }
 
-    if (!(exception instanceof HttpException)) {
-      this.appLoggerService.error("Unhandled exception", exception, {
+    if (
+      !(exception instanceof HttpException) ||
+      statusCode >= HttpStatus.INTERNAL_SERVER_ERROR
+    ) {
+      this.loggerService.error("Unhandled exception", exception, {
         context: AppExceptionFilter.name,
         requestId: traceId,
-        method: request.method,
-        url: request.url,
+        data: {
+          method: request.method,
+          url: request.url,
+        },
       })
     }
 
@@ -128,24 +132,14 @@ class AppExceptionFilter extends BaseExceptionFilter {
     }
 
     if (isArray(details)) {
-      const redactedDetails = redactLogValue(details)
-
-      return {
-        code,
-        message,
-        details: isArray(redactedDetails) ? redactedDetails : null,
-      }
+      return { code, message, details }
     }
 
     if (isObject(details)) {
-      const redactedDetails = redactLogValue(details)
-
       return {
         code,
         message,
-        details: isObject(redactedDetails)
-          ? Object.fromEntries(Object.entries(redactedDetails))
-          : null,
+        details: Object.fromEntries(Object.entries(details)),
       }
     }
 
@@ -191,9 +185,7 @@ class AppExceptionFilter extends BaseExceptionFilter {
       return undefined
     }
 
-    const redactedMessage = redactLogValue(message)
-
-    return isArray(redactedMessage) ? redactedMessage : undefined
+    return message
   }
 
   private getHttpExceptionMessage(

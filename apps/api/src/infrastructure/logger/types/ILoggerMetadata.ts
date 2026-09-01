@@ -1,9 +1,9 @@
 interface ILoggerMetadata {
-  [key: string]: unknown;
+  data: Record<string, unknown>
 
-  context?: string;
-  requestId?: string;
-  jobId?: string;
+  context?: string
+  requestId?: string
+  jobId?: string
 }
 
-export type { ILoggerMetadata };
+export type { ILoggerMetadata }

@@ -3,7 +3,7 @@ import type { Schema } from "mongoose"
 import type { IReturnedObject } from "../types/IReturnedObject"
 import { isNil } from "@shared/functions/isNil"
 
-const applyToJsonPlugin = (schema: Schema): void => {
+const applyToJsonPlugin = (schema: Schema) => {
   const existingToJsonOptions = schema.get("toJSON")
   const existingTransform = existingToJsonOptions?.transform
 
@@ -15,11 +15,11 @@ const applyToJsonPlugin = (schema: Schema): void => {
     transform: (document, returnedObject: IReturnedObject, options) => {
       const transformedObject =
         typeof existingTransform === "function"
-          ? existingTransform(
+          ? (existingTransform(
               document as Parameters<typeof existingTransform>[0],
               returnedObject as Parameters<typeof existingTransform>[1],
               options as Parameters<typeof existingTransform>[2],
-            ) ?? returnedObject
+            ) ?? returnedObject)
           : returnedObject
 
       if (!isNil(transformedObject._id)) {

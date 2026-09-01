@@ -9,7 +9,6 @@ import { InfrastructureConfigModule } from "@infrastructure/config/config.module
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 
 import { CacheService } from "./services/cache.service"
-import { CACHE_NAMESPACE_SEPARATOR } from "./static/CACHE_NAMESPACE_SEPARATOR"
 import { THROTTLE_DEFAULTS } from "./static/THROTTLE_DEFAULTS"
 
 @Module({
@@ -19,15 +18,15 @@ import { THROTTLE_DEFAULTS } from "./static/THROTTLE_DEFAULTS"
       inject: [InfrastructureConfigService],
       useFactory: (configurationService: InfrastructureConfigService) => {
         const normalizedNamespace = configurationService.app.name
-          .split(CACHE_NAMESPACE_SEPARATOR)
+          .split(":")
           .filter(Boolean)
-          .join(CACHE_NAMESPACE_SEPARATOR)
+          .join(":")
 
         return {
           stores: [
             createKeyv(configurationService.redis.url, {
               namespace: normalizedNamespace,
-              keyPrefixSeparator: CACHE_NAMESPACE_SEPARATOR,
+              keyPrefixSeparator: ":",
             }),
           ],
         }

@@ -26,6 +26,29 @@ abstract class BaseMongoRepository<TSchema, TDocument, TCreatePayload> {
     return createdDocument
   }
 
+  async createMany(
+    payloads: TCreatePayload[],
+    batchSize = 10,
+  ): Promise<TDocument[]> {
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+      throw new Error("Create many batch size must be a positive integer")
+    }
+
+    const createdDocuments: TDocument[] = []
+
+    for (let offset = 0; offset < payloads.length; offset += batchSize) {
+      const documentPayloads = payloads.slice(
+        offset,
+        offset + batchSize,
+      ) as Parameters<Model<TDocument>["create"]>[0][]
+      const createdBatch = await this.model.create(documentPayloads)
+
+      createdDocuments.push(...createdBatch)
+    }
+
+    return createdDocuments
+  }
+
   async findById(
     id: string,
     projection?: ProjectionType<TSchema>,

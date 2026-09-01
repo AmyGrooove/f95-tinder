@@ -8,6 +8,7 @@ import type { Connection } from "mongoose"
 
 import { CacheService } from "@infrastructure/cache/services/cache.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
+import { OpenObserveService } from "@infrastructure/logger/services/openObserve.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { StorageService } from "@infrastructure/storage/services/storage.service"
 import { isNil } from "@shared/functions/isNil"
@@ -22,6 +23,7 @@ class InfrastructureHealthService {
     private readonly cacheService: CacheService,
     @InjectConnection() private readonly connection: Connection,
     private readonly jobService: JobService,
+    private readonly openObserveService: OpenObserveService,
     private readonly storageService: StorageService,
     private readonly searchService: SearchService,
   ) {}
@@ -67,6 +69,15 @@ class InfrastructureHealthService {
       HEALTH_CHECK_KEYS.search,
       async (): Promise<boolean> => {
         return this.searchService.healthCheck()
+      },
+    )
+  }
+
+  async checkOpenObserve(): Promise<HealthIndicatorResult> {
+    return this.createIndicator(
+      HEALTH_CHECK_KEYS.openObserve,
+      async (): Promise<boolean> => {
+        return this.openObserveService.healthCheck()
       },
     )
   }
