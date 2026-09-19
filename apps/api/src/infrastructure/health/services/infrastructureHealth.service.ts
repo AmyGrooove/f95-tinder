@@ -1,19 +1,17 @@
 import { setTimeout as wait } from "node:timers/promises"
 
 import { Injectable } from "@nestjs/common"
-import { InjectConnection } from "@nestjs/mongoose"
 import {
   HealthIndicatorService,
   type HealthIndicatorResult,
 } from "@nestjs/terminus"
-import type { Connection } from "mongoose"
 
 import { CacheHealthService } from "@infrastructure/cache/services/cacheHealth.service"
+import { MongoHealthService } from "@infrastructure/database/services/mongoHealth.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import { OpenObserveService } from "@infrastructure/logger/services/openObserve.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { StorageService } from "@infrastructure/storage/services/storage.service"
-import { isNil } from "@shared/functions/checks/isNil"
 
 import { CHECK_TIMEOUT_MS } from "../static/CHECK_TIMEOUT_MS"
 import { HEALTH_CHECK_KEYS } from "../static/HEALTH_CHECK_KEYS"
@@ -23,7 +21,7 @@ class InfrastructureHealthService {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
     private readonly cacheHealthService: CacheHealthService,
-    @InjectConnection() private readonly connection: Connection,
+    private readonly mongoHealthService: MongoHealthService,
     private readonly jobService: JobService,
     private readonly openObserveService: OpenObserveService,
     private readonly storageService: StorageService,
@@ -34,7 +32,7 @@ class InfrastructureHealthService {
     return this.createIndicator(
       HEALTH_CHECK_KEYS.database,
       async (): Promise<boolean> => {
-        return this.pingDatabase()
+        return this.mongoHealthService.healthCheck()
       },
     )
   }
@@ -82,16 +80,6 @@ class InfrastructureHealthService {
         return this.openObserveService.healthCheck()
       },
     )
-  }
-
-  private async pingDatabase() {
-    if (isNil(this.connection.db)) {
-      return false
-    }
-
-    await this.connection.db.admin().ping()
-
-    return true
   }
 
   private async createIndicator(

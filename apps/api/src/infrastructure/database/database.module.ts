@@ -6,6 +6,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 
 import { applyTimestampsPlugin } from "./functions/applyTimestampsPlugin"
 import { applyToJsonPlugin } from "./functions/applyToJsonPlugin"
+import { MongoHealthService } from "./services/mongoHealth.service"
 import { MongoTransactionService } from "./services/mongoTransaction.service"
 
 @Module({
@@ -27,8 +28,8 @@ import { MongoTransactionService } from "./services/mongoTransaction.service"
       },
     }),
   ],
-  providers: [MongoTransactionService],
-  exports: [MongooseModule, MongoTransactionService],
+  providers: [MongoHealthService, MongoTransactionService],
+  exports: [MongooseModule, MongoHealthService, MongoTransactionService],
 })
 class DatabaseModule {}
 
