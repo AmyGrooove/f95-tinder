@@ -1,3 +1,4 @@
+import multipart from "@fastify/multipart"
 import { ValidationPipe, VersioningType } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import {
@@ -5,7 +6,6 @@ import {
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
-import type { FastifyInstance } from "fastify"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { requestContext } from "@shared/functions/requestContext"
@@ -23,7 +23,18 @@ const bootstrap = async (): Promise<void> => {
   const configurationService = app.get(InfrastructureConfigService)
   const appConfiguration = configurationService.app
 
-  const fastify = app.getHttpAdapter().getInstance() as FastifyInstance
+  const fastify = app.getHttpAdapter().getInstance()
+
+  await app.register(multipart, {
+    limits: {
+      fieldNameSize: 100,
+      fieldSize: 64 * 1024,
+      fields: 20,
+      fileSize: 25 * 1024 * 1024,
+      files: 1,
+      parts: 21,
+    },
+  })
 
   fastify.addHook("onRequest", (request, _reply, done) => {
     requestContext.run(

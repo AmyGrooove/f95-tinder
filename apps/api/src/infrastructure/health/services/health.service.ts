@@ -11,6 +11,7 @@ import {
 import { CacheHealthService } from "@infrastructure/cache/services/cacheHealth.service"
 import { MongoHealthService } from "@infrastructure/database/services/mongoHealth.service"
 import { LoggerHealthService } from "@infrastructure/logger/services/loggerHealth.service"
+import { StorageHealthService } from "@infrastructure/storage/services/storageHealth.service"
 
 import { CHECK_TIMEOUT_MS } from "../static/CHECK_TIMEOUT_MS"
 import { HEALTH_CHECK_KEYS } from "../static/HEALTH_CHECK_KEYS"
@@ -23,6 +24,7 @@ class HealthService {
     private readonly mongoHealthService: MongoHealthService,
     private readonly cacheHealthService: CacheHealthService,
     private readonly loggerHealthService: LoggerHealthService,
+    private readonly storageHealthService: StorageHealthService,
   ) {}
 
   checkHealth(): Promise<HealthCheckResult> {
@@ -40,6 +42,11 @@ class HealthService {
       async (): Promise<HealthIndicatorResult> => {
         return this.createIndicator(HEALTH_CHECK_KEYS.openObserve, async () => {
           return this.loggerHealthService.healthCheck()
+        })
+      },
+      async (): Promise<HealthIndicatorResult> => {
+        return this.createIndicator(HEALTH_CHECK_KEYS.storage, async () => {
+          return this.storageHealthService.healthCheck()
         })
       },
     ]

@@ -3,9 +3,11 @@ import { Client } from "minio"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { ImageUploadInterceptor } from "./interceptors/imageUpload.interceptor"
 import { ImageProcessingService } from "./services/imageProcessing.service"
+import { StorageHealthService } from "./services/storageHealth.service"
 import { StorageService } from "./services/storage.service"
 import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
 
@@ -19,13 +21,14 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
         const storage = configurationService.storage
 
         if (
-          !storage.endpoint ||
-          !storage.accessKey ||
-          !storage.secretKey
+          isNil(storage.endpoint) ||
+          storage.endpoint === "" ||
+          isNil(storage.accessKey) ||
+          storage.accessKey === "" ||
+          isNil(storage.secretKey) ||
+          storage.secretKey === ""
         ) {
-          throw new Error(
-            "MinIO URL and credentials must be configured",
-          )
+          throw new Error("MinIO URL and credentials must be configured")
         }
 
         let endpoint: URL
@@ -36,14 +39,12 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
           throw new Error("MINIO_URL must be a valid HTTP(S) URL")
         }
 
-        if (
-          endpoint.protocol !== "http:" &&
-          endpoint.protocol !== "https:"
-        ) {
+        if (endpoint.protocol !== "http:" && endpoint.protocol !== "https:") {
           throw new Error("MINIO_URL must use HTTP or HTTPS")
         }
 
-        const endpointPort = endpoint.port ? Number(endpoint.port) : undefined
+        const endpointPort =
+          endpoint.port !== "" ? Number(endpoint.port) : undefined
 
         return new Client({
           endPoint: endpoint.hostname,
@@ -56,9 +57,10 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
     },
     ImageProcessingService,
     ImageUploadInterceptor,
+    StorageHealthService,
     StorageService,
   ],
-  exports: [STORAGE_CLIENT, StorageService],
+  exports: [StorageHealthService, StorageService],
 })
 class StorageModule {}
 

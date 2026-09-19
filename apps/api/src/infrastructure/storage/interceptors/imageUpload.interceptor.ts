@@ -1,24 +1,32 @@
+import { randomUUID } from "node:crypto"
+
 import {
   BadRequestException,
   Injectable,
   PayloadTooLargeException,
 } from "@nestjs/common"
-import type { CallHandler, ExecutionContext, NestInterceptor } from "@nestjs/common"
+import type {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+} from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 import type { Observable } from "rxjs"
 
 import { isArray } from "@shared/functions/checks/isArray"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isObject } from "@shared/functions/checks/isObject"
+import { isString } from "@shared/functions/checks/isString"
 
 import { normalizeMultipartFields } from "../functions/normalizeMultipartFields"
 import { ImageProcessingService } from "../services/imageProcessing.service"
 import { StorageService } from "../services/storage.service"
 import { DEFAULT_IMAGE_QUALITY } from "../static/DEFAULT_IMAGE_QUALITY"
+import { IMAGE_UPLOAD_METADATA_KEY } from "../static/IMAGE_UPLOAD_METADATA_KEY"
 import type { IFastifyMultipartFile } from "../types/IFastifyMultipartFile"
 import type { IFastifyMultipartRequest } from "../types/IFastifyMultipartRequest"
 import type { IImageUploadOptions } from "../types/IImageUploadOptions"
 import type { IProcessImageOptions } from "../types/IProcessImageOptions"
-
-const IMAGE_UPLOAD_METADATA_KEY = "infrastructure:storage:image-upload"
 
 @Injectable()
 class ImageUploadInterceptor implements NestInterceptor {
@@ -37,27 +45,28 @@ class ImageUploadInterceptor implements NestInterceptor {
       options: IImageUploadOptions
     }>(IMAGE_UPLOAD_METADATA_KEY, [context.getHandler(), context.getClass()])
 
-    if (!metadata) {
+    if (isNil(metadata)) {
       return next.handle()
     }
 
-    const request = context.switchToHttp().getRequest<IFastifyMultipartRequest>()
-
-    if (!request.parts) {
-      throw new BadRequestException("Multipart support is not registered")
-    }
+    const request = context
+      .switchToHttp()
+      .getRequest<IFastifyMultipartRequest>()
 
     const multipartFields: Record<string, unknown> = {}
-    let uploadedFile: IFastifyMultipartFile | undefined
+    const processingOptions = this.createProcessingOptions(metadata.options)
+    let input: Buffer | undefined
+    let mimeType: string | undefined
 
     for await (const part of request.parts()) {
       if (this.isMultipartFile(part)) {
-        if (uploadedFile || part.fieldname !== metadata.field) {
+        if (input !== undefined || part.fieldname !== metadata.field) {
           part.file.resume()
           throw new BadRequestException("Exactly one image file is required")
         }
 
-        uploadedFile = part
+        input = await this.readFile(part, processingOptions.maxBytes)
+        mimeType = part.mimetype
         continue
       }
 
@@ -75,19 +84,17 @@ class ImageUploadInterceptor implements NestInterceptor {
       }
     }
 
-    if (!uploadedFile) {
+    if (isNil(input) || isNil(mimeType)) {
       throw new BadRequestException(`Missing image field '${metadata.field}'`)
     }
 
-    const processingOptions = this.createProcessingOptions(metadata.options)
-    const input = await this.readFile(uploadedFile, processingOptions.maxBytes)
     const output = await this.imageProcessingService.processImage(
       input,
-      uploadedFile.mimetype,
+      mimeType,
       processingOptions,
     )
     const processedUpload = await this.storageService.upload(
-      metadata.options.path,
+      `${metadata.options.path.replace(/\/+$/, "")}/${randomUUID()}.webp`,
       output,
       "image/webp",
     )
@@ -129,7 +136,9 @@ class ImageUploadInterceptor implements NestInterceptor {
         size += buffer.length
 
         if (size > maxBytes) {
-          throw new PayloadTooLargeException("Image upload exceeds the byte limit")
+          throw new PayloadTooLargeException(
+            "Image upload exceeds the byte limit",
+          )
         }
 
         chunks.push(buffer)
@@ -143,8 +152,7 @@ class ImageUploadInterceptor implements NestInterceptor {
 
   private isMultipartFile(part: unknown): part is IFastifyMultipartFile {
     return (
-      typeof part === "object" &&
-      part !== null &&
+      isObject(part) &&
       "type" in part &&
       part.type === "file" &&
       "file" in part &&
@@ -156,11 +164,10 @@ class ImageUploadInterceptor implements NestInterceptor {
     part: unknown,
   ): part is { fieldname: string; value: unknown } {
     return (
-      typeof part === "object" &&
-      part !== null &&
+      isObject(part) &&
       "fieldname" in part &&
       "value" in part &&
-      typeof part.fieldname === "string"
+      isString(part.fieldname)
     )
   }
 }

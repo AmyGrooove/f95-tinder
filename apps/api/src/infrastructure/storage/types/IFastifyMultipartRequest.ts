@@ -1,12 +1,10 @@
 import type { FastifyRequest } from "fastify"
 
-import type { IFastifyMultipartFile } from "./IFastifyMultipartFile"
-import type { TProcessedUpload } from "./TProcessedUpload"
+import type { IStorageUploadResult } from "./IStorageUploadResult"
 
 interface IFastifyMultipartRequest extends FastifyRequest {
   body: Record<string, unknown>
-  processedUploads?: Record<string, TProcessedUpload>
-  parts?: () => AsyncIterableIterator<IFastifyMultipartFile | unknown>
+  processedUploads?: Record<string, IStorageUploadResult>
 }
 
 export type { IFastifyMultipartRequest }

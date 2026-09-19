@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common"
 import sharp from "sharp"
 
+import { isNumber } from "@shared/functions/checks/isNumber"
+
 import { DEFAULT_IMAGE_QUALITY } from "../static/DEFAULT_IMAGE_QUALITY"
-import { SUPPORTED_IMAGE_FORMATS } from "../static/SUPPORTED_IMAGE_FORMATS"
 import { SUPPORTED_IMAGE_MIME_TYPES } from "../static/SUPPORTED_IMAGE_MIME_TYPES"
 import type { IProcessImageOptions } from "../types/IProcessImageOptions"
 
@@ -12,7 +13,7 @@ class ImageProcessingService {
     input: Buffer,
     declaredMimeType: string,
     options: IProcessImageOptions,
-  ): Promise<Buffer> {
+  ) {
     if (input.length === 0) {
       throw new BadRequestException("Image upload must not be empty")
     }
@@ -31,22 +32,29 @@ class ImageProcessingService {
         limitInputPixels: options.maxPixels,
       }).rotate()
       const metadata = await image.metadata()
-      const format = metadata.format
+      const mediaType = metadata.mediaType
       const width = metadata.width
       const height = metadata.height
       const pages = metadata.pages ?? 1
 
-      if (!SUPPORTED_IMAGE_FORMATS.includes(format as never)) {
-        throw new BadRequestException("Unsupported decoded image format")
+      if (!SUPPORTED_IMAGE_MIME_TYPES.includes(mediaType as never)) {
+        throw new BadRequestException("Unsupported decoded image MIME type")
       }
 
-      const decodedMimeType = format === "jpeg" ? "image/jpeg" : `image/${format}`
-
-      if (decodedMimeType !== declaredMimeType) {
-        throw new BadRequestException("Image MIME type does not match decoded content")
+      if (mediaType !== declaredMimeType) {
+        throw new BadRequestException(
+          "Image MIME type does not match decoded content",
+        )
       }
 
-      if (!width || !height) {
+      if (
+        !isNumber(width) ||
+        !isNumber(height) ||
+        width === 0 ||
+        height === 0 ||
+        Number.isNaN(width) ||
+        Number.isNaN(height)
+      ) {
         throw new BadRequestException("Image dimensions are unavailable")
       }
 
@@ -55,7 +63,9 @@ class ImageProcessingService {
         height > options.maxHeight ||
         width * height * pages > options.maxPixels
       ) {
-        throw new BadRequestException("Image dimensions exceed the allowed limit")
+        throw new BadRequestException(
+          "Image dimensions exceed the allowed limit",
+        )
       }
 
       return await image

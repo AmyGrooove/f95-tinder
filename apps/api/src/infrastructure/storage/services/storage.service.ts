@@ -1,17 +1,15 @@
 import type { Readable } from "node:stream"
 
-import {
-  Inject,
-  Injectable,
-  ServiceUnavailableException,
-} from "@nestjs/common"
+import { Inject, Injectable, ServiceUnavailableException } from "@nestjs/common"
 import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import type { Client } from "minio"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { isFunction } from "@shared/functions/checks/isFunction"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { STORAGE_CLIENT } from "../static/STORAGE_CLIENT"
-import type { TProcessedUpload } from "../types/TProcessedUpload"
+import type { IStorageUploadResult } from "../types/IStorageUploadResult"
 
 @Injectable()
 class StorageService implements OnModuleInit, OnModuleDestroy {
@@ -20,13 +18,13 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     private readonly configurationService: InfrastructureConfigService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
+  async onModuleInit() {
     const bucket = this.configurationService.app.name
 
     try {
-      const bucketExists = await this.storageClient.bucketExists(bucket)
+      const isBucketExists = await this.storageClient.bucketExists(bucket)
 
-      if (bucketExists) {
+      if (isBucketExists) {
         return
       }
 
@@ -49,21 +47,17 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async onModuleDestroy(): Promise<void> {
+  async onModuleDestroy() {
     const clientWithClose = this.storageClient as Client & {
       close?: () => Promise<void> | void
     }
 
-    if (clientWithClose.close) {
+    if (isFunction(clientWithClose.close)) {
       await clientWithClose.close()
     }
   }
 
-  async upload(
-    path: string,
-    body: Buffer | Readable,
-    contentType: string,
-  ): Promise<TProcessedUpload> {
+  async upload(path: string, body: Buffer | Readable, contentType: string) {
     try {
       await this.storageClient.putObject(
         this.getBucket(),
@@ -75,13 +69,13 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
       const object = await this.storageClient.statObject(this.getBucket(), path)
       const publicUrl = this.createPublicUrl(path)
 
-      const processedUpload: TProcessedUpload = {
+      const processedUpload: IStorageUploadResult = {
         path,
         size: object.size,
-        mimeType: "image/webp",
+        mimeType: contentType,
       }
 
-      if (publicUrl) {
+      if (publicUrl !== undefined) {
         processedUpload.publicUrl = publicUrl
       }
 
@@ -91,7 +85,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async download(path: string): Promise<Readable> {
+  async download(path: string) {
     try {
       return await this.storageClient.getObject(this.getBucket(), path)
     } catch {
@@ -99,7 +93,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async delete(path: string): Promise<void> {
+  async delete(path: string) {
     try {
       await this.storageClient.removeObject(this.getBucket(), path)
     } catch {
@@ -107,7 +101,11 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async exists(path: string): Promise<boolean> {
+  async deleteMany(paths: string[]) {
+    await Promise.all(paths.map((path) => this.delete(path)))
+  }
+
+  async isExists(path: string) {
     try {
       await this.storageClient.statObject(this.getBucket(), path)
 
@@ -121,7 +119,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async presignedReadUrl(path: string, expiresSeconds?: number): Promise<string> {
+  async presignedReadUrl(path: string, expiresSeconds?: number) {
     try {
       return await this.storageClient.presignedGetObject(
         this.getBucket(),
@@ -133,7 +131,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async presignedWriteUrl(path: string, expiresSeconds?: number): Promise<string> {
+  async presignedWriteUrl(path: string, expiresSeconds?: number) {
     try {
       return await this.storageClient.presignedPutObject(
         this.getBucket(),
@@ -145,22 +143,14 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async healthCheck(): Promise<boolean> {
-    try {
-      return await this.storageClient.bucketExists(this.getBucket())
-    } catch {
-      return false
-    }
-  }
-
-  private getBucket(): string {
+  private getBucket() {
     return this.configurationService.app.name
   }
 
-  private createPublicUrl(path: string): string | undefined {
+  private createPublicUrl(path: string) {
     const publicUrl = this.configurationService.storage.publicUrl
 
-    if (!publicUrl) {
+    if (isNil(publicUrl) || publicUrl === "") {
       return undefined
     }
 
@@ -174,7 +164,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     return `${publicUrl.replace(/\/$/, "")}/${encodedPath}`
   }
 
-  private isObjectNotFound(error: unknown): boolean {
+  private isObjectNotFound(error: unknown) {
     if (!(error instanceof Error)) {
       return false
     }
@@ -182,10 +172,7 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
     return "code" in error && error.code === "NoSuchKey"
   }
 
-  private createStorageError(
-    operation: string,
-    path: string,
-  ): ServiceUnavailableException {
+  private createStorageError(operation: string, path: string) {
     return new ServiceUnavailableException(
       `Storage ${operation} failed for '${path}'`,
     )

@@ -1,12 +1,16 @@
 import { createParamDecorator, type ExecutionContext } from "@nestjs/common"
 
-import type { IFastifyMultipartRequest } from "../types/IFastifyMultipartRequest"
+import { isNil } from "@shared/functions/checks/isNil"
+
+import type { IFastifyMultipartRequest } from "../../../types/IFastifyMultipartRequest"
 
 const UploadedImage = createParamDecorator(
   (field: string | undefined, context: ExecutionContext) => {
-    const request = context.switchToHttp().getRequest<IFastifyMultipartRequest>()
+    const request = context
+      .switchToHttp()
+      .getRequest<IFastifyMultipartRequest>()
 
-    if (!field) {
+    if (isNil(field) || field === "") {
       return request.processedUploads
     }
 
