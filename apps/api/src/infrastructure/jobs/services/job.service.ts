@@ -2,9 +2,9 @@ import { InjectQueue } from "@nestjs/bullmq"
 import { Injectable } from "@nestjs/common"
 import type { Job, JobsOptions, Queue } from "bullmq"
 
-import { isNil } from "@shared/functions/isNil"
-import { createPaginatedResult } from "@shared/functions/createPaginatedResult"
-import { normalizePagination } from "@shared/functions/normalizePagination"
+import { isNil } from "@shared/functions/checks/isNil"
+import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
 
 import { JobCancellationError } from "../errors/JobCancellationError"

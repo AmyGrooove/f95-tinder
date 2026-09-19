@@ -1,9 +1,7 @@
-import type { ConfigType } from "@nestjs/config"
+import type { createInfrastructureConfiguration } from "../functions/createInfrastructureConfiguration"
 
-import type { infrastructureConfiguration } from "../config.module"
-
-type TInfrastructureConfiguration = ConfigType<
-  typeof infrastructureConfiguration
+type TInfrastructureConfiguration = ReturnType<
+  typeof createInfrastructureConfiguration
 >
 
 export type { TInfrastructureConfiguration }

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { isNil } from "@shared/functions/isNil"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { normalizeError } from "../functions/normalizeError"
 import type { ILoggerMetadata } from "../types/ILoggerMetadata"
@@ -32,8 +32,8 @@ class LoggerService {
     const { context, data, jobId, requestId } = metadata ?? {}
 
     const record: ILogRecord = {
-      timestamp: new Date().toISOString(),
-      type: level,
+      _timestamp: new Date().toISOString(),
+      level,
       service: this.infrastructureConfigService.app.name,
       environment: this.infrastructureConfigService.app.environment ?? "",
       message,

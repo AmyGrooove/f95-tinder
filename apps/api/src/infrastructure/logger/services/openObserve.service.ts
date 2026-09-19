@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { isNil } from "@shared/functions/isNil"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { CHECK_TIMEOUT_MS } from "../../health/static/CHECK_TIMEOUT_MS"
 import type { ILogRecord } from "../types/ILogRecord"
@@ -86,7 +86,7 @@ class OpenObserveService {
     try {
       const output = JSON.stringify(record)
 
-      if (record.type === "error") {
+      if (record.level === "error") {
         this.logger.error(output)
 
         return

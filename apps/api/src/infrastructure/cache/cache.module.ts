@@ -1,15 +1,12 @@
 import { CacheModule as NestCacheModule } from "@nestjs/cache-manager"
 import { Module } from "@nestjs/common"
-import { APP_GUARD } from "@nestjs/core"
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler"
 import { createKeyv } from "@keyv/redis"
-import { ThrottlerStorageRedisService } from "@nest-lab/throttler-storage-redis"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 
+import { CacheHealthService } from "./services/cacheHealth.service"
 import { CacheService } from "./services/cache.service"
-import { THROTTLE_DEFAULTS } from "./static/THROTTLE_DEFAULTS"
 
 @Module({
   imports: [
@@ -27,32 +24,15 @@ import { THROTTLE_DEFAULTS } from "./static/THROTTLE_DEFAULTS"
             createKeyv(configurationService.redis.url, {
               namespace: normalizedNamespace,
               keyPrefixSeparator: ":",
+              throwOnErrors: true,
             }),
           ],
         }
       },
     }),
-    ThrottlerModule.forRootAsync({
-      imports: [InfrastructureConfigModule],
-      inject: [InfrastructureConfigService],
-      useFactory: (configurationService: InfrastructureConfigService) => {
-        return {
-          throttlers: [THROTTLE_DEFAULTS],
-          storage: new ThrottlerStorageRedisService(
-            configurationService.redis.url,
-          ),
-        }
-      },
-    }),
   ],
-  providers: [
-    CacheService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
-  exports: [NestCacheModule, ThrottlerModule, CacheService],
+  providers: [CacheHealthService, CacheService],
+  exports: [NestCacheModule, CacheHealthService, CacheService],
 })
 class CacheModule {}
 

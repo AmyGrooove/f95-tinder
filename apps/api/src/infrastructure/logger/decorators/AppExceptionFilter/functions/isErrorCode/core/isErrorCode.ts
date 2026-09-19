@@ -1,4 +1,4 @@
-import { isString } from "@shared/functions/isString"
+import { isString } from "@shared/functions/checks/isString"
 
 import { ERROR_CODES } from "../../../static/ERROR_CODES"
 import type { TErrorCode } from "../../../types/TErrorCode"

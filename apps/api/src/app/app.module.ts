@@ -8,6 +8,7 @@ import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExcepti
 import { HealthModule } from "@infrastructure/health/health.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
+import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
     LoggerModule,
     DatabaseModule,
     CacheModule,
+    ThrottlingModule,
     SchedulerModule,
     HealthModule,
   ],

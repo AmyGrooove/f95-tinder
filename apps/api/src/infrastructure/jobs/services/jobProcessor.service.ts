@@ -2,9 +2,10 @@ import { InjectQueue } from "@nestjs/bullmq"
 import { Injectable } from "@nestjs/common"
 import { UnrecoverableError, type Job, type Queue } from "bullmq"
 
-import { isObject } from "@shared/functions/isObject"
-import { isString } from "@shared/functions/isString"
+import { isObject } from "@shared/functions/checks/isObject"
+import { isString } from "@shared/functions/checks/isString"
 
+import { LoggerService } from "../../logger/services/logger.service"
 import { JobCancellationError } from "../errors/JobCancellationError"
 import { NonRetryableJobError } from "../errors/NonRetryableJobError"
 import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
@@ -20,6 +21,7 @@ class JobProcessorService {
     @InjectQueue(JOBS_QUEUE_NAME) private readonly jobsQueue: Queue,
     private readonly jobConcurrencyService: JobConcurrencyService,
     private readonly jobRegistry: JobRegistry,
+    private readonly loggerService: LoggerService,
   ) {}
 
   async process(job: Job) {
@@ -78,11 +80,20 @@ class JobProcessorService {
             return
           }
 
-          if (error instanceof NonRetryableJobError) {
-            throw new UnrecoverableError(error.message)
-          }
+          const processingError =
+            error instanceof NonRetryableJobError
+              ? new UnrecoverableError(error.message)
+              : error instanceof Error
+                ? error
+                : new Error("Job handler failed")
 
-          throw error instanceof Error ? error : new Error("Job handler failed")
+          this.loggerService.error("Job handler failed", processingError, {
+            context: JobProcessorService.name,
+            data: { type: data.type },
+            jobId: id,
+          })
+
+          throw processingError
         }
       },
     )

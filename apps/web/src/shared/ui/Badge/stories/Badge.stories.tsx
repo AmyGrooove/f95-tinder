@@ -8,7 +8,7 @@ const meta = {
   component: Badge,
   tags: ['autodocs'],
   args: {
-    children: 'Badge',
+    children: 'Метка',
     size: 'medium',
     variant: 'primary',
   },

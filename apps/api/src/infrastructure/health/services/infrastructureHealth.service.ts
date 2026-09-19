@@ -1,3 +1,5 @@
+import { setTimeout as wait } from "node:timers/promises"
+
 import { Injectable } from "@nestjs/common"
 import { InjectConnection } from "@nestjs/mongoose"
 import {
@@ -6,12 +8,12 @@ import {
 } from "@nestjs/terminus"
 import type { Connection } from "mongoose"
 
-import { CacheService } from "@infrastructure/cache/services/cache.service"
+import { CacheHealthService } from "@infrastructure/cache/services/cacheHealth.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import { OpenObserveService } from "@infrastructure/logger/services/openObserve.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { StorageService } from "@infrastructure/storage/services/storage.service"
-import { isNil } from "@shared/functions/isNil"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { CHECK_TIMEOUT_MS } from "../static/CHECK_TIMEOUT_MS"
 import { HEALTH_CHECK_KEYS } from "../static/HEALTH_CHECK_KEYS"
@@ -20,7 +22,7 @@ import { HEALTH_CHECK_KEYS } from "../static/HEALTH_CHECK_KEYS"
 class InfrastructureHealthService {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
-    private readonly cacheService: CacheService,
+    private readonly cacheHealthService: CacheHealthService,
     @InjectConnection() private readonly connection: Connection,
     private readonly jobService: JobService,
     private readonly openObserveService: OpenObserveService,
@@ -41,7 +43,7 @@ class InfrastructureHealthService {
     return this.createIndicator(
       HEALTH_CHECK_KEYS.cache,
       async (): Promise<boolean> => {
-        return this.cacheService.healthCheck()
+        return this.cacheHealthService.healthCheck()
       },
     )
   }
@@ -82,7 +84,7 @@ class InfrastructureHealthService {
     )
   }
 
-  private async pingDatabase(): Promise<boolean> {
+  private async pingDatabase() {
     if (isNil(this.connection.db)) {
       return false
     }
@@ -106,16 +108,14 @@ class InfrastructureHealthService {
     return indicator.down()
   }
 
-  private async runWithTimeout(
-    check: () => Promise<boolean>,
-  ): Promise<boolean> {
-    let timeout: NodeJS.Timeout | undefined
+  private async runWithTimeout(check: () => Promise<boolean>) {
+    const timeoutController = new AbortController()
 
     try {
-      const timeoutResult = new Promise<boolean>((resolve) => {
-        timeout = setTimeout(() => {
-          resolve(false)
-        }, CHECK_TIMEOUT_MS)
+      const timeoutResult = wait(CHECK_TIMEOUT_MS, false, {
+        signal: timeoutController.signal,
+      }).catch(() => {
+        return false
       })
       const checkResult = check().catch(() => {
         return false
@@ -123,9 +123,7 @@ class InfrastructureHealthService {
 
       return await Promise.race([checkResult, timeoutResult])
     } finally {
-      if (!isNil(timeout)) {
-        clearTimeout(timeout)
-      }
+      timeoutController.abort()
     }
   }
 }

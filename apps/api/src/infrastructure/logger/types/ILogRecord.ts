@@ -2,8 +2,8 @@ import type { TNormalizedError } from "./TNormalizedError"
 import type { TLogLevel } from "./TLogLevel"
 
 interface ILogRecord {
-  timestamp: string
-  type: TLogLevel
+  _timestamp: string
+  level: TLogLevel
   service: string
   environment: string
   message: string

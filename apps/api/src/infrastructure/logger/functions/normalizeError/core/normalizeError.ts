@@ -1,6 +1,6 @@
-import { isArray } from "@shared/functions/isArray"
-import { isObject } from "@shared/functions/isObject"
-import { isString } from "@shared/functions/isString"
+import { isArray } from "@shared/functions/checks/isArray"
+import { isObject } from "@shared/functions/checks/isObject"
+import { isString } from "@shared/functions/checks/isString"
 
 import type { TNormalizedError } from "../../../types/TNormalizedError"
 

@@ -7,7 +7,7 @@ import type { CallHandler, ExecutionContext, NestInterceptor } from "@nestjs/com
 import { Reflector } from "@nestjs/core"
 import type { Observable } from "rxjs"
 
-import { isArray } from "@shared/functions/isArray"
+import { isArray } from "@shared/functions/checks/isArray"
 
 import { normalizeMultipartFields } from "../functions/normalizeMultipartFields"
 import { ImageProcessingService } from "../services/imageProcessing.service"

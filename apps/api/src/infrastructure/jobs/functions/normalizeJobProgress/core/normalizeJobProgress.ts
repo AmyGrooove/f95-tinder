@@ -1,5 +1,5 @@
-import { isObject } from "@shared/functions/isObject"
-import { isString } from "@shared/functions/isString"
+import { isObject } from "@shared/functions/checks/isObject"
+import { isString } from "@shared/functions/checks/isString"
 
 import type { IJobProgress } from "../../../types/IJobProgress"
 

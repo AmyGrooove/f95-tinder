@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 
-import { isNil } from "@shared/functions/isNil"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import type { TJobType } from "../types/IJobPayloadMap"
 

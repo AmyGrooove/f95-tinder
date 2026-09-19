@@ -1,5 +1,5 @@
-import { isArray } from "@shared/functions/isArray"
-import { isObject } from "@shared/functions/isObject"
+import { isArray } from "@shared/functions/checks/isArray"
+import { isObject } from "@shared/functions/checks/isObject"
 
 const normalizeMultipartFields = (
   fields: Record<string, unknown>,

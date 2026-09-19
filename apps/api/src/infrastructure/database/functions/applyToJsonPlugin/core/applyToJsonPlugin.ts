@@ -1,7 +1,7 @@
 import type { Schema } from "mongoose"
 
 import type { IReturnedObject } from "../types/IReturnedObject"
-import { isNil } from "@shared/functions/isNil"
+import { isNil } from "@shared/functions/checks/isNil"
 
 const applyToJsonPlugin = (schema: Schema) => {
   const existingToJsonOptions = schema.get("toJSON")

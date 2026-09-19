@@ -7,7 +7,7 @@ const meta = {
   component: Attachment,
   tags: ['autodocs'],
   args: {
-    alt: 'Attachment preview',
+    alt: 'Предпросмотр вложения',
     src: 'https://cdn.androidadult.com/wp-content/uploads/2024/09/Nene-has-a-desire-for-exposure-APK-Android-Adult-Hentai-Game-Download-Featured.png',
   },
   argTypes: {

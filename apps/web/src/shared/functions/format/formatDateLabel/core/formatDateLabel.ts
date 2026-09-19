@@ -1,9 +1,7 @@
 import dayjs from 'dayjs'
 import { isNil } from '@shared/functions/checks/isNil'
 
-const formatDateLabel = (
-  dateValue: string | number | null | undefined,
-): string => {
+const formatDateLabel = (dateValue: string | number | null | undefined) => {
   if (isNil(dateValue) || dateValue === '' || dateValue === 0) {
     return 'Не указана'
   }

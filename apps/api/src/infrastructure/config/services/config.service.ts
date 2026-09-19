@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common"
+import { getConfigToken } from "@nestjs/config"
 
-import { infrastructureConfiguration } from "../config.module"
 import type { TInfrastructureConfiguration } from "../types/TInfrastructureConfiguration"
 
 @Injectable()
 class InfrastructureConfigService {
   constructor(
-    @Inject(infrastructureConfiguration.KEY)
+    @Inject(getConfigToken("infrastructure"))
     private readonly configuration: TInfrastructureConfiguration,
   ) {}
 

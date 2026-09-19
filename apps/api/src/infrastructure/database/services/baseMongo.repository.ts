@@ -6,9 +6,9 @@ import type {
   UpdateQuery,
 } from "mongoose"
 
-import { isNil } from "@shared/functions/isNil"
-import { createPaginatedResult } from "@shared/functions/createPaginatedResult"
-import { normalizePagination } from "@shared/functions/normalizePagination"
+import { isNil } from "@shared/functions/checks/isNil"
+import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
 
 import type { IBaseMongoRepositoryOptions } from "../types/IBaseMongoRepositoryOptions"

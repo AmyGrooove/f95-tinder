@@ -16,6 +16,14 @@ class HealthController {
   getHealth() {
     return this.healthService.checkReadiness()
   }
+
+  @Get("observability")
+  @HealthCheck()
+  @ApiOperation({ summary: "Get observability health status" })
+  @ApiOkResponse({ description: "Observability dependency health status" })
+  getObservabilityHealth() {
+    return this.healthService.checkObservability()
+  }
 }
 
 export { HealthController }

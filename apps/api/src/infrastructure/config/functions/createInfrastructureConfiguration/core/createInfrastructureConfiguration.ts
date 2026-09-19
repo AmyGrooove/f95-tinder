@@ -1,63 +1,61 @@
+import { createAppConfiguration } from "../functions/createAppConfiguration"
+import { createRedisConfiguration } from "../functions/createRedisConfiguration"
+import { getEnvironmentUrl } from "../functions/getEnvironmentUrl"
+import { getRequiredEnvironmentValue } from "../functions/getRequiredEnvironmentValue"
+import { CONFIG_ERROR_MESSAGES } from "../static/CONFIG_ERROR_MESSAGES"
+
 const createInfrastructureConfiguration = () => {
-  const redisUrl = new URL(String(process.env.REDIS_URL))
-  const redisDatabase = Number(redisUrl.pathname.slice(1))
+  const mongoUrl = getEnvironmentUrl("MONGO_URL", ["mongodb:", "mongodb+srv:"])
+  const accessSecret = getRequiredEnvironmentValue("JWT_ACCESS_SECRET")
+  const refreshSecret = getRequiredEnvironmentValue("JWT_REFRESH_SECRET")
+  const mailDomain = getRequiredEnvironmentValue("MAIL_DOMAIN")
+
+  if (accessSecret.length < 32 || refreshSecret.length < 32) {
+    throw new Error(CONFIG_ERROR_MESSAGES.JWT_SECRET_LENGTH)
+  }
+
+  if (
+    !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(
+      mailDomain,
+    )
+  ) {
+    throw new Error(CONFIG_ERROR_MESSAGES.INVALID_MAIL_DOMAIN)
+  }
 
   return {
-    app: {
-      environment: process.env.NODE_ENV,
-      name: String(process.env.APP_NAME),
-      port: Number(process.env.PORT),
-      version: process.env.npm_package_version,
-      corsOrigins: process.env.CORS_ORIGINS?.split(",")
-        .map((corsOrigin) => {
-          return corsOrigin.trim()
-        })
-        .filter((corsOrigin) => {
-          return corsOrigin.length > 0
-        }),
-    },
+    app: createAppConfiguration(),
     database: {
-      uri: String(process.env.MONGO_URL),
+      uri: mongoUrl.toString(),
     },
-    redis: {
-      url: redisUrl.toString(),
-      host: redisUrl.hostname,
-      port: redisUrl.port !== "" ? Number(redisUrl.port) : undefined,
-      database: redisDatabase,
-      isTls: redisUrl.protocol === "rediss:",
-      password:
-        redisUrl.password !== ""
-          ? decodeURIComponent(redisUrl.password)
-          : undefined,
-      username:
-        redisUrl.username !== ""
-          ? decodeURIComponent(redisUrl.username)
-          : undefined,
-    },
+    redis: createRedisConfiguration(),
     jwt: {
-      accessSecret: String(process.env.JWT_ACCESS_SECRET),
-      refreshSecret: String(process.env.JWT_REFRESH_SECRET),
+      accessSecret,
+      refreshSecret,
     },
     storage: {
-      endpoint: process.env.MINIO_URL,
-      accessKey: process.env.MINIO_ACCESS_KEY,
-      secretKey: process.env.MINIO_ACCESS_SECRET,
-      publicUrl: process.env.MINIO_PUBLIC_URL,
+      endpoint: getEnvironmentUrl("MINIO_URL", ["http:", "https:"]).toString(),
+      accessKey: getRequiredEnvironmentValue("MINIO_ACCESS_KEY"),
+      secretKey: getRequiredEnvironmentValue("MINIO_ACCESS_SECRET"),
+      publicUrl: getEnvironmentUrl("MINIO_PUBLIC_URL", [
+        "http:",
+        "https:",
+      ]).toString(),
     },
     search: {
-      host: process.env.MEILISEARCH_URL,
-      apiKey: process.env.MEILISEARCH_ACCESS_SECRET,
+      host: getEnvironmentUrl("MEILISEARCH_URL", [
+        "http:",
+        "https:",
+      ]).toString(),
+      apiKey: getRequiredEnvironmentValue("MEILISEARCH_ACCESS_SECRET"),
     },
     mail: {
-      apiKey: process.env.RESEND_ACCESS_SECRET,
-      domain: process.env.MAIL_DOMAIN,
+      apiKey: getRequiredEnvironmentValue("RESEND_ACCESS_SECRET"),
+      domain: mailDomain,
     },
     openObserve: {
-      url:
-        process.env.OPENOBSERVE_URL ??
-        `http://localhost:5080/api/default/${String(process.env.APP_NAME)}/_json`,
-      username: process.env.OPENOBSERVE_USERNAME,
-      password: process.env.OPENOBSERVE_PASSWORD,
+      url: getEnvironmentUrl("OPENOBSERVE_URL", ["http:", "https:"]).toString(),
+      username: getRequiredEnvironmentValue("OPENOBSERVE_USERNAME"),
+      password: getRequiredEnvironmentValue("OPENOBSERVE_PASSWORD"),
     },
   }
 }

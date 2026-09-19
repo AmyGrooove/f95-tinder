@@ -4,6 +4,7 @@ import { DiscoveryModule } from "@nestjs/core"
 
 import { InfrastructureConfigModule } from "../config/config.module"
 import { InfrastructureConfigService } from "../config/services/config.service"
+import { LoggerModule } from "../logger/logger.module"
 import { JobDispatcher } from "./services/jobDispatcher.service"
 import { JobConcurrencyService } from "./services/jobConcurrency.service"
 import { JobProcessorService } from "./services/jobProcessor.service"
@@ -14,6 +15,7 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
 @Module({
   imports: [
     DiscoveryModule,
+    LoggerModule,
     BullModule.forRootAsync({
       imports: [InfrastructureConfigModule],
       inject: [InfrastructureConfigService],

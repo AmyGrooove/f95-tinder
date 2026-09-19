@@ -13,7 +13,9 @@ import { AppModule } from "./app/app.module"
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      trustProxy: ["loopback", "linklocal", "uniquelocal"],
+    }),
   )
 
   const configurationService = app.get(InfrastructureConfigService)
@@ -43,7 +45,6 @@ const bootstrap = async (): Promise<void> => {
   const swaggerConfig = new DocumentBuilder()
     .setTitle("F95 Tinder API")
     .setDescription("Remote backend API for F95 Tinder")
-    .setVersion(appConfiguration.version ?? "unknown")
     .addBearerAuth(
       {
         type: "http",

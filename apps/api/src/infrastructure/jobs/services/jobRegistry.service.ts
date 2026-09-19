@@ -1,9 +1,9 @@
 import { Injectable, OnModuleInit } from "@nestjs/common"
 import { DiscoveryService } from "@nestjs/core"
 
-import { isFunction } from "@shared/functions/isFunction"
-import { isNil } from "@shared/functions/isNil"
-import { isObject } from "@shared/functions/isObject"
+import { isFunction } from "@shared/functions/checks/isFunction"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isObject } from "@shared/functions/checks/isObject"
 
 import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
 import type { IJobHandlerOptions } from "../types/IJobHandlerOptions"
