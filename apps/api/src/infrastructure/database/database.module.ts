@@ -6,6 +6,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 
 import { applyTimestampsPlugin } from "./functions/applyTimestampsPlugin"
 import { applyToJsonPlugin } from "./functions/applyToJsonPlugin"
+import { MongoTransactionService } from "./services/mongoTransaction.service"
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { applyToJsonPlugin } from "./functions/applyToJsonPlugin"
       useFactory: (configurationService: InfrastructureConfigService) => {
         return {
           uri: configurationService.database.uri,
-          autoIndex: configurationService.app.environment !== "production",
+          autoIndex: true,
           connectionFactory: (connection) => {
             connection.plugin(applyTimestampsPlugin)
             connection.plugin(applyToJsonPlugin)
@@ -26,7 +27,8 @@ import { applyToJsonPlugin } from "./functions/applyToJsonPlugin"
       },
     }),
   ],
-  exports: [MongooseModule],
+  providers: [MongoTransactionService],
+  exports: [MongooseModule, MongoTransactionService],
 })
 class DatabaseModule {}
 

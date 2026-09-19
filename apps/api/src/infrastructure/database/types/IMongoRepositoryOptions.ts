@@ -1,7 +1,7 @@
 import type { SortOrder } from "mongoose"
 
-interface IBaseMongoRepositoryOptions {
+interface IMongoRepositoryOptions {
   defaultSort?: Record<string, SortOrder>
 }
 
-export type { IBaseMongoRepositoryOptions }
+export type { IMongoRepositoryOptions }

@@ -7,11 +7,9 @@ const applyToJsonPlugin = (schema: Schema) => {
   const existingToJsonOptions = schema.get("toJSON")
   const existingTransform = existingToJsonOptions?.transform
 
-  schema.set("versionKey", false)
   schema.set("toJSON", {
     ...existingToJsonOptions,
     virtuals: true,
-    versionKey: false,
     transform: (document, returnedObject: IReturnedObject, options) => {
       const transformedObject =
         typeof existingTransform === "function"
