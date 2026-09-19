@@ -1,4 +1,4 @@
-import type { IAuthPrincipal } from "@infrastructure/security/types/IAuthPrincipal"
+import type { IAuthPrincipal } from "./IAuthPrincipal"
 
 interface ICurrentUserRequest {
   authPrincipal?: IAuthPrincipal

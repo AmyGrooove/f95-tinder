@@ -3,7 +3,7 @@ import { createParamDecorator, type ExecutionContext } from "@nestjs/common"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import type { IAuthPrincipal } from "@infrastructure/security/types/IAuthPrincipal"
-import type { ICurrentUserRequest } from "../types/ICurrentUserRequest"
+import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
 
 const CurrentUser: {
   (): ParameterDecorator

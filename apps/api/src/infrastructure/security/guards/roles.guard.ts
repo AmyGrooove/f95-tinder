@@ -10,10 +10,10 @@ import { Reflector } from "@nestjs/core"
 import { ROLES_METADATA_KEY } from "@infrastructure/security/decorators/Roles/static/ROLES_METADATA_KEY"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import type { ICurrentUserRequest } from "@infrastructure/security/decorators/CurrentUser/types/ICurrentUserRequest"
+import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
 
 @Injectable()
-class RoleGuard implements CanActivate {
+class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -26,18 +26,15 @@ class RoleGuard implements CanActivate {
       return true
     }
 
-    const request = context
-      .switchToHttp()
-      .getRequest<ICurrentUserRequest>()
+    const request = context.switchToHttp().getRequest<ICurrentUserRequest>()
     const authPrincipal = request.authPrincipal
 
     if (isNil(authPrincipal)) {
       throw new UnauthorizedException("User is not authenticated")
     }
 
-    const principalRoles = authPrincipal.roles ?? []
     const isRoleAllowed = roles.some((role) => {
-      return principalRoles.includes(role)
+      return authPrincipal.roles.includes(role)
     })
 
     if (!isRoleAllowed) {
@@ -48,4 +45,4 @@ class RoleGuard implements CanActivate {
   }
 }
 
-export { RoleGuard }
+export { RolesGuard }

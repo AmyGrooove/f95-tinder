@@ -4,13 +4,13 @@ import { JwtModule } from "@nestjs/jwt"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 
 import { AccessTokenGuard } from "./guards/accessToken.guard"
-import { RoleGuard } from "./guards/role.guard"
+import { RolesGuard } from "./guards/roles.guard"
 import { SecurityJwtService } from "./services/jwt.service"
 
 @Module({
   imports: [InfrastructureConfigModule, JwtModule.register({})],
-  providers: [SecurityJwtService, AccessTokenGuard, RoleGuard],
-  exports: [SecurityJwtService, AccessTokenGuard, RoleGuard],
+  providers: [SecurityJwtService, AccessTokenGuard, RolesGuard],
+  exports: [SecurityJwtService, AccessTokenGuard, RolesGuard],
 })
 class SecurityModule {}
 
