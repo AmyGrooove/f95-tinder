@@ -11,18 +11,10 @@ class HealthController {
 
   @Get()
   @HealthCheck()
-  @ApiOperation({ summary: "Get API readiness" })
-  @ApiOkResponse({ description: "Required dependency health status" })
+  @ApiOperation({ summary: "Get API health status" })
+  @ApiOkResponse({ description: "Dependency health status" })
   getHealth() {
-    return this.healthService.checkReadiness()
-  }
-
-  @Get("observability")
-  @HealthCheck()
-  @ApiOperation({ summary: "Get observability health status" })
-  @ApiOkResponse({ description: "Observability dependency health status" })
-  getObservabilityHealth() {
-    return this.healthService.checkObservability()
+    return this.healthService.checkHealth()
   }
 }
 
