@@ -1,9 +1,9 @@
 type TNormalizedError = {
   message: string
+  details: Record<string, unknown> | null
 
   name?: string
   stack?: string
-  details?: Record<string, unknown> | unknown[] | null
 }
 
 export type { TNormalizedError }

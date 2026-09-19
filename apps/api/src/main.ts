@@ -5,8 +5,10 @@ import {
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
+import type { FastifyInstance } from "fastify"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { requestContext } from "@shared/functions/requestContext"
 
 import { AppModule } from "./app/app.module"
 
@@ -20,6 +22,20 @@ const bootstrap = async (): Promise<void> => {
 
   const configurationService = app.get(InfrastructureConfigService)
   const appConfiguration = configurationService.app
+
+  const fastify = app.getHttpAdapter().getInstance() as FastifyInstance
+
+  fastify.addHook("onRequest", (request, _reply, done) => {
+    requestContext.run(
+      {
+        requestId: request.id,
+        method: request.method,
+        path: request.url.split("?")[0],
+      },
+      done,
+    )
+  })
+
   const corsOrigin =
     appConfiguration.environment !== "production"
       ? true

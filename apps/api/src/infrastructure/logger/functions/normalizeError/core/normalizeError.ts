@@ -8,6 +8,7 @@ const normalizeError = (error: unknown): TNormalizedError => {
   if (error instanceof Error) {
     return {
       message: error.message,
+      details: null,
       name: error.name,
       stack: error.stack,
     }
@@ -16,13 +17,14 @@ const normalizeError = (error: unknown): TNormalizedError => {
   if (isString(error)) {
     return {
       message: error,
+      details: null,
     }
   }
 
   if (isArray(error)) {
     return {
       message: "Unknown error",
-      details: error,
+      details: { errors: error },
     }
   }
 
@@ -35,6 +37,7 @@ const normalizeError = (error: unknown): TNormalizedError => {
 
   return {
     message: "Unknown error",
+    details: null,
   }
 }
 

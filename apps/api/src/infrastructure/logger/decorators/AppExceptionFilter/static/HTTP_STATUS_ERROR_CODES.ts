@@ -1,0 +1,17 @@
+import { HttpStatus } from "@nestjs/common"
+
+import type { TErrorCode } from "../types/TErrorCode"
+import { ERROR_CODES } from "./ERROR_CODES"
+
+const HTTP_STATUS_ERROR_CODES: Partial<Record<number, TErrorCode>> = {
+  [HttpStatus.BAD_REQUEST]: ERROR_CODES.BAD_REQUEST,
+  [HttpStatus.UNAUTHORIZED]: ERROR_CODES.UNAUTHORIZED,
+  [HttpStatus.FORBIDDEN]: ERROR_CODES.FORBIDDEN,
+  [HttpStatus.NOT_FOUND]: ERROR_CODES.NOT_FOUND,
+  [HttpStatus.CONFLICT]: ERROR_CODES.CONFLICT,
+  [HttpStatus.UNPROCESSABLE_ENTITY]: ERROR_CODES.UNPROCESSABLE_ENTITY,
+  [HttpStatus.TOO_MANY_REQUESTS]: ERROR_CODES.TOO_MANY_REQUESTS,
+  [HttpStatus.INTERNAL_SERVER_ERROR]: ERROR_CODES.INTERNAL_ERROR,
+}
+
+export { HTTP_STATUS_ERROR_CODES }

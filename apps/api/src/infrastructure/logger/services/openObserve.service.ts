@@ -3,8 +3,10 @@ import { Injectable, Logger } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import { CHECK_TIMEOUT_MS } from "../../health/static/CHECK_TIMEOUT_MS"
+import { redactLogValue } from "../functions/redactLogValue"
+import { LOGGER_SEND_TIMEOUT_MS } from "../static/LOGGER_SEND_TIMEOUT_MS"
 import type { ILogRecord } from "../types/ILogRecord"
+import type { TLogLevel } from "../types/TLogLevel"
 
 @Injectable()
 class OpenObserveService {
@@ -15,8 +17,18 @@ class OpenObserveService {
   ) {}
 
   async send(record: ILogRecord) {
+    let output: string
+
+    try {
+      output = JSON.stringify(redactLogValue(record))
+    } catch {
+      this.logger.error("Failed to serialize log record")
+
+      return
+    }
+
     if (!this.checkIsEnabled()) {
-      this.writeFallback(record)
+      this.writeFallback(output, record.level)
 
       return
     }
@@ -30,36 +42,16 @@ class OpenObserveService {
             Authorization: this.getAuthorizationHeader(),
             "Content-Type": "application/json",
           },
-          body: JSON.stringify([record]),
-          signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
+          body: `[${output}]`,
+          signal: AbortSignal.timeout(LOGGER_SEND_TIMEOUT_MS),
         },
       )
 
       if (!response.ok) {
-        this.writeFallback(record)
+        this.writeFallback(output, record.level)
       }
     } catch {
-      this.writeFallback(record)
-    }
-  }
-
-  async healthCheck() {
-    if (!this.checkIsEnabled()) {
-      return false
-    }
-
-    try {
-      const url = new URL(
-        "/healthz",
-        this.infrastructureConfigService.openObserve.url,
-      )
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
-      })
-
-      return response.ok
-    } catch {
-      return false
+      this.writeFallback(output, record.level)
     }
   }
 
@@ -82,20 +74,20 @@ class OpenObserveService {
     return `Basic ${Buffer.from(credentials).toString("base64")}`
   }
 
-  private writeFallback(record: ILogRecord) {
-    try {
-      const output = JSON.stringify(record)
+  private writeFallback(output: string, level: TLogLevel) {
+    if (level === "error") {
+      this.logger.error(output)
 
-      if (record.level === "error") {
-        this.logger.error(output)
-
-        return
-      }
-
-      this.logger.log(output)
-    } catch {
-      this.logger.error("Failed to serialize log record")
+      return
     }
+
+    if (level === "warn") {
+      this.logger.warn(output)
+
+      return
+    }
+
+    this.logger.log(output)
   }
 }
 

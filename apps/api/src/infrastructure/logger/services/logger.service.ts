@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isString } from "@shared/functions/checks/isString"
+import { requestContext } from "@shared/functions/requestContext"
 
 import { normalizeError } from "../functions/normalizeError"
 import type { ILoggerMetadata } from "../types/ILoggerMetadata"
@@ -19,6 +21,10 @@ class LoggerService {
     this.write("info", message, undefined, metadata)
   }
 
+  warn(message: string, metadata?: ILoggerMetadata) {
+    this.write("warn", message, undefined, metadata)
+  }
+
   error(message: string, error?: unknown, metadata?: ILoggerMetadata) {
     this.write("error", message, error, metadata)
   }
@@ -30,6 +36,13 @@ class LoggerService {
     metadata?: ILoggerMetadata,
   ) {
     const { context, data, jobId, requestId } = metadata ?? {}
+    const currentRequest = requestContext.getAll()
+    const {
+      requestId: currentRequestId,
+      method,
+      path,
+      ...additionalContext
+    } = currentRequest ?? {}
 
     const record: ILogRecord = {
       _timestamp: new Date().toISOString(),
@@ -38,7 +51,13 @@ class LoggerService {
       environment: this.infrastructureConfigService.app.environment ?? "",
       message,
       context,
-      requestId,
+      requestId: currentRequestId ?? requestId,
+      method: isString(method) ? method : undefined,
+      path: isString(path) ? path : undefined,
+      requestContext:
+        Object.keys(additionalContext).length > 0
+          ? additionalContext
+          : undefined,
       jobId,
       metadata: data,
       error: isNil(error) ? undefined : normalizeError(error),

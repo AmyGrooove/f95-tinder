@@ -3,17 +3,8 @@ import { BaseExceptionFilter } from "@nestjs/core"
 import type { FastifyReply, FastifyRequest } from "fastify"
 
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isNil } from "@shared/functions/checks/isNil"
-import { isObject } from "@shared/functions/checks/isObject"
-import { isString } from "@shared/functions/checks/isString"
-import { ERROR_MESSAGES } from "@shared/static/ERROR_MESSAGES"
-
-import { isErrorCode } from "../functions/isErrorCode"
-import { ERROR_CODES } from "../static/ERROR_CODES"
+import { createStructuredResponse } from "../functions/createStructuredResponse"
 import type { IErrorEnvelope } from "../types/IErrorEnvelope"
-import type { IStructuredExceptionResponse } from "../types/IStructuredExceptionResponse"
-import type { TErrorCode } from "../types/TErrorCode"
 
 @Catch()
 class AppExceptionFilter extends BaseExceptionFilter {
@@ -26,31 +17,21 @@ class AppExceptionFilter extends BaseExceptionFilter {
     const request = httpContext.getRequest<FastifyRequest>()
     const response = httpContext.getResponse<FastifyReply>()
     const statusCode = this.getStatusCode(exception)
-    const traceId = request.id
-    const structuredResponse = this.createStructuredResponse(
-      exception,
-      statusCode,
-    )
+    const requestId = request.id
+    const structuredResponse = createStructuredResponse(exception, statusCode)
     const body: IErrorEnvelope = {
       error: {
         code: structuredResponse.code,
         message: structuredResponse.message,
         details: structuredResponse.details,
-        traceId,
+        requestId,
       },
     }
 
-    if (
-      !(exception instanceof HttpException) ||
-      statusCode >= HttpStatus.INTERNAL_SERVER_ERROR
-    ) {
+    if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.loggerService.error("Unhandled exception", exception, {
         context: AppExceptionFilter.name,
-        requestId: traceId,
-        data: {
-          method: request.method,
-          url: request.url,
-        },
+        requestId,
       })
     }
 
@@ -63,152 +44,6 @@ class AppExceptionFilter extends BaseExceptionFilter {
     }
 
     return HttpStatus.INTERNAL_SERVER_ERROR
-  }
-
-  private createStructuredResponse(
-    exception: unknown,
-    statusCode: number,
-  ): IStructuredExceptionResponse {
-    if (!(exception instanceof HttpException)) {
-      return {
-        code: ERROR_CODES.INTERNAL_ERROR,
-        message: ERROR_MESSAGES.INTERNAL_ERROR,
-        details: null,
-      }
-    }
-
-    const exceptionResponse = exception.getResponse()
-
-    if (isObject(exceptionResponse)) {
-      const structuredResponse =
-        this.getExplicitStructuredResponse(exceptionResponse)
-
-      if (!isNil(structuredResponse)) {
-        return structuredResponse
-      }
-
-      const validationDetails = this.getValidationDetails(exceptionResponse)
-
-      if (!isNil(validationDetails)) {
-        return {
-          code: ERROR_CODES.BAD_REQUEST,
-          message: ERROR_MESSAGES.VALIDATION_ERROR,
-          details: validationDetails,
-        }
-      }
-    }
-
-    return {
-      code: this.getHttpErrorCode(statusCode),
-      message: this.getHttpExceptionMessage(
-        exceptionResponse,
-        exception.message,
-      ),
-      details: null,
-    }
-  }
-
-  private getExplicitStructuredResponse(
-    response: object,
-  ): IStructuredExceptionResponse | undefined {
-    if (!("code" in response) || !("message" in response)) {
-      return undefined
-    }
-
-    const { code, message } = response
-
-    if (!isErrorCode(code) || !isString(message)) {
-      return undefined
-    }
-
-    const details = "details" in response ? response.details : null
-
-    if (isNil(details)) {
-      return {
-        code,
-        message,
-        details: null,
-      }
-    }
-
-    if (isArray(details)) {
-      return { code, message, details }
-    }
-
-    if (isObject(details)) {
-      return {
-        code,
-        message,
-        details: Object.fromEntries(Object.entries(details)),
-      }
-    }
-
-    return {
-      code,
-      message,
-      details: null,
-    }
-  }
-
-  private getHttpErrorCode(statusCode: number): TErrorCode {
-    if (statusCode === HttpStatus.BAD_REQUEST) {
-      return ERROR_CODES.BAD_REQUEST
-    }
-
-    if (statusCode === HttpStatus.UNAUTHORIZED) {
-      return ERROR_CODES.UNAUTHORIZED
-    }
-
-    if (statusCode === HttpStatus.FORBIDDEN) {
-      return ERROR_CODES.FORBIDDEN
-    }
-
-    if (statusCode === HttpStatus.NOT_FOUND) {
-      return ERROR_CODES.NOT_FOUND
-    }
-
-    if (statusCode === HttpStatus.TOO_MANY_REQUESTS) {
-      return ERROR_CODES.TOO_MANY_REQUESTS
-    }
-
-    return ERROR_CODES.INTERNAL_ERROR
-  }
-
-  private getValidationDetails(response: object) {
-    if (!("message" in response)) {
-      return undefined
-    }
-
-    const { message } = response
-
-    if (!isArray(message)) {
-      return undefined
-    }
-
-    return message
-  }
-
-  private getHttpExceptionMessage(
-    response: unknown,
-    fallbackMessage: string,
-  ): string {
-    if (isString(response)) {
-      return response
-    }
-
-    if (isObject(response)) {
-      if (!("message" in response)) {
-        return fallbackMessage
-      }
-
-      const { message } = response
-
-      if (isString(message)) {
-        return message
-      }
-    }
-
-    return fallbackMessage
   }
 }
 

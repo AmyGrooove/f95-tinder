@@ -10,6 +10,9 @@ interface ILogRecord {
 
   context?: string
   requestId?: string
+  method?: string
+  path?: string
+  requestContext?: Record<string, unknown>
   jobId?: string
   metadata?: unknown
   error?: TNormalizedError

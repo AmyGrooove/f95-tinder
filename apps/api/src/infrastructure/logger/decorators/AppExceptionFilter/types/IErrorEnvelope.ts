@@ -1,9 +1,9 @@
-import type { IStructuredExceptionResponse } from "./IStructuredExceptionResponse";
+import type { IStructuredExceptionResponse } from "./IStructuredExceptionResponse"
 
 interface IErrorEnvelope {
   error: IStructuredExceptionResponse & {
-    traceId: string;
-  };
+    requestId: string
+  }
 }
 
-export type { IErrorEnvelope };
+export type { IErrorEnvelope }

@@ -9,7 +9,7 @@ import {
 import { CacheHealthService } from "@infrastructure/cache/services/cacheHealth.service"
 import { MongoHealthService } from "@infrastructure/database/services/mongoHealth.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
-import { OpenObserveService } from "@infrastructure/logger/services/openObserve.service"
+import { LoggerHealthService } from "@infrastructure/logger/services/loggerHealth.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { StorageService } from "@infrastructure/storage/services/storage.service"
 
@@ -23,7 +23,7 @@ class InfrastructureHealthService {
     private readonly cacheHealthService: CacheHealthService,
     private readonly mongoHealthService: MongoHealthService,
     private readonly jobService: JobService,
-    private readonly openObserveService: OpenObserveService,
+    private readonly loggerHealthService: LoggerHealthService,
     private readonly storageService: StorageService,
     private readonly searchService: SearchService,
   ) {}
@@ -77,7 +77,7 @@ class InfrastructureHealthService {
     return this.createIndicator(
       HEALTH_CHECK_KEYS.openObserve,
       async (): Promise<boolean> => {
-        return this.openObserveService.healthCheck()
+        return this.loggerHealthService.healthCheck()
       },
     )
   }
