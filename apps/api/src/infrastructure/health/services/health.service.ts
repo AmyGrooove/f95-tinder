@@ -1,16 +1,12 @@
 import { setTimeout as wait } from "node:timers/promises"
 
 import { Injectable } from "@nestjs/common"
-import {
-  HealthCheckService,
-  HealthIndicatorService,
-  type HealthCheckResult,
-  type HealthIndicatorResult,
-} from "@nestjs/terminus"
+import { HealthCheckService, HealthIndicatorService } from "@nestjs/terminus"
 
 import { CacheHealthService } from "@infrastructure/cache/services/cacheHealth.service"
 import { MongoHealthService } from "@infrastructure/database/services/mongoHealth.service"
 import { LoggerHealthService } from "@infrastructure/logger/services/loggerHealth.service"
+import { MailHealthService } from "@infrastructure/mail/services/mailHealth.service"
 import { StorageHealthService } from "@infrastructure/storage/services/storageHealth.service"
 
 import { CHECK_TIMEOUT_MS } from "../static/CHECK_TIMEOUT_MS"
@@ -24,27 +20,33 @@ class HealthService {
     private readonly mongoHealthService: MongoHealthService,
     private readonly cacheHealthService: CacheHealthService,
     private readonly loggerHealthService: LoggerHealthService,
+    private readonly mailHealthService: MailHealthService,
     private readonly storageHealthService: StorageHealthService,
   ) {}
 
-  checkHealth(): Promise<HealthCheckResult> {
-    const checks: Array<() => Promise<HealthIndicatorResult>> = [
-      async (): Promise<HealthIndicatorResult> => {
+  checkHealth() {
+    const checks = [
+      async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.database, async () => {
           return this.mongoHealthService.healthCheck()
         })
       },
-      async (): Promise<HealthIndicatorResult> => {
+      async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.cache, async () => {
           return this.cacheHealthService.healthCheck()
         })
       },
-      async (): Promise<HealthIndicatorResult> => {
+      async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.openObserve, async () => {
           return this.loggerHealthService.healthCheck()
         })
       },
-      async (): Promise<HealthIndicatorResult> => {
+      async () => {
+        return this.createIndicator(HEALTH_CHECK_KEYS.mail, async () => {
+          return this.mailHealthService.healthCheck()
+        })
+      },
+      async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.storage, async () => {
           return this.storageHealthService.healthCheck()
         })
@@ -54,10 +56,7 @@ class HealthService {
     return this.healthCheckService.check(checks)
   }
 
-  private async createIndicator(
-    key: string,
-    check: () => Promise<boolean>,
-  ): Promise<HealthIndicatorResult> {
+  private async createIndicator(key: string, check: () => Promise<boolean>) {
     const isHealthy = await this.runWithTimeout(check)
     const indicator = this.healthIndicatorService.check(key)
 

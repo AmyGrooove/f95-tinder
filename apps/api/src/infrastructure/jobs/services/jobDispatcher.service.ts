@@ -5,8 +5,10 @@ import {
   OnModuleDestroy,
 } from "@nestjs/common"
 import { type Queue, Worker } from "bullmq"
-import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
+import { isNil } from "@shared/functions/checks/isNil"
 import { InfrastructureConfigService } from "../../config/services/config.service"
+import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
+import type { TJobType } from "../types/IJobPayloadMap"
 import { JobProcessorService } from "./jobProcessor.service"
 import { JobRegistry } from "./jobRegistry.service"
 
@@ -42,6 +44,17 @@ class JobDispatcher implements OnApplicationBootstrap, OnModuleDestroy {
         },
         concurrency,
         prefix: this.infrastructureConfigService.app.name,
+        settings: {
+          backoffStrategy: (attemptsMade, _type, _error, job) => {
+            const handler = this.jobRegistry.get(job?.name as TJobType)
+
+            if (isNil(handler)) {
+              throw new Error("No handler is registered for retrying job")
+            }
+
+            return handler.options.retryDelays[attemptsMade - 1] ?? -1
+          },
+        },
       },
     )
   }

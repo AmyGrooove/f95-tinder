@@ -1,6 +1,7 @@
 const HEALTH_CHECK_KEYS = {
   cache: "cache",
   database: "database",
+  mail: "mail",
   openObserve: "openObserve",
   storage: "storage",
 } as const

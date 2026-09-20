@@ -2,14 +2,13 @@ import { InjectQueue } from "@nestjs/bullmq"
 import { Injectable } from "@nestjs/common"
 import type { Job, JobsOptions, Queue } from "bullmq"
 
+import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
 
 import { JobCancellationError } from "../errors/JobCancellationError"
 import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
-import type { IJobDetails } from "../types/IJobDetails"
 import type { IJobListOptions } from "../types/IJobListOptions"
 import type { IJobPayloadMap } from "../types/IJobPayloadMap"
 import type { IJobData } from "../types/IJobData"
@@ -37,12 +36,15 @@ class JobService {
       throw new Error(`No handler is registered for job type '${type}'`)
     }
 
+    const isCustomBackoff = registeredHandler.options.retryDelays.length > 0
     const job = await this.jobsQueue.add(
       type,
       { cancellationState: "none", payload, type } satisfies IJobData<TType>,
       {
         attempts: registeredHandler.options.attempts,
-        backoff: { delay: registeredHandler.options.retryDelay, type: "fixed" },
+        backoff: isCustomBackoff
+          ? { type: "custom" }
+          : { delay: registeredHandler.options.retryDelay, type: "fixed" },
         delay: 5_000,
         removeOnComplete: { age: 60 * 60 * 24 * 7, count: 1_000 },
         removeOnFail: { age: 60 * 60 * 24 * 14, count: 2_000 },
@@ -89,10 +91,7 @@ class JobService {
     return isNil(job) ? null : this.createJobDetails(job)
   }
 
-  async list<TType extends TJobType>(
-    type: TType,
-    options?: IJobListOptions,
-  ): Promise<IPaginatedResult<IJobDetails>> {
+  async list<TType extends TJobType>(type: TType, options?: IJobListOptions) {
     const { page, limit } = normalizePagination(options, 50)
     const requestedStates = options?.states
     const jobs = await this.jobsQueue.getJobs([
@@ -125,7 +124,7 @@ class JobService {
         .map((job) => this.createJobDetails(job)),
     )
     const matchingDetails = details.filter(
-      (job) => !requestedStates || requestedStates.includes(job.state),
+      (job) => isNil(requestedStates) || requestedStates.includes(job.state),
     )
     const total = matchingDetails.length
     const offset = (page - 1) * limit
@@ -145,7 +144,7 @@ class JobService {
 
     if (
       !isNil(progress) &&
-      (!Number.isInteger(progress) || progress < 0 || progress > 100)
+      (!isInt(progress) || progress < 0 || progress > 100)
     ) {
       throw new Error("Job progress must be an integer between 0 and 100")
     }
@@ -180,7 +179,7 @@ class JobService {
     return true
   }
 
-  private async createJobDetails(job: Job): Promise<IJobDetails> {
+  private async createJobDetails(job: Job) {
     const data = job.data as IJobData<TJobType>
     const progress = normalizeJobProgress(job.progress)
     const state = await getJobState(job, data, progress)

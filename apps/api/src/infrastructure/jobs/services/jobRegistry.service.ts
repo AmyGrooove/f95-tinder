@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from "@nestjs/common"
 import { DiscoveryService } from "@nestjs/core"
 
 import { isFunction } from "@shared/functions/checks/isFunction"
+import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
 
@@ -66,19 +67,45 @@ class JobRegistry implements OnModuleInit {
     const normalizedOptions = {
       attempts: options?.attempts ?? 3,
       retryDelay: options?.retryDelay ?? 1_000,
+      retryDelays: options?.retryDelays ?? [],
       concurrency: options?.concurrency ?? 1,
     }
 
-    if (!Number.isInteger(normalizedOptions.attempts) || normalizedOptions.attempts <= 0) {
-      throw new Error("Job handler option 'attempts' must be a positive integer")
+    if (!isInt(normalizedOptions.attempts) || normalizedOptions.attempts <= 0) {
+      throw new Error(
+        "Job handler option 'attempts' must be a positive integer",
+      )
     }
 
-    if (!Number.isInteger(normalizedOptions.retryDelay) || normalizedOptions.retryDelay < 0) {
-      throw new Error("Job handler option 'retryDelay' must be a non-negative integer")
+    if (
+      !isInt(normalizedOptions.retryDelay) ||
+      normalizedOptions.retryDelay < 0
+    ) {
+      throw new Error(
+        "Job handler option 'retryDelay' must be a non-negative integer",
+      )
     }
 
-    if (!Number.isInteger(normalizedOptions.concurrency) || normalizedOptions.concurrency <= 0) {
-      throw new Error("Job handler option 'concurrency' must be a positive integer")
+    if (
+      normalizedOptions.retryDelays.length > 0 &&
+      (normalizedOptions.retryDelays.length !==
+        normalizedOptions.attempts - 1 ||
+        normalizedOptions.retryDelays.some(
+          (delay) => !isInt(delay) || delay < 0,
+        ))
+    ) {
+      throw new Error(
+        "Job handler option 'retryDelays' must match the retry count",
+      )
+    }
+
+    if (
+      !isInt(normalizedOptions.concurrency) ||
+      normalizedOptions.concurrency <= 0
+    ) {
+      throw new Error(
+        "Job handler option 'concurrency' must be a positive integer",
+      )
     }
 
     return normalizedOptions

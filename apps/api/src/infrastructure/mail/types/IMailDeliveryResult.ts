@@ -1,6 +1,6 @@
 interface IMailDeliveryResult {
   id: string
-  status: "queued" | "sent"
+  status: "queued"
 }
 
 export type { IMailDeliveryResult }

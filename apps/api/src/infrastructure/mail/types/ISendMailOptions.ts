@@ -1,12 +1,14 @@
 import type { IMailAttachment } from "./IMailAttachment"
+import type { TMailSender } from "./TMailSender"
 
 interface ISendMailOptions {
   subject: string
   to: string | string[]
 
   attachments?: IMailAttachment[]
-  from?: string
+  from?: TMailSender
   html?: string
+  idempotencyKey?: string
   replyTo?: string | string[]
   text?: string
 }

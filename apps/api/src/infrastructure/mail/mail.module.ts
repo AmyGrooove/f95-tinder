@@ -4,8 +4,10 @@ import { Resend } from "resend"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import { SendMailJobHandler } from "./handlers/sendMailJob.handler"
+import { MailHealthService } from "./services/mailHealth.service"
 import { MailService } from "./services/mail.service"
 import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
 
@@ -20,7 +22,7 @@ import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
         const apiKey = mail.apiKey?.trim()
         const domain = mail.domain?.trim()
 
-        if (!apiKey || !domain) {
+        if (isNil(apiKey) || apiKey === "" || isNil(domain) || domain === "") {
           throw new Error(
             "RESEND_ACCESS_SECRET and MAIL_DOMAIN must be configured",
           )
@@ -39,9 +41,10 @@ import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
       },
     },
     SendMailJobHandler,
+    MailHealthService,
     MailService,
   ],
-  exports: [MAIL_CLIENT, MailService],
+  exports: [MailHealthService, MailService],
 })
 class MailModule {}
 
