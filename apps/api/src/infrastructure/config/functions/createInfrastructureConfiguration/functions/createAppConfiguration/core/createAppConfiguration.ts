@@ -11,6 +11,8 @@ const createAppConfiguration = () => {
     ? "development"
     : (environmentValue.trim() as TEnvironmentNode)
   const name = getRequiredEnvironmentValue("APP_NAME")
+  const version = getRequiredEnvironmentValue("APP_VERSION")
+  const description = getRequiredEnvironmentValue("APP_DESCRIPTION")
   const port = Number(getRequiredEnvironmentValue("PORT"))
   const corsOrigins = getRequiredEnvironmentValue("CORS_ORIGINS")
     .split(",")
@@ -60,6 +62,18 @@ const createAppConfiguration = () => {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_APP_NAME)
   }
 
+  if (
+    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(
+      version,
+    )
+  ) {
+    throw new Error(CONFIG_ERROR_MESSAGES.INVALID_APP_VERSION)
+  }
+
+  if (description.trim() === "") {
+    throw new Error(CONFIG_ERROR_MESSAGES.EMPTY_APP_DESCRIPTION)
+  }
+
   if (corsOrigins.length === 0) {
     throw new Error(CONFIG_ERROR_MESSAGES.EMPTY_CORS_ORIGINS)
   }
@@ -71,6 +85,8 @@ const createAppConfiguration = () => {
   return {
     environment,
     name,
+    version,
+    description,
     port,
     corsOrigins,
   }

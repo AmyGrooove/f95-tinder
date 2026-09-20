@@ -134,8 +134,9 @@ class JobProcessorService extends WorkerHost {
       return result
     } catch (error) {
       const currentJob = await this.jobsQueue.getJob(id)
-      const currentData =
-        isNil(currentJob) ? undefined : parseJobData(currentJob.data)
+      const currentData = isNil(currentJob)
+        ? undefined
+        : parseJobData(currentJob.data)
       const isCancellationRequested =
         !isNil(currentData) && currentData.cancellationState !== "none"
 

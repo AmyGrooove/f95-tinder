@@ -1,1 +1,1 @@
-export { normalizeError } from "./core/normalizeError";
+export { normalizeError } from "./core/normalizeError"

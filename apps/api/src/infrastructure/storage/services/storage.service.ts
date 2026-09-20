@@ -1,18 +1,17 @@
 import type { Readable } from "node:stream"
 
 import { Inject, Injectable, ServiceUnavailableException } from "@nestjs/common"
-import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
+import type { OnModuleInit } from "@nestjs/common"
 import type { Client } from "minio"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { isFunction } from "@shared/functions/checks/isFunction"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { STORAGE_CLIENT } from "../static/STORAGE_CLIENT"
 import type { IStorageUploadResult } from "../types/IStorageUploadResult"
 
 @Injectable()
-class StorageService implements OnModuleInit, OnModuleDestroy {
+class StorageService implements OnModuleInit {
   constructor(
     @Inject(STORAGE_CLIENT) private readonly storageClient: Client,
     private readonly configurationService: InfrastructureConfigService,
@@ -44,16 +43,6 @@ class StorageService implements OnModuleInit, OnModuleDestroy {
       }
 
       throw this.createStorageError("initialize bucket", bucket)
-    }
-  }
-
-  async onModuleDestroy() {
-    const clientWithClose = this.storageClient as Client & {
-      close?: () => Promise<void> | void
-    }
-
-    if (isFunction(clientWithClose.close)) {
-      await clientWithClose.close()
     }
   }
 

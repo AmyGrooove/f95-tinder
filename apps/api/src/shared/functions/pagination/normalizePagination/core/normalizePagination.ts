@@ -8,12 +8,14 @@ const normalizePagination = (
   const requestedLimit = pagination?.limit
 
   return {
-    page: isNil(requestedPage) || !Number.isFinite(requestedPage)
-      ? 1
-      : Math.max(1, Math.floor(requestedPage)),
-    limit: isNil(requestedLimit) || !Number.isFinite(requestedLimit)
-      ? defaultLimit
-      : Math.min(100, Math.max(1, Math.floor(requestedLimit))),
+    page:
+      isNil(requestedPage) || !Number.isFinite(requestedPage)
+        ? 1
+        : Math.max(1, Math.floor(requestedPage)),
+    limit:
+      isNil(requestedLimit) || !Number.isFinite(requestedLimit)
+        ? defaultLimit
+        : Math.min(100, Math.max(1, Math.floor(requestedLimit))),
   }
 }
 

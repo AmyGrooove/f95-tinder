@@ -1,6 +1,7 @@
 {
   "name": "@f95-tinder/api",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "engines": {
     "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
@@ -14,6 +15,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@fastify/helmet": "^13.1.1",
     "@fastify/multipart": "^10.1.1",
     "@fastify/static": "^10.1.4",
     "@keyv/redis": "^5.1.6",
@@ -56,9 +58,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
     "prettier": "^3.9.8",
-    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.70.0",
-    "webpack-node-externals": "^3.0.0"
+    "typescript-eslint": "^8.70.0"
   }
 }

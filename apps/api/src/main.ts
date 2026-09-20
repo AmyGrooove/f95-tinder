@@ -1,3 +1,4 @@
+import helmet from "@fastify/helmet"
 import multipart from "@fastify/multipart"
 import { ValidationPipe, VersioningType } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
@@ -35,6 +36,7 @@ const bootstrap = async () => {
       parts: 21,
     },
   })
+  await app.register(helmet)
 
   fastify.addHook("onRequest", (request, _reply, done) => {
     requestContext.run(
@@ -70,8 +72,9 @@ const bootstrap = async () => {
   )
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle("F95 Tinder API")
-    .setDescription("Remote backend API for F95 Tinder")
+    .setTitle(appConfiguration.name)
+    .setDescription(appConfiguration.description)
+    .setVersion(appConfiguration.version)
     .addBearerAuth(
       {
         type: "http",
@@ -85,9 +88,25 @@ const bootstrap = async () => {
 
   SwaggerModule.setup("docs", app, swaggerDocument)
 
+  fastify.addHook("onSend", (request, reply, payload, done) => {
+    const isSwaggerRoute =
+      request.url === "/docs" ||
+      request.url.startsWith("/docs/") ||
+      request.url.startsWith("/docs?")
+
+    if (isSwaggerRoute) {
+      reply.removeHeader("content-security-policy")
+    }
+
+    done(null, payload)
+  })
+
   app.enableShutdownHooks()
 
   await app.listen(appConfiguration.port, "0.0.0.0")
 }
 
-void bootstrap()
+await bootstrap().catch((error: unknown) => {
+  console.error(error)
+  process.exitCode = 1
+})

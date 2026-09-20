@@ -26,9 +26,7 @@ const createJobDetails = (
     attempt: job.attemptsStarted,
     createdAt: new Date(job.timestamp),
     failedReason:
-      state === "failed" &&
-      !isNil(job.failedReason) &&
-      job.failedReason !== ""
+      state === "failed" && !isNil(job.failedReason) && job.failedReason !== ""
         ? job.failedReason
         : undefined,
     finishedAt:

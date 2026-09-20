@@ -1,5 +1,7 @@
 type TEnvironmentKey =
   | "APP_NAME"
+  | "APP_VERSION"
+  | "APP_DESCRIPTION"
   | "PORT"
   | "CORS_ORIGINS"
   | "MONGO_URL"

@@ -6,6 +6,8 @@ const CONFIG_ERROR_MESSAGES = {
   INVALID_PORT: "PORT must be an integer between 1 and 65535",
   INVALID_APP_NAME:
     "APP_NAME must be a lowercase MinIO bucket name between 3 and 63 characters",
+  INVALID_APP_VERSION: "APP_VERSION must be a valid semantic version",
+  EMPTY_APP_DESCRIPTION: "APP_DESCRIPTION must not be empty",
   INVALID_CORS_ORIGINS:
     "CORS_ORIGINS must contain valid HTTP(S) origins or '*'",
   EMPTY_CORS_ORIGINS: "CORS_ORIGINS must contain at least one origin",
