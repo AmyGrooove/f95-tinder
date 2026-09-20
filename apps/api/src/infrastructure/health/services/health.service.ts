@@ -8,6 +8,7 @@ import { MongoHealthService } from "@infrastructure/database/services/mongoHealt
 import { LoggerHealthService } from "@infrastructure/logger/services/loggerHealth.service"
 import { MailHealthService } from "@infrastructure/mail/services/mailHealth.service"
 import { SchedulerHealthService } from "@infrastructure/scheduler/services/schedulerHealth.service"
+import { SearchHealthService } from "@infrastructure/search/services/searchHealth.service"
 import { StorageHealthService } from "@infrastructure/storage/services/storageHealth.service"
 
 import { CHECK_TIMEOUT_MS } from "../static/CHECK_TIMEOUT_MS"
@@ -23,6 +24,7 @@ class HealthService {
     private readonly loggerHealthService: LoggerHealthService,
     private readonly mailHealthService: MailHealthService,
     private readonly schedulerHealthService: SchedulerHealthService,
+    private readonly searchHealthService: SearchHealthService,
     private readonly storageHealthService: StorageHealthService,
   ) {}
 
@@ -51,6 +53,11 @@ class HealthService {
       async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.scheduler, async () => {
           return this.schedulerHealthService.checkHealth()
+        })
+      },
+      async () => {
+        return this.createIndicator(HEALTH_CHECK_KEYS.search, async () => {
+          return this.searchHealthService.healthCheck()
         })
       },
       async () => {

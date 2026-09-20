@@ -1,5 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common"
-import type { MeiliSearch } from "meilisearch"
+import {
+  ErrorStatusCode,
+  MeiliSearchApiError,
+  type MeiliSearch,
+} from "meilisearch"
 
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
 import type { ISearchIndexOptions } from "../types/ISearchIndexOptions"
@@ -9,33 +13,39 @@ import type { TSearchDocument } from "../types/TSearchDocument"
 
 @Injectable()
 class SearchService {
-  private readonly indexInitializations = new Map<string, Promise<void>>()
+  private readonly indexInitializations = new Map<string, Promise<number>>()
 
   constructor(
     @Inject(SEARCH_CLIENT) private readonly searchClient: MeiliSearch,
   ) {}
 
-  ensureIndex(name: string, options: ISearchIndexOptions): Promise<void> {
-    const existingInitialization = this.indexInitializations.get(name)
+  async ensureIndex(
+    name: string,
+    options: ISearchIndexOptions,
+    waitForTask = false,
+  ) {
+    let initialization = this.indexInitializations.get(name)
 
-    if (existingInitialization !== undefined) {
-      return existingInitialization
+    if (initialization === undefined) {
+      initialization = this.initializeIndex(name, options).finally(() => {
+        this.indexInitializations.delete(name)
+      })
+
+      this.indexInitializations.set(name, initialization)
     }
 
-    const initialization = this.initializeIndex(name, options).finally(() => {
-      this.indexInitializations.delete(name)
-    })
+    const taskUid = await initialization
 
-    this.indexInitializations.set(name, initialization)
-
-    return initialization
+    if (waitForTask) {
+      await this.searchClient.tasks.waitForTask(taskUid)
+    }
   }
 
   async upsert<TDocument extends TSearchDocument>(
     index: string,
     documents: TDocument[],
     waitForTask = false,
-  ): Promise<void> {
+  ) {
     const task = await this.searchClient.index(index).addDocuments(documents)
 
     if (waitForTask) {
@@ -48,7 +58,9 @@ class SearchService {
     query: string,
     options?: ISearchQueryOptions,
   ): Promise<ISearchResult<TDocument>> {
-    const result = await this.searchClient.index(index).search<TDocument>(query, options)
+    const result = await this.searchClient
+      .index(index)
+      .search<TDocument>(query, options)
 
     return {
       estimatedTotalHits: result.estimatedTotalHits ?? result.hits.length,
@@ -60,11 +72,7 @@ class SearchService {
     }
   }
 
-  async delete(
-    index: string,
-    id: string,
-    waitForTask = false,
-  ): Promise<void> {
+  async delete(index: string, id: string, waitForTask = false) {
     const task = await this.searchClient.index(index).deleteDocument(id)
 
     if (waitForTask) {
@@ -72,7 +80,7 @@ class SearchService {
     }
   }
 
-  async clear(index: string, waitForTask = false): Promise<void> {
+  async clear(index: string, waitForTask = false) {
     const task = await this.searchClient.index(index).deleteAllDocuments()
 
     if (waitForTask) {
@@ -80,28 +88,18 @@ class SearchService {
     }
   }
 
-  async healthCheck(): Promise<boolean> {
-    try {
-      await this.searchClient.health()
-
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  private async initializeIndex(
-    name: string,
-    options: ISearchIndexOptions,
-  ): Promise<void> {
+  private async initializeIndex(name: string, options: ISearchIndexOptions) {
     try {
       await this.searchClient.getIndex(name)
-    } catch {
-      const task = await this.searchClient.createIndex(name, {
-        primaryKey: options.primaryKey,
-      })
+    } catch (error) {
+      if (
+        !(error instanceof MeiliSearchApiError) ||
+        error.cause?.code !== ErrorStatusCode.INDEX_NOT_FOUND
+      ) {
+        throw error
+      }
 
-      await this.searchClient.tasks.waitForTask(task.taskUid)
+      await this.searchClient.createIndex(name, { primaryKey: "id" })
     }
 
     const task = await this.searchClient.index(name).updateSettings({
@@ -112,7 +110,7 @@ class SearchService {
       sortableAttributes: options.sortableAttributes,
     })
 
-    await this.searchClient.tasks.waitForTask(task.taskUid)
+    return task.taskUid
   }
 }
 

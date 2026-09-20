@@ -4,6 +4,7 @@ const HEALTH_CHECK_KEYS = {
   mail: "mail",
   openObserve: "openObserve",
   scheduler: "scheduler",
+  search: "search",
   storage: "storage",
 } as const
 

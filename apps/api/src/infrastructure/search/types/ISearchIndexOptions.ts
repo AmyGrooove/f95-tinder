@@ -1,6 +1,4 @@
 interface ISearchIndexOptions {
-  primaryKey: string
-
   displayedAttributes?: string[]
   filterableAttributes?: string[]
   rankingRules?: string[]
