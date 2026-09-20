@@ -1,8 +1,8 @@
-@forward './functions/colorAlpha';
+@forward '@shared/styles/functions/colorAlpha';
 
-@forward './mixins/interactive';
-@forward './mixins/liquidGlass';
-@forward './mixins/shimmer';
-@forward './mixins/transition';
-@forward './mixins/textStyle';
-@forward './mixins/fadeScaleIn';
+@forward '@shared/styles/mixins/interactive';
+@forward '@shared/styles/mixins/liquidGlass';
+@forward '@shared/styles/mixins/shimmer';
+@forward '@shared/styles/mixins/transition';
+@forward '@shared/styles/mixins/textStyle';
+@forward '@shared/styles/mixins/fadeScaleIn';

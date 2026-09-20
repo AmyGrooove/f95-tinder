@@ -38,7 +38,8 @@ const RadioGroup = (props: IRadioGroupProps) => {
             <label
               className={cn(st.option, {
                 [st.option_disabled]:
-                  (!isNil(option.isDisabled) && option.isDisabled) || isDisabled,
+                  (!isNil(option.isDisabled) && option.isDisabled) ||
+                  isDisabled,
               })}
               key={option.value}
             >

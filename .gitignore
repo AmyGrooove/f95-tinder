@@ -4,7 +4,8 @@ dist
 release
 .env
 .env.local
-.f95-cookie.local
 .pnpm-store
 .agents
 tsconfig.tsbuildinfo
+next-env.d.ts
+pnpm-lock.yaml
