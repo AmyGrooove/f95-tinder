@@ -1,9 +1,9 @@
 import type {
-  FilterQuery,
   InsertManyOptions,
   Model,
   MongooseBaseQueryOptions,
   MongooseBulkWriteOptions,
+  QueryFilter,
   UpdateQuery,
   UpdateWithAggregationPipeline,
   mongo,
@@ -42,13 +42,13 @@ class MongoBulkRepository<
   }
 
   async updateMany(
-    filter: FilterQuery<TSchema>,
+    filter: QueryFilter<TSchema>,
     payload: UpdateQuery<TSchema> | UpdateWithAggregationPipeline,
     options?: Parameters<Model<TSchema>["updateMany"]>[2],
   ): Promise<mongo.UpdateResult> {
     const result = await this.model
       .updateMany(
-        filter as FilterQuery<TDocument>,
+        filter as QueryFilter<TDocument>,
         payload as UpdateQuery<TDocument> | UpdateWithAggregationPipeline,
         options as Parameters<Model<TDocument>["updateMany"]>[2],
       )
@@ -58,12 +58,12 @@ class MongoBulkRepository<
   }
 
   async deleteMany(
-    filter: FilterQuery<TSchema>,
+    filter: QueryFilter<TSchema>,
     options?: mongo.DeleteOptions & MongooseBaseQueryOptions<TSchema>,
   ): Promise<mongo.DeleteResult> {
     const result = await this.model
       .deleteMany(
-        filter as FilterQuery<TDocument>,
+        filter as QueryFilter<TDocument>,
         options as mongo.DeleteOptions & MongooseBaseQueryOptions<TDocument>,
       )
       .exec()

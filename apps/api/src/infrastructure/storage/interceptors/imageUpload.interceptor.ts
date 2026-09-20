@@ -11,7 +11,7 @@ import type {
   NestInterceptor,
 } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
-import type { Observable } from "rxjs"
+import { catchError, defer, type Observable } from "rxjs"
 
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
@@ -106,7 +106,17 @@ class ImageUploadInterceptor implements NestInterceptor {
     )
     request.processedUploads = { [metadata.field]: processedUpload }
 
-    return next.handle()
+    return next.handle().pipe(
+      catchError((error: unknown) => {
+        return defer(async () => {
+          await this.storageService.delete(processedUpload.path).catch(() => {
+            return undefined
+          })
+
+          throw error
+        })
+      }),
+    )
   }
 
   private createProcessingOptions(

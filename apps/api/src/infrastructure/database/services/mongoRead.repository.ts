@@ -1,4 +1,4 @@
-import type { FilterQuery, ProjectionType, QueryOptions } from "mongoose"
+import type { ProjectionType, QueryFilter, QueryOptions } from "mongoose"
 
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -25,13 +25,13 @@ class MongoReadRepository<
   }
 
   async findOne(
-    filter: FilterQuery<TSchema>,
+    filter: QueryFilter<TSchema>,
     projection?: ProjectionType<TSchema>,
     options?: QueryOptions<TSchema>,
   ): Promise<TDocument | null> {
     const document = await this.model
       .findOne(
-        filter as FilterQuery<TDocument>,
+        filter as QueryFilter<TDocument>,
         projection as ProjectionType<TDocument>,
         options as QueryOptions<TDocument>,
       )
@@ -41,12 +41,12 @@ class MongoReadRepository<
   }
 
   async findMany(
-    filter: FilterQuery<TSchema>,
+    filter: QueryFilter<TSchema>,
     projection?: ProjectionType<TSchema>,
     options?: QueryOptions<TSchema>,
   ): Promise<TDocument[]> {
     const query = this.model.find(
-      filter as FilterQuery<TDocument>,
+      filter as QueryFilter<TDocument>,
       projection as ProjectionType<TDocument>,
       options as QueryOptions<TDocument>,
     )
@@ -61,11 +61,11 @@ class MongoReadRepository<
   }
 
   async checkIsExists(
-    filter: FilterQuery<TSchema>,
+    filter: QueryFilter<TSchema>,
     options?: QueryOptions<TSchema>,
   ) {
     const document = await this.model
-      .exists(filter as FilterQuery<TDocument>)
+      .exists(filter as QueryFilter<TDocument>)
       .setOptions(options as QueryOptions<TDocument>)
       .exec()
 

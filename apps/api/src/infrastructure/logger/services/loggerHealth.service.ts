@@ -1,22 +1,14 @@
-import { Injectable, type OnApplicationBootstrap } from "@nestjs/common"
+import { Injectable } from "@nestjs/common"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 
 import { LOGGER_HEALTH_CHECK_TIMEOUT_MS } from "../static/LOGGER_HEALTH_CHECK_TIMEOUT_MS"
 
 @Injectable()
-class LoggerHealthService implements OnApplicationBootstrap {
+class LoggerHealthService {
   constructor(
     private readonly infrastructureConfigService: InfrastructureConfigService,
   ) {}
-
-  async onApplicationBootstrap() {
-    const isHealthy = await this.healthCheck()
-
-    if (!isHealthy) {
-      throw new Error("OpenObserve is unavailable")
-    }
-  }
 
   async healthCheck() {
     const { url } = this.infrastructureConfigService.openObserve

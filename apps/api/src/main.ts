@@ -12,7 +12,7 @@ import { requestContext } from "@shared/functions/requestContext"
 
 import { AppModule } from "./app/app.module"
 
-const bootstrap = async (): Promise<void> => {
+const bootstrap = async () => {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
