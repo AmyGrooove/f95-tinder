@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common"
-import { MeiliSearch } from "meilisearch"
+import { Meilisearch } from "meilisearch"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
@@ -17,7 +17,7 @@ import { SEARCH_CLIENT } from "./static/SEARCH_CLIENT"
       useFactory: (configurationService: InfrastructureConfigService) => {
         const { host, apiKey } = configurationService.search
 
-        return new MeiliSearch({
+        return new Meilisearch({
           host,
           apiKey,
         })

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common"
 import {
   ErrorStatusCode,
-  MeiliSearchApiError,
-  type MeiliSearch,
+  MeilisearchApiError,
+  type Meilisearch,
 } from "meilisearch"
 
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
@@ -16,7 +16,7 @@ class SearchService {
   private readonly indexInitializations = new Map<string, Promise<number>>()
 
   constructor(
-    @Inject(SEARCH_CLIENT) private readonly searchClient: MeiliSearch,
+    @Inject(SEARCH_CLIENT) private readonly searchClient: Meilisearch,
   ) {}
 
   async ensureIndex(
@@ -93,7 +93,7 @@ class SearchService {
       await this.searchClient.getIndex(name)
     } catch (error) {
       if (
-        !(error instanceof MeiliSearchApiError) ||
+        !(error instanceof MeilisearchApiError) ||
         error.cause?.code !== ErrorStatusCode.INDEX_NOT_FOUND
       ) {
         throw error

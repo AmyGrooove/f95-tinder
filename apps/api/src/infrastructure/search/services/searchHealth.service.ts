@@ -1,12 +1,12 @@
 import { Inject, Injectable, type OnApplicationBootstrap } from "@nestjs/common"
-import type { MeiliSearch } from "meilisearch"
+import type { Meilisearch } from "meilisearch"
 
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
 
 @Injectable()
 class SearchHealthService implements OnApplicationBootstrap {
   constructor(
-    @Inject(SEARCH_CLIENT) private readonly searchClient: MeiliSearch,
+    @Inject(SEARCH_CLIENT) private readonly searchClient: Meilisearch,
   ) {}
 
   async onApplicationBootstrap() {
