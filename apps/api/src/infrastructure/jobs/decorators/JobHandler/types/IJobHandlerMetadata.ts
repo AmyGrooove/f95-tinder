@@ -1,8 +1,7 @@
-import type { IJobHandlerOptions } from "../../../types/IJobHandlerOptions"
-import type { TJobType } from "../../../types/IJobPayloadMap"
+import type { JobDefinition } from "../../../types/JobDefinition"
 
-interface IJobHandlerMetadata extends IJobHandlerOptions {
-  type: TJobType
+interface IJobHandlerMetadata {
+  definition: JobDefinition<unknown>
 }
 
 export type { IJobHandlerMetadata }

@@ -1,8 +1,8 @@
-import type { IJobPayloadMap, TJobType } from "./IJobPayloadMap"
-
-interface IJobData<TType extends TJobType> {
-  type: TType
-  payload: IJobPayloadMap[TType]
+interface IJobData<TPayload = unknown> {
+  name: string
+  version: number
+  payload: TPayload
+  retryDelays: readonly number[]
   cancellationState: "none" | "cancelling" | "cancelled"
 }
 

@@ -1,149 +1,181 @@
-import { InjectQueue } from "@nestjs/bullmq"
-import { Injectable } from "@nestjs/common"
-import { UnrecoverableError, type Job, type Queue } from "bullmq"
+import {
+  InjectQueue,
+  OnWorkerEvent,
+  Processor,
+  WorkerHost,
+} from "@nestjs/bullmq"
+import { UnrecoverableError, type Job } from "bullmq"
+import type { Queue } from "bullmq"
 
-import { isObject } from "@shared/functions/checks/isObject"
+import { isInt } from "@shared/functions/checks/isInt"
+import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
 import { LoggerService } from "../../logger/services/logger.service"
-import { JobCancellationError } from "../errors/JobCancellationError"
+import { JobCancelledError } from "../errors/JobCancelledError"
 import { NonRetryableJobError } from "../errors/NonRetryableJobError"
+import { parseJobData } from "../functions/parseJobData"
+import { JOB_CANCELLED_RESULT } from "../static/JOB_CANCELLED_RESULT"
 import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
+import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
 import type { IJobData } from "../types/IJobData"
-import type { IJobProgress } from "../types/IJobProgress"
-import type { TJobType } from "../types/IJobPayloadMap"
-import { JobConcurrencyService } from "./jobConcurrency.service"
+import type { JobContext } from "../types/JobContext"
 import { JobRegistry } from "./jobRegistry.service"
 
-@Injectable()
-class JobProcessorService {
+@Processor(JOBS_QUEUE_NAME, {
+  concurrency: JOBS_SETTINGS.concurrency,
+  settings: {
+    backoffStrategy: (attempt, _type, _error, job) => {
+      return isNil(job)
+        ? -1
+        : (parseJobData(job.data).retryDelays[attempt - 1] ?? -1)
+    },
+  },
+})
+class JobProcessorService extends WorkerHost {
   constructor(
     @InjectQueue(JOBS_QUEUE_NAME) private readonly jobsQueue: Queue,
-    private readonly jobConcurrencyService: JobConcurrencyService,
     private readonly jobRegistry: JobRegistry,
     private readonly loggerService: LoggerService,
-  ) {}
+  ) {
+    super()
+  }
+
+  @OnWorkerEvent("error")
+  onWorkerError(error: Error) {
+    this.loggerService.error("Job worker error", error, {
+      context: JobProcessorService.name,
+      data: { queue: JOBS_QUEUE_NAME },
+    })
+  }
 
   async process(job: Job) {
-    if (!job.id) {
+    const id = job.id
+
+    if (!isString(id) || id === "") {
       throw new UnrecoverableError("BullMQ job does not have an identifier")
     }
 
-    const id = job.id
-    const data = this.getData(job.data)
-    const registeredHandler = this.jobRegistry.get(data.type)
+    let data: IJobData
+    try {
+      data = parseJobData(job.data)
+    } catch (error) {
+      this.loggerService.error("Invalid persisted job envelope", error, {
+        context: JobProcessorService.name,
+        data: { jobName: job.name },
+        jobId: id,
+      })
 
-    if (!registeredHandler) {
       throw new UnrecoverableError(
-        `No handler is registered for job type '${data.type}'`,
+        `Invalid persisted envelope for '${job.name}'`,
       )
     }
 
-    if (data.cancellationState !== "none") {
-      return
+    const registeredHandler = this.jobRegistry.get(job.name)
+
+    if (isNil(registeredHandler)) {
+      throw new UnrecoverableError(`No handler is registered for '${job.name}'`)
     }
 
-    await job.updateProgress({
-      progress: 0,
-      executionState: "queued",
-    } satisfies IJobProgress)
+    if (
+      data.name !== job.name ||
+      data.version !== registeredHandler.definition.version
+    ) {
+      throw new UnrecoverableError(
+        `Incompatible payload version for '${job.name}'`,
+      )
+    }
 
-    await this.jobConcurrencyService.run(
-      data.type,
-      registeredHandler.options.concurrency,
-      async () => {
-        const currentJob = await this.jobsQueue.getJob(id)
-        const currentData = currentJob
-          ? this.getData(currentJob.data)
-          : undefined
-
-        if (!currentData || currentData.cancellationState !== "none") {
-          return
+    const context: JobContext = {
+      id,
+      attempt: job.attemptsStarted,
+      updateProgress: async (progress) => {
+        if (
+          !isInt(progress.progress) ||
+          progress.progress < 0 ||
+          progress.progress > 100 ||
+          (!isNil(progress.status) && !isString(progress.status))
+        ) {
+          throw new Error("Job progress must be an integer between 0 and 100")
         }
 
-        await job.updateProgress({
-          progress: 0,
-          executionState: "running",
-        } satisfies IJobProgress)
+        await job.updateProgress(progress)
+      },
+      throwIfCancelled: async () => {
+        const currentJob = await this.jobsQueue.getJob(id)
 
-        try {
-          await registeredHandler.handler.handle(id, currentData.payload)
-          await this.markCancelledIfRequested(job, id)
-        } catch (error) {
-          if (error instanceof JobCancellationError) {
-            await this.markCancelled(job, id)
-
-            return
-          }
-
-          if (await this.markCancelledIfRequested(job, id)) {
-            return
-          }
-
-          const processingError =
-            error instanceof NonRetryableJobError
-              ? new UnrecoverableError(error.message)
-              : error instanceof Error
-                ? error
-                : new Error("Job handler failed")
-
-          this.loggerService.error("Job handler failed", processingError, {
-            context: JobProcessorService.name,
-            data: { type: data.type },
-            jobId: id,
-          })
-
-          throw processingError
+        if (
+          isNil(currentJob) ||
+          parseJobData(currentJob.data).cancellationState !== "none"
+        ) {
+          throw new JobCancelledError(`Job '${id}' was cancelled`)
         }
       },
-    )
-  }
-
-  private getData(value: unknown): IJobData<TJobType> {
-    if (!isObject(value)) {
-      throw new UnrecoverableError("Persisted job has an invalid type")
     }
 
-    const candidate = value as Record<string, unknown>
+    const startedAt = Date.now()
 
-    if (!isString(candidate.type)) {
-      throw new UnrecoverableError("Persisted job has an invalid type")
-    }
-
-    if (
-      candidate.cancellationState !== "none" &&
-      candidate.cancellationState !== "cancelling" &&
-      candidate.cancellationState !== "cancelled"
-    ) {
-      throw new UnrecoverableError("Persisted job has an invalid envelope")
-    }
-
-    return value as IJobData<TJobType>
-  }
-
-  private async markCancelledIfRequested(job: Job, id: string) {
-    const currentJob = await this.jobsQueue.getJob(id)
-
-    if (
-      !currentJob ||
-      this.getData(currentJob.data).cancellationState === "none"
-    ) {
-      return false
-    }
-
-    await this.markCancelled(job, id)
-
-    return true
-  }
-
-  private async markCancelled(job: Job, id: string) {
-    const currentJob = await this.jobsQueue.getJob(id)
-
-    if (currentJob) {
-      await job.updateData({
-        ...this.getData(currentJob.data),
-        cancellationState: "cancelled",
+    try {
+      await context.throwIfCancelled()
+      const result = await registeredHandler.handler.handle(
+        data.payload,
+        context,
+      )
+      await context.throwIfCancelled()
+      this.loggerService.info("Job completed", {
+        context: JobProcessorService.name,
+        data: {
+          jobName: job.name,
+          attempt: context.attempt,
+          duration: Date.now() - startedAt,
+        },
+        jobId: id,
       })
+      return result
+    } catch (error) {
+      const currentJob = await this.jobsQueue.getJob(id)
+      const currentData =
+        isNil(currentJob) ? undefined : parseJobData(currentJob.data)
+      const isCancellationRequested =
+        !isNil(currentData) && currentData.cancellationState !== "none"
+
+      if (error instanceof JobCancelledError || isCancellationRequested) {
+        if (!isNil(currentJob) && !isNil(currentData)) {
+          await currentJob.updateData({
+            ...currentData,
+            cancellationState: "cancelled",
+          })
+        }
+        this.loggerService.info("Job cancelled", {
+          context: JobProcessorService.name,
+          data: {
+            jobName: job.name,
+            attempt: context.attempt,
+            duration: Date.now() - startedAt,
+          },
+          jobId: id,
+        })
+        return JOB_CANCELLED_RESULT
+      }
+
+      const processingError =
+        error instanceof NonRetryableJobError
+          ? new UnrecoverableError(error.message)
+          : error instanceof Error
+            ? error
+            : new Error("Job handler failed")
+
+      this.loggerService.error("Job handler failed", error, {
+        context: JobProcessorService.name,
+        data: {
+          jobName: job.name,
+          attempt: context.attempt,
+          duration: Date.now() - startedAt,
+        },
+        jobId: id,
+      })
+
+      throw processingError
     }
   }
 }

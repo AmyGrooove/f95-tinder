@@ -1,10 +1,10 @@
 import type { TJobState } from "./TJobState"
-import type { TJobType } from "./IJobPayloadMap"
-
 interface IJobDetails {
-  type: TJobType
+  id: string
+  name: string
   state: TJobState
   progress: number
+  attempt: number
   createdAt: Date
 
   status?: string

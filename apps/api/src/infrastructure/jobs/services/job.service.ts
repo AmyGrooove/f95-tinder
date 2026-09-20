@@ -1,53 +1,56 @@
 import { InjectQueue } from "@nestjs/bullmq"
 import { Injectable } from "@nestjs/common"
-import type { Job, JobsOptions, Queue } from "bullmq"
+import type { Job, JobsOptions, JobType, Queue } from "bullmq"
 
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
-import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 
-import { JobCancellationError } from "../errors/JobCancellationError"
-import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
-import type { IJobListOptions } from "../types/IJobListOptions"
-import type { IJobPayloadMap } from "../types/IJobPayloadMap"
-import type { IJobData } from "../types/IJobData"
-import type { IJobProgress } from "../types/IJobProgress"
-import type { TJobType } from "../types/IJobPayloadMap"
 import { createJobDetails } from "../functions/createJobDetails"
 import { getJobState } from "../functions/getJobState"
-import { normalizeJobProgress } from "../functions/normalizeJobProgress"
-import { JobRegistry } from "./jobRegistry.service"
+import { parseJobData } from "../functions/parseJobData"
+import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
+import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
+import type { IJobAddOptions } from "../types/IJobAddOptions"
+import type { IJobData } from "../types/IJobData"
+import type { JobDefinition } from "../types/JobDefinition"
+import type { IJobListOptions } from "../types/IJobListOptions"
 
 @Injectable()
 class JobService {
   constructor(
     @InjectQueue(JOBS_QUEUE_NAME) private readonly jobsQueue: Queue,
-    private readonly jobRegistry: JobRegistry,
   ) {}
 
-  async add<TType extends TJobType>(
-    type: TType,
-    payload: IJobPayloadMap[TType],
+  async add<TPayload>(
+    definition: JobDefinition<TPayload>,
+    payload: NoInfer<TPayload>,
+    options?: IJobAddOptions,
   ) {
-    const registeredHandler = this.jobRegistry.get(type)
-
-    if (isNil(registeredHandler)) {
-      throw new Error(`No handler is registered for job type '${type}'`)
+    if (
+      !isNil(options?.delay) &&
+      (!isInt(options.delay) || options.delay < 0)
+    ) {
+      throw new Error("Job delay must be a non-negative integer")
     }
 
-    const isCustomBackoff = registeredHandler.options.retryDelays.length > 0
     const job = await this.jobsQueue.add(
-      type,
-      { cancellationState: "none", payload, type } satisfies IJobData<TType>,
+      definition.name,
       {
-        attempts: registeredHandler.options.attempts,
-        backoff: isCustomBackoff
-          ? { type: "custom" }
-          : { delay: registeredHandler.options.retryDelay, type: "fixed" },
-        delay: 5_000,
-        removeOnComplete: { age: 60 * 60 * 24 * 7, count: 1_000 },
-        removeOnFail: { age: 60 * 60 * 24 * 14, count: 2_000 },
+        name: definition.name,
+        version: definition.version,
+        payload,
+        retryDelays: definition.retryDelays,
+        cancellationState: "none",
+      } satisfies IJobData<TPayload>,
+      {
+        attempts: definition.retryDelays.length + 1,
+        backoff:
+          definition.retryDelays.length > 0 ? { type: "custom" } : undefined,
+        jobId: options?.jobId,
+        delay: options?.delay,
+        deduplication: options?.deduplication,
+        removeOnComplete: JOBS_SETTINGS.removeOnComplete,
+        removeOnFail: JOBS_SETTINGS.removeOnFail,
       } satisfies JobsOptions,
     )
 
@@ -58,43 +61,17 @@ class JobService {
     return job.id
   }
 
-  async cancel(id: string) {
-    const job = await this.jobsQueue.getJob(id)
-
-    if (isNil(job)) {
-      return false
-    }
-
-    const state = await this.getState(job)
-
-    if (state === "completed" || state === "failed") {
-      return false
-    }
-
-    if (state === "cancelling" || state === "cancelled") {
-      return true
-    }
-
-    const data = job.data as IJobData<TJobType>
-    const cancellationState = state === "queued" ? "cancelled" : "cancelling"
-
-    if (data.cancellationState !== cancellationState) {
-      await job.updateData({ ...data, cancellationState })
-    }
-
-    return true
-  }
-
   async get(id: string) {
     const job = await this.jobsQueue.getJob(id)
-
-    return isNil(job) ? null : this.createJobDetails(job)
+    return isNil(job) ? null : this.toDetails(job)
   }
 
-  async list<TType extends TJobType>(type: TType, options?: IJobListOptions) {
-    const { page, limit } = normalizePagination(options, 50)
-    const requestedStates = options?.states
-    const jobs = await this.jobsQueue.getJobs([
+  async list<TPayload>(
+    definition: JobDefinition<TPayload>,
+    options?: IJobListOptions,
+  ) {
+    const limit = options?.limit ?? 50
+    const allStates = [
       "active",
       "completed",
       "delayed",
@@ -102,97 +79,185 @@ class JobService {
       "prioritized",
       "waiting",
       "waiting-children",
-    ])
-    const details = await Promise.all(
-      jobs
-        .filter((job) => job.name === type)
-        .sort((firstJob, secondJob) => {
-          const timestampDifference = secondJob.timestamp - firstJob.timestamp
+    ] satisfies JobType[]
+    const states = allStates.filter((state) => {
+      if (isNil(options?.states)) {
+        return true
+      }
 
-          if (timestampDifference !== 0) {
-            return timestampDifference
-          }
+      if (state === "active") {
+        return options.states.some((item) =>
+          ["running", "cancelling"].includes(item),
+        )
+      }
 
-          return String(secondJob.id).localeCompare(
-            String(firstJob.id),
-            undefined,
-            {
-              numeric: true,
-            },
-          )
-        })
-        .map((job) => this.createJobDetails(job)),
-    )
-    const matchingDetails = details.filter(
-      (job) => isNil(requestedStates) || requestedStates.includes(job.state),
-    )
-    const total = matchingDetails.length
-    const offset = (page - 1) * limit
+      if (state === "completed") {
+        return options.states.some((item) =>
+          ["completed", "cancelled"].includes(item),
+        )
+      }
 
-    return createPaginatedResult(
-      matchingDetails.slice(offset, offset + limit),
-      total,
-      page,
-      limit,
-    )
-  }
+      if (state === "failed") {
+        return options.states.includes("failed")
+      }
 
-  async update(id: string, progress?: number, status?: string) {
-    if (isNil(progress) && isNil(status)) {
-      throw new Error("Job update must include progress or status")
-    }
+      return options.states.some((item) =>
+        ["queued", "cancelling", "cancelled"].includes(item),
+      )
+    })
+    const [statePart, offsetPart] = (options?.cursor ?? "0:0").split(":")
+    let stateIndex = Number(statePart)
+    let offset = Number(offsetPart)
 
     if (
-      !isNil(progress) &&
-      (!isInt(progress) || progress < 0 || progress > 100)
+      !isInt(limit) ||
+      limit < 1 ||
+      limit > 100 ||
+      !isInt(stateIndex) ||
+      stateIndex < 0 ||
+      stateIndex > states.length ||
+      !isInt(offset) ||
+      offset < 0
     ) {
-      throw new Error("Job progress must be an integer between 0 and 100")
+      throw new Error("Invalid job list range")
     }
 
+    const items = []
+    let scanned = 0
+
+    while (
+      stateIndex < states.length &&
+      scanned < 500 &&
+      items.length < limit
+    ) {
+      const batchSize = Math.min(100, 500 - scanned)
+      const batch = await this.jobsQueue.getJobs(
+        states[stateIndex],
+        offset,
+        offset + batchSize - 1,
+      )
+
+      for (const job of batch) {
+        offset += 1
+        scanned += 1
+
+        if (job.name !== definition.name) {
+          continue
+        }
+
+        const details = await this.toDetails(job)
+
+        if (
+          !isNil(options?.states) &&
+          !options.states.includes(details.state)
+        ) {
+          continue
+        }
+
+        items.push(details)
+
+        if (items.length === limit) {
+          break
+        }
+      }
+
+      if (batch.length < batchSize && items.length < limit) {
+        stateIndex += 1
+        offset = 0
+      }
+    }
+
+    return stateIndex < states.length
+      ? { items, hasMore: true, cursor: `${stateIndex}:${offset}` }
+      : { items, hasMore: false }
+  }
+
+  async update<TPayload>(
+    definition: JobDefinition<TPayload>,
+    id: string,
+    payload: NoInfer<TPayload>,
+  ) {
     const job = await this.jobsQueue.getJob(id)
 
     if (isNil(job)) {
       throw new Error(`Job '${id}' does not exist`)
     }
 
-    const state = await this.getState(job)
+    const data = parseJobData(job.data)
 
-    if (["cancelled", "completed", "failed"].includes(state)) {
-      throw new Error(`Job '${id}' is already finished`)
+    if (
+      job.name !== definition.name ||
+      data.name !== definition.name ||
+      data.version !== definition.version
+    ) {
+      throw new Error(
+        `Job '${id}' does not match definition '${definition.name}'`,
+      )
     }
 
-    if (state === "cancelling") {
-      throw new JobCancellationError(`Job '${id}' was cancelled`)
+    const state = await getJobState(job, data)
+
+    if (state !== "queued") {
+      throw new Error(`Job '${id}' cannot be updated in state '${state}'`)
     }
 
-    const currentProgress = normalizeJobProgress(job.progress)
-    await job.updateProgress({
-      executionState: currentProgress.executionState,
-      progress: progress ?? currentProgress.progress,
-      status: status ?? currentProgress.status,
-    } satisfies IJobProgress)
+    await job.updateData({ ...data, payload })
   }
 
-  async healthCheck() {
-    await this.jobsQueue.getJobCounts()
+  async cancel(id: string) {
+    const job = await this.jobsQueue.getJob(id)
+
+    if (isNil(job)) {
+      return false
+    }
+
+    const data = parseJobData(job.data)
+    const state = await getJobState(job, data)
+
+    if (state === "completed" || state === "failed") {
+      return false
+    }
+
+    if (state === "cancelled" || state === "cancelling") {
+      return true
+    }
+
+    await job.updateData({
+      ...data,
+      cancellationState: state === "queued" ? "cancelled" : "cancelling",
+    })
 
     return true
   }
 
-  private async createJobDetails(job: Job) {
-    const data = job.data as IJobData<TJobType>
-    const progress = normalizeJobProgress(job.progress)
-    const state = await getJobState(job, data, progress)
+  async retry(id: string) {
+    const job = await this.jobsQueue.getJob(id)
 
-    return createJobDetails(job, data, progress, state)
+    if (isNil(job)) {
+      throw new Error(`Job '${id}' does not exist`)
+    }
+
+    const data = parseJobData(job.data)
+    const state = await getJobState(job, data)
+
+    if (state !== "failed") {
+      throw new Error(`Job '${id}' cannot be retried in state '${state}'`)
+    }
+
+    if (data.cancellationState !== "none") {
+      await job.updateData({ ...data, cancellationState: "none" })
+    }
+
+    await job.retry("failed", {
+      resetAttemptsMade: true,
+      resetAttemptsStarted: true,
+    })
   }
 
-  private async getState(
-    job: Job,
-    data = job.data as IJobData<TJobType>,
-    progress = normalizeJobProgress(job.progress),
-  ) {
-    return getJobState(job, data, progress)
+  private async toDetails(job: Job) {
+    const data = parseJobData(job.data)
+    const state = await getJobState(job, data)
+    return createJobDetails(job, { state, name: data.name })
   }
 }
 

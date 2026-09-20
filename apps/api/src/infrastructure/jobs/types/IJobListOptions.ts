@@ -1,7 +1,7 @@
 import type { TJobState } from "./TJobState"
 
 interface IJobListOptions {
-  page?: number
+  cursor?: string
   limit?: number
   states?: readonly TJobState[]
 }

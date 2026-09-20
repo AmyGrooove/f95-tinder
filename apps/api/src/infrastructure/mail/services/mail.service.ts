@@ -4,7 +4,7 @@ import { JobService } from "@infrastructure/jobs/services/job.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-import { MAIL_JOB_NAME } from "../static/MAIL_JOB_NAME"
+import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
 import type { IMailDeliveryResult } from "../types/IMailDeliveryResult"
 import type { ISendMailOptions } from "../types/ISendMailOptions"
 
@@ -24,7 +24,7 @@ class MailService {
           : attachment.content,
       })),
     }
-    const id = await this.jobService.add(MAIL_JOB_NAME, payload)
+    const id = await this.jobService.add(SEND_MAIL_JOB, payload)
 
     return { id, status: "queued" } satisfies IMailDeliveryResult
   }

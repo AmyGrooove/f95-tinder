@@ -1,11 +1,9 @@
-import type { IJobHandlerOptions } from "./IJobHandlerOptions"
-import type { IJobPayloadMap, TJobType } from "./IJobPayloadMap"
+import type { IJobHandler } from "./IJobHandler"
+import type { JobDefinition } from "./JobDefinition"
 
-interface IRegisteredJobHandler<TType extends TJobType = TJobType> {
-  handler: {
-    handle(id: string, payload: IJobPayloadMap[TType]): Promise<unknown> | unknown
-  }
-  options: Required<IJobHandlerOptions>
+interface IRegisteredJobHandler {
+  handler: IJobHandler<unknown>
+  definition: JobDefinition<unknown>
 }
 
 export type { IRegisteredJobHandler }

@@ -5,8 +5,7 @@ import { DiscoveryModule } from "@nestjs/core"
 import { InfrastructureConfigModule } from "../config/config.module"
 import { InfrastructureConfigService } from "../config/services/config.service"
 import { LoggerModule } from "../logger/logger.module"
-import { JobDispatcher } from "./services/jobDispatcher.service"
-import { JobConcurrencyService } from "./services/jobConcurrency.service"
+import { JobsHealthService } from "./services/jobsHealth.service"
 import { JobProcessorService } from "./services/jobProcessor.service"
 import { JobRegistry } from "./services/jobRegistry.service"
 import { JobService } from "./services/job.service"
@@ -19,7 +18,9 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
     BullModule.forRootAsync({
       imports: [InfrastructureConfigModule],
       inject: [InfrastructureConfigService],
-      useFactory: (infrastructureConfigService: InfrastructureConfigService) => {
+      useFactory: (
+        infrastructureConfigService: InfrastructureConfigService,
+      ) => {
         return {
           connection: {
             db: infrastructureConfigService.redis.database,
@@ -35,14 +36,8 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
     }),
     BullModule.registerQueue({ name: JOBS_QUEUE_NAME }),
   ],
-  providers: [
-    JobConcurrencyService,
-    JobDispatcher,
-    JobProcessorService,
-    JobRegistry,
-    JobService,
-  ],
-  exports: [BullModule, JobService],
+  providers: [JobsHealthService, JobProcessorService, JobRegistry, JobService],
+  exports: [JobService, JobsHealthService],
 })
 class JobsModule {}
 

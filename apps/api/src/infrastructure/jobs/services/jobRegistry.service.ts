@@ -2,23 +2,34 @@ import { Injectable, OnModuleInit } from "@nestjs/common"
 import { DiscoveryService } from "@nestjs/core"
 
 import { isFunction } from "@shared/functions/checks/isFunction"
-import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
 
-import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
-import type { IJobHandlerOptions } from "../types/IJobHandlerOptions"
-import type { TJobType } from "../types/IJobPayloadMap"
-import type { IRegisteredJobHandler } from "../types/IRegisteredJobHandler"
 import type { IJobHandlerMetadata } from "../decorators/JobHandler/types/IJobHandlerMetadata"
+import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
+import type { IRegisteredJobHandler } from "../types/IRegisteredJobHandler"
 
 @Injectable()
 class JobRegistry implements OnModuleInit {
-  private readonly handlers = new Map<TJobType, IRegisteredJobHandler>()
+  private readonly handlers = new Map<string, IRegisteredJobHandler>()
+  private isInitialized = false
 
   constructor(private readonly discoveryService: DiscoveryService) {}
 
   onModuleInit() {
+    this.initialize()
+  }
+
+  get(name: string) {
+    this.initialize()
+    return this.handlers.get(name)
+  }
+
+  private initialize() {
+    if (this.isInitialized) {
+      return
+    }
+
     for (const provider of this.discoveryService.getProviders()) {
       if (isNil(provider.metatype)) {
         continue
@@ -29,86 +40,37 @@ class JobRegistry implements OnModuleInit {
         provider.metatype,
       ) as IJobHandlerMetadata | undefined
 
-      if (!isNil(metadata)) {
-        this.register(metadata, provider.instance)
+      if (isNil(metadata)) {
+        continue
       }
-    }
-  }
 
-  get(type: TJobType) {
-    return this.handlers.get(type)
-  }
+      const { definition } = metadata
 
-  getConcurrency() {
-    return [...this.handlers.values()].reduce((total, { options }) => {
-      return total + options.concurrency
-    }, 0)
-  }
+      if (this.handlers.has(definition.name)) {
+        throw new Error(
+          `Multiple handlers are registered for '${definition.name}'`,
+        )
+      }
 
-  private register(metadata: IJobHandlerMetadata, instance: unknown) {
-    if (this.handlers.has(metadata.type)) {
-      throw new Error(`Multiple handlers are registered for '${metadata.type}'`)
-    }
+      const instance: unknown = provider.instance
 
-    if (
-      !isObject(instance) ||
-      !isFunction((instance as Record<string, unknown>).handle)
-    ) {
-      throw new Error(`Job handler '${metadata.type}' must provide handle()`)
-    }
+      if (
+        !isObject(instance) ||
+        !("handle" in instance) ||
+        !isFunction(instance.handle)
+      ) {
+        throw new Error(
+          `Job handler '${definition.name}' must provide handle()`,
+        )
+      }
 
-    this.handlers.set(metadata.type, {
-      handler: instance as IRegisteredJobHandler["handler"],
-      options: this.normalizeOptions(metadata),
-    })
-  }
-
-  private normalizeOptions(options?: IJobHandlerOptions) {
-    const normalizedOptions = {
-      attempts: options?.attempts ?? 3,
-      retryDelay: options?.retryDelay ?? 1_000,
-      retryDelays: options?.retryDelays ?? [],
-      concurrency: options?.concurrency ?? 1,
+      this.handlers.set(definition.name, {
+        definition,
+        handler: instance as IRegisteredJobHandler["handler"],
+      })
     }
 
-    if (!isInt(normalizedOptions.attempts) || normalizedOptions.attempts <= 0) {
-      throw new Error(
-        "Job handler option 'attempts' must be a positive integer",
-      )
-    }
-
-    if (
-      !isInt(normalizedOptions.retryDelay) ||
-      normalizedOptions.retryDelay < 0
-    ) {
-      throw new Error(
-        "Job handler option 'retryDelay' must be a non-negative integer",
-      )
-    }
-
-    if (
-      normalizedOptions.retryDelays.length > 0 &&
-      (normalizedOptions.retryDelays.length !==
-        normalizedOptions.attempts - 1 ||
-        normalizedOptions.retryDelays.some(
-          (delay) => !isInt(delay) || delay < 0,
-        ))
-    ) {
-      throw new Error(
-        "Job handler option 'retryDelays' must match the retry count",
-      )
-    }
-
-    if (
-      !isInt(normalizedOptions.concurrency) ||
-      normalizedOptions.concurrency <= 0
-    ) {
-      throw new Error(
-        "Job handler option 'concurrency' must be a positive integer",
-      )
-    }
-
-    return normalizedOptions
+    this.isInitialized = true
   }
 }
 

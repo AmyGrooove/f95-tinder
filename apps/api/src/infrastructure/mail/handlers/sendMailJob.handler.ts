@@ -3,27 +3,24 @@ import type { Resend } from "resend"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
+import type { JobContext } from "@infrastructure/jobs/types/JobContext"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
 import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
-import { MAIL_JOB_NAME } from "../static/MAIL_JOB_NAME"
+import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
 import { MAIL_SENDERS } from "../static/MAIL_SENDERS"
 import type { ISendMailOptions } from "../types/ISendMailOptions"
 
 @Injectable()
-@JobHandler(MAIL_JOB_NAME, {
-  attempts: 4,
-  retryDelays: [1_000, 5_000, 30_000],
-  concurrency: 5,
-})
+@JobHandler(SEND_MAIL_JOB)
 class SendMailJobHandler {
   constructor(
     @Inject(MAIL_CLIENT) private readonly mailClient: Resend,
     private readonly infrastructureConfigService: InfrastructureConfigService,
   ) {}
 
-  async handle(id: string, payload: ISendMailOptions) {
+  async handle(payload: ISendMailOptions, context: JobContext) {
     const content =
       isString(payload.html) && payload.html !== ""
         ? { html: payload.html, text: payload.text }
@@ -34,6 +31,8 @@ class SendMailJobHandler {
     if (isNil(content)) {
       throw new Error("Mail content must include text or HTML")
     }
+
+    await context.throwIfCancelled()
 
     const sender = payload.from ?? "no-reply"
     const domain = this.infrastructureConfigService.mail.domain
@@ -46,7 +45,10 @@ class SendMailJobHandler {
         subject: payload.subject,
         to: payload.to,
       },
-      { idempotencyKey: payload.idempotencyKey ?? `${MAIL_JOB_NAME}:${id}` },
+      {
+        idempotencyKey:
+          payload.idempotencyKey ?? `${SEND_MAIL_JOB.name}:${context.id}`,
+      },
     )
 
     if (!isNil(result.error)) {
