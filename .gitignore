@@ -1,11 +1,38 @@
-node_modules
-.next
-dist
-release
+# Environment
 .env
-.env.local
-.pnpm-store
-.agents
-tsconfig.tsbuildinfo
-next-env.d.ts
-pnpm-lock.yaml
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Logs
+*.log
+logs/
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+.cache/

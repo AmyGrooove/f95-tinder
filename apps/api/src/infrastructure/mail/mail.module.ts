@@ -1,10 +1,9 @@
 import { Module } from "@nestjs/common"
-import { Resend } from "resend"
+import { createTransport } from "nodemailer"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
-import { isNil } from "@shared/functions/checks/isNil"
 
 import { SendMailJobHandler } from "./handlers/sendMailJob.handler"
 import { MailHealthService } from "./services/mailHealth.service"
@@ -18,26 +17,14 @@ import { MAIL_CLIENT } from "./static/MAIL_CLIENT"
       provide: MAIL_CLIENT,
       inject: [InfrastructureConfigService],
       useFactory: (configurationService: InfrastructureConfigService) => {
-        const mail = configurationService.mail
-        const apiKey = mail.apiKey?.trim()
-        const domain = mail.domain?.trim()
+        const { host, password, port, secure, user } = configurationService.mail
 
-        if (isNil(apiKey) || apiKey === "" || isNil(domain) || domain === "") {
-          throw new Error(
-            "RESEND_ACCESS_SECRET and MAIL_DOMAIN must be configured",
-          )
-        }
-
-        const isValidDomain =
-          /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(
-            domain,
-          )
-
-        if (!isValidDomain) {
-          throw new Error("MAIL_DOMAIN must be a valid email domain")
-        }
-
-        return new Resend(apiKey)
+        return createTransport({
+          auth: { pass: password, user },
+          host,
+          port,
+          secure,
+        })
       },
     },
     SendMailJobHandler,

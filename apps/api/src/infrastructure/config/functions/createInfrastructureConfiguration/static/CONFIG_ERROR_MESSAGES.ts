@@ -16,6 +16,8 @@ const CONFIG_ERROR_MESSAGES = {
   REDIS_DATABASE: "REDIS_URL database must be a non-negative integer",
   JWT_SECRET_LENGTH: "JWT secrets must be at least 32 characters long",
   INVALID_MAIL_DOMAIN: "MAIL_DOMAIN must be a valid email domain",
+  INVALID_SMTP_PORT: "SMTP_PORT must be an integer from 1 to 65535",
+  INVALID_SMTP_SECURE: "SMTP_SECURE must be true or false",
 } as const
 
 export { CONFIG_ERROR_MESSAGES }

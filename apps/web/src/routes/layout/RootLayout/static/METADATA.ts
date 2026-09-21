@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 const METADATA: Metadata = {
-  title: 'F95 Tinder',
+  title: 'Bisky',
   icons: {
     icon: '/favicon.svg',
   },

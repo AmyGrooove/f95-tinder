@@ -22,6 +22,7 @@ class MailService {
         content: Buffer.isBuffer(attachment.content)
           ? attachment.content.toString("base64")
           : attachment.content,
+        isBuffer: Buffer.isBuffer(attachment.content),
       })),
     }
     const id = await this.jobService.add(SEND_MAIL_JOB, payload)
@@ -41,15 +42,6 @@ class MailService {
 
     if (options.subject.trim() === "") {
       throw new Error("Mail subject must not be empty")
-    }
-
-    if (
-      options.idempotencyKey !== undefined &&
-      (!isString(options.idempotencyKey) ||
-        options.idempotencyKey.trim() === "" ||
-        options.idempotencyKey.length > 256)
-    ) {
-      throw new Error("Mail idempotency key must be 1 to 256 characters")
     }
 
     const isTextMissing = isNil(options.text) || options.text === ""

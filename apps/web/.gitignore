@@ -1,0 +1,10 @@
+node_modules/
+.next/
+dist/
+release/
+.env
+.env.local
+.pnpm-store/
+.agents/
+tsconfig.tsbuildinfo
+next-env.d.ts

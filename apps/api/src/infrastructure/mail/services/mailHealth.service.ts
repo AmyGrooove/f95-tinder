@@ -1,29 +1,16 @@
-import { Injectable } from "@nestjs/common"
+import { Inject, Injectable } from "@nestjs/common"
+import type { Transporter } from "nodemailer"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
 
 @Injectable()
 class MailHealthService {
-  constructor(
-    private readonly infrastructureConfigService: InfrastructureConfigService,
-  ) {}
+  constructor(@Inject(MAIL_CLIENT) private readonly mailClient: Transporter) {}
 
   async healthCheck() {
-    const { apiKey, domain } = this.infrastructureConfigService.mail
-
-    if (apiKey.trim() === "" || domain.trim() === "") {
-      return false
-    }
-
     try {
-      const response = await fetch("https://api.resend.com/domains?limit=1", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        signal: AbortSignal.timeout(1_500),
-      })
-
-      const isApiAvailable = response.ok || response.status === 403
-
-      return isApiAvailable
+      await this.mailClient.verify()
+      return true
     } catch {
       return false
     }

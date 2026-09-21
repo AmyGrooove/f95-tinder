@@ -8,7 +8,6 @@ interface ISendMailOptions {
   attachments?: IMailAttachment[]
   from?: TMailSender
   html?: string
-  idempotencyKey?: string
   replyTo?: string | string[]
   text?: string
 }
