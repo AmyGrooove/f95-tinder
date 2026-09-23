@@ -1,16 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common"
-import type { Transporter } from "nodemailer"
-
-import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
+import { Injectable } from "@nestjs/common"
+import { MailerService } from "@nestjs-modules/mailer"
 
 @Injectable()
 class MailHealthService {
-  constructor(@Inject(MAIL_CLIENT) private readonly mailClient: Transporter) {}
+  constructor(private readonly mailerService: MailerService) {}
 
   async healthCheck() {
     try {
-      await this.mailClient.verify()
-      return true
+      return await this.mailerService.verifyAllTransporters()
     } catch {
       return false
     }

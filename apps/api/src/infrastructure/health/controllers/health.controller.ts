@@ -16,6 +16,13 @@ class HealthController {
   getHealth() {
     return this.healthService.checkHealth()
   }
+
+  @Get("live")
+  @ApiOperation({ summary: "Check API liveness" })
+  @ApiOkResponse({ description: "HTTP API is responding" })
+  getLiveness() {
+    return { status: "ok" }
+  }
 }
 
 export { HealthController }

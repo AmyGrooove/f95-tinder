@@ -1,5 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common"
-import type { Transporter } from "nodemailer"
+import { Injectable } from "@nestjs/common"
+import { MailerService } from "@nestjs-modules/mailer"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
@@ -7,7 +7,6 @@ import type { JobContext } from "@infrastructure/jobs/types/JobContext"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
 import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
 import { MAIL_SENDERS } from "../static/MAIL_SENDERS"
 import type { ISendMailJobPayload } from "../types/ISendMailJobPayload"
@@ -16,7 +15,7 @@ import type { ISendMailJobPayload } from "../types/ISendMailJobPayload"
 @JobHandler(SEND_MAIL_JOB)
 class SendMailJobHandler {
   constructor(
-    @Inject(MAIL_CLIENT) private readonly mailClient: Transporter,
+    private readonly mailerService: MailerService,
     private readonly infrastructureConfigService: InfrastructureConfigService,
   ) {}
 
@@ -36,7 +35,7 @@ class SendMailJobHandler {
 
     const sender = payload.from ?? "no-reply"
     const domain = this.infrastructureConfigService.mail.domain
-    const result = await this.mailClient.sendMail({
+    const result = await this.mailerService.sendMail({
       ...content,
       attachments: payload.attachments?.map(
         ({ content, isBuffer, ...attachment }) => ({
