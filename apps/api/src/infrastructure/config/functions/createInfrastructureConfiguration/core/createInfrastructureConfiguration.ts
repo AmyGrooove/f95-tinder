@@ -53,11 +53,6 @@ const createInfrastructureConfiguration = () => {
       apiKey: getRequiredEnvironmentValue("RESEND_ACCESS_SECRET"),
       domain: mailDomain,
     },
-    openObserve: {
-      url: getEnvironmentUrl("OPENOBSERVE_URL", ["http:", "https:"]).toString(),
-      username: getRequiredEnvironmentValue("OPENOBSERVE_USERNAME"),
-      password: getRequiredEnvironmentValue("OPENOBSERVE_PASSWORD"),
-    },
   }
 }
 

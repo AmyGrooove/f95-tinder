@@ -5,16 +5,15 @@ import { isString } from "@shared/functions/checks/isString"
 import { requestContext } from "@shared/functions/requestContext"
 
 import { normalizeError } from "../functions/normalizeError"
+import { redactLogValue } from "../functions/redactLogValue"
 import type { ILoggerMetadata } from "../types/ILoggerMetadata"
 import type { ILogRecord } from "../types/ILogRecord"
 import type { TLogLevel } from "../types/TLogLevel"
-import { OpenObserveService } from "./openObserve.service"
 
 @Injectable()
 class LoggerService {
   constructor(
     private readonly infrastructureConfigService: InfrastructureConfigService,
-    private readonly openObserveService: OpenObserveService,
   ) {}
 
   info(message: string, metadata?: ILoggerMetadata) {
@@ -63,7 +62,25 @@ class LoggerService {
       error: isNil(error) ? undefined : normalizeError(error),
     }
 
-    void this.openObserveService.send(record)
+    let output: string
+
+    try {
+      output = JSON.stringify(redactLogValue(record))
+    } catch {
+      process.stderr.write(
+        '{"level":"error","message":"Failed to serialize log record"}\n',
+      )
+
+      return
+    }
+
+    if (level === "error") {
+      process.stderr.write(`${output}\n`)
+
+      return
+    }
+
+    process.stdout.write(`${output}\n`)
   }
 }
 

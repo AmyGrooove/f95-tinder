@@ -37,10 +37,6 @@ class InfrastructureConfigService {
   get mail(): TInfrastructureConfiguration["mail"] {
     return this.configuration.mail
   }
-
-  get openObserve(): TInfrastructureConfiguration["openObserve"] {
-    return this.configuration.openObserve
-  }
 }
 
 export { InfrastructureConfigService }

@@ -3,7 +3,6 @@ const HEALTH_CHECK_KEYS = {
   database: "database",
   jobs: "jobs",
   mail: "mail",
-  openObserve: "openObserve",
   scheduler: "scheduler",
   search: "search",
   storage: "storage",

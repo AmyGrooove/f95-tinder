@@ -3,7 +3,6 @@ import { TerminusModule } from "@nestjs/terminus"
 
 import { CacheModule } from "@infrastructure/cache/cache.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
-import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
 import { MailModule } from "@infrastructure/mail/mail.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
@@ -18,7 +17,6 @@ import { HealthService } from "./services/health.service"
     TerminusModule,
     CacheModule,
     DatabaseModule,
-    LoggerModule,
     JobsModule,
     MailModule,
     SchedulerModule,

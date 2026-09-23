@@ -17,8 +17,5 @@ type TEnvironmentKey =
   | "MEILISEARCH_ACCESS_SECRET"
   | "RESEND_ACCESS_SECRET"
   | "MAIL_DOMAIN"
-  | "OPENOBSERVE_URL"
-  | "OPENOBSERVE_USERNAME"
-  | "OPENOBSERVE_PASSWORD"
 
 export type { TEnvironmentKey }
