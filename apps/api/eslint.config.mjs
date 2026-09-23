@@ -10,6 +10,14 @@ export default [
   eslint.configs.recommended,
   ...typescriptEslint.configs.recommended,
   {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ["src/**/*.ts"],
     languageOptions: {
       globals: {

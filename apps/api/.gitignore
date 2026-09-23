@@ -6,3 +6,5 @@ release/
 .env
 .env.*
 !.env.example
+!.env.tunnel.example
+.env.tunnel

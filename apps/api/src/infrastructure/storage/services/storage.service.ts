@@ -15,7 +15,9 @@ import type { S3Client } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isString } from "@shared/functions/checks/isString"
 
 import { DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS } from "../static/DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS"
 import { STORAGE_CLIENT } from "../static/STORAGE_CLIENT"
@@ -26,6 +28,7 @@ class StorageService implements OnModuleInit {
   constructor(
     @Inject(STORAGE_CLIENT) private readonly storageClient: S3Client,
     private readonly configurationService: InfrastructureConfigService,
+    private readonly loggerService: LoggerService,
   ) {}
 
   async onModuleInit() {
@@ -37,26 +40,50 @@ class StorageService implements OnModuleInit {
         return
       } catch (error) {
         if (!this.isObjectNotFound(error)) {
-          throw error
+          throw this.createStorageError(
+            "initialize bucket",
+            bucket,
+            "HeadBucket",
+            error,
+          )
+        }
+
+        this.logStorageError("HeadBucket", bucket, error)
+
+        const isBucketCreationEnabled =
+          this.configurationService.app.environment !== "production"
+
+        if (!isBucketCreationEnabled) {
+          throw new ServiceUnavailableException(
+            `Storage bucket '${bucket}' does not exist and auto-creation is disabled`,
+            { cause: error },
+          )
         }
       }
 
-      const isBucketCreationEnabled =
-        this.configurationService.app.environment !== "production"
-
-      if (!isBucketCreationEnabled) {
-        throw new ServiceUnavailableException(
-          `Storage bucket '${bucket}' does not exist and auto-creation is disabled`,
+      try {
+        await this.storageClient.send(
+          new CreateBucketCommand({ Bucket: bucket }),
+        )
+      } catch (error) {
+        throw this.createStorageError(
+          "initialize bucket",
+          bucket,
+          "CreateBucket",
+          error,
         )
       }
-
-      await this.storageClient.send(new CreateBucketCommand({ Bucket: bucket }))
     } catch (error) {
       if (error instanceof ServiceUnavailableException) {
         throw error
       }
 
-      throw this.createStorageError("initialize bucket", bucket)
+      throw this.createStorageError(
+        "initialize bucket",
+        bucket,
+        "unknown",
+        error,
+      )
     }
   }
 
@@ -93,8 +120,13 @@ class StorageService implements OnModuleInit {
       }
 
       return processedUpload
-    } catch {
-      throw this.createStorageError("upload", path)
+    } catch (error) {
+      throw this.createStorageError(
+        "upload",
+        path,
+        "PutObject/HeadObject",
+        error,
+      )
     }
   }
 
@@ -112,8 +144,8 @@ class StorageService implements OnModuleInit {
       }
 
       return object.Body
-    } catch {
-      throw this.createStorageError("download", path)
+    } catch (error) {
+      throw this.createStorageError("download", path, "GetObject", error)
     }
   }
 
@@ -125,8 +157,8 @@ class StorageService implements OnModuleInit {
           Key: path,
         }),
       )
-    } catch {
-      throw this.createStorageError("delete", path)
+    } catch (error) {
+      throw this.createStorageError("delete", path, "DeleteObject", error)
     }
   }
 
@@ -149,7 +181,12 @@ class StorageService implements OnModuleInit {
         return false
       }
 
-      throw this.createStorageError("check existence", path)
+      throw this.createStorageError(
+        "check existence",
+        path,
+        "HeadObject",
+        error,
+      )
     }
   }
 
@@ -165,8 +202,13 @@ class StorageService implements OnModuleInit {
           expiresIn: expiresSeconds ?? DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS,
         },
       )
-    } catch {
-      throw this.createStorageError("create read URL", path)
+    } catch (error) {
+      throw this.createStorageError(
+        "create read URL",
+        path,
+        "GetObject presign",
+        error,
+      )
     }
   }
 
@@ -182,8 +224,13 @@ class StorageService implements OnModuleInit {
           expiresIn: expiresSeconds ?? DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS,
         },
       )
-    } catch {
-      throw this.createStorageError("create write URL", path)
+    } catch (error) {
+      throw this.createStorageError(
+        "create write URL",
+        path,
+        "PutObject presign",
+        error,
+      )
     }
   }
 
@@ -215,15 +262,60 @@ class StorageService implements OnModuleInit {
 
     return (
       error.name === "NotFound" ||
+      error.name === "NoSuchBucket" ||
       error.name === "NoSuchKey" ||
-      error.$metadata.httpStatusCode === 404
+      error.$metadata?.httpStatusCode === 404
     )
   }
 
-  private createStorageError(operation: string, path: string) {
+  private createStorageError(
+    operation: string,
+    path: string,
+    command: string,
+    cause: unknown,
+  ) {
+    this.logStorageError(command, path, cause)
+
     return new ServiceUnavailableException(
       `Storage ${operation} failed for '${path}'`,
+      { cause },
     )
+  }
+
+  private logStorageError(command: string, path: string, error: unknown) {
+    const errorName = error instanceof Error ? error.name : undefined
+    const errorMessage = error instanceof Error ? error.message : undefined
+    const errorCode = this.getStorageErrorCode(error)
+    const metadata =
+      error instanceof S3ServiceException ? error.$metadata : undefined
+
+    this.loggerService.error(`Storage ${command} failed`, error, {
+      context: StorageService.name,
+      data: {
+        command,
+        path,
+        errorName,
+        errorMessage,
+        errorCode,
+        metadata,
+        httpStatusCode: metadata?.httpStatusCode,
+        requestId: metadata?.requestId,
+      },
+    })
+  }
+
+  private getStorageErrorCode(error: unknown) {
+    if (error instanceof S3ServiceException) {
+      return error.name
+    }
+
+    if (typeof error !== "object" || isNil(error)) {
+      return undefined
+    }
+
+    const code = Reflect.get(error, "code") ?? Reflect.get(error, "Code")
+
+    return isString(code) ? code : undefined
   }
 }
 

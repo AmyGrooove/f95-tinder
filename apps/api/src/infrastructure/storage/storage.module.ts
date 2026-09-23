@@ -3,6 +3,7 @@ import { S3Client } from "@aws-sdk/client-s3"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { ImageUploadInterceptor } from "./interceptors/imageUpload.interceptor"
@@ -12,7 +13,7 @@ import { StorageService } from "./services/storage.service"
 import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
 
 @Module({
-  imports: [InfrastructureConfigModule],
+  imports: [InfrastructureConfigModule, LoggerModule],
   providers: [
     {
       provide: STORAGE_CLIENT,
