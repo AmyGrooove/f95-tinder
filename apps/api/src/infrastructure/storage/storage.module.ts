@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common"
-import { Client } from "minio"
+import { S3Client } from "@aws-sdk/client-s3"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
@@ -23,12 +23,16 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
         if (
           isNil(storage.endpoint) ||
           storage.endpoint === "" ||
+          isNil(storage.region) ||
+          storage.region === "" ||
           isNil(storage.accessKey) ||
           storage.accessKey === "" ||
           isNil(storage.secretKey) ||
           storage.secretKey === ""
         ) {
-          throw new Error("MinIO URL and credentials must be configured")
+          throw new Error(
+            "Garage URL, region, and credentials must be configured",
+          )
         }
 
         let endpoint: URL
@@ -36,22 +40,23 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
         try {
           endpoint = new URL(storage.endpoint)
         } catch {
-          throw new Error("MINIO_URL must be a valid HTTP(S) URL")
+          throw new Error("GARAGE_URL must be a valid HTTP(S) URL")
         }
 
         if (endpoint.protocol !== "http:" && endpoint.protocol !== "https:") {
-          throw new Error("MINIO_URL must use HTTP or HTTPS")
+          throw new Error("GARAGE_URL must use HTTP or HTTPS")
         }
 
-        const endpointPort =
-          endpoint.port !== "" ? Number(endpoint.port) : undefined
-
-        return new Client({
-          endPoint: endpoint.hostname,
-          port: endpointPort,
-          useSSL: endpoint.protocol === "https:",
-          accessKey: storage.accessKey,
-          secretKey: storage.secretKey,
+        return new S3Client({
+          endpoint: endpoint.toString(),
+          region: storage.region,
+          forcePathStyle: true,
+          requestChecksumCalculation: "WHEN_REQUIRED",
+          responseChecksumValidation: "WHEN_REQUIRED",
+          credentials: {
+            accessKeyId: storage.accessKey,
+            secretAccessKey: storage.secretKey,
+          },
         })
       },
     },

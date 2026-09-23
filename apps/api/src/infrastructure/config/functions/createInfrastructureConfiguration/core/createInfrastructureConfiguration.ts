@@ -33,10 +33,11 @@ const createInfrastructureConfiguration = () => {
       refreshSecret,
     },
     storage: {
-      endpoint: getEnvironmentUrl("MINIO_URL", ["http:", "https:"]).toString(),
-      accessKey: getRequiredEnvironmentValue("MINIO_ACCESS_KEY"),
-      secretKey: getRequiredEnvironmentValue("MINIO_ACCESS_SECRET"),
-      publicUrl: getEnvironmentUrl("MINIO_PUBLIC_URL", [
+      endpoint: getEnvironmentUrl("GARAGE_URL", ["http:", "https:"]).toString(),
+      region: getRequiredEnvironmentValue("GARAGE_REGION"),
+      accessKey: getRequiredEnvironmentValue("GARAGE_ACCESS_KEY_ID"),
+      secretKey: getRequiredEnvironmentValue("GARAGE_SECRET_ACCESS_KEY"),
+      publicUrl: getEnvironmentUrl("GARAGE_PUBLIC_URL", [
         "http:",
         "https:",
       ]).toString(),

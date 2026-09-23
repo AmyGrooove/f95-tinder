@@ -1,19 +1,30 @@
-import type { Readable } from "node:stream"
+import { Readable } from "node:stream"
 
 import { Inject, Injectable, ServiceUnavailableException } from "@nestjs/common"
 import type { OnModuleInit } from "@nestjs/common"
-import type { Client } from "minio"
+import {
+  CreateBucketCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3ServiceException,
+} from "@aws-sdk/client-s3"
+import type { S3Client } from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { isNil } from "@shared/functions/checks/isNil"
 
+import { DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS } from "../static/DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS"
 import { STORAGE_CLIENT } from "../static/STORAGE_CLIENT"
 import type { IStorageUploadResult } from "../types/IStorageUploadResult"
 
 @Injectable()
 class StorageService implements OnModuleInit {
   constructor(
-    @Inject(STORAGE_CLIENT) private readonly storageClient: Client,
+    @Inject(STORAGE_CLIENT) private readonly storageClient: S3Client,
     private readonly configurationService: InfrastructureConfigService,
   ) {}
 
@@ -21,10 +32,13 @@ class StorageService implements OnModuleInit {
     const bucket = this.configurationService.app.name
 
     try {
-      const isBucketExists = await this.storageClient.bucketExists(bucket)
-
-      if (isBucketExists) {
+      try {
+        await this.storageClient.send(new HeadBucketCommand({ Bucket: bucket }))
         return
+      } catch (error) {
+        if (!this.isObjectNotFound(error)) {
+          throw error
+        }
       }
 
       const isBucketCreationEnabled =
@@ -36,7 +50,7 @@ class StorageService implements OnModuleInit {
         )
       }
 
-      await this.storageClient.makeBucket(bucket)
+      await this.storageClient.send(new CreateBucketCommand({ Bucket: bucket }))
     } catch (error) {
       if (error instanceof ServiceUnavailableException) {
         throw error
@@ -48,19 +62,29 @@ class StorageService implements OnModuleInit {
 
   async upload(path: string, body: Buffer | Readable, contentType: string) {
     try {
-      await this.storageClient.putObject(
-        this.getBucket(),
-        path,
-        body,
-        undefined,
-        { "Content-Type": contentType },
+      await this.storageClient.send(
+        new PutObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+          Body: body,
+          ContentType: contentType,
+        }),
       )
-      const object = await this.storageClient.statObject(this.getBucket(), path)
+      const object = await this.storageClient.send(
+        new HeadObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+      )
       const publicUrl = this.createPublicUrl(path)
+
+      if (isNil(object.ContentLength)) {
+        throw new Error("Storage object size is unavailable")
+      }
 
       const processedUpload: IStorageUploadResult = {
         path,
-        size: object.size,
+        size: object.ContentLength,
         mimeType: contentType,
       }
 
@@ -76,7 +100,18 @@ class StorageService implements OnModuleInit {
 
   async download(path: string) {
     try {
-      return await this.storageClient.getObject(this.getBucket(), path)
+      const object = await this.storageClient.send(
+        new GetObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+      )
+
+      if (!(object.Body instanceof Readable)) {
+        throw new Error("Storage object body is unavailable")
+      }
+
+      return object.Body
     } catch {
       throw this.createStorageError("download", path)
     }
@@ -84,7 +119,12 @@ class StorageService implements OnModuleInit {
 
   async delete(path: string) {
     try {
-      await this.storageClient.removeObject(this.getBucket(), path)
+      await this.storageClient.send(
+        new DeleteObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+      )
     } catch {
       throw this.createStorageError("delete", path)
     }
@@ -96,7 +136,12 @@ class StorageService implements OnModuleInit {
 
   async isExists(path: string) {
     try {
-      await this.storageClient.statObject(this.getBucket(), path)
+      await this.storageClient.send(
+        new HeadObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+      )
 
       return true
     } catch (error) {
@@ -110,10 +155,15 @@ class StorageService implements OnModuleInit {
 
   async presignedReadUrl(path: string, expiresSeconds?: number) {
     try {
-      return await this.storageClient.presignedGetObject(
-        this.getBucket(),
-        path,
-        expiresSeconds,
+      return await getSignedUrl(
+        this.storageClient,
+        new GetObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+        {
+          expiresIn: expiresSeconds ?? DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS,
+        },
       )
     } catch {
       throw this.createStorageError("create read URL", path)
@@ -122,10 +172,15 @@ class StorageService implements OnModuleInit {
 
   async presignedWriteUrl(path: string, expiresSeconds?: number) {
     try {
-      return await this.storageClient.presignedPutObject(
-        this.getBucket(),
-        path,
-        expiresSeconds,
+      return await getSignedUrl(
+        this.storageClient,
+        new PutObjectCommand({
+          Bucket: this.getBucket(),
+          Key: path,
+        }),
+        {
+          expiresIn: expiresSeconds ?? DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS,
+        },
       )
     } catch {
       throw this.createStorageError("create write URL", path)
@@ -154,11 +209,15 @@ class StorageService implements OnModuleInit {
   }
 
   private isObjectNotFound(error: unknown) {
-    if (!(error instanceof Error)) {
+    if (!(error instanceof S3ServiceException)) {
       return false
     }
 
-    return "code" in error && error.code === "NoSuchKey"
+    return (
+      error.name === "NotFound" ||
+      error.name === "NoSuchKey" ||
+      error.$metadata.httpStatusCode === 404
+    )
   }
 
   private createStorageError(operation: string, path: string) {
