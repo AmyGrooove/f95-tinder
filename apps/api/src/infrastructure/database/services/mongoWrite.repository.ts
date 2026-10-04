@@ -1,6 +1,9 @@
-import type { CreateOptions, QueryOptions, UpdateQuery } from "mongoose"
-
-import { isNil } from "@shared/functions/checks/isNil"
+import type {
+  CreateOptions,
+  QueryFilter,
+  QueryOptions,
+  UpdateQuery,
+} from "mongoose"
 
 import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
 
@@ -33,11 +36,32 @@ class MongoWriteRepository<
       options as QueryOptions<TDocument>,
     )
 
-    if (isNil(options?.new)) {
-      query.setOptions({ new: true })
-    }
+    query.setOptions({
+      new: options?.new ?? true,
+      runValidators: options?.runValidators ?? true,
+    })
 
     const document = await query.exec()
+
+    return document
+  }
+
+  async updateByFilter(
+    filter: QueryFilter<TSchema>,
+    payload: UpdateQuery<TSchema>,
+    options?: QueryOptions<TSchema>,
+  ): Promise<TDocument | null> {
+    const document = await this.model
+      .findOneAndUpdate(
+        filter as QueryFilter<TDocument>,
+        payload as UpdateQuery<TDocument>,
+        options as QueryOptions<TDocument>,
+      )
+      .setOptions({
+        new: options?.new ?? true,
+        runValidators: options?.runValidators ?? true,
+      })
+      .exec()
 
     return document
   }
@@ -48,6 +72,20 @@ class MongoWriteRepository<
   ): Promise<TDocument | null> {
     const document = await this.model
       .findByIdAndDelete(id, options as QueryOptions<TDocument>)
+      .exec()
+
+    return document
+  }
+
+  async deleteByFilter(
+    filter: QueryFilter<TSchema>,
+    options?: QueryOptions<TSchema>,
+  ): Promise<TDocument | null> {
+    const document = await this.model
+      .findOneAndDelete(
+        filter as QueryFilter<TDocument>,
+        options as QueryOptions<TDocument>,
+      )
       .exec()
 
     return document

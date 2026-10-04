@@ -1,4 +1,4 @@
-const isArray = <TValue = unknown>(value: unknown): value is TValue[] => {
+const isArray = (value: unknown): value is unknown[] => {
   return Array.isArray(value)
 }
 

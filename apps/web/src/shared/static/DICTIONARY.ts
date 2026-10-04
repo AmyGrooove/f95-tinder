@@ -1,4 +1,7 @@
 const DICTIONARY = {
+  common: {
+    dateNotSpecified: 'Не указана',
+  },
   pages: {
     library: {
       title: 'Библиотека',

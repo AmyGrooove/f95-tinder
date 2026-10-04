@@ -1,4 +1,5 @@
 import { ApiError, ERROR_CODES } from '@shared/errors/ApiError'
+import { isArray } from '@shared/functions/checks/isArray'
 import { isNil } from '@shared/functions/checks/isNil'
 import { isObject } from '@shared/functions/checks/isObject'
 import { isString } from '@shared/functions/checks/isString'
@@ -46,7 +47,7 @@ const getApiErrorResponse = async (
 
 const fetchData = async <TResponse>(
   props: IFetchDataProps,
-): Promise<TResponse> => {
+): Promise<TResponse | undefined> => {
   const { body, method = 'GET', path, query, signal } = props
 
   const searchParameters = new URLSearchParams()
@@ -56,10 +57,7 @@ const fetchData = async <TResponse>(
       return
     }
 
-    searchParameters.set(
-      key,
-      Array.isArray(value) ? value.join(',') : String(value),
-    )
+    searchParameters.set(key, isArray(value) ? value.join(',') : String(value))
   })
 
   const queryString = searchParameters.toString()
@@ -96,7 +94,7 @@ const fetchData = async <TResponse>(
   }
 
   if (response.status === 204) {
-    return undefined as TResponse
+    return undefined
   }
 
   return response.json() as Promise<TResponse>

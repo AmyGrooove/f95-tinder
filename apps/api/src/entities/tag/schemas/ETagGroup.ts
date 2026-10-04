@@ -1,0 +1,3 @@
+enum ETagGroup {}
+
+export { ETagGroup }

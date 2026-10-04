@@ -23,13 +23,24 @@ class MongoPaginationRepository<
       .find(
         filter as QueryFilter<TDocument>,
         projection as ProjectionType<TDocument>,
-        options as QueryOptions<TDocument>,
+        { ...options, sort: undefined } as QueryOptions<TDocument>,
       )
       .skip(skip)
       .limit(limit)
 
-    if (isNil(options?.sort) && !isNil(this.defaultSort)) {
+    const sort: Parameters<typeof query.sort>[0] = options?.sort
+
+    query.sort(
+      typeof sort === "string" && sort.trim() === "" ? undefined : sort,
+      { override: true },
+    )
+
+    if (Object.keys(query.getOptions().sort ?? {}).length === 0) {
       query.sort(this.defaultSort)
+    }
+
+    if (!Object.hasOwn(query.getOptions().sort ?? {}, "_id")) {
+      query.sort({ _id: -1 })
     }
 
     const countQuery = this.model

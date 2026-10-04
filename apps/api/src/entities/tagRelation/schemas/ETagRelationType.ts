@@ -1,0 +1,3 @@
+enum ETagRelationType {}
+
+export { ETagRelationType }

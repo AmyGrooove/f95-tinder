@@ -52,6 +52,7 @@ class MongoBulkRepository<
         payload as UpdateQuery<TDocument> | UpdateWithAggregationPipeline,
         options as Parameters<Model<TDocument>["updateMany"]>[2],
       )
+      .setOptions({ runValidators: options?.runValidators ?? true })
       .exec()
 
     return result

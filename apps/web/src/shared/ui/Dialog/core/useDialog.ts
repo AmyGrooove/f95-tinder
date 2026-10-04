@@ -1,13 +1,21 @@
+import { useState } from 'react'
 import { useUnit } from 'effector-react'
+import { isNil } from '@shared/functions/checks/isNil'
 import { useViewportType } from '@shared/hooks/useViewportType'
+import type { TViewportType } from '@shared/hooks/useViewportType'
 import { clearDialog, closeDialog, $dialog } from '../stores/dialogStore'
 
 const useDialog = () => {
   const { content, isOpen, title } = useUnit($dialog)
 
   const viewportType = useViewportType()
+  const [dialogViewportType, setDialogViewportType] = useState<TViewportType>()
 
-  const isMobile = viewportType === 'mobile'
+  const isMobile = (dialogViewportType ?? viewportType) === 'mobile'
+
+  if (isOpen && isNil(dialogViewportType)) {
+    setDialogViewportType(viewportType)
+  }
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -15,9 +23,13 @@ const useDialog = () => {
     }
   }
 
-  const handleOpenChangeComplete = (isOpen: boolean) => {
-    if (!isOpen) {
+  const handleOpenChangeComplete = (nextIsOpen: boolean) => {
+    if (!nextIsOpen) {
       clearDialog()
+
+      if (!isOpen) {
+        setDialogViewportType(undefined)
+      }
     }
   }
 
