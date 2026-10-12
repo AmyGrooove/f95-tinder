@@ -7,8 +7,6 @@ import { EItemType } from "./EItemType"
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class ItemId {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true })

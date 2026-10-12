@@ -1,0 +1,116 @@
+во многих есть связка через ItemId
+может создать отдельную для этого коллекцию?
+
+Общее
+названия коллекции пишем как название класса
+используем функции из apps\api\src\shared\functions\checks
+все названия индексов камелом пишем (и поправь некоторые, т.к. некоторые просто совподают между собой)
+много где встречается group сделать enum, может быть отдельную коллекцию для этого сделать?
+удали дефолтные параметры, которые уже есть (к примеру, strict: true)
+поправь типы где используется TCreateEntity (они могут быть криво написаны)
+enum unit давай вынесем в apps\api\src\entities\shared
+
+apps\api\src\entities\shared\MongoEntity мне кажется можно переместить в apps\api\src\infrastructure\database\decorators
+
+Feature
+unit сделать enum
+group сделать enum
+
+ItemRelationRole
+group сделать enum
+
+RelationSide
+specRoleName сделай | null
+
+Session
+что за toJSON? удали
+удали rotation
+currentRefreshJti
+refreshIssuedAt
+revision
+revokedAt
+revokeReason
+rotationReceipt
+ну и удали apps\api\src\entities\session\schemas\rotationReceipt.schema.ts
+
+Source
+description сделай | null
+
+SourceItem
+удали namespace и revision
+
+Tag
+description сделай | null
+group сделать enum
+удали scope
+applicableTypes
+tasteTransfer
+transferTypes
+revision
+
+TagRelation
+type сделай enum
+
+User
+удали toJSON
+удали revision
+actionSequence
+credentialVersion
+accessCodeChangedAt
+catalogPermissions
+locale
+
+UserItem
+удали revision
+projectionCheckpoint
+lineage
+conflicts
+removedAttemptIds
+и связанные подобъекты
+
+ItemAttempt
+удали attemptId
+createdSequence
+updatedSequence
+lineage
+
+UserRecommendationState
+удали lastSkippedAt
+policyVersion
+revision
+projectionCheckpoint
+lineage
+и связанные подобъекты
+
+UserSetting
+добавь locale и сделай его enum
+
+UserTasteProfile сделай
+UserTasteProfile {
+  _id: ObjectId
+
+  user: ObjectId
+
+  profiles: tasteItemTypeProfile[]
+
+  createdAt: Date
+  updatedAt: Date
+}
+
+tasteItemTypeProfile {
+  type: EItemType
+
+  positiveEmbedding: embedding | null
+  negativeEmbedding: embedding | null
+
+  tagPreferences: tasteTagPreference[]
+
+  interactionsCount: number
+}
+
+tasteTagPreference {
+  tag: ObjectId // Tag
+
+  score: number
+  samples: number
+}

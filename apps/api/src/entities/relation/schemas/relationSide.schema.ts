@@ -1,4 +1,4 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
@@ -11,8 +11,6 @@ import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class RelationSide {
   @Prop({ type: ItemIdSchema, required: true })

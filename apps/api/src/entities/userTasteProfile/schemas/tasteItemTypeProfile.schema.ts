@@ -1,5 +1,4 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import type { TCreateTasteTagPreference } from "./tasteTagPreference.schema"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isInt } from "@shared/functions/checks/isInt"
@@ -7,16 +6,13 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { EItemType } from "@entities/shared/schemas/EItemType"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
 import { EmbeddingSchema } from "@entities/shared/schemas/embedding.schema"
-import type { TasteTagPreference } from "./tasteTagPreference.schema"
+import type {
+  TasteTagPreference,
+  TCreateTasteTagPreference,
+} from "./tasteTagPreference.schema"
 import { TasteTagPreferenceSchema } from "./tasteTagPreference.schema"
 
-@Schema({
-  _id: false,
-  id: false,
-  timestamps: false,
-  versionKey: false,
-  strict: true,
-})
+@Schema({ _id: false, id: false, timestamps: false })
 class TasteItemTypeProfile {
   @Prop({ type: String, enum: Object.values(EItemType), required: true })
   type: EItemType
@@ -28,8 +24,8 @@ class TasteItemTypeProfile {
   negativeEmbedding: Embedding | null
 
   @Prop({
-    required: true,
     type: [TasteTagPreferenceSchema],
+    required: true,
     default: [],
     validate: (value: unknown) =>
       isArray(value) && value.every((entry) => !isNil(entry)),
@@ -37,8 +33,8 @@ class TasteItemTypeProfile {
   tagPreferences: TasteTagPreference[]
 
   @Prop({
-    required: true,
     type: Number,
+    required: true,
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
@@ -48,13 +44,17 @@ class TasteItemTypeProfile {
 type TCreateTasteItemTypeProfile = TCreateEntity<
   TasteItemTypeProfile,
   "positiveEmbedding" | "negativeEmbedding" | "interactionsCount",
-  {
-    tagPreferences?: TCreateTasteTagPreference[]
-  }
+  { tagPreferences?: TCreateTasteTagPreference[] }
 >
 
 const TasteItemTypeProfileSchema =
   SchemaFactory.createForClass(TasteItemTypeProfile)
+
+TasteItemTypeProfileSchema.path("tagPreferences").validate(
+  (value: TasteTagPreference[]) =>
+    value.length <= 4096 &&
+    new Set(value.map((entry) => String(entry.tag))).size === value.length,
+)
 
 export { TasteItemTypeProfile, TasteItemTypeProfileSchema }
 export type { TCreateTasteItemTypeProfile }

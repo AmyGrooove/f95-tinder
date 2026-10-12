@@ -5,8 +5,6 @@ import { isInt } from "@shared/functions/checks/isInt"
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class RatingDistribution {
   @Prop({
@@ -15,7 +13,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "1": number
+  one: number
 
   @Prop({
     required: true,
@@ -23,7 +21,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "2": number
+  two: number
 
   @Prop({
     required: true,
@@ -31,7 +29,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "3": number
+  three: number
 
   @Prop({
     required: true,
@@ -39,7 +37,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "4": number
+  four: number
 
   @Prop({
     required: true,
@@ -47,7 +45,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "5": number
+  five: number
 
   @Prop({
     required: true,
@@ -55,7 +53,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "6": number
+  six: number
 
   @Prop({
     required: true,
@@ -63,7 +61,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "7": number
+  seven: number
 
   @Prop({
     required: true,
@@ -71,7 +69,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "8": number
+  eight: number
 
   @Prop({
     required: true,
@@ -79,7 +77,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "9": number
+  nine: number
 
   @Prop({
     required: true,
@@ -87,7 +85,7 @@ class RatingDistribution {
     default: 0,
     validate: (value: unknown) => isInt(value) && value >= 0,
   })
-  "10": number
+  ten: number
 }
 
 type TCreateRatingDistribution = Partial<RatingDistribution>

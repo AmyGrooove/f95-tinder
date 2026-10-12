@@ -5,8 +5,6 @@ import { ELinkedAccountProvider } from "./ELinkedAccountProvider"
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class LinkedAccount {
   @Prop({

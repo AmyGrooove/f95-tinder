@@ -1,5 +1,5 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
@@ -7,14 +7,11 @@ import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 @Schema({
-  collection: "sourceItems",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "SourceItem",
 })
 class SourceItem extends MongoEntity {
-  @Prop({ type: ItemIdSchema, required: true })
-  item: ItemId
+  @Prop({ type: ItemIdSchema, default: null })
+  item: ItemId | null
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Source" })
   source: Types.ObjectId
@@ -26,17 +23,17 @@ class SourceItem extends MongoEntity {
   externalUrl: string | null
 }
 
-type TCreateSourceItem = TCreateEntity<SourceItem, "externalUrl">
+type TCreateSourceItem = TCreateEntity<SourceItem, "externalUrl" | "item">
 
 const SourceItemSchema = SchemaFactory.createForClass(SourceItem)
 
 SourceItemSchema.index(
   { source: 1, externalId: 1 },
-  { name: "source_external_item", unique: true },
+  { name: "sourceItemSourceExternalId", unique: true },
 )
 SourceItemSchema.index(
   { "item.type": 1, "item.id": 1, source: 1 },
-  { name: "item_source", unique: true },
+  { name: "sourceItemItemSource" },
 )
 
 export { SourceItem, SourceItemSchema }

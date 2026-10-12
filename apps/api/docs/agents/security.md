@@ -13,3 +13,11 @@ Read for authentication, roles, token creation or rate limits. HTTP/CORS configu
 Password helpers already exist as [hashValue](../../src/infrastructure/security/functions/hashValue/core/hashValue.ts) and [compareHash](../../src/infrastructure/security/functions/compareHash/core/compareHash.ts); inspect them before adding another hashing implementation.
 
 [ThrottlingModule](../../src/infrastructure/throttling/throttling.module.ts), unlike SecurityModule, is imported by AppModule and registers a global `ThrottlerGuard` with Redis storage. Its [default](../../src/infrastructure/throttling/static/THROTTLE_DEFAULTS.ts) is 100 requests per 60,000 ms. Health routes currently have no local throttling exemption.
+
+## MVP persistence boundary
+
+[User](../../src/entities/user/schemas/user.schema.ts) retains accessCodeHash and passwordHash with select:false; credentialVersion, revision/actionSequence, accessCodeChangedAt, catalogPermissions and locale were removed. [Session](../../src/entities/session/schemas/session.schema.ts) retains user, refreshTokenHash (select:false), userAgent, expiresAt and lastUsedAt; rotation/jti/issuedAt/revision/revoke/receipt fields were removed. UserSetting owns required ELocale.RU/EN. Linked providers remain Google and Yandex; source changes do not migrate stored documents.
+
+RecoveryChallenge/durable delivery reference is a schema/repository only. The OAuthAttempt entity was removed from the MVP; OAuth state storage and reauth binding must be designed when implementing authentication. Encrypted metadata holds ciphertext/iv/authTag/keyVersion; no crypto implementation, provider call, token issuance, recovery mail, HTTP endpoint or live-session guard was introduced. User and Session local toJSON transforms were removed; select:false affects default queries only. Explicit selections, create results, lean and aggregate output need an explicit transport allowlist.
+
+The JWT helper above still uses 30-day refresh expiration; persistence fields alone do not implement the agreed four-month rolling session. Authentication behavior and settings belong to P3.

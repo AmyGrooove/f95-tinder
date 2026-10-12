@@ -1,18 +1,13 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
-@Schema({
-  collection: "itemTags",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
-})
+@Schema({ collection: "ItemTag" })
 class ItemTag extends MongoEntity {
   @Prop({ type: ItemIdSchema, required: true })
   item: ItemId
@@ -23,7 +18,8 @@ class ItemTag extends MongoEntity {
   @Prop({
     type: Number,
     required: true,
-    validate: (value: unknown) => isNumber(value) && Number.isFinite(value),
+    validate: (value: unknown) =>
+      isFiniteNumber(value) && value >= 0 && value <= 1,
   })
   relevanceScore: number
 }
@@ -34,11 +30,11 @@ const ItemTagSchema = SchemaFactory.createForClass(ItemTag)
 
 ItemTagSchema.index(
   { "item.type": 1, "item.id": 1, tag: 1 },
-  { name: "item_tag", unique: true },
+  { name: "itemTagItemTag", unique: true },
 )
 ItemTagSchema.index(
   { tag: 1, "item.type": 1, "item.id": 1 },
-  { name: "tag_item" },
+  { name: "itemTagTagItem" },
 )
 
 export { ItemTag, ItemTagSchema }

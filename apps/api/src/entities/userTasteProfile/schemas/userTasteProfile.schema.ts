@@ -1,5 +1,5 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateTasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
@@ -10,10 +10,7 @@ import type { TasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
 import { TasteItemTypeProfileSchema } from "./tasteItemTypeProfile.schema"
 
 @Schema({
-  collection: "userTasteProfiles",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "UserTasteProfile",
 })
 class UserTasteProfile extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
@@ -32,16 +29,19 @@ class UserTasteProfile extends MongoEntity {
 type TCreateUserTasteProfile = TCreateEntity<
   UserTasteProfile,
   never,
-  {
-    profiles?: TCreateTasteItemTypeProfile[]
-  }
+  { profiles?: TCreateTasteItemTypeProfile[] }
 >
 
 const UserTasteProfileSchema = SchemaFactory.createForClass(UserTasteProfile)
 
 UserTasteProfileSchema.index(
   { user: 1 },
-  { name: "taste_profile_user", unique: true },
+  { name: "userTasteProfileUser", unique: true },
+)
+
+UserTasteProfileSchema.path("profiles").validate(
+  (value: TasteItemTypeProfile[]) =>
+    new Set(value.map((entry) => entry.type)).size === value.length,
 )
 
 export { UserTasteProfile, UserTasteProfileSchema }

@@ -5,8 +5,6 @@ import { isInt } from "@shared/functions/checks/isInt"
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class UserItemStatusCounts {
   @Prop({

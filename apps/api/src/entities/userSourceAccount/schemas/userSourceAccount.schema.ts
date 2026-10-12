@@ -1,14 +1,11 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 @Schema({
-  collection: "userSourceAccounts",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "UserSourceAccount",
 })
 class UserSourceAccount extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
@@ -36,11 +33,11 @@ const UserSourceAccountSchema = SchemaFactory.createForClass(UserSourceAccount)
 
 UserSourceAccountSchema.index(
   { user: 1, source: 1 },
-  { name: "user_source_account", unique: true },
+  { name: "userSourceAccountUserSource", unique: true },
 )
 UserSourceAccountSchema.index(
   { source: 1, externalId: 1 },
-  { name: "source_external_account", unique: true },
+  { name: "userSourceAccountSourceExternalId", unique: true },
 )
 
 export { UserSourceAccount, UserSourceAccountSchema }

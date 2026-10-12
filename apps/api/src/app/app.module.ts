@@ -1,3 +1,12 @@
+import { MovieModule } from "@entities/movie/movie.module"
+import { SourceArtifactModule } from "@entities/sourceArtifact/sourceArtifact.module"
+import { SearchIndexStateModule } from "@entities/searchIndexState/searchIndexState.module"
+import { RecoveryChallengeModule } from "@entities/recoveryChallenge/recoveryChallenge.module"
+import { RecommendationSnapshotModule } from "@entities/recommendationSnapshot/recommendationSnapshot.module"
+import { RecommendationRequestModule } from "@entities/recommendationRequest/recommendationRequest.module"
+import { RecommendationProjectionStateModule } from "@entities/recommendationProjectionState/recommendationProjectionState.module"
+import { UserActionModule } from "@entities/userAction/userAction.module"
+import { RecommendationExposureModule } from "@entities/recommendationExposure/recommendationExposure.module"
 import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
@@ -30,6 +39,15 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
 @Module({
   imports: [
+    MovieModule,
+    SourceArtifactModule,
+    SearchIndexStateModule,
+    RecoveryChallengeModule,
+    RecommendationSnapshotModule,
+    RecommendationRequestModule,
+    RecommendationProjectionStateModule,
+    UserActionModule,
+    RecommendationExposureModule,
     InfrastructureConfigModule,
     LoggerModule,
     DatabaseModule,

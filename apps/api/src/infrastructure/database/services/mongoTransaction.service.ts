@@ -8,11 +8,12 @@ class MongoTransactionService {
 
   async run<TResult>(
     callback: (session: ClientSession) => Promise<TResult>,
+    options?: Parameters<ClientSession["withTransaction"]>[1],
   ): Promise<TResult> {
     const session = await this.connection.startSession()
 
     try {
-      return await session.withTransaction(() => callback(session))
+      return await session.withTransaction(() => callback(session), options)
     } finally {
       await session.endSession()
     }

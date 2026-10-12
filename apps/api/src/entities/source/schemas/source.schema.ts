@@ -1,15 +1,12 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import { ESourceType } from "./ESourceType"
 
 @Schema({
-  collection: "sources",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "Source",
 })
 class Source extends MongoEntity {
   @Prop({ type: String, required: true })
@@ -35,7 +32,7 @@ type TCreateSource = TCreateEntity<Source, "description" | "baseUrl" | "apiUrl">
 
 const SourceSchema = SchemaFactory.createForClass(Source)
 
-SourceSchema.index({ key: 1 }, { name: "source_key", unique: true })
+SourceSchema.index({ key: 1 }, { name: "sourceKey", unique: true })
 
 export { Source, SourceSchema }
 export type { TCreateSource }

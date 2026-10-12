@@ -6,6 +6,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 
 import { applyTimestampsPlugin } from "./functions/applyTimestampsPlugin"
 import { applyToJsonPlugin } from "./functions/applyToJsonPlugin"
+import { applyVersionKeyPlugin } from "./functions/applyVersionKeyPlugin"
 import { MongoHealthService } from "./services/mongoHealth.service"
 import { MongoTransactionService } from "./services/mongoTransaction.service"
 
@@ -20,6 +21,7 @@ import { MongoTransactionService } from "./services/mongoTransaction.service"
           autoIndex: true,
           connectionFactory: (connection) => {
             connection.plugin(applyTimestampsPlugin)
+            connection.plugin(applyVersionKeyPlugin)
             connection.plugin(applyToJsonPlugin)
 
             return connection

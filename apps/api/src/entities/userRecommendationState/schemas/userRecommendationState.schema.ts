@@ -1,5 +1,5 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isInt } from "@shared/functions/checks/isInt"
 import { Schema as MongooseSchema } from "mongoose"
@@ -8,10 +8,7 @@ import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 
 @Schema({
-  collection: "userRecommendationStates",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "UserRecommendationState",
 })
 class UserRecommendationState extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
@@ -36,11 +33,11 @@ class UserRecommendationState extends MongoEntity {
   })
   skippedCount: number
 
-  @Prop({ type: Date, required: true })
-  firstShownAt: Date
+  @Prop({ type: Date, default: null })
+  firstShownAt: Date | null
 
-  @Prop({ type: Date, required: true })
-  lastShownAt: Date
+  @Prop({ type: Date, default: null })
+  lastShownAt: Date | null
 
   @Prop({ type: Date, default: null })
   nextEligibleAt: Date | null
@@ -54,7 +51,13 @@ class UserRecommendationState extends MongoEntity {
 
 type TCreateUserRecommendationState = TCreateEntity<
   UserRecommendationState,
-  "shownCount" | "skippedCount" | "nextEligibleAt" | "isExcluded" | "expiresAt"
+  | "shownCount"
+  | "skippedCount"
+  | "nextEligibleAt"
+  | "isExcluded"
+  | "expiresAt"
+  | "firstShownAt"
+  | "lastShownAt"
 >
 
 const UserRecommendationStateSchema = SchemaFactory.createForClass(
@@ -63,7 +66,7 @@ const UserRecommendationStateSchema = SchemaFactory.createForClass(
 
 UserRecommendationStateSchema.index(
   { user: 1, "item.type": 1, "item.id": 1 },
-  { name: "recommendation_user_item", unique: true },
+  { name: "userRecommendationStateUserItem", unique: true },
 )
 
 export { UserRecommendationState, UserRecommendationStateSchema }

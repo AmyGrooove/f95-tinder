@@ -1,19 +1,16 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { isBoolean } from "@shared/functions/checks/isBoolean"
+import { isDate } from "@shared/functions/checks/isDate"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isString } from "@shared/functions/checks/isString"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 import type { Types } from "mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 
-@Schema({
-  collection: "itemFeatures",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
-})
+@Schema({ collection: "ItemFeature" })
 class ItemFeature extends MongoEntity {
   @Prop({ type: ItemIdSchema, required: true })
   item: ItemId
@@ -25,10 +22,10 @@ class ItemFeature extends MongoEntity {
     type: MongooseSchema.Types.Mixed,
     required: true,
     validate: (value: unknown) =>
-      (isNumber(value) && Number.isFinite(value)) ||
+      isFiniteNumber(value) ||
       isString(value) ||
-      typeof value === "boolean" ||
-      (value instanceof Date && Number.isFinite(value.getTime())),
+      isBoolean(value) ||
+      isDate(value),
   })
   value: number | string | boolean | Date
 }
@@ -39,11 +36,11 @@ const ItemFeatureSchema = SchemaFactory.createForClass(ItemFeature)
 
 ItemFeatureSchema.index(
   { "item.type": 1, "item.id": 1, feature: 1 },
-  { name: "item_feature", unique: true },
+  { name: "itemFeatureItemFeature", unique: true },
 )
 ItemFeatureSchema.index(
   { feature: 1, "item.type": 1, "item.id": 1 },
-  { name: "feature_item" },
+  { name: "itemFeatureFeatureItem" },
 )
 
 export { ItemFeature, ItemFeatureSchema }

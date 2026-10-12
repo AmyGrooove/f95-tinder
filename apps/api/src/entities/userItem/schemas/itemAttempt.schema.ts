@@ -1,25 +1,32 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { EProgressUnit } from "@entities/shared/schemas/EProgressUnit"
+import { isInt } from "@shared/functions/checks/isInt"
+import { isNil } from "@shared/functions/checks/isNil"
 import { EUserItemStatus } from "./EUserItemStatus"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 
 @Schema({
   _id: false,
   id: false,
   timestamps: false,
-  versionKey: false,
-  strict: true,
 })
 class ItemAttempt {
   @Prop({
     type: Number,
-    required: true,
-    validate: (value: unknown) => isNumber(value) && Number.isFinite(value),
+    default: null,
+    min: 0,
+    validate: (value: unknown) =>
+      isNil(value) || (isInt(value) && value <= Number.MAX_SAFE_INTEGER),
   })
-  progress: number
+  progress: number | null
 
-  @Prop({ type: String, required: true })
-  unit: string
+  @Prop({
+    type: String,
+    required: true,
+    enum: Object.values(EProgressUnit),
+    default: EProgressUnit.MINUTE,
+  })
+  unit: EProgressUnit
 
   @Prop({ type: Date, default: null })
   startedAt: Date | null
@@ -27,16 +34,25 @@ class ItemAttempt {
   @Prop({ type: Date, default: null })
   completedAt: Date | null
 
-  @Prop({ type: String, enum: Object.values(EUserItemStatus), required: true })
-  status: EUserItemStatus
+  @Prop({
+    type: String,
+    required: true,
+    enum: [
+      EUserItemStatus.IN_PROGRESS,
+      EUserItemStatus.ON_HOLD,
+      EUserItemStatus.COMPLETED,
+      EUserItemStatus.DROPPED,
+    ],
+  })
+  status: Exclude<EUserItemStatus, EUserItemStatus.PLANNED>
 }
+
+const ItemAttemptSchema = SchemaFactory.createForClass(ItemAttempt)
 
 type TCreateItemAttempt = TCreateEntity<
   ItemAttempt,
-  "startedAt" | "completedAt"
+  "progress" | "unit" | "startedAt" | "completedAt"
 >
-
-const ItemAttemptSchema = SchemaFactory.createForClass(ItemAttempt)
 
 export { ItemAttempt, ItemAttemptSchema }
 export type { TCreateItemAttempt }

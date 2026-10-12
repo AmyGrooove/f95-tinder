@@ -38,6 +38,10 @@ All listed variables except `NODE_ENV` are required by the configuration factory
 
 Storage checks/initializes its bucket during module initialization; search rejects application bootstrap if Meilisearch is unavailable. [SchedulerHealthService](../../src/infrastructure/scheduler/services/schedulerHealth.service.ts) records a ten-minute cron heartbeat and measures elapsed time from startup until the first heartbeat. It is not a distributed scheduling lock.
 
+## Persistence startup boundary
+
+AppModule now imports 26 entity modules. DatabaseModule still uses autoIndex:true, so bootstrapping the application may apply schema index declarations. P1 was checked statically with no application context or service connections; use separately approved isolated targets before runtime, and never infer permission to migrate existing indexes/data from schema changes. No automatic TTL or cleanup was added.
+
 ## Tooling
 
 [package.json](../../package.json) defines `dev` (`nest start --watch`), `build` (`nest build`), `start` (`node dist/main.js`) and `type-check` (`tsc --noEmit`). `tunnel` runs the local tunnel script with `.env.tunnel`; it is not needed for routine source verification. `lint:fix` and `format` operate on the entire package and write changes.

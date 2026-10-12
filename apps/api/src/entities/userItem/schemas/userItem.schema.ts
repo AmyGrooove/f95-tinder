@@ -1,10 +1,10 @@
-import type { TCreateEntity } from "@entities/shared/TCreateEntity"
-import { MongoEntity } from "@entities/shared/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateItemAttempt } from "./itemAttempt.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { isInt } from "@shared/functions/checks/isInt"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
@@ -14,10 +14,7 @@ import type { ItemAttempt } from "./itemAttempt.schema"
 import { ItemAttemptSchema } from "./itemAttempt.schema"
 
 @Schema({
-  collection: "userItems",
-  timestamps: true,
-  versionKey: false,
-  strict: true,
+  collection: "UserItem",
 })
 class UserItem extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
@@ -33,7 +30,7 @@ class UserItem extends MongoEntity {
     type: Number,
     default: null,
     validate: (value: unknown) =>
-      value === null || (isNumber(value) && Number.isFinite(value)),
+      isNil(value) || (isInt(value) && value >= 1 && value <= 10),
   })
   rating: number | null
 
@@ -65,11 +62,20 @@ const UserItemSchema = SchemaFactory.createForClass(UserItem)
 
 UserItemSchema.index(
   { user: 1, "item.type": 1, "item.id": 1 },
-  { name: "user_item", unique: true },
+  { name: "userItemUserItem", unique: true },
 )
 UserItemSchema.index(
   { "item.type": 1, "item.id": 1, user: 1 },
-  { name: "item_user" },
+  { name: "userItemItemUser" },
+)
+
+UserItemSchema.path("attempts").validate(
+  (value: ItemAttempt[]) =>
+    value.filter(
+      (entry) =>
+        entry.status === EUserItemStatus.IN_PROGRESS ||
+        entry.status === EUserItemStatus.ON_HOLD,
+    ).length <= 1,
 )
 
 export { UserItem, UserItemSchema }

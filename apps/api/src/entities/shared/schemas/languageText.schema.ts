@@ -1,18 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
-@Schema({
-  _id: false,
-  id: false,
-  timestamps: false,
-  versionKey: false,
-  strict: true,
-})
+@Schema({ _id: false, id: false, timestamps: false })
 class LanguageText {
   @Prop({ type: String, required: true })
-  en: string
+  ru: string | null
 
   @Prop({ type: String, required: true })
-  ru: string
+  en: string | null
 }
 
 const LanguageTextSchema = SchemaFactory.createForClass(LanguageText)
