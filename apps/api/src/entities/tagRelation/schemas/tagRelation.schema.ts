@@ -10,10 +10,10 @@ import type { Types } from "mongoose"
 })
 class TagRelation extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Tag" })
-  from: Types.ObjectId
+  first: Types.ObjectId
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Tag" })
-  to: Types.ObjectId
+  second: Types.ObjectId
 
   @Prop({ type: String, enum: Object.values(ETagRelationType), required: true })
   type: ETagRelationType
@@ -23,13 +23,19 @@ type TCreateTagRelation = TCreateEntity<TagRelation>
 
 const TagRelationSchema = SchemaFactory.createForClass(TagRelation)
 
+TagRelationSchema.pre("validate", function () {
+  if (this.first?.equals(this.second)) {
+    this.invalidate("second", "A tag cannot be related to itself")
+  }
+})
+
 TagRelationSchema.index(
-  { from: 1, type: 1, to: 1 },
-  { name: "tagRelationFromTypeTo", unique: true },
+  { first: 1, type: 1, second: 1 },
+  { name: "tagRelationUnique", unique: true },
 )
 TagRelationSchema.index(
-  { to: 1, type: 1, from: 1 },
-  { name: "tagRelationToTypeFrom" },
+  { second: 1, type: 1, first: 1 },
+  { name: "tagRelationSecondLookup" },
 )
 
 export { TagRelation, TagRelationSchema }

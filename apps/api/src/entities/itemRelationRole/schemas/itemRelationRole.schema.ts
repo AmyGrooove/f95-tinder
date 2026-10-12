@@ -4,33 +4,37 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
+import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
 
 @Schema({ collection: "ItemRelationRole" })
 class ItemRelationRole extends MongoEntity {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
   key: string
 
   @Prop({
     type: String,
     enum: Object.values(EItemRelationRoleGroup),
-    required: true,
+    default: null,
   })
-  group: EItemRelationRoleGroup
+  group: EItemRelationRoleGroup | null
 
   @Prop({ type: LanguageTextSchema, required: true })
   name: LanguageText
 
-  @Prop({ type: LanguageTextSchema, default: null })
-  description: LanguageText | null
+  @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
+  description: LanguageText
 }
 
-type TCreateItemRelationRole = TCreateEntity<ItemRelationRole, "description">
+type TCreateItemRelationRole = TCreateEntity<
+  ItemRelationRole,
+  "description" | "group"
+>
 
 const ItemRelationRoleSchema = SchemaFactory.createForClass(ItemRelationRole)
 
 ItemRelationRoleSchema.index(
   { key: 1 },
-  { name: "itemRelationRoleKey", unique: true },
+  { name: "itemRelationRoleKeyUnique", unique: true },
 )
 
 export { ItemRelationRole, ItemRelationRoleSchema }

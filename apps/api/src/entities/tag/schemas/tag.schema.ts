@@ -3,46 +3,49 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
-import { isNil } from "@shared/functions/checks/isNil"
+import { isString } from "@shared/functions/checks/isString"
+import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
 import { EmbeddingSchema } from "@entities/shared/schemas/embedding.schema"
 
-@Schema({
-  collection: "Tag",
-})
+@Schema({ collection: "Tag" })
 class Tag extends MongoEntity {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
   key: string
 
-  @Prop({ type: String, enum: Object.values(ETagGroup), required: true })
-  group: ETagGroup
+  @Prop({ type: String, enum: Object.values(ETagGroup), default: null })
+  group: ETagGroup | null
 
   @Prop({ type: LanguageTextSchema, required: true })
   name: LanguageText
 
-  @Prop({ type: LanguageTextSchema, default: null })
-  description: LanguageText | null
+  @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
+  description: LanguageText
 
   @Prop({
     required: true,
-    type: [LanguageTextSchema],
+    type: [String],
     default: [],
     validate: (value: unknown) =>
-      isArray(value) && value.every((entry) => !isNil(entry)),
+      isArray(value) &&
+      value.every((entry) => isString(entry) && entry.trim().length > 0),
   })
-  aliases: LanguageText[]
+  aliases: string[]
 
   @Prop({ type: EmbeddingSchema, default: null })
   embedding: Embedding | null
 }
 
-type TCreateTag = TCreateEntity<Tag, "description" | "aliases" | "embedding">
+type TCreateTag = TCreateEntity<
+  Tag,
+  "group" | "description" | "aliases" | "embedding"
+>
 
 const TagSchema = SchemaFactory.createForClass(Tag)
 
-TagSchema.index({ key: 1 }, { name: "tagKey", unique: true })
+TagSchema.index({ key: 1 }, { name: "tagKeyUnique", unique: true })
 
 export { Tag, TagSchema }
 export type { TCreateTag }

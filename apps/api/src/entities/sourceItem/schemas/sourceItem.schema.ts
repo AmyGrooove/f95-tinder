@@ -29,11 +29,11 @@ const SourceItemSchema = SchemaFactory.createForClass(SourceItem)
 
 SourceItemSchema.index(
   { source: 1, externalId: 1 },
-  { name: "sourceItemSourceExternalId", unique: true },
+  { name: "sourceExternalIdUnique", unique: true },
 )
 SourceItemSchema.index(
   { "item.type": 1, "item.id": 1, source: 1 },
-  { name: "sourceItemItemSource" },
+  { name: "itemSourceLookup" },
 )
 
 export { SourceItem, SourceItemSchema }

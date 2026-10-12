@@ -30,11 +30,11 @@ const ItemTagSchema = SchemaFactory.createForClass(ItemTag)
 
 ItemTagSchema.index(
   { "item.type": 1, "item.id": 1, tag: 1 },
-  { name: "itemTagItemTag", unique: true },
+  { name: "itemTagUnique", unique: true },
 )
 ItemTagSchema.index(
   { tag: 1, "item.type": 1, "item.id": 1 },
-  { name: "itemTagTagItem" },
+  { name: "tagItemLookup" },
 )
 
 export { ItemTag, ItemTagSchema }

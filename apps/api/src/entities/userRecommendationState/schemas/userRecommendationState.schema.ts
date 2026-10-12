@@ -2,14 +2,13 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 
-@Schema({
-  collection: "UserRecommendationState",
-})
+@Schema({ collection: "UserRecommendationState" })
 class UserRecommendationState extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
@@ -21,7 +20,7 @@ class UserRecommendationState extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
   shownCount: number
 
@@ -29,7 +28,7 @@ class UserRecommendationState extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
   skippedCount: number
 
@@ -66,7 +65,7 @@ const UserRecommendationStateSchema = SchemaFactory.createForClass(
 
 UserRecommendationStateSchema.index(
   { user: 1, "item.type": 1, "item.id": 1 },
-  { name: "userRecommendationStateUserItem", unique: true },
+  { name: "userRecommendationStateUnique", unique: true },
 )
 
 export { UserRecommendationState, UserRecommendationStateSchema }

@@ -3,23 +3,21 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
-import { ESourceType } from "./ESourceType"
+import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
 
-@Schema({
-  collection: "Source",
-})
+@Schema({ collection: "Source" })
 class Source extends MongoEntity {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
   key: string
 
   @Prop({ type: LanguageTextSchema, required: true })
   name: LanguageText
 
-  @Prop({ type: LanguageTextSchema, default: null })
-  description: LanguageText | null
+  @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
+  description: LanguageText
 
-  @Prop({ type: String, enum: Object.values(ESourceType), required: true })
-  type: ESourceType
+  @Prop({ type: String, default: null })
+  logoUrl: string | null
 
   @Prop({ type: String, default: null })
   baseUrl: string | null
@@ -28,11 +26,14 @@ class Source extends MongoEntity {
   apiUrl: string | null
 }
 
-type TCreateSource = TCreateEntity<Source, "description" | "baseUrl" | "apiUrl">
+type TCreateSource = TCreateEntity<
+  Source,
+  "description" | "logoUrl" | "baseUrl" | "apiUrl"
+>
 
 const SourceSchema = SchemaFactory.createForClass(Source)
 
-SourceSchema.index({ key: 1 }, { name: "sourceKey", unique: true })
+SourceSchema.index({ key: 1 }, { name: "sourceKeyUnique", unique: true })
 
 export { Source, SourceSchema }
 export type { TCreateSource }

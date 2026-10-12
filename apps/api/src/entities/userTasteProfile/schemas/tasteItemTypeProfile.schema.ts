@@ -2,6 +2,7 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
 import { EItemType } from "@entities/shared/schemas/EItemType"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
@@ -11,6 +12,7 @@ import type {
   TCreateTasteTagPreference,
 } from "./tasteTagPreference.schema"
 import { TasteTagPreferenceSchema } from "./tasteTagPreference.schema"
+import { MAX_TAG_PREFERENCES } from "../static/MAX_TAG_PREFERENCES"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class TasteItemTypeProfile {
@@ -27,8 +29,11 @@ class TasteItemTypeProfile {
     type: [TasteTagPreferenceSchema],
     required: true,
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) && value.every((entry) => !isNil(entry)),
+    validate: (value: TasteTagPreference[]) =>
+      isArray(value) &&
+      value.every((entry) => !isNil(entry)) &&
+      value.length <= MAX_TAG_PREFERENCES &&
+      new Set(value.map((entry) => String(entry.tag))).size === value.length,
   })
   tagPreferences: TasteTagPreference[]
 
@@ -36,7 +41,7 @@ class TasteItemTypeProfile {
     type: Number,
     required: true,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
   interactionsCount: number
 }
@@ -49,12 +54,6 @@ type TCreateTasteItemTypeProfile = TCreateEntity<
 
 const TasteItemTypeProfileSchema =
   SchemaFactory.createForClass(TasteItemTypeProfile)
-
-TasteItemTypeProfileSchema.path("tagPreferences").validate(
-  (value: TasteTagPreference[]) =>
-    value.length <= 4096 &&
-    new Set(value.map((entry) => String(entry.tag))).size === value.length,
-)
 
 export { TasteItemTypeProfile, TasteItemTypeProfileSchema }
 export type { TCreateTasteItemTypeProfile }

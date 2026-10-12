@@ -1,0 +1,3 @@
+const MAX_TAG_PREFERENCES = 4096
+
+export { MAX_TAG_PREFERENCES }

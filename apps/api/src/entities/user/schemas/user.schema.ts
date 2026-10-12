@@ -7,10 +7,9 @@ import { isString } from "@shared/functions/checks/isString"
 import { EUserRole } from "./EUserRole"
 import type { LinkedAccount } from "./linkedAccount.schema"
 import { LinkedAccountSchema } from "./linkedAccount.schema"
+import { USERNAME_REGEX } from "../static/USERNAME_REGEX"
 
-@Schema({
-  collection: "User",
-})
+@Schema({ collection: "User" })
 class User extends MongoEntity {
   @Prop({
     type: String,
@@ -25,10 +24,16 @@ class User extends MongoEntity {
   @Prop({ type: Date, default: null })
   emailVerifiedAt: Date | null
 
-  @Prop({ type: String, required: true, trim: true, lowercase: true })
+  @Prop({
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+    match: USERNAME_REGEX,
+  })
   username: string
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, trim: true })
   displayName: string
 
   @Prop({ type: String, default: null })
@@ -74,11 +79,20 @@ type TCreateUser = TCreateEntity<
 
 const UserSchema = SchemaFactory.createForClass(User)
 
-UserSchema.index({ username: 1 }, { name: "userUsername", unique: true })
+UserSchema.set("toJSON", {
+  transform: (_document, returnedObject: Partial<User>) => {
+    delete returnedObject.passwordHash
+    delete returnedObject.accessCodeHash
+
+    return returnedObject
+  },
+})
+
+UserSchema.index({ username: 1 }, { name: "userUsernameUnique", unique: true })
 UserSchema.index(
   { email: 1 },
   {
-    name: "userEmail",
+    name: "userEmailUnique",
     unique: true,
     partialFilterExpression: { email: { $type: "string" } },
   },
@@ -86,7 +100,7 @@ UserSchema.index(
 UserSchema.index(
   { "linkedAccounts.provider": 1, "linkedAccounts.externalId": 1 },
   {
-    name: "userLinkedAccount",
+    name: "userLinkedAccountUnique",
     unique: true,
     partialFilterExpression: {
       "linkedAccounts.provider": { $type: "string" },

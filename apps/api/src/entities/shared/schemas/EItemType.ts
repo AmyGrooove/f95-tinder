@@ -1,5 +1,3 @@
-enum EItemType {
-  MOVIE = "movie",
-}
+enum EItemType {}
 
 export { EItemType }

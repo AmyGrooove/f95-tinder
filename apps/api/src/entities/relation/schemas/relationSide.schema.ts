@@ -23,11 +23,11 @@ class RelationSide {
   })
   role: Types.ObjectId
 
-  @Prop({ type: LanguageTextSchema, default: null })
-  specRoleName: LanguageText | null
+  @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
+  roleNameOverride: LanguageText
 }
 
-type TCreateRelationSide = TCreateEntity<RelationSide, "specRoleName">
+type TCreateRelationSide = TCreateEntity<RelationSide, "roleNameOverride">
 
 const RelationSideSchema = SchemaFactory.createForClass(RelationSide)
 

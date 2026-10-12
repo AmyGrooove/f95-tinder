@@ -9,9 +9,7 @@ import type { Types } from "mongoose"
 import type { TasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
 import { TasteItemTypeProfileSchema } from "./tasteItemTypeProfile.schema"
 
-@Schema({
-  collection: "UserTasteProfile",
-})
+@Schema({ collection: "UserTasteProfile" })
 class UserTasteProfile extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
@@ -36,7 +34,7 @@ const UserTasteProfileSchema = SchemaFactory.createForClass(UserTasteProfile)
 
 UserTasteProfileSchema.index(
   { user: 1 },
-  { name: "userTasteProfileUser", unique: true },
+  { name: "userTasteProfileUnique", unique: true },
 )
 
 UserTasteProfileSchema.path("profiles").validate(

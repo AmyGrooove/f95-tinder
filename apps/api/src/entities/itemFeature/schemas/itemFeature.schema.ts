@@ -36,11 +36,11 @@ const ItemFeatureSchema = SchemaFactory.createForClass(ItemFeature)
 
 ItemFeatureSchema.index(
   { "item.type": 1, "item.id": 1, feature: 1 },
-  { name: "itemFeatureItemFeature", unique: true },
+  { name: "itemFeatureUnique", unique: true },
 )
 ItemFeatureSchema.index(
   { feature: 1, "item.type": 1, "item.id": 1 },
-  { name: "itemFeatureFeatureItem" },
+  { name: "featureItemLookup" },
 )
 
 export { ItemFeature, ItemFeatureSchema }

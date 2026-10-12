@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { EProgressUnit } from "@entities/shared/schemas/EProgressUnit"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
 import { EUserItemStatus } from "./EUserItemStatus"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
@@ -16,7 +17,7 @@ class ItemAttempt {
     default: null,
     min: 0,
     validate: (value: unknown) =>
-      isNil(value) || (isInt(value) && value <= Number.MAX_SAFE_INTEGER),
+      isNil(value) || (isInt(value) && isNonNegativeSafe(value)),
   })
   progress: number | null
 

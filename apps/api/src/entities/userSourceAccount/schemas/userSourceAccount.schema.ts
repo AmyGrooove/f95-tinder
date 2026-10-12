@@ -4,9 +4,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
-@Schema({
-  collection: "UserSourceAccount",
-})
+@Schema({ collection: "UserSourceAccount" })
 class UserSourceAccount extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
@@ -16,28 +14,19 @@ class UserSourceAccount extends MongoEntity {
 
   @Prop({ type: String, required: true })
   externalId: string
-
-  @Prop({ type: String, default: null })
-  username: string | null
-
-  @Prop({ type: String, default: null })
-  profileUrl: string | null
 }
 
-type TCreateUserSourceAccount = TCreateEntity<
-  UserSourceAccount,
-  "username" | "profileUrl"
->
+type TCreateUserSourceAccount = TCreateEntity<UserSourceAccount>
 
 const UserSourceAccountSchema = SchemaFactory.createForClass(UserSourceAccount)
 
 UserSourceAccountSchema.index(
   { user: 1, source: 1 },
-  { name: "userSourceAccountUserSource", unique: true },
+  { name: "userSourceUnique", unique: true },
 )
 UserSourceAccountSchema.index(
   { source: 1, externalId: 1 },
-  { name: "userSourceAccountSourceExternalId", unique: true },
+  { name: "sourceAccountUnique", unique: true },
 )
 
 export { UserSourceAccount, UserSourceAccountSchema }

@@ -1,3 +1,5 @@
-enum ETagRelationType {}
+enum ETagRelationType {
+  PARENT = "parent",
+}
 
 export { ETagRelationType }

@@ -4,6 +4,7 @@ import type { TCreateUserItemStatusCounts } from "./userItemStatusCounts.schema"
 import type { TCreateRatingDistribution } from "./ratingDistribution.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
 import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
@@ -22,8 +23,7 @@ class ItemMetric extends MongoEntity {
     type: Number,
     required: true,
     min: 0,
-    validate: (value: unknown) =>
-      isInt(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
     default: 0,
   })
   completedAttemptsCount: number
@@ -32,15 +32,15 @@ class ItemMetric extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
-  views: number
+  recommendationsCount: number
 
   @Prop({
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
   ratingsCount: number
 
@@ -66,14 +66,14 @@ class ItemMetric extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && value >= 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
   })
   favoritesCount: number
 }
 
 type TCreateItemMetric = TCreateEntity<
   ItemMetric,
-  | "views"
+  | "recommendationsCount"
   | "ratingsCount"
   | "ratingAverage"
   | "favoritesCount"
@@ -88,7 +88,7 @@ const ItemMetricSchema = SchemaFactory.createForClass(ItemMetric)
 
 ItemMetricSchema.index(
   { "item.type": 1, "item.id": 1 },
-  { name: "itemMetricItem", unique: true },
+  { name: "itemMetricUnique", unique: true },
 )
 
 export { ItemMetric, ItemMetricSchema }

@@ -3,6 +3,7 @@ import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class TasteTagPreference {
@@ -12,7 +13,12 @@ class TasteTagPreference {
   @Prop({ type: Number, required: true, validate: isFiniteNumber })
   score: number
 
-  @Prop({ type: Number, required: true, min: 0, validate: isInt })
+  @Prop({
+    type: Number,
+    required: true,
+    min: 0,
+    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+  })
   samples: number
 }
 

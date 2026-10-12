@@ -3,6 +3,7 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
+import { SESSION_EXPIRY_GRACE_SECONDS } from "../static/SESSION_EXPIRY_GRACE_SECONDS"
 
 @Schema({
   collection: "Session",
@@ -21,19 +22,29 @@ class Session extends MongoEntity {
   expiresAt: Date
 
   @Prop({ type: Date, default: null })
-  lastUsedAt: Date | null
+  lastRefreshedAt: Date | null
 }
 
-type TCreateSession = TCreateEntity<Session, "userAgent" | "lastUsedAt"> &
+type TCreateSession = TCreateEntity<Session, "userAgent" | "lastRefreshedAt"> &
   Partial<Pick<Session, "_id">>
 
 const SessionSchema = SchemaFactory.createForClass(Session)
 
 SessionSchema.index(
   { refreshTokenHash: 1 },
-  { name: "sessionRefreshTokenHash", unique: true },
+  { name: "sessionRefreshTokenHashUnique", unique: true },
 )
-SessionSchema.index({ user: 1, expiresAt: 1 }, { name: "sessionUserExpiresAt" })
+SessionSchema.index(
+  { user: 1, expiresAt: 1 },
+  { name: "sessionUserExpiryLookup" },
+)
+SessionSchema.index(
+  { expiresAt: 1 },
+  {
+    name: "sessionExpiryTtl",
+    expireAfterSeconds: SESSION_EXPIRY_GRACE_SECONDS,
+  },
+)
 
 export { Session, SessionSchema }
 export type { TCreateSession }

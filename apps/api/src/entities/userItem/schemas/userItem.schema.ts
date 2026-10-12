@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isInt } from "@shared/functions/checks/isInt"
+import { isString } from "@shared/functions/checks/isString"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import type { ItemId } from "@entities/shared/schemas/itemId.schema"
@@ -13,9 +14,7 @@ import { EUserItemStatus } from "./EUserItemStatus"
 import type { ItemAttempt } from "./itemAttempt.schema"
 import { ItemAttemptSchema } from "./itemAttempt.schema"
 
-@Schema({
-  collection: "UserItem",
-})
+@Schema({ collection: "UserItem" })
 class UserItem extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
@@ -46,7 +45,13 @@ class UserItem extends MongoEntity {
   })
   attempts: ItemAttempt[]
 
-  @Prop({ type: String, default: null })
+  @Prop({
+    type: String,
+    default: null,
+    trim: true,
+    set: (value: unknown) =>
+      isString(value) && value.trim() === "" ? null : value,
+  })
   note: string | null
 }
 
@@ -62,11 +67,11 @@ const UserItemSchema = SchemaFactory.createForClass(UserItem)
 
 UserItemSchema.index(
   { user: 1, "item.type": 1, "item.id": 1 },
-  { name: "userItemUserItem", unique: true },
+  { name: "userItemUnique", unique: true },
 )
 UserItemSchema.index(
   { "item.type": 1, "item.id": 1, user: 1 },
-  { name: "userItemItemUser" },
+  { name: "itemUsersLookup" },
 )
 
 UserItemSchema.path("attempts").validate(
