@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { EProgressUnit } from "@entities/shared/schemas/EProgressUnit"
+import { EUnit } from "@entities/shared/schemas/EUnit"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
@@ -24,10 +24,10 @@ class ItemAttempt {
   @Prop({
     type: String,
     required: true,
-    enum: Object.values(EProgressUnit),
-    default: EProgressUnit.MINUTE,
+    enum: [EUnit.MINUTE],
+    default: EUnit.MINUTE,
   })
-  unit: EProgressUnit
+  unit: EUnit
 
   @Prop({ type: Date, default: null })
   startedAt: Date | null

@@ -1,4 +1,4 @@
-import { EFeatureUnit } from "@entities/shared/schemas/EFeatureUnit"
+import { EUnit } from "@entities/shared/schemas/EUnit"
 import { EFeatureGroup } from "./EFeatureGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
@@ -29,8 +29,8 @@ class Feature extends MongoEntity {
   })
   valueType: EFeatureValueType
 
-  @Prop({ type: String, enum: Object.values(EFeatureUnit), default: null })
-  unit: EFeatureUnit | null
+  @Prop({ type: String, enum: Object.values(EUnit), default: null })
+  unit: EUnit | null
 }
 
 type TCreateFeature = TCreateEntity<Feature, "description" | "group" | "unit">

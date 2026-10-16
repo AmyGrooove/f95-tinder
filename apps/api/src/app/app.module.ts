@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
+import { MovieModule } from "@entities/movie/movie.module"
 import { RelationModule } from "@entities/relation/relation.module"
 import { ItemRelationRoleModule } from "@entities/itemRelationRole/itemRelationRole.module"
 import { TagModule } from "@entities/tag/tag.module"
@@ -37,6 +38,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     ThrottlingModule,
     SchedulerModule,
     HealthModule,
+    MovieModule,
     RelationModule,
     ItemRelationRoleModule,
     TagModule,

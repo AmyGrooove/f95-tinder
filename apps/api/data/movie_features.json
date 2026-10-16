@@ -1,0 +1,97 @@
+[
+  {
+    "key": "releaseDate",
+    "_source": {
+      "provider": "tmdb",
+      "endpoint": "/movie/{id}",
+      "field": "release_date"
+    },
+    "group": "release",
+    "name": {
+      "ru": "Дата первого выхода",
+      "en": "First release date"
+    },
+    "description": {
+      "ru": "Дата первого выхода фильма независимо от страны",
+      "en": "The film's first release date, regardless of country"
+    },
+    "valueType": "date",
+    "unit": null
+  },
+  {
+    "key": "duration",
+    "_source": {
+      "provider": "tmdb",
+      "endpoint": "/movie/{id}",
+      "field": "runtime"
+    },
+    "group": "technical",
+    "name": {
+      "ru": "Продолжительность",
+      "en": "Duration"
+    },
+    "description": {
+      "ru": "Продолжительность фильма в минутах",
+      "en": "The film's duration in minutes"
+    },
+    "valueType": "number",
+    "unit": "minute"
+  },
+  {
+    "key": "releaseStatus",
+    "_source": {
+      "provider": "tmdb",
+      "endpoint": "/movie/{id}",
+      "field": "status"
+    },
+    "group": "release",
+    "name": {
+      "ru": "Статус выпуска",
+      "en": "Release status"
+    },
+    "description": {
+      "ru": "Код статуса выпуска фильма, например released",
+      "en": "The film's release status code, such as released"
+    },
+    "valueType": "string",
+    "unit": null
+  },
+  {
+    "key": "budget",
+    "_source": {
+      "provider": "tmdb",
+      "endpoint": "/movie/{id}",
+      "field": "budget"
+    },
+    "group": "financial",
+    "name": {
+      "ru": "Бюджет",
+      "en": "Budget"
+    },
+    "description": {
+      "ru": "Бюджет фильма в долларах США. Неизвестная сумма не записывается как ноль",
+      "en": "The film's budget in US dollars. An unknown amount is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": "usd"
+  },
+  {
+    "key": "boxOfficeRevenue",
+    "_source": {
+      "provider": "tmdb",
+      "endpoint": "/movie/{id}",
+      "field": "revenue"
+    },
+    "group": "financial",
+    "name": {
+      "ru": "Кассовые сборы",
+      "en": "Box office revenue"
+    },
+    "description": {
+      "ru": "Кассовые сборы фильма в долларах США. Неизвестная сумма не записывается как ноль",
+      "en": "The film's box office revenue in US dollars. An unknown amount is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": "usd"
+  }
+]

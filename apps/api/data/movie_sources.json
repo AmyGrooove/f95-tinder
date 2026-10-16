@@ -1,0 +1,16 @@
+[
+  {
+    "key": "tmdb",
+    "name": {
+      "ru": "TMDB",
+      "en": "TMDB"
+    },
+    "description": {
+      "ru": "Источник метаданных о фильмах",
+      "en": "Movie metadata source"
+    },
+    "logoUrl": null,
+    "baseUrl": "https://www.themoviedb.org",
+    "apiUrl": "https://api.themoviedb.org/3"
+  }
+]
