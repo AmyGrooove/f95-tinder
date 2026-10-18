@@ -8,8 +8,6 @@ import { isInt } from "@shared/functions/checks/isInt"
 import { isString } from "@shared/functions/checks/isString"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
-import type { ItemId } from "@entities/shared/schemas/itemId.schema"
-import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 import { EUserItemStatus } from "./EUserItemStatus"
 import type { ItemAttempt } from "./itemAttempt.schema"
 import { ItemAttemptSchema } from "./itemAttempt.schema"
@@ -19,8 +17,8 @@ class UserItem extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
 
-  @Prop({ type: ItemIdSchema, required: true })
-  item: ItemId
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
+  item: Types.ObjectId
 
   @Prop({ type: String, enum: Object.values(EUserItemStatus), default: null })
   status: EUserItemStatus | null
@@ -66,13 +64,10 @@ type TCreateUserItem = TCreateEntity<
 const UserItemSchema = SchemaFactory.createForClass(UserItem)
 
 UserItemSchema.index(
-  { user: 1, "item.type": 1, "item.id": 1 },
+  { user: 1, item: 1 },
   { name: "userItemUnique", unique: true },
 )
-UserItemSchema.index(
-  { "item.type": 1, "item.id": 1, user: 1 },
-  { name: "itemUsersLookup" },
-)
+UserItemSchema.index({ item: 1, user: 1 }, { name: "itemUsersLookup" })
 
 UserItemSchema.path("attempts").validate(
   (value: ItemAttempt[]) =>

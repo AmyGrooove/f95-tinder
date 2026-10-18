@@ -26,11 +26,11 @@ type TCreateRelation = TCreateEntity<
 const RelationSchema = SchemaFactory.createForClass(Relation)
 
 RelationSchema.index(
-  { "first.item.type": 1, "first.item.id": 1, "first.role": 1 },
+  { "first.item": 1, "first.role": 1 },
   { name: "relationFirstLookup" },
 )
 RelationSchema.index(
-  { "second.item.type": 1, "second.item.id": 1, "second.role": 1 },
+  { "second.item": 1, "second.role": 1 },
   { name: "relationSecondLookup" },
 )
 

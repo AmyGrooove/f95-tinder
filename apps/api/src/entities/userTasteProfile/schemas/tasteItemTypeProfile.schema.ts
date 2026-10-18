@@ -4,7 +4,7 @@ import { isArray } from "@shared/functions/checks/isArray"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
-import { EItemType } from "@entities/shared/schemas/EItemType"
+import { EItemType } from "@entities/item/schemas/EItemType"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
 import { EmbeddingSchema } from "@entities/shared/schemas/embedding.schema"
 import type {

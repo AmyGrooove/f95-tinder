@@ -3,11 +3,11 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateUserItemStatusCounts } from "./userItemStatusCounts.schema"
 import type { TCreateRatingDistribution } from "./ratingDistribution.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { Schema as MongooseSchema } from "mongoose"
+import type { Types } from "mongoose"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import type { ItemId } from "@entities/shared/schemas/itemId.schema"
-import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 import type { RatingDistribution } from "./ratingDistribution.schema"
 import { RatingDistributionSchema } from "./ratingDistribution.schema"
 import type { UserItemStatusCounts } from "./userItemStatusCounts.schema"
@@ -16,8 +16,8 @@ import { isNil } from "@shared/functions/checks/isNil"
 
 @Schema({ collection: "ItemMetric" })
 class ItemMetric extends MongoEntity {
-  @Prop({ type: ItemIdSchema, required: true })
-  item: ItemId
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
+  item: Types.ObjectId
 
   @Prop({
     type: Number,
@@ -86,10 +86,7 @@ type TCreateItemMetric = TCreateEntity<
 
 const ItemMetricSchema = SchemaFactory.createForClass(ItemMetric)
 
-ItemMetricSchema.index(
-  { "item.type": 1, "item.id": 1 },
-  { name: "itemMetricUnique", unique: true },
-)
+ItemMetricSchema.index({ item: 1 }, { name: "itemMetricUnique", unique: true })
 
 export { ItemMetric, ItemMetricSchema }
 export type { TCreateItemMetric }

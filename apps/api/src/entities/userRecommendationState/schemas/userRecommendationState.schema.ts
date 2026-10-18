@@ -5,16 +5,14 @@ import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
-import type { ItemId } from "@entities/shared/schemas/itemId.schema"
-import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 
 @Schema({ collection: "UserRecommendationState" })
 class UserRecommendationState extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId
 
-  @Prop({ type: ItemIdSchema, required: true })
-  item: ItemId
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
+  item: Types.ObjectId
 
   @Prop({
     required: true,
@@ -64,7 +62,7 @@ const UserRecommendationStateSchema = SchemaFactory.createForClass(
 )
 
 UserRecommendationStateSchema.index(
-  { user: 1, "item.type": 1, "item.id": 1 },
+  { user: 1, item: 1 },
   { name: "userRecommendationStateUnique", unique: true },
 )
 

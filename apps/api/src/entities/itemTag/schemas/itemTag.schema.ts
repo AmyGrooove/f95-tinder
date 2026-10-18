@@ -2,15 +2,13 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import type { ItemId } from "@entities/shared/schemas/itemId.schema"
-import { ItemIdSchema } from "@entities/shared/schemas/itemId.schema"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 @Schema({ collection: "ItemTag" })
 class ItemTag extends MongoEntity {
-  @Prop({ type: ItemIdSchema, required: true })
-  item: ItemId
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
+  item: Types.ObjectId
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Tag" })
   tag: Types.ObjectId
@@ -29,13 +27,10 @@ type TCreateItemTag = TCreateEntity<ItemTag>
 const ItemTagSchema = SchemaFactory.createForClass(ItemTag)
 
 ItemTagSchema.index(
-  { "item.type": 1, "item.id": 1, tag: 1 },
+  { item: 1, tag: 1 },
   { name: "itemTagUnique", unique: true },
 )
-ItemTagSchema.index(
-  { tag: 1, "item.type": 1, "item.id": 1 },
-  { name: "tagItemLookup" },
-)
+ItemTagSchema.index({ tag: 1, item: 1 }, { name: "tagItemLookup" })
 
 export { ItemTag, ItemTagSchema }
 export type { TCreateItemTag }
