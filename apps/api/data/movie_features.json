@@ -1,30 +1,31 @@
 [
   {
     "key": "releaseDate",
-    "_source": {
-      "provider": "tmdb",
-      "endpoint": "/movie/{id}",
-      "field": "release_date"
-    },
     "group": "release",
     "name": {
       "ru": "Дата первого выхода",
       "en": "First release date"
     },
     "description": {
-      "ru": "Дата первого выхода фильма независимо от страны",
-      "en": "The film's first release date, regardless of country"
+      "ru": "Дата первого известного выхода фильма. Учитываются территория, версия фильма и точность даты; неизвестный день не подменяется первым января",
+      "en": "First known release date, accounting for territory, film version and date precision; an unknown day is not replaced with January 1"
     },
     "valueType": "date",
-    "unit": null
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.premiere_world"
+      },
+      {
+        "provider": "wikidata",
+        "property": "P577"
+      }
+    ]
   },
   {
     "key": "duration",
-    "_source": {
-      "provider": "tmdb",
-      "endpoint": "/movie/{id}",
-      "field": "runtime"
-    },
     "group": "technical",
     "name": {
       "ru": "Продолжительность",
@@ -35,15 +36,21 @@
       "en": "The film's duration in minutes"
     },
     "valueType": "number",
-    "unit": "minute"
+    "unit": "minute",
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.duration"
+      },
+      {
+        "provider": "wikidata",
+        "property": "P2047"
+      }
+    ]
   },
   {
     "key": "releaseStatus",
-    "_source": {
-      "provider": "tmdb",
-      "endpoint": "/movie/{id}",
-      "field": "status"
-    },
     "group": "release",
     "name": {
       "ru": "Статус выпуска",
@@ -54,44 +61,327 @@
       "en": "The film's release status code, such as released"
     },
     "valueType": "string",
-    "unit": null
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.all_status"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.anime_status"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.drama_status"
+      }
+    ]
   },
   {
     "key": "budget",
-    "_source": {
-      "provider": "tmdb",
-      "endpoint": "/movie/{id}",
-      "field": "budget"
-    },
     "group": "financial",
     "name": {
       "ru": "Бюджет",
       "en": "Budget"
     },
     "description": {
-      "ru": "Бюджет фильма в долларах США. Неизвестная сумма не записывается как ноль",
-      "en": "The film's budget in US dollars. An unknown amount is not recorded as zero"
+      "ru": "Бюджет фильма в долларах США. Суммы в других валютах и неизвестные суммы не записываются в эту характеристику",
+      "en": "Film budget in US dollars. Amounts in other currencies and unknown amounts are not stored in this feature"
     },
     "valueType": "number",
-    "unit": "usd"
+    "unit": "usd",
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "property": "P2130"
+      }
+    ]
   },
   {
     "key": "boxOfficeRevenue",
-    "_source": {
-      "provider": "tmdb",
-      "endpoint": "/movie/{id}",
-      "field": "revenue"
-    },
     "group": "financial",
     "name": {
       "ru": "Кассовые сборы",
       "en": "Box office revenue"
     },
     "description": {
-      "ru": "Кассовые сборы фильма в долларах США. Неизвестная сумма не записывается как ноль",
-      "en": "The film's box office revenue in US dollars. An unknown amount is not recorded as zero"
+      "ru": "Мировые кассовые сборы фильма в долларах США. Региональные сборы, суммы в других валютах и неизвестные суммы не записываются в эту характеристику",
+      "en": "Worldwide box office revenue in US dollars. Regional revenue, amounts in other currencies and unknown amounts are not stored in this feature"
     },
     "valueType": "number",
-    "unit": "usd"
+    "unit": "usd",
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "property": "P2142"
+      }
+    ]
+  },
+  {
+    "key": "releaseYear",
+    "group": "release",
+    "name": {
+      "ru": "Год выхода",
+      "en": "Release year"
+    },
+    "description": {
+      "ru": "Год первого выхода фильма; может быть известен без точной даты",
+      "en": "Year of the first film release; may be known without an exact date"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.year"
+      },
+      {
+        "provider": "wikidata",
+        "property": "P577"
+      }
+    ]
+  },
+  {
+    "key": "releaseDateRu",
+    "group": "release",
+    "name": {
+      "ru": "Дата премьеры в России",
+      "en": "Russian premiere date"
+    },
+    "description": {
+      "ru": "Дата первого выхода фильма в России; повторные показы и другие территории не подменяют российскую премьеру",
+      "en": "First film release date in Russia; re-releases and other territories do not replace the Russian premiere"
+    },
+    "valueType": "date",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.premiere_ru"
+      },
+      {
+        "provider": "wikidata",
+        "property": "P577"
+      }
+    ]
+  },
+  {
+    "key": "minimalAge",
+    "group": null,
+    "name": {
+      "ru": "Возрастное ограничение",
+      "en": "Minimum age"
+    },
+    "description": {
+      "ru": "Минимальный возраст для просмотра. Неизвестное ограничение не записывается как ноль",
+      "en": "Minimum viewing age. An unknown restriction is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.minimal_age"
+      }
+    ]
+  },
+  {
+    "key": "mpaaRating",
+    "group": null,
+    "name": {
+      "ru": "Рейтинг MPA",
+      "en": "MPA rating"
+    },
+    "description": {
+      "ru": "Код возрастной категории MPA в верхнем регистре. Категории других систем не записываются как MPA",
+      "en": "Uppercase MPA age classification code. Ratings from other systems are not stored as MPA ratings"
+    },
+    "valueType": "string",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.rating_mpaa"
+      },
+      {
+        "provider": "wikidata",
+        "property": "P1657"
+      }
+    ]
+  },
+  {
+    "key": "kinopoiskRating",
+    "group": null,
+    "name": {
+      "ru": "Рейтинг КиноПоиск",
+      "en": "KinoPoisk rating"
+    },
+    "description": {
+      "ru": "Рейтинг КиноПоиск по шкале от 0 до 10, полученный через Kodik. Неизвестное значение не записывается как ноль",
+      "en": "KinoPoisk rating on a 0 to 10 scale, retrieved through Kodik. An unknown value is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.kinopoisk_rating"
+      }
+    ]
+  },
+  {
+    "key": "kinopoiskVotes",
+    "group": null,
+    "name": {
+      "ru": "Количество оценок КиноПоиск",
+      "en": "KinoPoisk vote count"
+    },
+    "description": {
+      "ru": "Количество оценок КиноПоиск, полученное через Kodik. Неизвестное количество не записывается как ноль",
+      "en": "KinoPoisk vote count retrieved through Kodik. An unknown count is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.kinopoisk_votes"
+      }
+    ]
+  },
+  {
+    "key": "imdbRating",
+    "group": null,
+    "name": {
+      "ru": "Рейтинг IMDb",
+      "en": "IMDb rating"
+    },
+    "description": {
+      "ru": "Рейтинг IMDb по шкале от 0 до 10, полученный через Kodik. Неизвестное значение не записывается как ноль",
+      "en": "IMDb rating on a 0 to 10 scale, retrieved through Kodik. An unknown value is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.imdb_rating"
+      }
+    ]
+  },
+  {
+    "key": "imdbVotes",
+    "group": null,
+    "name": {
+      "ru": "Количество оценок IMDb",
+      "en": "IMDb vote count"
+    },
+    "description": {
+      "ru": "Количество оценок IMDb, полученное через Kodik. Неизвестное количество не записывается как ноль",
+      "en": "IMDb vote count retrieved through Kodik. An unknown count is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.imdb_votes"
+      }
+    ]
+  },
+  {
+    "key": "shikimoriRating",
+    "group": null,
+    "name": {
+      "ru": "Рейтинг Shikimori",
+      "en": "Shikimori rating"
+    },
+    "description": {
+      "ru": "Рейтинг Shikimori по шкале от 0 до 10, полученный через Kodik. Неизвестное значение не записывается как ноль",
+      "en": "Shikimori rating on a 0 to 10 scale, retrieved through Kodik. An unknown value is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.shikimori_rating"
+      }
+    ]
+  },
+  {
+    "key": "shikimoriVotes",
+    "group": null,
+    "name": {
+      "ru": "Количество оценок Shikimori",
+      "en": "Shikimori vote count"
+    },
+    "description": {
+      "ru": "Количество оценок Shikimori, полученное через Kodik. Неизвестное количество не записывается как ноль",
+      "en": "Shikimori vote count retrieved through Kodik. An unknown count is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.shikimori_votes"
+      }
+    ]
+  },
+  {
+    "key": "mydramalistRating",
+    "group": null,
+    "name": {
+      "ru": "Рейтинг MyDramaList",
+      "en": "MyDramaList rating"
+    },
+    "description": {
+      "ru": "Рейтинг MyDramaList по шкале от 0 до 10, полученный через Kodik. Неизвестное значение не записывается как ноль",
+      "en": "MyDramaList rating on a 0 to 10 scale, retrieved through Kodik. An unknown value is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.mydramalist_rating"
+      }
+    ]
+  },
+  {
+    "key": "mydramalistVotes",
+    "group": null,
+    "name": {
+      "ru": "Количество оценок MyDramaList",
+      "en": "MyDramaList vote count"
+    },
+    "description": {
+      "ru": "Количество оценок MyDramaList, полученное через Kodik. Неизвестное количество не записывается как ноль",
+      "en": "MyDramaList vote count retrieved through Kodik. An unknown count is not recorded as zero"
+    },
+    "valueType": "number",
+    "unit": null,
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/list",
+        "field": "material_data.mydramalist_votes"
+      }
+    ]
   }
 ]

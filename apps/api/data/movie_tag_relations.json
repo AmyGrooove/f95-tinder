@@ -1,0 +1,162 @@
+[
+  {
+    "first": "blackComedyFilm",
+    "second": "comedy",
+    "type": "parent"
+  },
+  {
+    "first": "bodyHorrorFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "combatSports",
+    "second": "sport",
+    "type": "parent"
+  },
+  {
+    "first": "cosmicHorrorFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "crimeDocumentary",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "crimeDocumentary",
+    "second": "crime",
+    "type": "parent"
+  },
+  {
+    "first": "detective",
+    "second": "mystery",
+    "type": "parent"
+  },
+  {
+    "first": "folkHorrorFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "ghostFilm",
+    "second": "supernatural",
+    "type": "parent"
+  },
+  {
+    "first": "gothicHorrorFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "heistFilm",
+    "second": "crime",
+    "type": "parent"
+  },
+  {
+    "first": "historicalDocumentaryFilm",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "historicalDocumentaryFilm",
+    "second": "history",
+    "type": "parent"
+  },
+  {
+    "first": "melodrama",
+    "second": "drama",
+    "type": "parent"
+  },
+  {
+    "first": "musicDocumentaryFilm",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "musicDocumentaryFilm",
+    "second": "music",
+    "type": "parent"
+  },
+  {
+    "first": "natureDocumentary",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "neoNoir",
+    "second": "filmNoir",
+    "type": "parent"
+  },
+  {
+    "first": "organizedCrime",
+    "second": "crime",
+    "type": "parent"
+  },
+  {
+    "first": "parody",
+    "second": "comedy",
+    "type": "parent"
+  },
+  {
+    "first": "psychologicalHorrorFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "psychologicalThrillerFilm",
+    "second": "thriller",
+    "type": "parent"
+  },
+  {
+    "first": "racing",
+    "second": "sport",
+    "type": "parent"
+  },
+  {
+    "first": "reincarnation",
+    "second": "supernatural",
+    "type": "parent"
+  },
+  {
+    "first": "scienceDocumentary",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "serialKillerFilm",
+    "second": "crime",
+    "type": "parent"
+  },
+  {
+    "first": "slasherFilm",
+    "second": "horror",
+    "type": "parent"
+  },
+  {
+    "first": "sportsDocumentary",
+    "second": "documentary",
+    "type": "parent"
+  },
+  {
+    "first": "sportsDocumentary",
+    "second": "sport",
+    "type": "parent"
+  },
+  {
+    "first": "urbanFantasy",
+    "second": "fantasy",
+    "type": "parent"
+  },
+  {
+    "first": "vampires",
+    "second": "supernatural",
+    "type": "parent"
+  },
+  {
+    "first": "werewolfFilm",
+    "second": "supernatural",
+    "type": "parent"
+  }
+]

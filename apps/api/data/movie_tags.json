@@ -1,1 +1,2296 @@
-[]
+[
+  {
+    "key": "action",
+    "group": "genre",
+    "name": {
+      "ru": "Боевик",
+      "en": "Action"
+    },
+    "description": {
+      "ru": "Быстрый темп, опасные столкновения, погони и зрелищные схватки",
+      "en": "Fast-paced conflict, high-stakes pursuits and intense physical confrontations"
+    },
+    "aliases": ["Экшен"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "боевик",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "экшен",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "боевик",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q188473"
+      }
+    ]
+  },
+  {
+    "key": "adventure",
+    "group": "genre",
+    "name": {
+      "ru": "Приключения",
+      "en": "Adventure"
+    },
+    "description": {
+      "ru": "Путешествия, рискованные поиски и открытия за пределами привычного мира",
+      "en": "Journeys, risky quests and discoveries beyond the familiar world"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "приключения",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "приключения",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "приключения",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q319221"
+      }
+    ]
+  },
+  {
+    "key": "comedy",
+    "group": "genre",
+    "name": {
+      "ru": "Комедия",
+      "en": "Comedy"
+    },
+    "description": {
+      "ru": "Юмор, нелепые обстоятельства и комические столкновения характеров",
+      "en": "Humor, absurd situations and comic clashes between personalities"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "комедия",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "комедия",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "комедия",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q157443"
+      }
+    ]
+  },
+  {
+    "key": "crime",
+    "group": "genre",
+    "name": {
+      "ru": "Криминал",
+      "en": "Crime"
+    },
+    "description": {
+      "ru": "Преступный мир, нарушение закона и последствия криминальных решений",
+      "en": "Criminal activity, life outside the law and the consequences of crime"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "криминал",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "криминал",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q959790"
+      }
+    ]
+  },
+  {
+    "key": "documentary",
+    "group": "genre",
+    "name": {
+      "ru": "Документалистика",
+      "en": "Documentary"
+    },
+    "description": {
+      "ru": "Реальные люди, события и явления, раскрытые через факты и свидетельства",
+      "en": "Real people, events and subjects explored through facts and firsthand accounts"
+    },
+    "aliases": ["Документальный"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "документальный",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "документальный",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q93204"
+      }
+    ]
+  },
+  {
+    "key": "drama",
+    "group": "genre",
+    "name": {
+      "ru": "Драма",
+      "en": "Drama"
+    },
+    "description": {
+      "ru": "Личные конфликты, трудный выбор и эмоциональные последствия поступков",
+      "en": "Personal conflicts, difficult choices and the emotional consequences of actions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "драма",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "драма",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "драма",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q130232"
+      }
+    ]
+  },
+  {
+    "key": "family",
+    "group": "audience",
+    "name": {
+      "ru": "Семейный",
+      "en": "Family"
+    },
+    "description": {
+      "ru": "Темы и подача, подходящие для совместного знакомства с историей разных поколений",
+      "en": "Themes and presentation suited to audiences of different generations together"
+    },
+    "aliases": ["Для всей семьи"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "семейный",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "семейный",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q1361932"
+      }
+    ]
+  },
+  {
+    "key": "fantasy",
+    "group": "genre",
+    "name": {
+      "ru": "Фэнтези",
+      "en": "Fantasy"
+    },
+    "description": {
+      "ru": "Магия, мифические существа и миры с собственными сверхъестественными законами",
+      "en": "Magic, mythical beings and worlds governed by supernatural rules"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фэнтези",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фэнтези",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фэнтези",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q157394"
+      }
+    ]
+  },
+  {
+    "key": "history",
+    "group": "genre",
+    "name": {
+      "ru": "Исторический",
+      "en": "Historical"
+    },
+    "description": {
+      "ru": "События и судьбы на фоне реальных эпох, обычаев и исторических перемен",
+      "en": "Lives and events shaped by past eras, historical change and period customs"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "история",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "исторический",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "история",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q17013749"
+      }
+    ]
+  },
+  {
+    "key": "horror",
+    "group": "genre",
+    "name": {
+      "ru": "Ужасы",
+      "en": "Horror"
+    },
+    "description": {
+      "ru": "Страх, тревога и ощущение угрозы через пугающие образы и события",
+      "en": "Fear, dread and a sense of danger created through unsettling imagery and events"
+    },
+    "aliases": ["Хоррор"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "ужасы",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "ужасы",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "ужасы",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q200092"
+      }
+    ]
+  },
+  {
+    "key": "music",
+    "group": "genre",
+    "name": {
+      "ru": "Музыка",
+      "en": "Music"
+    },
+    "description": {
+      "ru": "Музыкальное творчество, выступления и влияние музыки на судьбы героев",
+      "en": "Musical creation, performances and the role of music in characters’ lives"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "музыка",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "музыка",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "музыка",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q109733358"
+      }
+    ]
+  },
+  {
+    "key": "mystery",
+    "group": "genre",
+    "name": {
+      "ru": "Тайна",
+      "en": "Mystery"
+    },
+    "description": {
+      "ru": "Загадки, скрытые обстоятельства и постепенное раскрытие неизвестного",
+      "en": "Enigmas, concealed facts and the gradual uncovering of hidden truths"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "тайна",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q1200678"
+      }
+    ]
+  },
+  {
+    "key": "detective",
+    "group": "genre",
+    "name": {
+      "ru": "Детектив",
+      "en": "Detective fiction"
+    },
+    "description": {
+      "ru": "Расследование загадочных происшествий, поиск улик и установление истины",
+      "en": "Investigating suspicious events, following clues and piecing together the truth"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "детектив",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "детектив",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "romance",
+    "group": "genre",
+    "name": {
+      "ru": "Романтика",
+      "en": "Romance"
+    },
+    "description": {
+      "ru": "Зарождение чувств, близость и сложности любовных отношений",
+      "en": "Developing affection, emotional intimacy and challenges in romantic relationships"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "романтика",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "романтика",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q1054574"
+      }
+    ]
+  },
+  {
+    "key": "melodrama",
+    "group": "genre",
+    "name": {
+      "ru": "Мелодрама",
+      "en": "Melodrama"
+    },
+    "description": {
+      "ru": "Обострённые чувства, тяжёлые обстоятельства и драматические испытания отношений",
+      "en": "Heightened emotions, difficult circumstances and dramatic tests of personal bonds"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "мелодрама",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "мелодрама",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "scienceFiction",
+    "group": "genre",
+    "name": {
+      "ru": "Научная фантастика",
+      "en": "Science fiction"
+    },
+    "description": {
+      "ru": "Научные гипотезы и технологии, меняющие привычный мир и возможности человека",
+      "en": "Speculative science and technologies that reshape society and human possibilities"
+    },
+    "aliases": ["Sci-fi", "Сай-фай", "НФ"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фантастика",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фантастика",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "sci-fi",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q471839"
+      }
+    ]
+  },
+  {
+    "key": "thriller",
+    "group": "genre",
+    "name": {
+      "ru": "Триллер",
+      "en": "Thriller"
+    },
+    "description": {
+      "ru": "Нарастающее напряжение, неопределённость и постоянное ожидание опасности",
+      "en": "Escalating suspense, uncertainty and an ever-present threat of danger"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "триллер",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "триллер",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "триллер",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q2484376"
+      }
+    ]
+  },
+  {
+    "key": "war",
+    "group": "genre",
+    "name": {
+      "ru": "Военный",
+      "en": "War"
+    },
+    "description": {
+      "ru": "Вооружённые конфликты, фронтовая жизнь и испытания людей во время войны",
+      "en": "Armed conflicts, life during wartime and the human cost of war"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "военный",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "военное",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "военный",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "война",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q369747"
+      }
+    ]
+  },
+  {
+    "key": "western",
+    "group": "genre",
+    "name": {
+      "ru": "Вестерн",
+      "en": "Western"
+    },
+    "description": {
+      "ru": "Фронтир, противостояние на Диком Западе и борьба за порядок или свободу",
+      "en": "Frontier life, Old West conflicts and struggles over freedom and justice"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "вестерн",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q172980"
+      }
+    ]
+  },
+  {
+    "key": "biography",
+    "group": "genre",
+    "name": {
+      "ru": "Биография",
+      "en": "Biography"
+    },
+    "description": {
+      "ru": "Жизненный путь реального человека, его решения, достижения и противоречия",
+      "en": "The life of a real person, including their choices, achievements and struggles"
+    },
+    "aliases": ["Байопик"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "биография",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q645928"
+      }
+    ]
+  },
+  {
+    "key": "children",
+    "group": "audience",
+    "name": {
+      "ru": "Детский",
+      "en": "For children"
+    },
+    "description": {
+      "ru": "Доступные детям темы, понятные конфликты и соответствующая возрасту подача",
+      "en": "Age-appropriate themes, accessible conflicts and presentation aimed at children"
+    },
+    "aliases": ["Для детей"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "детский",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "детское",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q2143665"
+      }
+    ]
+  },
+  {
+    "key": "shortFilm",
+    "group": "format",
+    "name": {
+      "ru": "Короткометражка",
+      "en": "Short film"
+    },
+    "description": {
+      "ru": "Короткая самостоятельная экранная история с компактным развитием сюжета",
+      "en": "A brief self-contained screen story told within a limited running time"
+    },
+    "aliases": ["Короткий метр"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "короткометражка",
+        "field": "material_data.genres"
+      }
+    ]
+  },
+  {
+    "key": "musical",
+    "group": "genre",
+    "name": {
+      "ru": "Мюзикл",
+      "en": "Musical"
+    },
+    "description": {
+      "ru": "Песни и музыкальные номера, через которые развиваются сюжет и характеры",
+      "en": "Songs and musical sequences used to develop the story and its characters"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "мюзикл",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q842256"
+      }
+    ]
+  },
+  {
+    "key": "sport",
+    "group": "genre",
+    "name": {
+      "ru": "Спорт",
+      "en": "Sports"
+    },
+    "description": {
+      "ru": "Тренировки, соревнования, соперничество и преодоление собственных пределов",
+      "en": "Training, competition, rivalry and the pursuit of athletic achievement"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "спорт",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "спорт",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "спорт",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q1339864"
+      }
+    ]
+  },
+  {
+    "key": "filmNoir",
+    "group": "subgenre",
+    "name": {
+      "ru": "Нуар",
+      "en": "Noir"
+    },
+    "description": {
+      "ru": "Мрачная атмосфера, моральная неоднозначность и мир скрытых мотивов",
+      "en": "A shadowy atmosphere, moral ambiguity and characters with hidden motives"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "фильм-нуар",
+        "field": "material_data.genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q185867"
+      }
+    ]
+  },
+  {
+    "key": "martialArts",
+    "group": "subgenre",
+    "name": {
+      "ru": "Боевые искусства",
+      "en": "Martial arts"
+    },
+    "description": {
+      "ru": "Мастерство рукопашного боя, дисциплина и поединки разных боевых школ",
+      "en": "Hand-to-hand combat skills, discipline and clashes between fighting traditions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "боевые искусства",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "боевые искусства",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q1033891"
+      }
+    ]
+  },
+  {
+    "key": "vampires",
+    "group": "keyword",
+    "name": {
+      "ru": "Вампиры",
+      "en": "Vampires"
+    },
+    "description": {
+      "ru": "Бессмертие, жажда крови и противостояние людей с вампирскими существами",
+      "en": "Immortality, bloodlust and conflicts involving vampire beings"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "вампиры",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q2137852"
+      }
+    ]
+  },
+  {
+    "key": "videoGames",
+    "group": "keyword",
+    "name": {
+      "ru": "Видеоигры",
+      "en": "Video games"
+    },
+    "description": {
+      "ru": "Игровые миры, культура гейминга и люди, чья жизнь связана с играми",
+      "en": "Game worlds, gaming culture and people whose lives revolve around video games"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "видеоигры",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "survival",
+    "group": "keyword",
+    "name": {
+      "ru": "Выживание",
+      "en": "Survival"
+    },
+    "description": {
+      "ru": "Борьба за жизнь при нехватке ресурсов, изоляции или смертельной угрозе",
+      "en": "The struggle to stay alive amid scarce resources, isolation or mortal danger"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "выживание",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q15898171"
+      }
+    ]
+  },
+  {
+    "key": "racing",
+    "group": "keyword",
+    "name": {
+      "ru": "Гонки",
+      "en": "Racing"
+    },
+    "description": {
+      "ru": "Скоростное соперничество, мастерство управления и борьба за победу на трассе",
+      "en": "High-speed rivalry, driving skill and competition for victory on the track"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "гонки",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "urbanFantasy",
+    "group": "subgenre",
+    "name": {
+      "ru": "Городское фэнтези",
+      "en": "Urban fantasy"
+    },
+    "description": {
+      "ru": "Магия и сверхъестественное, скрытые среди улиц и повседневной городской жизни",
+      "en": "Magic and supernatural forces woven into everyday urban life"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "городское фэнтези",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "childcare",
+    "group": "keyword",
+    "name": {
+      "ru": "Забота о детях",
+      "en": "Childcare"
+    },
+    "description": {
+      "ru": "Воспитание, повседневная забота и формирование связи между детьми и взрослыми",
+      "en": "Raising children, everyday caregiving and bonds between children and adults"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "забота о детях",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "visualArts",
+    "group": "keyword",
+    "name": {
+      "ru": "Изобразительное искусство",
+      "en": "Visual arts"
+    },
+    "description": {
+      "ru": "Создание изображений, художественный поиск и жизнь творческих людей",
+      "en": "Making visual art, artistic discovery and the lives of creative people"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "изобразительное искусство",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "performingArts",
+    "group": "keyword",
+    "name": {
+      "ru": "Сценическое искусство",
+      "en": "Performing arts"
+    },
+    "description": {
+      "ru": "Театр, танец и выступления, где мастерство раскрывается перед публикой",
+      "en": "Theater, dance and live performance where artists create for an audience"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "исполнительское искусство",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "space",
+    "group": "keyword",
+    "name": {
+      "ru": "Космос",
+      "en": "Outer space"
+    },
+    "description": {
+      "ru": "Космические полёты, исследование Вселенной и жизнь за пределами Земли",
+      "en": "Space travel, exploration of the universe and life beyond Earth"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "космос",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "lovePolygon",
+    "group": "keyword",
+    "name": {
+      "ru": "Любовный многоугольник",
+      "en": "Love polygon"
+    },
+    "description": {
+      "ru": "Переплетение взаимных и безответных чувств между несколькими персонажами",
+      "en": "Intertwined attraction and unrequited feelings among several characters"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "любовный многоугольник",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "medicine",
+    "group": "keyword",
+    "name": {
+      "ru": "Медицина",
+      "en": "Medicine"
+    },
+    "description": {
+      "ru": "Диагнозы, лечение, врачебные решения и этические трудности помощи людям",
+      "en": "Diagnosis, treatment, medical decisions and ethical dilemmas in patient care"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "медицина",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "медицина",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "mythology",
+    "group": "keyword",
+    "name": {
+      "ru": "Мифология",
+      "en": "Mythology"
+    },
+    "description": {
+      "ru": "Древние предания, божества и мифологические сюжеты разных культур",
+      "en": "Ancient legends, deities and mythic traditions drawn from different cultures"
+    },
+    "aliases": ["Мифы и легенды"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "мифология",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "organizedCrime",
+    "group": "keyword",
+    "name": {
+      "ru": "Организованная преступность",
+      "en": "Organized crime"
+    },
+    "description": {
+      "ru": "Криминальные группировки, борьба за влияние и внутренние законы преступного мира",
+      "en": "Criminal networks, power struggles and the unwritten rules of the underworld"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "организованная преступность",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "parody",
+    "group": "subgenre",
+    "name": {
+      "ru": "Пародия",
+      "en": "Parody"
+    },
+    "description": {
+      "ru": "Комическое переосмысление узнаваемых сюжетов, жанров и культурных образов",
+      "en": "Comic reinterpretations of familiar stories, genres and cultural conventions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "пародия",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q622548"
+      }
+    ]
+  },
+  {
+    "key": "pets",
+    "group": "keyword",
+    "name": {
+      "ru": "Питомцы",
+      "en": "Pets"
+    },
+    "description": {
+      "ru": "Домашние животные и привязанность, забота или приключения рядом с ними",
+      "en": "Companion animals and the bonds, responsibilities or adventures they bring"
+    },
+    "aliases": ["Домашние животные"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "питомцы",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "timeTravel",
+    "group": "keyword",
+    "name": {
+      "ru": "Путешествия во времени",
+      "en": "Time travel"
+    },
+    "description": {
+      "ru": "Перемещение между эпохами и последствия вмешательства в прошлое или будущее",
+      "en": "Movement between eras and the consequences of changing past or future events"
+    },
+    "aliases": ["Тайм-тревел"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "путешествие во времени",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q104765957"
+      }
+    ]
+  },
+  {
+    "key": "workplace",
+    "group": "keyword",
+    "name": {
+      "ru": "Рабочие будни",
+      "en": "Workplace"
+    },
+    "description": {
+      "ru": "Профессиональная среда, отношения коллег и повседневные трудности работы",
+      "en": "Professional life, coworker relationships and the challenges of everyday work"
+    },
+    "aliases": ["Работа"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "работа",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "reincarnation",
+    "group": "keyword",
+    "name": {
+      "ru": "Реинкарнация",
+      "en": "Reincarnation"
+    },
+    "description": {
+      "ru": "Новая жизнь после смерти с изменившейся личностью, памятью или судьбой",
+      "en": "A new life after death that transforms identity, memory or destiny"
+    },
+    "aliases": ["Перерождение"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "реинкарнация",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "samurai",
+    "group": "keyword",
+    "name": {
+      "ru": "Самураи",
+      "en": "Samurai"
+    },
+    "description": {
+      "ru": "Воинская честь, традиции и конфликты японского самурайского сословия",
+      "en": "Warrior honor, traditions and conflicts of Japan’s samurai class"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "самураи",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q169672"
+      }
+    ]
+  },
+  {
+    "key": "supernatural",
+    "group": "keyword",
+    "name": {
+      "ru": "Сверхъестественное",
+      "en": "Supernatural"
+    },
+    "description": {
+      "ru": "Необъяснимые силы, духи и явления, выходящие за рамки законов природы",
+      "en": "Unexplained forces, spirits and phenomena beyond the laws of nature"
+    },
+    "aliases": ["Паранормальное"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "сверхъестественное",
+        "field": "material_data.anime_genres"
+      },
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "сверхъестественное",
+        "field": "material_data.drama_genres"
+      },
+      {
+        "provider": "wikidata",
+        "id": "Q3634883"
+      }
+    ]
+  },
+  {
+    "key": "combatSports",
+    "group": "keyword",
+    "name": {
+      "ru": "Спортивные единоборства",
+      "en": "Combat sports"
+    },
+    "description": {
+      "ru": "Состязания по боксу, борьбе и другим контактным боевым дисциплинам",
+      "en": "Competition in boxing, wrestling and other regulated combat disciplines"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "спортивные единоборства",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "school",
+    "group": "keyword",
+    "name": {
+      "ru": "Школа",
+      "en": "School life"
+    },
+    "description": {
+      "ru": "Учёба, дружба, соперничество и взросление в школьной среде",
+      "en": "Classes, friendships, rivalries and growing up in a school setting"
+    },
+    "aliases": ["Школьная жизнь"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "школа",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "showBusiness",
+    "group": "keyword",
+    "name": {
+      "ru": "Шоу-бизнес",
+      "en": "Show business"
+    },
+    "description": {
+      "ru": "Закулисье индустрии развлечений, карьера артистов и цена публичного успеха",
+      "en": "Behind-the-scenes entertainment careers and the pressures of public success"
+    },
+    "aliases": ["Индустрия развлечений"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "шоу-бизнес",
+        "field": "material_data.anime_genres"
+      }
+    ]
+  },
+  {
+    "key": "business",
+    "group": "keyword",
+    "name": {
+      "ru": "Бизнес",
+      "en": "Business"
+    },
+    "description": {
+      "ru": "Предпринимательство, корпоративное соперничество и решения в мире денег",
+      "en": "Entrepreneurship, corporate competition and consequential financial decisions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "бизнес",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "food",
+    "group": "keyword",
+    "name": {
+      "ru": "Еда и кулинария",
+      "en": "Food and cooking"
+    },
+    "description": {
+      "ru": "Приготовление блюд, вкусовые открытия и культура еды",
+      "en": "Cooking, culinary discoveries and the culture surrounding food"
+    },
+    "aliases": ["Кулинария"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "еда",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "law",
+    "group": "keyword",
+    "name": {
+      "ru": "Право и суд",
+      "en": "Law and justice"
+    },
+    "description": {
+      "ru": "Судебные разбирательства, работа юристов и борьба за справедливость",
+      "en": "Courtroom disputes, legal professionals and struggles for justice"
+    },
+    "aliases": ["Юриспруденция"],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "закон",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "politics",
+    "group": "keyword",
+    "name": {
+      "ru": "Политика",
+      "en": "Politics"
+    },
+    "description": {
+      "ru": "Борьба за власть, государственные решения и столкновение общественных интересов",
+      "en": "Power struggles, government decisions and competing public interests"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "kodik",
+        "endpoint": "/genres",
+        "name": "политика",
+        "field": "material_data.drama_genres"
+      }
+    ]
+  },
+  {
+    "key": "mockumentary",
+    "group": "format",
+    "name": {
+      "ru": "Мокьюментари",
+      "en": "Mockumentary"
+    },
+    "description": {
+      "ru": "Вымышленные события, поданные как документальная съёмка с её условностями",
+      "en": "Fictional events presented with the conventions of documentary filmmaking"
+    },
+    "aliases": ["Псевдодокументалистика"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q459435"
+      }
+    ]
+  },
+  {
+    "key": "heistFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Ограбления",
+      "en": "Heists"
+    },
+    "description": {
+      "ru": "Подготовка рискованной кражи, работа команды и неожиданные срывы плана",
+      "en": "The planning and execution of elaborate thefts, often with plans going wrong"
+    },
+    "aliases": ["Хайст"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q496523"
+      }
+    ]
+  },
+  {
+    "key": "prisonFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Тюремная жизнь",
+      "en": "Prison life"
+    },
+    "description": {
+      "ru": "Заключение, тюремная иерархия и борьба за свободу или выживание",
+      "en": "Confinement, prison hierarchies and struggles for freedom or survival"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q586250"
+      }
+    ]
+  },
+  {
+    "key": "roadMovie",
+    "group": "subgenre",
+    "name": {
+      "ru": "Роуд-муви",
+      "en": "Road movie"
+    },
+    "description": {
+      "ru": "Дорога, случайные встречи и перемены героев в ходе путешествия",
+      "en": "A journey shaped by chance encounters and changes in the travelers"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q628165"
+      }
+    ]
+  },
+  {
+    "key": "experimentalFilm",
+    "group": "style",
+    "name": {
+      "ru": "Экспериментальный стиль",
+      "en": "Experimental style"
+    },
+    "description": {
+      "ru": "Нестандартная форма, необычные художественные приёмы и нарушение привычных правил",
+      "en": "Unconventional forms and techniques that challenge established storytelling rules"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q790192"
+      }
+    ]
+  },
+  {
+    "key": "disasterFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Катастрофы",
+      "en": "Disaster"
+    },
+    "description": {
+      "ru": "Масштабное бедствие, разрушения и действия людей в условиях общего кризиса",
+      "en": "Large-scale calamities and human responses to destruction and crisis"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q846544"
+      }
+    ]
+  },
+  {
+    "key": "slasherFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Слэшер",
+      "en": "Slasher"
+    },
+    "description": {
+      "ru": "Преследование жертв убийцей и нарастающий ужас перед следующей расправой",
+      "en": "A killer stalks victims as the threat of another attack steadily grows"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q853630"
+      }
+    ]
+  },
+  {
+    "key": "artFilm",
+    "group": "style",
+    "name": {
+      "ru": "Артхаус",
+      "en": "Arthouse"
+    },
+    "description": {
+      "ru": "Авторское видение, многозначность и акцент на выразительной форме",
+      "en": "A distinct artistic vision, ambiguity and an emphasis on expressive form"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1135802"
+      }
+    ]
+  },
+  {
+    "key": "surrealistFilm",
+    "group": "style",
+    "name": {
+      "ru": "Сюрреализм",
+      "en": "Surrealism"
+    },
+    "description": {
+      "ru": "Логика сновидений, неожиданные образы и нарушение привычных связей реальности",
+      "en": "Dream logic, unexpected imagery and disrupted connections between ordinary events"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1190502"
+      }
+    ]
+  },
+  {
+    "key": "postApocalypticFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Постапокалипсис",
+      "en": "Post-apocalypse"
+    },
+    "description": {
+      "ru": "Жизнь после краха цивилизации, борьба за ресурсы и создание нового порядка",
+      "en": "Life after civilization collapses, with scarce resources and new social orders"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1341051"
+      }
+    ]
+  },
+  {
+    "key": "monsterFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Монстры",
+      "en": "Monsters"
+    },
+    "description": {
+      "ru": "Необычные опасные существа, столкновение с ними и страх перед неизвестным",
+      "en": "Dangerous extraordinary creatures and the fear and conflict they provoke"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1342372"
+      }
+    ]
+  },
+  {
+    "key": "superheroFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Супергерои",
+      "en": "Superheroes"
+    },
+    "description": {
+      "ru": "Герои с особыми способностями, ответственность за силу и борьба с угрозами",
+      "en": "Extraordinary abilities, the responsibility of power and battles against threats"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1535153"
+      }
+    ]
+  },
+  {
+    "key": "natureDocumentary",
+    "group": "subgenre",
+    "name": {
+      "ru": "Документалистика о природе",
+      "en": "Nature documentary"
+    },
+    "description": {
+      "ru": "Животные, экосистемы и природные процессы, показанные через реальные наблюдения",
+      "en": "Wildlife, ecosystems and natural processes explored through real observations"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q1760864"
+      }
+    ]
+  },
+  {
+    "key": "pirateFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Пираты",
+      "en": "Pirates"
+    },
+    "description": {
+      "ru": "Морские разбойники, охота за добычей и жизнь вне законов морских держав",
+      "en": "Outlaws at sea, the pursuit of treasure and life beyond maritime law"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q2096633"
+      }
+    ]
+  },
+  {
+    "key": "serialKillerFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Серийные убийцы",
+      "en": "Serial killers"
+    },
+    "description": {
+      "ru": "Повторяющиеся убийства, поиски преступника и исследование его мотивов",
+      "en": "Patterns of murder, the search for a perpetrator and their motivations"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q2273331"
+      }
+    ]
+  },
+  {
+    "key": "spyFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Шпионаж",
+      "en": "Espionage"
+    },
+    "description": {
+      "ru": "Тайные операции, разведка, двойные агенты и скрытая борьба за информацию",
+      "en": "Covert missions, intelligence gathering, double agents and information warfare"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q2297927"
+      }
+    ]
+  },
+  {
+    "key": "neoNoir",
+    "group": "subgenre",
+    "name": {
+      "ru": "Неонуар",
+      "en": "Neo-noir"
+    },
+    "description": {
+      "ru": "Современная интерпретация нуара с мрачной эстетикой и неоднозначными героями",
+      "en": "A modern reworking of noir through dark aesthetics and morally ambiguous characters"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q2421031"
+      }
+    ]
+  },
+  {
+    "key": "zombieFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Зомби",
+      "en": "Zombies"
+    },
+    "description": {
+      "ru": "Ожившие мертвецы, угроза заражения и разрушение привычного уклада жизни",
+      "en": "The undead, the spread of infection and the collapse of everyday life"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q3072049"
+      }
+    ]
+  },
+  {
+    "key": "foundFootageFilm",
+    "group": "format",
+    "name": {
+      "ru": "Найденные записи",
+      "en": "Found footage"
+    },
+    "description": {
+      "ru": "События показаны как любительские видео или случайно обнаруженные записи",
+      "en": "Events appear as amateur recordings or footage supposedly discovered afterward"
+    },
+    "aliases": ["Фаунд-футадж"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q3272147"
+      }
+    ]
+  },
+  {
+    "key": "homeInvasion",
+    "group": "keyword",
+    "name": {
+      "ru": "Вторжение в дом",
+      "en": "Home invasion"
+    },
+    "description": {
+      "ru": "Чужаки проникают в жилище, превращая безопасное пространство в ловушку",
+      "en": "Intruders enter a home and turn a place of safety into a trap"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q3786423"
+      }
+    ]
+  },
+  {
+    "key": "werewolfFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Оборотни",
+      "en": "Werewolves"
+    },
+    "description": {
+      "ru": "Превращение человека в зверя, утрата контроля и столкновение двух природ",
+      "en": "Transformation into a beast, loss of control and conflict between two natures"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q5258881"
+      }
+    ]
+  },
+  {
+    "key": "blackComedyFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Чёрная комедия",
+      "en": "Dark comedy"
+    },
+    "description": {
+      "ru": "Мрачный юмор на темы смерти, насилия и других общественных табу",
+      "en": "Dark humor applied to death, violence and other uncomfortable subjects"
+    },
+    "aliases": ["Чёрный юмор"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q5778924"
+      }
+    ]
+  },
+  {
+    "key": "crimeDocumentary",
+    "group": "subgenre",
+    "name": {
+      "ru": "Криминальная документалистика",
+      "en": "Crime documentary"
+    },
+    "description": {
+      "ru": "Реальные преступления, расследования и судьбы людей, которых они затронули",
+      "en": "Real crimes, investigations and the lives of people affected by them"
+    },
+    "aliases": ["Тру-крайм"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q9259710"
+      }
+    ]
+  },
+  {
+    "key": "gamblingFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Азартные игры",
+      "en": "Gambling"
+    },
+    "description": {
+      "ru": "Ставки, игра на риск и последствия стремления к крупному выигрышу",
+      "en": "Wagers, calculated risks and the consequences of chasing a big win"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q11298267"
+      }
+    ]
+  },
+  {
+    "key": "lgbtqRelatedFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "ЛГБТК+ тематика",
+      "en": "LGBTQ+ themes"
+    },
+    "description": {
+      "ru": "Идентичность, отношения и жизненный опыт ЛГБТК+ персонажей",
+      "en": "Identity, relationships and the lived experiences of LGBTQ+ characters"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q20442589"
+      }
+    ]
+  },
+  {
+    "key": "dystopianFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Антиутопия",
+      "en": "Dystopia"
+    },
+    "description": {
+      "ru": "Общество с жёстким контролем, подавлением свободы и тревожным устройством мира",
+      "en": "An oppressive society defined by control, restricted freedoms and systemic injustice"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q20443008"
+      }
+    ]
+  },
+  {
+    "key": "alternateHistoryFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Альтернативная история",
+      "en": "Alternate history"
+    },
+    "description": {
+      "ru": "Прошлое, изменённое ключевым событием, и мир, возникший из другого хода истории",
+      "en": "A changed turning point in the past creates a different course of history"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q20656352"
+      }
+    ]
+  },
+  {
+    "key": "ghostFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Призраки",
+      "en": "Ghosts"
+    },
+    "description": {
+      "ru": "Духи умерших, незавершённые дела и их влияние на мир живых",
+      "en": "Spirits of the dead, unresolved pasts and their influence on the living"
+    },
+    "aliases": ["Привидения"],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q31888058"
+      }
+    ]
+  },
+  {
+    "key": "apocalypticFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Апокалипсис",
+      "en": "Apocalypse"
+    },
+    "description": {
+      "ru": "Надвигающийся конец света, распад общества и попытки предотвратить гибель",
+      "en": "An approaching end of the world, social collapse and attempts to avert disaster"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q47009776"
+      }
+    ]
+  },
+  {
+    "key": "screenlife",
+    "group": "format",
+    "name": {
+      "ru": "Скринлайф",
+      "en": "Screenlife"
+    },
+    "description": {
+      "ru": "Сюжет раскрывается через экраны устройств, переписки и цифровые интерфейсы",
+      "en": "The story unfolds through device screens, messages and digital interfaces"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q60753838"
+      }
+    ]
+  },
+  {
+    "key": "steampunkFilm",
+    "group": "style",
+    "name": {
+      "ru": "Стимпанк",
+      "en": "Steampunk"
+    },
+    "description": {
+      "ru": "Ретрофутуристические механизмы, паровые технологии и эстетика индустриальной эпохи",
+      "en": "Retrofuturistic machinery, steam technology and industrial-era aesthetics"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q63860397"
+      }
+    ]
+  },
+  {
+    "key": "bodyHorrorFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Боди-хоррор",
+      "en": "Body horror"
+    },
+    "description": {
+      "ru": "Ужас перед мутациями, деформацией тела и утратой физической целостности",
+      "en": "Horror rooted in mutation, bodily distortion and loss of physical integrity"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q102260466"
+      }
+    ]
+  },
+  {
+    "key": "comingOfAgeFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Взросление",
+      "en": "Coming of age"
+    },
+    "description": {
+      "ru": "Поиск себя, первые самостоятельные решения и переход к зрелости",
+      "en": "Self-discovery, first independent choices and the transition toward maturity"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q102429885"
+      }
+    ]
+  },
+  {
+    "key": "magicRealistFilm",
+    "group": "style",
+    "name": {
+      "ru": "Магический реализм",
+      "en": "Magical realism"
+    },
+    "description": {
+      "ru": "Чудесные события воспринимаются как естественная часть повседневной реальности",
+      "en": "Extraordinary events are treated as a natural part of everyday reality"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q102706436"
+      }
+    ]
+  },
+  {
+    "key": "folkHorrorFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Фолк-хоррор",
+      "en": "Folk horror"
+    },
+    "description": {
+      "ru": "Народные поверья, древние обряды и скрытая угроза замкнутых сообществ",
+      "en": "Folk beliefs, old rituals and sinister forces within isolated communities"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q104902646"
+      }
+    ]
+  },
+  {
+    "key": "cosmicHorrorFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Космический ужас",
+      "en": "Cosmic horror"
+    },
+    "description": {
+      "ru": "Столкновение с непостижимыми силами и осознание ничтожности человека во Вселенной",
+      "en": "Encounters with unknowable forces and humanity’s insignificance in the universe"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q109628222"
+      }
+    ]
+  },
+  {
+    "key": "psychologicalHorrorFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Психологические ужасы",
+      "en": "Psychological horror"
+    },
+    "description": {
+      "ru": "Страх рождается из травм, навязчивых мыслей и недоверия к собственному восприятию",
+      "en": "Fear grows from trauma, obsession and doubt about one’s own perception"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q109629396"
+      }
+    ]
+  },
+  {
+    "key": "psychologicalThrillerFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Психологический триллер",
+      "en": "Psychological thriller"
+    },
+    "description": {
+      "ru": "Напряжение строится на манипуляциях, скрытых мотивах и игре с восприятием",
+      "en": "Suspense driven by manipulation, hidden motives and distorted perceptions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q109733304"
+      }
+    ]
+  },
+  {
+    "key": "virtualRealityFilm",
+    "group": "keyword",
+    "name": {
+      "ru": "Виртуальная реальность",
+      "en": "Virtual reality"
+    },
+    "description": {
+      "ru": "Погружение в цифровые миры и размывание границ между виртуальным и настоящим",
+      "en": "Immersion in digital worlds and blurred boundaries between virtual and real"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q109733760"
+      }
+    ]
+  },
+  {
+    "key": "musicDocumentaryFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Музыкальная документалистика",
+      "en": "Music documentary"
+    },
+    "description": {
+      "ru": "Реальные музыканты, создание музыки и события музыкальной культуры",
+      "en": "Real musicians, the creative process and events in musical culture"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q110593123"
+      }
+    ]
+  },
+  {
+    "key": "gothicHorrorFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Готический хоррор",
+      "en": "Gothic horror"
+    },
+    "description": {
+      "ru": "Старинные тайны, мрачные пространства и ужас, связанный с прошлым",
+      "en": "Dark settings, old secrets and terrors bound to the past"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q114413232"
+      }
+    ]
+  },
+  {
+    "key": "historicalDocumentaryFilm",
+    "group": "subgenre",
+    "name": {
+      "ru": "Историческая документалистика",
+      "en": "Historical documentary"
+    },
+    "description": {
+      "ru": "Прошлые эпохи и события, восстановленные по источникам и свидетельствам",
+      "en": "Past eras and events reconstructed through historical evidence and testimony"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q116512806"
+      }
+    ]
+  },
+  {
+    "key": "scienceDocumentary",
+    "group": "subgenre",
+    "name": {
+      "ru": "Научная документалистика",
+      "en": "Science documentary"
+    },
+    "description": {
+      "ru": "Исследования, открытия и устройство мира, объяснённые с опорой на науку",
+      "en": "Research, discoveries and explanations of the world grounded in science"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q116777250"
+      }
+    ]
+  },
+  {
+    "key": "sportsDocumentary",
+    "group": "subgenre",
+    "name": {
+      "ru": "Спортивная документалистика",
+      "en": "Sports documentary"
+    },
+    "description": {
+      "ru": "Реальные спортсмены, соревнования и путь к победам и поражениям",
+      "en": "Real athletes, competitions and the journeys behind victories and defeats"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q124425556"
+      }
+    ]
+  },
+  {
+    "key": "satiricalFilm",
+    "group": "style",
+    "name": {
+      "ru": "Сатира",
+      "en": "Satire"
+    },
+    "description": {
+      "ru": "Ирония и преувеличение, обнажающие общественные пороки и противоречия",
+      "en": "Irony and exaggeration used to expose social failings and contradictions"
+    },
+    "aliases": [],
+    "_sources": [
+      {
+        "provider": "wikidata",
+        "id": "Q138603203"
+      }
+    ]
+  }
+]

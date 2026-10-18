@@ -1,8 +1,11 @@
 enum ETagGroup {
   GENRE = "genre",
+  SUBGENRE = "subgenre",
   KEYWORD = "keyword",
-  PRODUCTION_COUNTRY = "productionCountry",
-  ORIGIN_COUNTRY = "originCountry",
+  FORMAT = "format",
+  STYLE = "style",
+  AUDIENCE = "audience",
+  COUNTRY = "country",
   ORIGINAL_LANGUAGE = "originalLanguage",
 }
 
