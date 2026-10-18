@@ -1,0 +1,14 @@
+{
+  "key": "kodik",
+  "name": {
+    "ru": "Кодик",
+    "en": "Kodik"
+  },
+  "description": {
+    "ru": "Источник данных для наполнения и обновления каталога фильмов: названия, описания, жанры, страны, даты премьер, возрастные ограничения, постеры и кадры",
+    "en": "A data source for building and updating the film catalog: titles, descriptions, genres, countries, premiere dates, age classifications, posters and stills"
+  },
+  "logoUrl": null,
+  "baseUrl": null,
+  "apiUrl": "https://kodik-api.com"
+}
