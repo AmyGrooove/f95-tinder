@@ -14,7 +14,7 @@ CORS allows origins dynamically outside production and uses configured origins i
 
 ## Configuration authority
 
-[InfrastructureConfigModule](../../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. Consumers use [InfrastructureConfigService](../../src/infrastructure/config/services/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search` and `mail`. The derived [configuration type](../../src/infrastructure/config/types/TInfrastructureConfiguration.ts) follows the factory return type.
+[InfrastructureConfigModule](../../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. Consumers use [InfrastructureConfigService](../../src/infrastructure/config/services/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search`, `mail` and `sources`. The derived [configuration type](../../src/infrastructure/config/types/TInfrastructureConfiguration.ts) follows the factory return type.
 
 [createInfrastructureConfiguration](../../src/infrastructure/config/functions/createInfrastructureConfiguration/core/createInfrastructureConfiguration.ts) and its nested helpers define the current environment contract:
 
@@ -27,6 +27,7 @@ CORS allows origins dynamically outside production and uses configured origins i
 | Storage | `GARAGE_URL`, `GARAGE_REGION`, `GARAGE_ACCESS_KEY_ID`, `GARAGE_SECRET_ACCESS_KEY`, `GARAGE_PUBLIC_URL` |
 | Search  | `MEILISEARCH_URL`, `MEILISEARCH_ACCESS_SECRET`                                                         |
 | Mail    | `RESEND_ACCESS_SECRET`, `MAIL_DOMAIN`                                                                  |
+| Sources | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                                |
 
 All listed variables except `NODE_ENV` are required by the configuration factory. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
 
@@ -37,6 +38,8 @@ All listed variables except `NODE_ENV` are required by the configuration factory
 [HealthController](../../src/infrastructure/health/controllers/health.controller.ts) exposes `GET /health` and `GET /health/live`. Liveness returns `{ status: "ok" }` without checking dependencies. [HealthService](../../src/infrastructure/health/services/health.service.ts) checks database, cache, jobs, mail, scheduler, search and storage through Terminus. Each check races a 1,500 ms timeout; errors or timeout produce a down indicator. This race does not cancel the underlying dependency operation.
 
 Storage checks/initializes its bucket during module initialization; search rejects application bootstrap if Meilisearch is unavailable. [SchedulerHealthService](../../src/infrastructure/scheduler/services/schedulerHealth.service.ts) records a ten-minute cron heartbeat and measures elapsed time from startup until the first heartbeat. It is not a distributed scheduling lock.
+
+Successful aggregate health responses contain `status`, `error` and `details`; the redundant Terminus `info` field is omitted. Failures still propagate through the existing exception filter.
 
 ## Persistence startup boundary
 

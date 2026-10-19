@@ -4,7 +4,7 @@ This package is `@bisky/api`, a NestJS application using Fastify, TypeScript and
 
 ## Current scope
 
-- [Bootstrap](src/main.ts) configures HTTP, validation, Swagger and request context; [AppModule](src/app/app.module.ts) composes infrastructure and 18 entity modules.
+- [Bootstrap](src/main.ts) configures HTTP, validation, Swagger and request context; [AppModule](src/app/app.module.ts) composes infrastructure and 19 entity modules.
 - The current `src` contains `app`, `entities`, `infrastructure` and `shared`. MongoDB entity schema classes and repositories live in `src/entities`; their current structure is described in [data access context](docs/agents/data-access.md) and [the entity inventory](../../docs/entities.md). Target requirements are in [project foundations](../../docs/projectFoundations.md), with the initial scope in [MVP scope](../../docs/mvpScope.md). Item is the single catalogue entity for all content types; catalogue and user records reference its ObjectId directly. Enums and derived create types live alongside schemas; entity folders have no `types`, `enums` or `index.ts`. There is no business endpoint directory. The only controller is the health controller.
 - Existing capabilities include MongoDB repositories, Redis cache and throttling, BullMQ jobs, Resend mail, Garage-configured S3 storage, image processing, Meilisearch, JWT helpers, scheduling and structured logs.
 - Security providers exist but `SecurityModule` is not imported by the current application graph. Authentication is not a global guard.

@@ -37,6 +37,10 @@ class InfrastructureConfigService {
   get mail(): TInfrastructureConfiguration["mail"] {
     return this.configuration.mail
   }
+
+  get sources(): TInfrastructureConfiguration["sources"] {
+    return this.configuration.sources
+  }
 }
 
 export { InfrastructureConfigService }

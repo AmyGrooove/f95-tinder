@@ -28,7 +28,7 @@ class HealthService {
     private readonly storageHealthService: StorageHealthService,
   ) {}
 
-  checkHealth() {
+  async checkHealth() {
     const checks = [
       async () => {
         return this.createIndicator(HEALTH_CHECK_KEYS.database, async () => {
@@ -67,7 +67,13 @@ class HealthService {
       },
     ]
 
-    return this.healthCheckService.check(checks)
+    const result = await this.healthCheckService.check(checks)
+
+    return {
+      status: result.status,
+      error: result.error,
+      details: result.details,
+    }
   }
 
   private async createIndicator(key: string, check: () => Promise<boolean>) {
