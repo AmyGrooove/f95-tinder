@@ -7,7 +7,7 @@ import { SourceModule } from "@entities/source/source.module"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
 import { SecurityModule } from "@infrastructure/security/security.module"
 
-import { KodikMoviesController } from "./controllers/kodikMovies.controller"
+import { MovieImportController } from "./controllers/movieImport.controller"
 import { CollectNewKodikMoviesJobHandler } from "./handlers/collectNewKodikMoviesJob.handler"
 import { KodikMoviesService } from "./services/kodikMovies.service"
 
@@ -20,9 +20,9 @@ import { KodikMoviesService } from "./services/kodikMovies.service"
     JobsModule,
     SecurityModule,
   ],
-  controllers: [KodikMoviesController],
+  controllers: [MovieImportController],
   providers: [KodikMoviesService, CollectNewKodikMoviesJobHandler],
 })
-class KodikMoviesModule {}
+class MovieImportModule {}
 
-export { KodikMoviesModule }
+export { MovieImportModule }

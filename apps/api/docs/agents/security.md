@@ -2,7 +2,7 @@
 
 Read for authentication, roles, token creation or rate limits. HTTP/CORS configuration is in [runtime](runtime.md).
 
-[SecurityModule](../../src/infrastructure/security/security.module.ts) exports `SecurityJwtService`, `AccessTokenGuard` and `RolesGuard`. [KodikMoviesModule](../../src/endpoints/movieImport/kodikMovies.module.ts) imports it and protects its controller with `AccessTokenGuard`, then `RolesGuard`, and `@Roles(EUserRole.ADMIN)`. None of these guards is configured as the global application authentication guard.
+[SecurityModule](../../src/infrastructure/security/security.module.ts) exports `SecurityJwtService`, `AccessTokenGuard` and `RolesGuard`. [MovieImportModule](../../src/endpoints/movieImport/movieImport.module.ts) imports it and protects its controller with `AccessTokenGuard`, then `RolesGuard`, and `@Roles(EUserRole.ADMIN)`. None of these guards is configured as the global application authentication guard.
 
 [SecurityJwtService](../../src/infrastructure/security/services/jwt.service.ts) signs/verifies access and refresh tokens using separate configured secrets and HS256. Access expiration is 15 minutes; refresh expiration is 30 days. Issuer is the app name and audience is `<appName>-api`. Access payloads carry `sub`, `sessionId`, `roles` and `type: "access"`; refresh payloads carry `sub`, `sessionId`, `type: "refresh"` and are rejected if they contain `roles`. Verification checks token type and payload field types and converts failures into UnauthorizedException.
 

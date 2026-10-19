@@ -34,7 +34,7 @@ import { KodikMoviesService } from "../services/kodikMovies.service"
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Roles(EUserRole.ADMIN)
 @Controller("sources/kodik/movies")
-class KodikMoviesController {
+class MovieImportController {
   constructor(private readonly kodikMoviesService: KodikMoviesService) {}
 
   @Post("collectNew")
@@ -59,4 +59,4 @@ class KodikMoviesController {
   }
 }
 
-export { KodikMoviesController }
+export { MovieImportController }
