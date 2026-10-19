@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
+import { KodikMoviesModule } from "@endpoints/kodikMovies/kodikMovies.module"
+
 import { ItemModule } from "@entities/item/item.module"
 import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"
 import { RelationModule } from "@entities/relation/relation.module"
@@ -26,6 +28,7 @@ import { InfrastructureConfigModule } from "@infrastructure/config/config.module
 import { DatabaseModule } from "@infrastructure/database/database.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { HealthModule } from "@infrastructure/health/health.module"
+import { HttpModule } from "@infrastructure/http/http.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
@@ -33,12 +36,14 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 @Module({
   imports: [
     InfrastructureConfigModule,
+    HttpModule,
     LoggerModule,
     DatabaseModule,
     CacheModule,
     ThrottlingModule,
     SchedulerModule,
     HealthModule,
+    KodikMoviesModule,
     ItemModule,
     BannedItemModule,
     RelationModule,
