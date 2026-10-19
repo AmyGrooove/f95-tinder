@@ -1,0 +1,3 @@
+const POSITIVE_INTEGER_REGEX = /^[1-9]\d*$/
+
+export { POSITIVE_INTEGER_REGEX }

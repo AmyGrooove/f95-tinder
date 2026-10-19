@@ -1,21 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 
+import { JOB_STATES } from "@infrastructure/jobs/static/JOB_STATES"
 import type { TJobState } from "@infrastructure/jobs/types/TJobState"
 
 class KodikMovieCollectionResponseDto {
   @ApiProperty()
   id: string
 
-  @ApiProperty({
-    enum: [
-      "queued",
-      "running",
-      "cancelling",
-      "cancelled",
-      "completed",
-      "failed",
-    ],
-  })
+  @ApiProperty({ enum: JOB_STATES })
   state: TJobState
 
   @ApiProperty({ minimum: 0, maximum: 100 })

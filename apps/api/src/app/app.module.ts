@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
-import { KodikMoviesModule } from "@endpoints/kodikMovies/kodikMovies.module"
+import { KodikMoviesModule } from "@endpoints/movieImport/kodikMovies.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"

@@ -1,10 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger"
 import { IsString, Matches } from "class-validator"
 
+import { POSITIVE_INTEGER_REGEX } from "@shared/static/POSITIVE_INTEGER_REGEX"
+
 class KodikMovieCollectionParamsDto {
-  @ApiProperty({ pattern: "^[1-9]\\d*$" })
+  @ApiProperty({ pattern: POSITIVE_INTEGER_REGEX.source })
   @IsString()
-  @Matches(/^[1-9]\d*$/)
+  @Matches(POSITIVE_INTEGER_REGEX)
   id: string
 }
 
