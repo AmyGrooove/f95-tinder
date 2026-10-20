@@ -11,7 +11,7 @@ import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurren
 class AccessTokenGuard implements CanActivate {
   constructor(private readonly securityJwtService: SecurityJwtService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<
       {
         headers: { authorization?: string }

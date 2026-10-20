@@ -1,4 +1,4 @@
-const escapeRegex = (value: string): string => {
+const escapeRegex = (value: string) => {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 

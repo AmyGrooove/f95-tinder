@@ -13,7 +13,7 @@ class StorageHealthService {
     private readonly configurationService: InfrastructureConfigService,
   ) {}
 
-  async healthCheck(): Promise<boolean> {
+  async healthCheck() {
     try {
       await this.storageClient.send(
         new HeadBucketCommand({

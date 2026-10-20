@@ -79,7 +79,7 @@ class SessionController {
   })
   async deleteOtherSessions(
     @Cookies("__Host-accessToken") accessToken: unknown,
-  ): Promise<void> {
+  ) {
     await this.sessionService.deleteOtherSessions(accessToken)
   }
 
@@ -118,7 +118,7 @@ class SessionController {
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Param() params: SessionParamsDto,
     @Res({ passthrough: true }) reply: unknown,
-  ): Promise<void> {
+  ) {
     const isCurrent = await this.sessionService.deleteSession(
       accessToken,
       new Types.ObjectId(params.sessionId),
@@ -161,7 +161,7 @@ class SessionController {
   async refresh(
     @Cookies("__Host-refreshToken") refreshToken: unknown,
     @Res({ passthrough: true }) reply: unknown,
-  ): Promise<void> {
+  ) {
     const tokens = await this.sessionService.refresh(refreshToken)
 
     this.securityCookieService.setAuthCookies(reply, tokens)

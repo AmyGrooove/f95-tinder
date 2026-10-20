@@ -102,6 +102,16 @@ export default [
             "CallExpression[callee.type=/^(ArrowFunctionExpression|FunctionExpression)$/]",
           message: "Do not use IIFEs",
         },
+        {
+          selector:
+            ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[body] > TSTypeAnnotation.returnType > :matches(TSVoidKeyword, TSStringKeyword, TSNumberKeyword, TSBooleanKeyword)",
+          message: "Let TypeScript infer primitive return types",
+        },
+        {
+          selector:
+            ":matches(FunctionDeclaration, FunctionExpression, ArrowFunctionExpression)[body] > TSTypeAnnotation.returnType > TSTypeReference[typeName.name='Promise'] > TSTypeParameterInstantiation > :matches(TSVoidKeyword, TSStringKeyword, TSNumberKeyword, TSBooleanKeyword)",
+          message: "Let TypeScript infer primitive Promise return types",
+        },
       ],
       "import-x/no-default-export": "error",
       "import-x/no-cycle": ["error", { ignoreExternal: true }],
@@ -132,10 +142,7 @@ export default [
         "error",
         { fixMixedExportsWithInlineTypeSpecifier: false },
       ],
-      "@typescript-eslint/naming-convention": [
-        "error",
-        ...NAMING_CONVENTION,
-      ],
+      "@typescript-eslint/naming-convention": ["error", ...NAMING_CONVENTION],
       "@typescript-eslint/strict-boolean-expressions": [
         "error",
         {

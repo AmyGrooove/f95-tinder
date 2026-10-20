@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto"
-
 import {
   Injectable,
   ServiceUnavailableException,
@@ -12,11 +10,16 @@ import { SessionRepository } from "@entities/session/services/session.repository
 import { UserRepository } from "@entities/user/services/user.repository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
+import { compareHash } from "@infrastructure/security/functions/compareHash"
+import type { IAccessTokenPayload } from "@infrastructure/security/types/IAccessTokenPayload"
+import type { IAuthTokens } from "@infrastructure/security/types/IAuthTokens"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 import { requestContext } from "@shared/functions/requestContext"
 
 import type { LoginCodeBodyDto } from "../dto/body/loginCode.body"
+import type { LoginBodyDto } from "../dto/body/login.body"
+import type { ICreateAuthSessionProps } from "../types/ICreateAuthSessionProps"
 
 @Injectable()
 class AuthService {
@@ -27,48 +30,7 @@ class AuthService {
     private readonly jwtService: SecurityJwtService,
   ) {}
 
-  async loginByCode(body: LoginCodeBodyDto, userAgent: string | undefined) {
-    const user = await this.userRepository.read.findOne(
-      {
-        accessCodeHash: createHash("sha256")
-          .update(body.accessCode)
-          .digest("hex"),
-        passwordHash: null,
-      },
-      { _id: 1, role: 1 },
-    )
-
-    if (isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.invalidCredentials)
-    }
-
-    const sessionId = new Types.ObjectId()
-    const userId = user._id.toHexString()
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAccessToken({
-        sub: userId,
-        sessionId: sessionId.toHexString(),
-        role: user.role,
-      }),
-      this.jwtService.signRefreshToken({
-        sub: userId,
-        sessionId: sessionId.toHexString(),
-      }),
-    ])
-
-    await this.sessionRepository.createNew({
-      id: sessionId,
-      userId: user._id,
-      refreshToken,
-      userAgent,
-    })
-
-    requestContext.set("userId", userId)
-
-    return { accessToken, refreshToken }
-  }
-
-  async logout(accessToken: unknown): Promise<void> {
+  async verifyAccessToken(accessToken: unknown) {
     if (!isString(accessToken) || accessToken.length === 0) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
@@ -82,10 +44,98 @@ class AuthService {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    const session = await this.sessionRepository.write.deleteByFilter({
-      _id: new Types.ObjectId(payload.sessionId),
-      user: new Types.ObjectId(payload.sub),
-      expiresAt: { $gt: new Date() },
+    return payload
+  }
+
+  getSession(payload: Pick<IAccessTokenPayload, "sub" | "sessionId">) {
+    return this.sessionRepository.findActive({
+      id: new Types.ObjectId(payload.sessionId),
+      userId: new Types.ObjectId(payload.sub),
+    })
+  }
+
+  async issueTokens(
+    payload: Omit<IAccessTokenPayload, "type">,
+  ): Promise<IAuthTokens> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAccessToken(payload),
+      this.jwtService.signRefreshToken({
+        sub: payload.sub,
+        sessionId: payload.sessionId,
+      }),
+    ])
+
+    return { accessToken, refreshToken }
+  }
+
+  private async createSession(props: ICreateAuthSessionProps) {
+    const { userId, role, userAgent, session } = props
+    const sessionId = new Types.ObjectId()
+    const tokens = await this.issueTokens({
+      sub: userId.toHexString(),
+      sessionId: sessionId.toHexString(),
+      role,
+    })
+
+    await this.sessionRepository.createNew(
+      { id: sessionId, userId, refreshToken: tokens.refreshToken, userAgent },
+      { session },
+    )
+
+    return tokens
+  }
+
+  async login(body: LoginBodyDto, userAgent: string | undefined) {
+    const user = await this.userRepository.read.findOne(
+      { username: body.username },
+      { _id: 1, role: 1, passwordHash: 1 },
+    )
+
+    if (isNil(user) || isNil(user.passwordHash)) {
+      throw new UnauthorizedException(DICTIONARY.auth.invalidLoginCredentials)
+    }
+
+    const isPasswordValid = await compareHash(body.password, user.passwordHash)
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException(DICTIONARY.auth.invalidLoginCredentials)
+    }
+
+    const tokens = await this.createSession({
+      userId: user._id,
+      role: user.role,
+      userAgent,
+    })
+
+    requestContext.set("userId", user._id.toHexString())
+
+    return tokens
+  }
+
+  async loginByCode(body: LoginCodeBodyDto, userAgent: string | undefined) {
+    const user = await this.userRepository.findByAccessCode(body.accessCode)
+
+    if (isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.invalidCredentials)
+    }
+
+    const tokens = await this.createSession({
+      userId: user._id,
+      role: user.role,
+      userAgent,
+    })
+
+    requestContext.set("userId", user._id.toHexString())
+
+    return tokens
+  }
+
+  async logout(accessToken: unknown) {
+    const payload = await this.verifyAccessToken(accessToken)
+
+    const session = await this.sessionRepository.deleteActive({
+      id: new Types.ObjectId(payload.sessionId),
+      userId: new Types.ObjectId(payload.sub),
     })
 
     if (isNil(session)) {
@@ -93,6 +143,49 @@ class AuthService {
     }
 
     requestContext.set("userId", payload.sub)
+  }
+
+  async reissueCode(accessToken: unknown, body: LoginCodeBodyDto) {
+    const payload = await this.verifyAccessToken(accessToken)
+
+    const userId = new Types.ObjectId(payload.sub)
+    const currentSessionId = new Types.ObjectId(payload.sessionId)
+    const result = await this.transactionService.run(async (session) => {
+      const { user, accessCode } = await this.userRepository.reissueAccessCode(
+        { userId, accessCode: body.accessCode },
+        { session },
+      )
+
+      if (isNil(user)) {
+        throw new UnauthorizedException(DICTIONARY.auth.invalidCredentials)
+      }
+
+      const { accessToken: newAccessToken, refreshToken } =
+        await this.issueTokens({
+          sub: payload.sub,
+          sessionId: payload.sessionId,
+          role: user.role,
+        })
+      const currentSession = await this.sessionRepository.updateRefreshToken(
+        { id: currentSessionId, userId, refreshToken },
+        { session },
+      )
+
+      if (isNil(currentSession)) {
+        throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+      }
+
+      await this.sessionRepository.deleteOthers(
+        { userId, id: currentSessionId },
+        { session },
+      )
+
+      return { accessCode, accessToken: newAccessToken, refreshToken }
+    })
+
+    requestContext.set("userId", payload.sub)
+
+    return result
   }
 
   async register(userAgent: string | undefined) {
@@ -103,24 +196,12 @@ class AuthService {
             const { user, accessCode } = await this.userRepository.createNew({
               session,
             })
-            const sessionId = new Types.ObjectId()
-
-            const [accessToken, refreshToken] = await Promise.all([
-              this.jwtService.signAccessToken({
-                sub: user._id.toHexString(),
-                sessionId: sessionId.toHexString(),
-                role: user.role,
-              }),
-              this.jwtService.signRefreshToken({
-                sub: user._id.toHexString(),
-                sessionId: sessionId.toHexString(),
-              }),
-            ])
-
-            await this.sessionRepository.createNew(
-              { id: sessionId, userId: user._id, refreshToken, userAgent },
-              { session },
-            )
+            const { accessToken, refreshToken } = await this.createSession({
+              userId: user._id,
+              role: user.role,
+              userAgent,
+              session,
+            })
 
             return {
               userId: user._id.toHexString(),

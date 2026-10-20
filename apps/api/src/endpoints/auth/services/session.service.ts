@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto"
-
 import {
   Injectable,
   NotFoundException,
@@ -11,10 +9,11 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { SessionRepository } from "@entities/session/services/session.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
-import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 import { requestContext } from "@shared/functions/requestContext"
+
+import { AuthService } from "./auth.service"
 
 import type { SessionResponseDto } from "../dto/response/session.response"
 
@@ -24,47 +23,24 @@ class SessionService {
     private readonly userRepository: UserRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly jwtService: SecurityJwtService,
+    private readonly authService: AuthService,
   ) {}
 
   async getSessions(accessToken: unknown): Promise<SessionResponseDto[]> {
-    if (!isString(accessToken) || accessToken.length === 0) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
+    const payload = await this.authService.verifyAccessToken(accessToken)
 
-    const payload = await this.jwtService.verifyAccessToken(accessToken)
-
-    if (
-      !isObjectIdOrHexString(payload.sub) ||
-      !isObjectIdOrHexString(payload.sessionId)
-    ) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    const [sessions, hasUser] = await Promise.all([
-      this.sessionRepository.read.findMany(
-        {
-          user: new Types.ObjectId(payload.sub),
-          expiresAt: { $gt: new Date() },
-        },
-        {
-          _id: 1,
-          userAgent: 1,
-          createdAt: 1,
-          expiresAt: 1,
-          lastRefreshedAt: 1,
-        },
-        { sort: { createdAt: -1, _id: -1 } },
-      ),
+    const [sessions, isUserPresent] = await Promise.all([
+      this.sessionRepository.findActiveByUser(new Types.ObjectId(payload.sub)),
       this.userRepository.read.checkIsExists({
         _id: new Types.ObjectId(payload.sub),
       }),
     ])
 
-    const hasCurrentSession = sessions.some((session) => {
+    const isCurrentSessionPresent = sessions.some((session) => {
       return session._id.equals(payload.sessionId)
     })
 
-    if (!hasUser || !hasCurrentSession) {
+    if (!isUserPresent || !isCurrentSessionPresent) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
@@ -83,39 +59,26 @@ class SessionService {
   }
 
   async deleteSession(accessToken: unknown, sessionId: Types.ObjectId) {
-    if (!isString(accessToken) || accessToken.length === 0) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    const payload = await this.jwtService.verifyAccessToken(accessToken)
-
-    if (
-      !isObjectIdOrHexString(payload.sub) ||
-      !isObjectIdOrHexString(payload.sessionId)
-    ) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
+    const payload = await this.authService.verifyAccessToken(accessToken)
 
     const userId = new Types.ObjectId(payload.sub)
-    const [hasUser, hasCurrentSession] = await Promise.all([
+    const [isUserPresent, currentSession] = await Promise.all([
       this.userRepository.read.checkIsExists({ _id: userId }),
-      this.sessionRepository.read.checkIsExists({
-        _id: new Types.ObjectId(payload.sessionId),
-        user: userId,
-        expiresAt: { $gt: new Date() },
+      this.sessionRepository.findActive({
+        id: new Types.ObjectId(payload.sessionId),
+        userId,
       }),
     ])
 
-    if (!hasUser || !hasCurrentSession) {
+    if (!isUserPresent || isNil(currentSession)) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
     requestContext.set("userId", payload.sub)
 
-    const session = await this.sessionRepository.write.deleteByFilter({
-      _id: sessionId,
-      user: userId,
-      expiresAt: { $gt: new Date() },
+    const session = await this.sessionRepository.deleteActive({
+      id: sessionId,
+      userId,
     })
 
     if (isNil(session)) {
@@ -125,40 +88,28 @@ class SessionService {
     return sessionId.equals(payload.sessionId)
   }
 
-  async deleteOtherSessions(accessToken: unknown): Promise<void> {
-    if (!isString(accessToken) || accessToken.length === 0) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    const payload = await this.jwtService.verifyAccessToken(accessToken)
-
-    if (
-      !isObjectIdOrHexString(payload.sub) ||
-      !isObjectIdOrHexString(payload.sessionId)
-    ) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
+  async deleteOtherSessions(accessToken: unknown) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
 
     const userId = new Types.ObjectId(payload.sub)
     const currentSessionId = new Types.ObjectId(payload.sessionId)
-    const [hasUser, hasCurrentSession] = await Promise.all([
+    const [isUserPresent, currentSession] = await Promise.all([
       this.userRepository.read.checkIsExists({ _id: userId }),
-      this.sessionRepository.read.checkIsExists({
-        _id: currentSessionId,
-        user: userId,
-        expiresAt: { $gt: new Date() },
+      this.sessionRepository.findActive({
+        id: currentSessionId,
+        userId,
       }),
     ])
 
-    if (!hasUser || !hasCurrentSession) {
+    if (!isUserPresent || isNil(currentSession)) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
     requestContext.set("userId", payload.sub)
 
-    await this.sessionRepository.bulk.deleteMany({
-      user: userId,
-      _id: { $ne: currentSessionId },
+    await this.sessionRepository.deleteOthers({
+      userId,
+      id: currentSessionId,
     })
   }
 
@@ -185,37 +136,18 @@ class SessionService {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    const [accessToken, newRefreshToken] = await Promise.all([
-      this.jwtService.signAccessToken({
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.authService.issueTokens({
         sub: user._id.toHexString(),
         sessionId: payload.sessionId,
         role: user.role,
-      }),
-      this.jwtService.signRefreshToken({
-        sub: user._id.toHexString(),
-        sessionId: payload.sessionId,
-      }),
-    ])
-    const now = new Date()
-    const session = await this.sessionRepository.write.updateByFilter(
-      {
-        _id: new Types.ObjectId(payload.sessionId),
-        user: user._id,
-        refreshTokenHash: createHash("sha256")
-          .update(refreshToken)
-          .digest("hex"),
-        expiresAt: { $gt: now },
-      },
-      {
-        $set: {
-          refreshTokenHash: createHash("sha256")
-            .update(newRefreshToken)
-            .digest("hex"),
-          expiresAt: new Date(now.getTime() + JWT_REFRESH_EXPIRATION * 1000),
-          lastRefreshedAt: now,
-        },
-      },
-    )
+      })
+    const session = await this.sessionRepository.updateRefreshToken({
+      id: new Types.ObjectId(payload.sessionId),
+      userId: user._id,
+      currentRefreshToken: refreshToken,
+      refreshToken: newRefreshToken,
+    })
 
     if (isNil(session)) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)

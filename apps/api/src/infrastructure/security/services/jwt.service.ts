@@ -19,7 +19,7 @@ class SecurityJwtService {
     private readonly configurationService: InfrastructureConfigService,
   ) {}
 
-  signAccessToken(payload: Omit<IAccessTokenPayload, "type">): Promise<string> {
+  signAccessToken(payload: Omit<IAccessTokenPayload, "type">) {
     const appName = this.configurationService.app.name
 
     return this.jwtService.signAsync(
@@ -39,9 +39,7 @@ class SecurityJwtService {
     )
   }
 
-  signRefreshToken(
-    payload: Omit<IRefreshTokenPayload, "type">,
-  ): Promise<string> {
+  signRefreshToken(payload: Omit<IRefreshTokenPayload, "type">) {
     const appName = this.configurationService.app.name
 
     return this.jwtService.signAsync(

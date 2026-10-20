@@ -16,7 +16,7 @@ import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurren
 class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(context: ExecutionContext) {
     const roles = this.reflector.getAllAndOverride<readonly string[]>(
       ROLES_METADATA_KEY,
       [context.getHandler(), context.getClass()],
