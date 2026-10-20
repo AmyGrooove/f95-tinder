@@ -1,0 +1,21 @@
+
+1  POST /auth/register
+2  GET /account/whoami
+3  PATCH /auth/session/refresh
+4  POST /auth/logout
+5  POST /auth/login/code
+6  GET /auth/session
+7  DELETE /auth/session/:sessionId
+8  DELETE /auth/session/others
+9  PATCH /auth/login/code
+10 GET /account
+11 PATCH /account/username
+12 PATCH /account/displayName
+13 POST /account/setup
+14 PATCH /account/setup
+15 POST /auth/login
+16 PATCH /account/password
+17 POST /account/email
+18 PATCH /account/email
+19 POST /auth/password/reset
+20 PATCH /auth/password/reset

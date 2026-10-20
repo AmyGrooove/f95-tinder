@@ -1,5 +1,6 @@
 const DICTIONARY = {
   auth: {
+    unauthorized: "Авторизация отсутствует или недействительна",
     usernameUnavailable:
       "Не удалось создать уникальный логин, повторите запрос",
   },

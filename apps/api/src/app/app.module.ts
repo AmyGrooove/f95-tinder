@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
+import { AccountModule } from "@endpoints/account/account.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"
@@ -44,6 +45,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     SchedulerModule,
     HealthModule,
     AuthModule,
+    AccountModule,
     ItemModule,
     BannedItemModule,
     RelationModule,
