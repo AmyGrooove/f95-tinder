@@ -1,7 +1,7 @@
-import type { JobDefinition } from "../../../types/JobDefinition"
+import type { IJobDefinition } from "../../../types/IJobDefinition"
 
 interface IJobHandlerMetadata {
-  definition: JobDefinition<unknown>
+  definition: IJobDefinition<unknown>
 }
 
 export type { IJobHandlerMetadata }

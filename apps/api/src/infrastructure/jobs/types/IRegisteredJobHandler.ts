@@ -1,9 +1,9 @@
 import type { IJobHandler } from "./IJobHandler"
-import type { JobDefinition } from "./JobDefinition"
+import type { IJobDefinition } from "./IJobDefinition"
 
 interface IRegisteredJobHandler {
   handler: IJobHandler<unknown>
-  definition: JobDefinition<unknown>
+  definition: IJobDefinition<unknown>
 }
 
 export type { IRegisteredJobHandler }

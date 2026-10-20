@@ -69,9 +69,9 @@ export default [
           basePath: import.meta.dirname,
           zones: LAYERS.slice(1).map((layer, index) => ({
             target: `./src/${layer}`,
-            from: LAYERS
-              .slice(0, index + 1)
-              .map((higherLayer) => `./src/${higherLayer}`),
+            from: LAYERS.slice(0, index + 1).map(
+              (higherLayer) => `./src/${higherLayer}`,
+            ),
             message: "Do not import from a higher application layer",
           })),
         },

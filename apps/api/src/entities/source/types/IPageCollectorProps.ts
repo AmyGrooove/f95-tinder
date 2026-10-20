@@ -1,7 +1,7 @@
-import type { JobContext } from "@infrastructure/jobs/types/JobContext"
+import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 
 interface IPageCollectorProps<TState, TPage> {
-  context: JobContext
+  context: IJobContext
   initialState: TState
   getStateKey: (state: TState) => string
   fetchPage: (state: TState) => Promise<TPage>

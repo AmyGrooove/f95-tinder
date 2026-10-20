@@ -3,7 +3,7 @@ import type { Resend } from "resend"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
-import type { JobContext } from "@infrastructure/jobs/types/JobContext"
+import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
@@ -20,7 +20,7 @@ class SendMailJobHandler {
     private readonly infrastructureConfigService: InfrastructureConfigService,
   ) {}
 
-  async handle(payload: ISendMailJobPayload, context: JobContext) {
+  async handle(payload: ISendMailJobPayload, context: IJobContext) {
     const content =
       isString(payload.html) && payload.html !== ""
         ? { html: payload.html, text: payload.text }

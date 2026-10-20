@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto"
 
-import { Injectable, UnauthorizedException } from "@nestjs/common"
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common"
 import { isObjectIdOrHexString, Types } from "mongoose"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
@@ -76,6 +80,49 @@ class SessionService {
         isCurrent: session._id.equals(payload.sessionId),
       }
     })
+  }
+
+  async deleteSession(accessToken: unknown, sessionId: Types.ObjectId) {
+    if (!isString(accessToken) || accessToken.length === 0) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const payload = await this.jwtService.verifyAccessToken(accessToken)
+
+    if (
+      !isObjectIdOrHexString(payload.sub) ||
+      !isObjectIdOrHexString(payload.sessionId)
+    ) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const userId = new Types.ObjectId(payload.sub)
+    const [hasUser, hasCurrentSession] = await Promise.all([
+      this.userRepository.read.checkIsExists({ _id: userId }),
+      this.sessionRepository.read.checkIsExists({
+        _id: new Types.ObjectId(payload.sessionId),
+        user: userId,
+        expiresAt: { $gt: new Date() },
+      }),
+    ])
+
+    if (!hasUser || !hasCurrentSession) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    const session = await this.sessionRepository.write.deleteByFilter({
+      _id: sessionId,
+      user: userId,
+      expiresAt: { $gt: new Date() },
+    })
+
+    if (isNil(session)) {
+      throw new NotFoundException(DICTIONARY.auth.sessionNotFound)
+    }
+
+    return sessionId.equals(payload.sessionId)
   }
 
   async refresh(refreshToken: unknown) {

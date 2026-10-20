@@ -19,7 +19,7 @@ import { JOB_CANCELLED_RESULT } from "../static/JOB_CANCELLED_RESULT"
 import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
 import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
 import type { IJobData } from "../types/IJobData"
-import type { JobContext } from "../types/JobContext"
+import type { IJobContext } from "../types/IJobContext"
 import { JobRegistry } from "./jobRegistry.service"
 
 @Processor(JOBS_QUEUE_NAME, {
@@ -86,7 +86,7 @@ class JobProcessorService extends WorkerHost {
       )
     }
 
-    const context: JobContext = {
+    const context: IJobContext = {
       id,
       attempt: job.attemptsStarted,
       updateProgress: async (progress) => {

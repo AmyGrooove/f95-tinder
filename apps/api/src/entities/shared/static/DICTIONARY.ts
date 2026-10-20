@@ -2,6 +2,7 @@ const DICTIONARY = {
   auth: {
     invalidCredentials: "Секретный код недействителен",
     unauthorized: "Авторизация отсутствует или недействительна",
+    sessionNotFound: "Сессия не найдена",
     usernameUnavailable:
       "Не удалось создать уникальный логин, повторите запрос",
   },

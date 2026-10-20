@@ -1,10 +1,10 @@
 import type { IJobProgress } from "./IJobProgress"
 
-interface JobContext {
+interface IJobContext {
   readonly id: string
   readonly attempt: number
   updateProgress(progress: IJobProgress): Promise<void>
   throwIfCancelled(): Promise<void>
 }
 
-export type { JobContext }
+export type { IJobContext }

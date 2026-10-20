@@ -41,7 +41,7 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 | Storage | `GARAGE_URL`, `GARAGE_REGION`, `GARAGE_ACCESS_KEY_ID`, `GARAGE_SECRET_ACCESS_KEY`, `GARAGE_PUBLIC_URL` |
 | Search  | `MEILISEARCH_URL`, `MEILISEARCH_ACCESS_SECRET`                                                         |
 | Mail    | `RESEND_ACCESS_SECRET`, `MAIL_DOMAIN`                                                                  |
-| Sources | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                                |
+| Sources | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                               |
 
 All listed variables except `NODE_ENV` are required by the configuration factory. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
 

@@ -12,7 +12,7 @@ import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
 import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
 import type { IJobAddOptions } from "../types/IJobAddOptions"
 import type { IJobData } from "../types/IJobData"
-import type { JobDefinition } from "../types/JobDefinition"
+import type { IJobDefinition } from "../types/IJobDefinition"
 import type { IJobListOptions } from "../types/IJobListOptions"
 
 @Injectable()
@@ -22,7 +22,7 @@ class JobService {
   ) {}
 
   async add<TPayload>(
-    definition: JobDefinition<TPayload>,
+    definition: IJobDefinition<TPayload>,
     payload: NoInfer<TPayload>,
     options?: IJobAddOptions,
   ) {
@@ -67,7 +67,7 @@ class JobService {
   }
 
   async list<TPayload>(
-    definition: JobDefinition<TPayload>,
+    definition: IJobDefinition<TPayload>,
     options?: IJobListOptions,
   ) {
     const limit = options?.limit ?? 50
@@ -173,7 +173,7 @@ class JobService {
   }
 
   async update<TPayload>(
-    definition: JobDefinition<TPayload>,
+    definition: IJobDefinition<TPayload>,
     id: string,
     payload: NoInfer<TPayload>,
   ) {

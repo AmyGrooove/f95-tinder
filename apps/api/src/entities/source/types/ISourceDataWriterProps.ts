@@ -1,9 +1,9 @@
-import type { JobContext } from "@infrastructure/jobs/types/JobContext"
+import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 
 interface ISourceDataStoragePathProps {
   sourceKey: string
   scope: string
-  context: Pick<JobContext, "id" | "attempt">
+  context: Pick<IJobContext, "id" | "attempt">
 }
 
 interface ISourceDataPageProps {

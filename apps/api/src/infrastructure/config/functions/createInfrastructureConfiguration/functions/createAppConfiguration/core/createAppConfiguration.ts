@@ -3,7 +3,7 @@ import { isNil } from "@shared/functions/checks/isNil"
 
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
 import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
-import { TEnvironmentNode } from "../types/TEnvironmentNode"
+import type { TEnvironmentNode } from "../types/TEnvironmentNode"
 
 const createAppConfiguration = () => {
   const environmentValue = process.env.NODE_ENV as TEnvironmentNode | undefined

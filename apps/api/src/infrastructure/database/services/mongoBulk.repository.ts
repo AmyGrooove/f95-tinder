@@ -50,7 +50,7 @@ class MongoBulkRepository<
       .updateMany(
         filter as QueryFilter<TDocument>,
         payload as UpdateQuery<TDocument> | UpdateWithAggregationPipeline,
-        options as Parameters<Model<TDocument>["updateMany"]>[2],
+        options,
       )
       .setOptions({ runValidators: options?.runValidators ?? true })
       .exec()
@@ -63,10 +63,7 @@ class MongoBulkRepository<
     options?: mongo.DeleteOptions & MongooseBaseQueryOptions<TSchema>,
   ): Promise<mongo.DeleteResult> {
     const result = await this.model
-      .deleteMany(
-        filter as QueryFilter<TDocument>,
-        options as mongo.DeleteOptions & MongooseBaseQueryOptions<TDocument>,
-      )
+      .deleteMany(filter as QueryFilter<TDocument>, options)
       .exec()
 
     return result
@@ -76,10 +73,7 @@ class MongoBulkRepository<
     operations: Parameters<Model<TSchema>["bulkWrite"]>[0],
     options?: MongooseBulkWriteOptions,
   ): Promise<mongo.BulkWriteResult> {
-    const result = await this.model.bulkWrite(
-      operations as Parameters<Model<TDocument>["bulkWrite"]>[0],
-      options,
-    )
+    const result = await this.model.bulkWrite(operations, options)
 
     return result
   }
