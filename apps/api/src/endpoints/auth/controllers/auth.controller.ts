@@ -1,5 +1,14 @@
-import { Controller, Header, Headers, Post, Res } from "@nestjs/common"
-import { ApiTags } from "@nestjs/swagger"
+import {
+  Controller,
+  Cookies,
+  Header,
+  Headers,
+  HttpCode,
+  Patch,
+  Post,
+  Res,
+} from "@nestjs/common"
+import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 import { Throttle } from "@nestjs/throttler"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
@@ -15,6 +24,44 @@ class AuthController {
     private readonly authService: AuthService,
     private readonly securityCookieService: SecurityCookieService,
   ) {}
+
+  @Patch("session/refresh")
+  @HttpCode(204)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("refreshCookie")
+  @ApiEndpoint({
+    operationId: "AuthController_refresh",
+    summary: "Обновить токены и продлить текущую сессию",
+    description:
+      "Без тела запроса и access-токена. Требует действующий refresh JWT в cookie __Host-refreshToken и соответствующую неистёкшую серверную сессию. Старый refresh-токен становится недействительным; при конкурентном обновлении только один запрос успешен, остальные получают 401 без изменения cookies. Для изменяющих запросов действует встроенная CSRF-защита NestJS",
+    response: {
+      status: 204,
+      description: "Токены заменены, текущая сессия продлена на 120 дней",
+      headers: {
+        "Set-Cookie": {
+          description:
+            "__Host-accessToken (600 секунд) и __Host-refreshToken (10368000 секунд); Path=/; HttpOnly; Secure; SameSite=Strict",
+          schema: { type: "string" },
+        },
+      },
+    },
+    errors: [
+      {
+        status: 401,
+        description: "Авторизация отсутствует или недействительна",
+      },
+      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
+      { status: 429, description: "Превышен лимит запросов" },
+    ],
+  })
+  async refresh(
+    @Cookies("__Host-refreshToken") refreshToken: unknown,
+    @Res({ passthrough: true }) reply: unknown,
+  ): Promise<void> {
+    const tokens = await this.authService.refresh(refreshToken)
+
+    this.securityCookieService.setAuthCookies(reply, tokens)
+  }
 
   @Post("register")
   @Header("Cache-Control", "no-store")

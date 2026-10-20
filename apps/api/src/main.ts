@@ -82,6 +82,7 @@ const bootstrap = async () => {
     .setDescription(appConfiguration.description)
     .setVersion(appConfiguration.version)
     .addCookieAuth("__Host-accessToken", { type: "apiKey" }, "accessCookie")
+    .addCookieAuth("__Host-refreshToken", { type: "apiKey" }, "refreshCookie")
     .addBearerAuth(
       {
         type: "http",

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import { Injectable, UnauthorizedException } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 
@@ -47,6 +49,7 @@ class SecurityJwtService {
         sub: payload.sub,
         sessionId: payload.sessionId,
         type: "refresh",
+        jti: randomUUID(),
       },
       {
         secret: this.configurationService.jwt.refreshSecret,
