@@ -26,6 +26,33 @@ class AuthService {
     private readonly jwtService: SecurityJwtService,
   ) {}
 
+  async logout(accessToken: unknown): Promise<void> {
+    if (!isString(accessToken) || accessToken.length === 0) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const payload = await this.jwtService.verifyAccessToken(accessToken)
+
+    if (
+      !isObjectIdOrHexString(payload.sub) ||
+      !isObjectIdOrHexString(payload.sessionId)
+    ) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const session = await this.sessionRepository.write.deleteByFilter({
+      _id: new Types.ObjectId(payload.sessionId),
+      user: new Types.ObjectId(payload.sub),
+      expiresAt: { $gt: new Date() },
+    })
+
+    if (isNil(session)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+  }
+
   async refresh(refreshToken: unknown) {
     if (!isString(refreshToken) || refreshToken.length === 0) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)

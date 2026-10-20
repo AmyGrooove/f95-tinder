@@ -25,6 +25,44 @@ class AuthController {
     private readonly securityCookieService: SecurityCookieService,
   ) {}
 
+  @Post("logout")
+  @HttpCode(204)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiEndpoint({
+    operationId: "AuthController_logout",
+    summary: "Завершить текущую сессию",
+    description:
+      "Без тела запроса. Требует действующий JWT в cookie __Host-accessToken и неистёкшую серверную сессию текущего пользователя. Удаляет только текущую сессию и очищает обе auth cookies. При истёкшем access-токене сначала требуется обновление через /auth/session/refresh. Повторный выход из удалённой сессии возвращает 401 без изменения cookies. Действует встроенная CSRF-защита NestJS",
+    response: {
+      status: 204,
+      description: "Текущая сессия завершена, обе auth cookies очищены",
+      headers: {
+        "Set-Cookie": {
+          description:
+            "__Host-accessToken и __Host-refreshToken очищены; Path=/; HttpOnly; Secure; SameSite=Strict",
+          schema: { type: "string" },
+        },
+      },
+    },
+    errors: [
+      {
+        status: 401,
+        description: "Авторизация отсутствует или недействительна",
+      },
+      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
+      { status: 429, description: "Превышен лимит запросов" },
+    ],
+  })
+  async logout(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Res({ passthrough: true }) reply: unknown,
+  ): Promise<void> {
+    await this.authService.logout(accessToken)
+
+    this.securityCookieService.clearAuthCookies(reply)
+  }
+
   @Patch("session/refresh")
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
