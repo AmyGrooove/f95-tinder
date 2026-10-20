@@ -5,12 +5,12 @@ import { createPaginatedResult } from "@shared/functions/pagination/createPagina
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
 
-import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
+import { MongoCoreRepository } from "./mongoCore.repository"
 
 class MongoPaginationRepository<
   TSchema,
   TDocument,
-> extends MongoRepositoryCore<TDocument> {
+> extends MongoCoreRepository<TDocument> {
   async findManyPaginated(
     filter: QueryFilter<TSchema>,
     projection?: ProjectionType<TSchema>,

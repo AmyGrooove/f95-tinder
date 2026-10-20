@@ -6,7 +6,7 @@ Read for persistence, pagination, Redis cache or Meilisearch changes. Configurat
 
 [DatabaseModule](../../src/infrastructure/database/database.module.ts) creates the Mongoose connection with `autoIndex: true` and registers global [timestamp](../../src/infrastructure/database/functions/applyTimestampsPlugin/core/applyTimestampsPlugin.ts), [version-key](../../src/infrastructure/database/functions/applyVersionKeyPlugin/core/applyVersionKeyPlugin.ts) and [toJSON](../../src/infrastructure/database/functions/applyToJsonPlugin/core/applyToJsonPlugin.ts) plugins. The timestamp plugin enables timestamps only when the schema has no explicit setting, preserving `false` and custom timestamp options. The version-key plugin sets versionKey:false on every schema. Connection plugins also apply to child schemas. The JSON transform preserves a prior transform, enables virtuals, converts `_id` to string `id` and removes `_id` and `__v`. These are document serialization rules; do not assume every query result has already been serialized.
 
-Existing repository classes take a model and optional default sort through [MongoRepositoryCore](../../src/infrastructure/database/services/mongoRepositoryCore.repository.ts):
+Existing repository classes take a model and optional default sort through [MongoCoreRepository](../../src/infrastructure/database/services/mongoCore.repository.ts):
 
 | Existing object                                                                                         | Public operations                                                        |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |

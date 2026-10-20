@@ -1,8 +1,8 @@
+import { getRequiredEnvironmentValue } from "@infrastructure/config/functions/createInfrastructureConfiguration/functions/getRequiredEnvironmentValue"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
-import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
 import type { TEnvironmentNode } from "../types/TEnvironmentNode"
 
 const createAppConfiguration = () => {

@@ -1,4 +1,4 @@
-import type { TNormalizedError } from "./TNormalizedError"
+import type { INormalizedError } from "./INormalizedError"
 import type { TLogLevel } from "./TLogLevel"
 
 interface ILogRecord {
@@ -15,7 +15,7 @@ interface ILogRecord {
   requestContext?: Record<string, unknown>
   jobId?: string
   metadata?: unknown
-  error?: TNormalizedError
+  error?: INormalizedError
 }
 
 export type { ILogRecord }

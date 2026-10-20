@@ -55,6 +55,34 @@ class SessionController {
     return this.sessionService.getSessions(accessToken)
   }
 
+  @Delete("others")
+  @HttpCode(204)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiEndpoint({
+    operationId: "AuthController_deleteOtherSessions",
+    summary: "Завершить все сессии текущего аккаунта, кроме текущей",
+    description:
+      "Без тела запроса. Требует действующий JWT в cookie __Host-accessToken, существующего пользователя и неистёкшую текущую серверную сессию. Удаляет все остальные сессии этого пользователя, сохраняя текущую сессию и обе auth cookies. Если других сессий нет, также возвращает 204. Действует встроенная CSRF-защита NestJS",
+    response: {
+      status: 204,
+      description: "Все остальные сессии текущего аккаунта завершены",
+    },
+    errors: [
+      {
+        status: 401,
+        description: "Авторизация отсутствует или недействительна",
+      },
+      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
+      { status: 429, description: "Превышен лимит запросов" },
+    ],
+  })
+  async deleteOtherSessions(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+  ): Promise<void> {
+    await this.sessionService.deleteOtherSessions(accessToken)
+  }
+
   @Delete(":sessionId")
   @HttpCode(204)
   @Header("Cache-Control", "no-store")

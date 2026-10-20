@@ -5,13 +5,13 @@ import type {
   UpdateQuery,
 } from "mongoose"
 
-import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
+import { MongoCoreRepository } from "./mongoCore.repository"
 
 class MongoWriteRepository<
   TSchema,
   TDocument,
   TCreatePayload,
-> extends MongoRepositoryCore<TDocument> {
+> extends MongoCoreRepository<TDocument> {
   async create(
     payload: TCreatePayload,
     options?: CreateOptions,

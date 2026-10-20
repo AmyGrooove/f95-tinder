@@ -20,7 +20,7 @@ import { JOBS_QUEUE_NAME } from "../static/JOBS_QUEUE_NAME"
 import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
 import type { IJobData } from "../types/IJobData"
 import type { IJobContext } from "../types/IJobContext"
-import { JobRegistry } from "./jobRegistry.service"
+import { JobRegistryService } from "./jobRegistry.service"
 
 @Processor(JOBS_QUEUE_NAME, {
   concurrency: JOBS_SETTINGS.concurrency,
@@ -35,7 +35,7 @@ import { JobRegistry } from "./jobRegistry.service"
 class JobProcessorService extends WorkerHost {
   constructor(
     @InjectQueue(JOBS_QUEUE_NAME) private readonly jobsQueue: Queue,
-    private readonly jobRegistry: JobRegistry,
+    private readonly jobRegistry: JobRegistryService,
     private readonly loggerService: LoggerService,
   ) {
     super()

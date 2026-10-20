@@ -125,6 +125,43 @@ class SessionService {
     return sessionId.equals(payload.sessionId)
   }
 
+  async deleteOtherSessions(accessToken: unknown): Promise<void> {
+    if (!isString(accessToken) || accessToken.length === 0) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const payload = await this.jwtService.verifyAccessToken(accessToken)
+
+    if (
+      !isObjectIdOrHexString(payload.sub) ||
+      !isObjectIdOrHexString(payload.sessionId)
+    ) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    const userId = new Types.ObjectId(payload.sub)
+    const currentSessionId = new Types.ObjectId(payload.sessionId)
+    const [hasUser, hasCurrentSession] = await Promise.all([
+      this.userRepository.read.checkIsExists({ _id: userId }),
+      this.sessionRepository.read.checkIsExists({
+        _id: currentSessionId,
+        user: userId,
+        expiresAt: { $gt: new Date() },
+      }),
+    ])
+
+    if (!hasUser || !hasCurrentSession) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    await this.sessionRepository.bulk.deleteMany({
+      user: userId,
+      _id: { $ne: currentSessionId },
+    })
+  }
+
   async refresh(refreshToken: unknown) {
     if (!isString(refreshToken) || refreshToken.length === 0) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)

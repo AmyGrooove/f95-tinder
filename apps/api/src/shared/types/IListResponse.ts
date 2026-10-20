@@ -1,7 +1,7 @@
-type TListResponse<TItem> = {
+interface IListResponse<TItem> {
   items: TItem[]
   count: number
   nextCursor: string | null
 }
 
-export type { TListResponse }
+export type { IListResponse }

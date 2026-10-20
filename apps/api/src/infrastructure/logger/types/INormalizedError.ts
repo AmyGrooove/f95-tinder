@@ -1,4 +1,4 @@
-type TNormalizedError = {
+interface INormalizedError {
   message: string
   details: Record<string, unknown> | null
 
@@ -6,4 +6,4 @@ type TNormalizedError = {
   stack?: string
 }
 
-export type { TNormalizedError }
+export type { INormalizedError }

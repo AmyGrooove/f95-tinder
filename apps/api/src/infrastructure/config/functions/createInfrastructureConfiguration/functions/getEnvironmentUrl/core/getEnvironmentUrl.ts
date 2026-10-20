@@ -1,8 +1,8 @@
+import { getRequiredEnvironmentValue } from "@infrastructure/config/functions/createInfrastructureConfiguration/functions/getRequiredEnvironmentValue"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
 import type { TEnvironmentKey } from "../../../types/TEnvironmentKey"
-import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
 
 const getEnvironmentUrl = (key: TEnvironmentKey, protocols: string[]) => {
   let url: URL | undefined

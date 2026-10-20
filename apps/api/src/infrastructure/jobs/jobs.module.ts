@@ -7,7 +7,7 @@ import { InfrastructureConfigService } from "../config/services/config.service"
 import { LoggerModule } from "../logger/logger.module"
 import { JobsHealthService } from "./services/jobsHealth.service"
 import { JobProcessorService } from "./services/jobProcessor.service"
-import { JobRegistry } from "./services/jobRegistry.service"
+import { JobRegistryService } from "./services/jobRegistry.service"
 import { JobService } from "./services/job.service"
 import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
 
@@ -36,7 +36,12 @@ import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
     }),
     BullModule.registerQueue({ name: JOBS_QUEUE_NAME }),
   ],
-  providers: [JobsHealthService, JobProcessorService, JobRegistry, JobService],
+  providers: [
+    JobsHealthService,
+    JobProcessorService,
+    JobRegistryService,
+    JobService,
+  ],
   exports: [JobService, JobsHealthService],
 })
 class JobsModule {}

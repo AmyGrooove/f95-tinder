@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention -- Field names follow the external Kodik API contract. */
+
 type TKodikFilterValue = string | number | readonly (string | number)[]
 
 interface IKodikCommonParameters {

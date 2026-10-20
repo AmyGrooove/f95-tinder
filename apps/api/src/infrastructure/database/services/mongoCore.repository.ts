@@ -2,7 +2,7 @@ import type { Model } from "mongoose"
 
 import type { IMongoRepositoryOptions } from "../types/IMongoRepositoryOptions"
 
-abstract class MongoRepositoryCore<TDocument> {
+abstract class MongoCoreRepository<TDocument> {
   protected readonly defaultSort: IMongoRepositoryOptions["defaultSort"]
 
   constructor(
@@ -13,4 +13,4 @@ abstract class MongoRepositoryCore<TDocument> {
   }
 }
 
-export { MongoRepositoryCore }
+export { MongoCoreRepository }

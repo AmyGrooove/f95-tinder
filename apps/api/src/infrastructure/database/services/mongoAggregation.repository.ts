@@ -1,10 +1,10 @@
 import type { AggregateOptions, PipelineStage } from "mongoose"
 
-import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
+import { MongoCoreRepository } from "./mongoCore.repository"
 
 class MongoAggregationRepository<
   TDocument,
-> extends MongoRepositoryCore<TDocument> {
+> extends MongoCoreRepository<TDocument> {
   async aggregate<TResult>(
     pipeline: PipelineStage[],
     options?: AggregateOptions,

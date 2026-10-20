@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 
-import { ROLES_METADATA_KEY } from "@infrastructure/security/decorators/Roles/static/ROLES_METADATA_KEY"
+import { ROLES_METADATA_KEY } from "@infrastructure/security/decorators/Roles"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"

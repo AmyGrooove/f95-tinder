@@ -6,10 +6,10 @@ import {
 } from "meilisearch"
 
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
+import type { ISearchDocument } from "../types/ISearchDocument"
 import type { ISearchIndexOptions } from "../types/ISearchIndexOptions"
 import type { ISearchQueryOptions } from "../types/ISearchQueryOptions"
 import type { ISearchResult } from "../types/ISearchResult"
-import type { TSearchDocument } from "../types/TSearchDocument"
 
 @Injectable()
 class SearchService {
@@ -22,7 +22,7 @@ class SearchService {
   async ensureIndex(
     name: string,
     options: ISearchIndexOptions,
-    waitForTask = false,
+    isWaitForTask = false,
   ) {
     let initialization = this.indexInitializations.get(name)
 
@@ -36,24 +36,24 @@ class SearchService {
 
     const taskUid = await initialization
 
-    if (waitForTask) {
+    if (isWaitForTask) {
       await this.searchClient.tasks.waitForTask(taskUid)
     }
   }
 
-  async upsert<TDocument extends TSearchDocument>(
+  async upsert<TDocument extends ISearchDocument>(
     index: string,
     documents: TDocument[],
-    waitForTask = false,
+    isWaitForTask = false,
   ) {
     const task = await this.searchClient.index(index).addDocuments(documents)
 
-    if (waitForTask) {
+    if (isWaitForTask) {
       await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }
 
-  async search<TDocument extends TSearchDocument>(
+  async search<TDocument extends ISearchDocument>(
     index: string,
     query: string,
     options?: ISearchQueryOptions,
@@ -72,18 +72,18 @@ class SearchService {
     }
   }
 
-  async delete(index: string, id: string, waitForTask = false) {
+  async delete(index: string, id: string, isWaitForTask = false) {
     const task = await this.searchClient.index(index).deleteDocument(id)
 
-    if (waitForTask) {
+    if (isWaitForTask) {
       await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }
 
-  async clear(index: string, waitForTask = false) {
+  async clear(index: string, isWaitForTask = false) {
     const task = await this.searchClient.index(index).deleteAllDocuments()
 
-    if (waitForTask) {
+    if (isWaitForTask) {
       await this.searchClient.tasks.waitForTask(task.taskUid)
     }
   }

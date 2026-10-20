@@ -1,5 +1,6 @@
+import { getEnvironmentUrl } from "@infrastructure/config/functions/createInfrastructureConfiguration/functions/getEnvironmentUrl"
+
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
-import { getEnvironmentUrl } from "../../getEnvironmentUrl"
 
 const createRedisConfiguration = () => {
   const url = getEnvironmentUrl("REDIS_URL", ["redis:", "rediss:"])

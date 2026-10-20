@@ -4,8 +4,48 @@ import { createTypeScriptImportResolver } from "eslint-import-resolver-typescrip
 import importX from "eslint-plugin-import-x"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
+import { amy } from "../../eslint/amy.mjs"
 
 const LAYERS = ["app", "endpoints", "entities", "infrastructure", "shared"]
+
+const NAMING_CONVENTION = [
+  { selector: "interface", format: ["PascalCase"], prefix: ["I"] },
+  { selector: "typeAlias", format: ["PascalCase"], prefix: ["T"] },
+  {
+    selector: [
+      "variable",
+      "parameter",
+      "parameterProperty",
+      "classProperty",
+      "typeProperty",
+    ],
+    types: ["boolean"],
+    format: ["PascalCase"],
+    prefix: ["is"],
+    filter: { regex: "^[A-Z][A-Z0-9_]*$", match: false },
+  },
+  {
+    selector: ["classProperty", "typeProperty"],
+    modifiers: ["requiresQuotes"],
+    format: null,
+  },
+  {
+    selector: "classProperty",
+    modifiers: ["override"],
+    format: null,
+  },
+]
+
+const EXTERNAL_BOOLEAN_PROPERTIES = [
+  {
+    file: "src/infrastructure/database/services/mongoBulk.repository.ts",
+    properties: ["rawResult", "lean"],
+  },
+  {
+    file: "src/infrastructure/jobs/types/IJobAddOptions.ts",
+    properties: ["extend", "replace", "keepLastIfActive"],
+  },
+]
 
 export default [
   {
@@ -26,6 +66,7 @@ export default [
     files: ["src/**/*.ts"],
     plugins: {
       "import-x": importX,
+      amy,
     },
     settings: {
       "import-x/resolver-next": [
@@ -63,6 +104,9 @@ export default [
         },
       ],
       "import-x/no-default-export": "error",
+      "import-x/no-cycle": ["error", { ignoreExternal: true }],
+      "import-x/no-self-import": "error",
+      "amy/file-objects": "error",
       "import-x/no-restricted-paths": [
         "error",
         {
@@ -79,6 +123,7 @@ export default [
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },
@@ -89,15 +134,7 @@ export default [
       ],
       "@typescript-eslint/naming-convention": [
         "error",
-        { selector: "interface", format: ["PascalCase"], prefix: ["I"] },
-        { selector: "typeAlias", format: ["PascalCase"], prefix: ["T"] },
-        {
-          selector: "variable",
-          types: ["boolean"],
-          format: ["PascalCase"],
-          prefix: ["is", "has", "can", "should"],
-          filter: { regex: "^[A-Z][A-Z0-9_]*$", match: false },
-        },
+        ...NAMING_CONVENTION,
       ],
       "@typescript-eslint/strict-boolean-expressions": [
         "error",
@@ -109,4 +146,19 @@ export default [
       ],
     },
   },
+  ...EXTERNAL_BOOLEAN_PROPERTIES.map(({ file, properties }) => ({
+    files: [file],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        ...NAMING_CONVENTION,
+        {
+          selector: "typeProperty",
+          types: ["boolean"],
+          filter: { regex: `^(${properties.join("|")})$`, match: true },
+          format: null,
+        },
+      ],
+    },
+  })),
 ]

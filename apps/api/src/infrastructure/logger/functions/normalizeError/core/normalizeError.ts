@@ -2,9 +2,9 @@ import { isArray } from "@shared/functions/checks/isArray"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
-import type { TNormalizedError } from "../../../types/TNormalizedError"
+import type { INormalizedError } from "../../../types/INormalizedError"
 
-const normalizeError = (error: unknown): TNormalizedError => {
+const normalizeError = (error: unknown): INormalizedError => {
   if (error instanceof Error) {
     return {
       message: error.message,

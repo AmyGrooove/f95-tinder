@@ -10,7 +10,7 @@ import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
 import type { IRegisteredJobHandler } from "../types/IRegisteredJobHandler"
 
 @Injectable()
-class JobRegistry implements OnModuleInit {
+class JobRegistryService implements OnModuleInit {
   private readonly handlers = new Map<string, IRegisteredJobHandler>()
   private isInitialized = false
 
@@ -74,4 +74,4 @@ class JobRegistry implements OnModuleInit {
   }
 }
 
-export { JobRegistry }
+export { JobRegistryService }

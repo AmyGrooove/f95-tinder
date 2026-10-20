@@ -9,21 +9,21 @@ import type {
   mongo,
 } from "mongoose"
 
-import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
+import { MongoCoreRepository } from "./mongoCore.repository"
 
 class MongoBulkRepository<
   TSchema,
   TDocument,
   TCreatePayload,
-> extends MongoRepositoryCore<TDocument> {
+> extends MongoCoreRepository<TDocument> {
   async createMany(payloads: TCreatePayload[]): Promise<TDocument[]>
   async createMany(
     payloads: TCreatePayload[],
-    options: InsertManyOptions & { rawResult: true },
+    options: InsertManyOptions & Record<"rawResult", true>,
   ): Promise<mongo.InsertManyResult<TDocument>>
   async createMany(
     payloads: TCreatePayload[],
-    options: InsertManyOptions & { lean: true },
+    options: InsertManyOptions & Record<"lean", true>,
   ): Promise<TSchema[]>
   async createMany(
     payloads: TCreatePayload[],

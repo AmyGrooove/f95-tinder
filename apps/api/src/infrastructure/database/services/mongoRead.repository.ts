@@ -2,12 +2,12 @@ import type { ProjectionType, QueryFilter, QueryOptions } from "mongoose"
 
 import { isNil } from "@shared/functions/checks/isNil"
 
-import { MongoRepositoryCore } from "./mongoRepositoryCore.repository"
+import { MongoCoreRepository } from "./mongoCore.repository"
 
 class MongoReadRepository<
   TSchema,
   TDocument,
-> extends MongoRepositoryCore<TDocument> {
+> extends MongoCoreRepository<TDocument> {
   async findById(
     id: string,
     projection?: ProjectionType<TSchema>,
