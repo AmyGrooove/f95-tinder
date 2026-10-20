@@ -1,4 +1,8 @@
 const DICTIONARY = {
+  auth: {
+    usernameUnavailable:
+      "Не удалось создать уникальный логин, повторите запрос",
+  },
   source: {
     repeatedPage: "Повторилось состояние пагинации при сборе данных источника",
     invalidPageNumber:

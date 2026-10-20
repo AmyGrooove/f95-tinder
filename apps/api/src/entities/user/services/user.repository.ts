@@ -1,15 +1,20 @@
+import { randomBytes, randomInt } from "node:crypto"
+
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { CreateOptions, HydratedDocument, Model } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPagination.repository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
+import { hashValue } from "@infrastructure/security/functions/hashValue"
 
 import { User } from "../schemas/user.schema"
 import type { TCreateUser } from "../schemas/user.schema"
+import { USERNAME_ADJECTIVES } from "../static/USERNAME_ADJECTIVES"
+import { USERNAME_NOUNS } from "../static/USERNAME_NOUNS"
 
 @Injectable()
 class UserRepository {
@@ -42,6 +47,28 @@ class UserRepository {
     this.aggregation = new MongoAggregationRepository<HydratedDocument<User>>(
       model,
     )
+  }
+
+  async createNew(options?: CreateOptions) {
+    const accessCode = randomBytes(24).toString("base64url")
+    const accessCodeHash = await hashValue(accessCode)
+
+    const adjective = USERNAME_ADJECTIVES[randomInt(USERNAME_ADJECTIVES.length)]
+    const noun = USERNAME_NOUNS[randomInt(USERNAME_NOUNS.length)]
+    const digits = randomInt(1000).toString().padStart(3, "0")
+    const displayName = `${adjective}${noun.charAt(0).toUpperCase()}${noun.slice(1)}${digits}`
+    const username = displayName.toLowerCase()
+
+    const user = await this.write.create(
+      {
+        username,
+        displayName,
+        accessCodeHash,
+      },
+      options,
+    )
+
+    return { user, accessCode }
   }
 }
 

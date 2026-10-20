@@ -24,6 +24,12 @@ const bootstrap = async () => {
   const configurationService = app.get(InfrastructureConfigService)
   const appConfiguration = configurationService.app
 
+  app.enableCsrfProtection({
+    trustedOrigins: appConfiguration.corsOrigins.filter(
+      (origin) => origin !== "*",
+    ),
+  })
+
   const fastify = app.getHttpAdapter().getInstance()
 
   await app.register(multipart, {

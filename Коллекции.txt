@@ -199,7 +199,6 @@ User {
   _id: ObjectId
 
   email: string | null
-  emailVerifiedAt: Date | null
 
   username: string
   displayName: string

@@ -21,9 +21,6 @@ class User extends MongoEntity {
   })
   email: string | null
 
-  @Prop({ type: Date, default: null })
-  emailVerifiedAt: Date | null
-
   @Prop({
     type: String,
     required: true,
@@ -68,7 +65,6 @@ class User extends MongoEntity {
 type TCreateUser = TCreateEntity<
   User,
   | "email"
-  | "emailVerifiedAt"
   | "avatarUrl"
   | "passwordHash"
   | "accessCodeHash"

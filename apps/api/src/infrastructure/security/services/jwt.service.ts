@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { isArray } from "@shared/functions/checks/isArray"
 import { isString } from "@shared/functions/checks/isString"
 
 import { JWT_ACCESS_EXPIRATION } from "../static/JWT_ACCESS_EXPIRATION"
@@ -25,7 +24,7 @@ class SecurityJwtService {
       {
         sub: payload.sub,
         sessionId: payload.sessionId,
-        roles: payload.roles,
+        role: payload.role,
         type: "access",
       },
       {
@@ -76,8 +75,7 @@ class SecurityJwtService {
         payload.type !== "access" ||
         !isString(payload.sub) ||
         !isString(payload.sessionId) ||
-        !isArray(payload.roles) ||
-        !payload.roles.every(isString)
+        !isString(payload.role)
       ) {
         throw new UnauthorizedException("Access token is invalid")
       }
@@ -105,6 +103,7 @@ class SecurityJwtService {
         payload.type !== "refresh" ||
         !isString(payload.sub) ||
         !isString(payload.sessionId) ||
+        "role" in payload ||
         "roles" in payload
       ) {
         throw new UnauthorizedException("Refresh token is invalid")

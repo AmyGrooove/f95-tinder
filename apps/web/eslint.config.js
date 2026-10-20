@@ -3,9 +3,12 @@ import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTypeScript from 'eslint-config-next/typescript'
 import prettier from 'eslint-config-prettier/flat'
 
+const LAYERS = ['app', 'routes', 'entities', 'providers', 'shared']
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTypeScript,
+  prettier,
   {
     files: ['**/*.stories.{ts,tsx}'],
     rules: {
@@ -21,6 +24,63 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
+      'prefer-const': 'error',
+      curly: ['error', 'all'],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ExportSpecifier[exportKind='type']",
+          message: 'Use a separate export type declaration',
+        },
+        {
+          selector: 'ExportAllDeclaration',
+          message: 'Export public objects explicitly',
+        },
+        {
+          selector:
+            'CallExpression[callee.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
+          message: 'Do not use IIFEs',
+        },
+      ],
+      'import/no-default-export': 'error',
+      'import/no-cycle': ['error', { ignoreExternal: true }],
+      'import/no-self-import': 'error',
+      'import/no-restricted-paths': [
+        'error',
+        {
+          basePath: import.meta.dirname,
+          zones: LAYERS.slice(1).map((layer, index) => ({
+            target: `./src/${layer}`,
+            from: LAYERS
+              .slice(0, index + 1)
+              .map((higherLayer) => `./src/${higherLayer}`),
+            message: 'Do not import from a higher application layer',
+          })),
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
+      ],
+      '@typescript-eslint/consistent-type-exports': [
+        'error',
+        { fixMixedExportsWithInlineTypeSpecifier: false },
+      ],
+      '@typescript-eslint/naming-convention': [
+        'error',
+        { selector: 'interface', format: ['PascalCase'], prefix: ['I'] },
+        { selector: 'typeAlias', format: ['PascalCase'], prefix: ['T'] },
+        {
+          selector: 'variable',
+          types: ['boolean'],
+          format: ['PascalCase'],
+          prefix: ['is', 'has', 'can', 'should'],
+          filter: { regex: '^[A-Z][A-Z0-9_]*$', match: false },
+        },
+      ],
       '@typescript-eslint/strict-boolean-expressions': [
         'error',
         {
@@ -31,7 +91,14 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  prettier,
+  {
+    files: [
+      'src/app/**/{page,layout,template,loading,error,global-error,not-found,global-not-found,default,robots,sitemap,manifest,icon,apple-icon,opengraph-image,twitter-image}.{ts,tsx}',
+    ],
+    rules: {
+      'import/no-default-export': 'off',
+    },
+  },
   globalIgnores([
     '.next/**',
     'build/**',

@@ -1,7 +1,7 @@
 interface IAuthPrincipal {
   id: string
   sessionId: string
-  roles: string[]
+  role: string
 }
 
 export type { IAuthPrincipal }

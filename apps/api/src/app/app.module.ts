@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { APP_FILTER } from "@nestjs/core"
 
-import { MovieImportModule } from "@endpoints/movieImport/movieImport.module"
+import { AuthModule } from "@endpoints/auth/auth.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"
@@ -43,7 +43,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     ThrottlingModule,
     SchedulerModule,
     HealthModule,
-    MovieImportModule,
+    AuthModule,
     ItemModule,
     BannedItemModule,
     RelationModule,

@@ -32,7 +32,7 @@ class AccessTokenGuard implements CanActivate {
     request.authPrincipal = {
       id: payload.sub,
       sessionId: payload.sessionId,
-      roles: payload.roles,
+      role: payload.role,
     }
 
     return true

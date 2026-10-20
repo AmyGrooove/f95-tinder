@@ -33,9 +33,7 @@ class RolesGuard implements CanActivate {
       throw new UnauthorizedException("User is not authenticated")
     }
 
-    const isRoleAllowed = roles.some((role) => {
-      return authPrincipal.roles.includes(role)
-    })
+    const isRoleAllowed = roles.includes(authPrincipal.role)
 
     if (!isRoleAllowed) {
       throw new ForbiddenException("User role is not allowed")

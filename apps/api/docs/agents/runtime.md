@@ -20,6 +20,8 @@ Global validation transforms input, whitelists DTO fields and rejects non-whitel
 
 CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
 
+Bootstrap enables NestJS `enableCsrfProtection()` for the application before registering request hooks and before listening. It checks Fetch Metadata with an Origin/Host fallback for state-changing requests. Explicit `CORS_ORIGINS` entries are also passed as `trustedOrigins`; a development `*` entry is omitted because CSRF trust requires exact origins. Development CORS reflection does not grant CSRF trust. There are no route exclusions or required `X-Requested-With` headers.
+
 ## Configuration authority
 
 `KodikService.getSource()` reads the Source with key `kodik` through SourceRepository and throws 404 if it is absent. KodikMoviesService calls it before enqueueing and when collection starts.

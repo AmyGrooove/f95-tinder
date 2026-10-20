@@ -1,7 +1,7 @@
 interface IAccessTokenPayload {
   sub: string
   sessionId: string
-  roles: string[]
+  role: string
   type: "access"
 }
 
