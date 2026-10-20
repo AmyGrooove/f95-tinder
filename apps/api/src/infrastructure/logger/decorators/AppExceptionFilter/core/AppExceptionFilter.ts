@@ -5,6 +5,7 @@ import type { FastifyReply, FastifyRequest } from "fastify"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { createStructuredResponse } from "../functions/createStructuredResponse"
 import type { IErrorEnvelope } from "../types/IErrorEnvelope"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Catch()
 class AppExceptionFilter extends BaseExceptionFilter {
@@ -29,10 +30,14 @@ class AppExceptionFilter extends BaseExceptionFilter {
     }
 
     if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.loggerService.error("Unhandled exception", exception, {
-        context: AppExceptionFilter.name,
-        requestId,
-      })
+      this.loggerService.error(
+        DICTIONARY.logger.unhandledException,
+        exception,
+        {
+          context: AppExceptionFilter.name,
+          requestId,
+        },
+      )
     }
 
     response.status(statusCode).send(body)

@@ -9,6 +9,7 @@ import { redactLogValue } from "../functions/redactLogValue"
 import type { ILoggerMetadata } from "../types/ILoggerMetadata"
 import type { ILogRecord } from "../types/ILogRecord"
 import type { TLogLevel } from "../types/TLogLevel"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class LoggerService {
@@ -67,9 +68,7 @@ class LoggerService {
     try {
       output = JSON.stringify(redactLogValue(record))
     } catch {
-      process.stderr.write(
-        '{"level":"error","message":"Failed to serialize log record"}\n',
-      )
+      process.stderr.write(DICTIONARY.logger.serializationFailedRecord)
 
       return
     }

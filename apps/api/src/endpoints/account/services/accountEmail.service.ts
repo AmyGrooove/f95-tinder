@@ -44,34 +44,13 @@ class AccountEmailService {
   ) {}
 
   async confirmEmail(accessToken: unknown, body: ConfirmEmailBodyDto) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-
-    const userId = new Types.ObjectId(payload.sub)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, {
-        _id: 1,
-        email: 1,
-        passwordHash: 1,
-      }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
-
-    if (isNil(user.passwordHash) || isNil(user.email)) {
-      throw new ConflictException(DICTIONARY.account.emailUnavailable)
-    }
-
-    const pending = await this.consumeEmail(payload.sub, body.code)
+    const account = await this.getAccountCredentials(accessToken)
+    const pending = await this.consumeEmail(account.userId, body.code)
 
     try {
       const updatedUser = await this.userRepository.write.updateByFilter(
         {
-          _id: userId,
+          _id: new Types.ObjectId(account.userId),
           email: pending.currentEmail,
           passwordHash: pending.passwordHash,
         },
@@ -97,52 +76,11 @@ class AccountEmailService {
     }
   }
 
-  private consumeEmail(userId: string, code: string): Promise<IAccountEmail> {
-    return this.confirmationService.consume({
-      redis: this.redis,
-      key: `${this.configService.app.name}:account:email:{${userId}}`,
-      code,
-      attempts: ACCOUNT_CONFIRMATION.attempts,
-      invalidMessage: DICTIONARY.account.emailConfirmationInvalid,
-      checkIsPending: (pending): pending is IAccountEmail => {
-        return (
-          pending.userId === userId &&
-          "email" in pending &&
-          isString(pending.email) &&
-          "currentEmail" in pending &&
-          isString(pending.currentEmail) &&
-          "passwordHash" in pending &&
-          isString(pending.passwordHash)
-        )
-      },
-    })
-  }
-
   async requestEmail(accessToken: unknown, body: EmailBodyDto) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, {
-        _id: 1,
-        email: 1,
-        passwordHash: 1,
-      }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
-
-    if (isNil(user.passwordHash) || isNil(user.email)) {
-      throw new ConflictException(DICTIONARY.account.emailUnavailable)
-    }
-
+    const account = await this.getAccountCredentials(accessToken)
     const isPasswordValid = await compareHash(
       body.currentPassword,
-      user.passwordHash,
+      account.passwordHash,
     )
 
     if (!isPasswordValid) {
@@ -157,7 +95,7 @@ class AccountEmailService {
       throw new ConflictException(DICTIONARY.account.emailTaken)
     }
 
-    const key = `${this.configService.app.name}:account:email:{${payload.sub}}`
+    const key = `${this.configService.app.name}:account:email:{${account.userId}}`
     const cooldownKey = `${key}:cooldown`
 
     if ((await this.redis.exists(cooldownKey)) !== 0) {
@@ -170,10 +108,10 @@ class AccountEmailService {
     const code = randomInt(1_000_000).toString().padStart(6, "0")
     const codeHash = await hashValue(code)
     const pending = JSON.stringify({
-      userId: payload.sub,
+      userId: account.userId,
       email: body.email,
-      currentEmail: user.email,
-      passwordHash: user.passwordHash,
+      currentEmail: account.email,
+      passwordHash: account.passwordHash,
       codeHash,
       attemptsRemaining: ACCOUNT_CONFIRMATION.attempts,
     } satisfies IAccountEmail)
@@ -216,6 +154,55 @@ class AccountEmailService {
         DICTIONARY.account.emailMailUnavailable,
         { cause: error },
       )
+    }
+  }
+
+  private consumeEmail(userId: string, code: string): Promise<IAccountEmail> {
+    return this.confirmationService.consume({
+      redis: this.redis,
+      key: `${this.configService.app.name}:account:email:{${userId}}`,
+      code,
+      attempts: ACCOUNT_CONFIRMATION.attempts,
+      invalidMessage: DICTIONARY.account.emailConfirmationInvalid,
+      checkIsPending: (pending): pending is IAccountEmail => {
+        return (
+          pending.userId === userId &&
+          "email" in pending &&
+          isString(pending.email) &&
+          "currentEmail" in pending &&
+          isString(pending.currentEmail) &&
+          "passwordHash" in pending &&
+          isString(pending.passwordHash)
+        )
+      },
+    })
+  }
+
+  private async getAccountCredentials(accessToken: unknown) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, {
+        _id: 1,
+        email: 1,
+        passwordHash: 1,
+      }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    if (isNil(user.passwordHash) || isNil(user.email)) {
+      throw new ConflictException(DICTIONARY.account.emailUnavailable)
+    }
+
+    return {
+      userId: payload.sub,
+      email: user.email,
+      passwordHash: user.passwordHash,
     }
   }
 }

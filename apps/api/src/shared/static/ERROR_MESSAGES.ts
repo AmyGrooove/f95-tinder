@@ -1,8 +1,4 @@
-const ERROR_MESSAGES = {
-  UNAUTHORIZED: "Unauthorized",
-  FORBIDDEN: "Forbidden",
-  VALIDATION_ERROR: "Validation error",
-  INTERNAL_ERROR: "Internal server error",
-} as const
+import { DICTIONARY } from "@shared/static/DICTIONARY"
+const ERROR_MESSAGES = DICTIONARY.errors
 
 export { ERROR_MESSAGES }

@@ -68,23 +68,6 @@ class AuthService {
     return { accessToken, refreshToken }
   }
 
-  private async createSession(props: ICreateAuthSessionProps) {
-    const { userId, role, userAgent, session } = props
-    const sessionId = new Types.ObjectId()
-    const tokens = await this.issueTokens({
-      sub: userId.toHexString(),
-      sessionId: sessionId.toHexString(),
-      role,
-    })
-
-    await this.sessionRepository.createNew(
-      { id: sessionId, userId, refreshToken: tokens.refreshToken, userAgent },
-      { session },
-    )
-
-    return tokens
-  }
-
   async login(body: LoginBodyDto, userAgent: string | undefined) {
     const user = await this.userRepository.read.findOne(
       { username: body.username },
@@ -230,6 +213,23 @@ class AuthService {
     }
 
     throw new ServiceUnavailableException(DICTIONARY.auth.usernameUnavailable)
+  }
+
+  private async createSession(props: ICreateAuthSessionProps) {
+    const { userId, role, userAgent, session } = props
+    const sessionId = new Types.ObjectId()
+    const tokens = await this.issueTokens({
+      sub: userId.toHexString(),
+      sessionId: sessionId.toHexString(),
+      role,
+    })
+
+    await this.sessionRepository.createNew(
+      { id: sessionId, userId, refreshToken: tokens.refreshToken, userAgent },
+      { session },
+    )
+
+    return tokens
   }
 }
 

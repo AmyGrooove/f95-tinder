@@ -1,10 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger"
+import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 class WhoamiSessionResponseDto {
-  @ApiProperty({ description: "Идентификатор текущей сессии" })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiSessionResponse.id,
+  })
   id: string
 
-  @ApiProperty({ description: "Срок действия сессии", format: "date-time" })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.common.sessionExpiration,
+    format: "date-time",
+  })
   expiresAt: string
 }
 

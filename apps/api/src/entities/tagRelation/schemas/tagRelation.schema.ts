@@ -4,6 +4,7 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 @Schema({
   collection: "TagRelation",
@@ -25,7 +26,7 @@ const TagRelationSchema = SchemaFactory.createForClass(TagRelation)
 
 TagRelationSchema.pre("validate", function () {
   if (this.first?.equals(this.second)) {
-    this.invalidate("second", "A tag cannot be related to itself")
+    this.invalidate("second", DICTIONARY.tagRelation.selfRelation)
   }
 })
 

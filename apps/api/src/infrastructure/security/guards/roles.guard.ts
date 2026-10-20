@@ -11,6 +11,7 @@ import { ROLES_METADATA_KEY } from "@infrastructure/security/decorators/Roles"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class RolesGuard implements CanActivate {
@@ -30,13 +31,13 @@ class RolesGuard implements CanActivate {
     const authPrincipal = request.authPrincipal
 
     if (isNil(authPrincipal)) {
-      throw new UnauthorizedException("User is not authenticated")
+      throw new UnauthorizedException(DICTIONARY.security.userNotAuthenticated)
     }
 
     const isRoleAllowed = roles.includes(authPrincipal.role)
 
     if (!isRoleAllowed) {
-      throw new ForbiddenException("User role is not allowed")
+      throw new ForbiddenException(DICTIONARY.security.roleNotAllowed)
     }
 
     return true

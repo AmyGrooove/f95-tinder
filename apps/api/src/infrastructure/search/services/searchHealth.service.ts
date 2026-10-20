@@ -2,6 +2,7 @@ import { Inject, Injectable, type OnApplicationBootstrap } from "@nestjs/common"
 import type { Meilisearch } from "meilisearch"
 
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class SearchHealthService implements OnApplicationBootstrap {
@@ -13,7 +14,7 @@ class SearchHealthService implements OnApplicationBootstrap {
     const isHealthy = await this.healthCheck()
 
     if (!isHealthy) {
-      throw new Error("Meilisearch is unavailable")
+      throw new Error(DICTIONARY.search.unavailable)
     }
   }
 

@@ -6,6 +6,7 @@ import { isNumber } from "@shared/functions/checks/isNumber"
 import { DEFAULT_IMAGE_QUALITY } from "../static/DEFAULT_IMAGE_QUALITY"
 import { SUPPORTED_IMAGE_MIME_TYPES } from "../static/SUPPORTED_IMAGE_MIME_TYPES"
 import type { IProcessImageOptions } from "../types/IProcessImageOptions"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class ImageProcessingService {
@@ -15,15 +16,15 @@ class ImageProcessingService {
     options: IProcessImageOptions,
   ) {
     if (input.length === 0) {
-      throw new BadRequestException("Image upload must not be empty")
+      throw new BadRequestException(DICTIONARY.image.emptyUpload)
     }
 
     if (!SUPPORTED_IMAGE_MIME_TYPES.includes(declaredMimeType as never)) {
-      throw new BadRequestException("Unsupported image MIME type")
+      throw new BadRequestException(DICTIONARY.image.unsupportedMimeType)
     }
 
     if (input.length > options.maxBytes) {
-      throw new BadRequestException("Image upload exceeds the byte limit")
+      throw new BadRequestException(DICTIONARY.image.byteLimitExceeded)
     }
 
     try {
@@ -38,13 +39,13 @@ class ImageProcessingService {
       const pages = metadata.pages ?? 1
 
       if (!SUPPORTED_IMAGE_MIME_TYPES.includes(mediaType as never)) {
-        throw new BadRequestException("Unsupported decoded image MIME type")
+        throw new BadRequestException(
+          DICTIONARY.image.unsupportedDecodedMimeType,
+        )
       }
 
       if (mediaType !== declaredMimeType) {
-        throw new BadRequestException(
-          "Image MIME type does not match decoded content",
-        )
+        throw new BadRequestException(DICTIONARY.image.mimeTypeMismatch)
       }
 
       if (
@@ -55,7 +56,7 @@ class ImageProcessingService {
         Number.isNaN(width) ||
         Number.isNaN(height)
       ) {
-        throw new BadRequestException("Image dimensions are unavailable")
+        throw new BadRequestException(DICTIONARY.image.dimensionsUnavailable)
       }
 
       if (
@@ -63,9 +64,7 @@ class ImageProcessingService {
         height > options.maxHeight ||
         width * height * pages > options.maxPixels
       ) {
-        throw new BadRequestException(
-          "Image dimensions exceed the allowed limit",
-        )
+        throw new BadRequestException(DICTIONARY.image.dimensionLimitExceeded)
       }
 
       return await image
@@ -81,7 +80,7 @@ class ImageProcessingService {
         throw error
       }
 
-      throw new BadRequestException("Unable to process the uploaded image")
+      throw new BadRequestException(DICTIONARY.image.processingFailed)
     }
   }
 }

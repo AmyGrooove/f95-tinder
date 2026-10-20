@@ -28,12 +28,11 @@ class SessionService {
 
   async getSessions(accessToken: unknown): Promise<SessionResponseDto[]> {
     const payload = await this.authService.verifyAccessToken(accessToken)
+    const userId = new Types.ObjectId(payload.sub)
 
     const [sessions, isUserPresent] = await Promise.all([
-      this.sessionRepository.findActiveByUser(new Types.ObjectId(payload.sub)),
-      this.userRepository.read.checkIsExists({
-        _id: new Types.ObjectId(payload.sub),
-      }),
+      this.sessionRepository.findActiveByUser(userId),
+      this.userRepository.read.checkIsExists({ _id: userId }),
     ])
 
     const isCurrentSessionPresent = sessions.some((session) => {
@@ -64,10 +63,7 @@ class SessionService {
     const userId = new Types.ObjectId(payload.sub)
     const [isUserPresent, currentSession] = await Promise.all([
       this.userRepository.read.checkIsExists({ _id: userId }),
-      this.sessionRepository.findActive({
-        id: new Types.ObjectId(payload.sessionId),
-        userId,
-      }),
+      this.authService.getSession(payload),
     ])
 
     if (!isUserPresent || isNil(currentSession)) {
@@ -95,10 +91,7 @@ class SessionService {
     const currentSessionId = new Types.ObjectId(payload.sessionId)
     const [isUserPresent, currentSession] = await Promise.all([
       this.userRepository.read.checkIsExists({ _id: userId }),
-      this.sessionRepository.findActive({
-        id: currentSessionId,
-        userId,
-      }),
+      this.authService.getSession(payload),
     ])
 
     if (!isUserPresent || isNil(currentSession)) {
@@ -136,17 +129,16 @@ class SessionService {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      await this.authService.issueTokens({
-        sub: user._id.toHexString(),
-        sessionId: payload.sessionId,
-        role: user.role,
-      })
+    const tokens = await this.authService.issueTokens({
+      sub: user._id.toHexString(),
+      sessionId: payload.sessionId,
+      role: user.role,
+    })
     const session = await this.sessionRepository.updateRefreshToken({
       id: new Types.ObjectId(payload.sessionId),
       userId: user._id,
       currentRefreshToken: refreshToken,
-      refreshToken: newRefreshToken,
+      refreshToken: tokens.refreshToken,
     })
 
     if (isNil(session)) {
@@ -155,7 +147,7 @@ class SessionService {
 
     requestContext.set("userId", user._id.toHexString())
 
-    return { accessToken, refreshToken: newRefreshToken }
+    return tokens
   }
 }
 

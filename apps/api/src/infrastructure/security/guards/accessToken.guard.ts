@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common"
 import { SecurityJwtService } from "../services/jwt.service"
 import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class AccessTokenGuard implements CanActivate {
@@ -23,7 +24,7 @@ class AccessTokenGuard implements CanActivate {
       authorizationHeader === undefined ||
       !/^Bearer [^\s]+$/i.test(authorizationHeader)
     ) {
-      throw new UnauthorizedException("Access token is required")
+      throw new UnauthorizedException(DICTIONARY.security.accessTokenRequired)
     }
 
     const accessToken = authorizationHeader.slice("Bearer ".length)

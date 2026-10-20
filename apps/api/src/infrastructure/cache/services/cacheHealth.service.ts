@@ -1,6 +1,7 @@
 import { Injectable, type OnApplicationBootstrap } from "@nestjs/common"
 
 import { CacheService } from "./cache.service"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class CacheHealthService implements OnApplicationBootstrap {
@@ -22,7 +23,7 @@ class CacheHealthService implements OnApplicationBootstrap {
       const cachedValue = await this.cacheService.get<string>(key)
 
       if (cachedValue !== value) {
-        throw new Error("Cache health check returned an unexpected value")
+        throw new Error(DICTIONARY.cache.unexpectedHealthValue)
       }
     } catch (error) {
       healthCheckError = error
@@ -35,7 +36,7 @@ class CacheHealthService implements OnApplicationBootstrap {
       if (isHealthCheckFailed) {
         throw new AggregateError(
           [healthCheckError, cleanupError],
-          "Cache health check and cleanup failed",
+          DICTIONARY.cache.healthAndCleanupFailed,
           { cause: cleanupError },
         )
       }

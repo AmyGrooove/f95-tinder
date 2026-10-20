@@ -2,7 +2,12 @@ import { createHash, randomBytes, randomInt } from "node:crypto"
 
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { CreateOptions, HydratedDocument, Model } from "mongoose"
+import type {
+  CreateOptions,
+  HydratedDocument,
+  Model,
+  QueryOptions,
+} from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -14,6 +19,8 @@ import { User } from "../schemas/user.schema"
 import type { TCreateUser } from "../schemas/user.schema"
 import { USERNAME_ADJECTIVES } from "../static/USERNAME_ADJECTIVES"
 import { USERNAME_NOUNS } from "../static/USERNAME_NOUNS"
+import type { IReissueAccessCodeProps } from "../types/IReissueAccessCodeProps"
+import type { IReplacePasswordProps } from "../types/IReplacePasswordProps"
 
 @Injectable()
 class UserRepository {
@@ -45,6 +52,55 @@ class UserRepository {
     >(model)
     this.aggregation = new MongoAggregationRepository<HydratedDocument<User>>(
       model,
+    )
+  }
+
+  findByAccessCode(accessCode: string) {
+    return this.read.findOne(
+      {
+        accessCodeHash: createHash("sha256").update(accessCode).digest("hex"),
+        passwordHash: null,
+      },
+      { _id: 1, role: 1 },
+    )
+  }
+
+  async reissueAccessCode(
+    props: IReissueAccessCodeProps,
+    options?: Pick<QueryOptions<User>, "session">,
+  ) {
+    const accessCode = randomBytes(24).toString("base64url")
+    const user = await this.write.updateByFilter(
+      {
+        _id: props.userId,
+        accessCodeHash: createHash("sha256")
+          .update(props.accessCode)
+          .digest("hex"),
+        passwordHash: null,
+      },
+      {
+        $set: {
+          accessCodeHash: createHash("sha256").update(accessCode).digest("hex"),
+        },
+      },
+      { ...options, projection: { _id: 1, role: 1 } },
+    )
+
+    return { user, accessCode }
+  }
+
+  replacePassword(
+    props: IReplacePasswordProps,
+    options?: Pick<QueryOptions<User>, "session">,
+  ) {
+    return this.write.updateByFilter(
+      {
+        _id: props.userId,
+        email: props.email,
+        passwordHash: props.currentPasswordHash,
+      },
+      { $set: { passwordHash: props.passwordHash } },
+      { ...options, projection: { _id: 1 } },
     )
   }
 

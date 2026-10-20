@@ -11,6 +11,7 @@ import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
 import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
 import { MAIL_SENDERS } from "../static/MAIL_SENDERS"
 import type { ISendMailJobPayload } from "../types/ISendMailJobPayload"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 @JobHandler(SEND_MAIL_JOB)
@@ -29,7 +30,7 @@ class SendMailJobHandler {
           : undefined
 
     if (isNil(content)) {
-      throw new Error("Mail content must include text or HTML")
+      throw new Error(DICTIONARY.mail.contentRequired)
     }
 
     await context.throwIfCancelled()
@@ -55,7 +56,7 @@ class SendMailJobHandler {
     )
 
     if (!isNil(result.error)) {
-      throw new Error("Mail provider rejected the message", {
+      throw new Error(DICTIONARY.mail.providerRejected, {
         cause: result.error,
       })
     }
@@ -63,7 +64,7 @@ class SendMailJobHandler {
     const deliveryId = result.data?.id
 
     if (isNil(deliveryId) || deliveryId === "") {
-      throw new Error("Mail provider did not return a delivery identifier")
+      throw new Error(DICTIONARY.mail.deliveryIdMissing)
     }
 
     return { id: deliveryId, status: "sent" }

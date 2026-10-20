@@ -6,13 +6,14 @@ import { isString } from "@shared/functions/checks/isString"
 import type { TJobState } from "@infrastructure/jobs/types/TJobState"
 import type { IJobDetails } from "@infrastructure/jobs/types/IJobDetails"
 import { normalizeJobProgress } from "@infrastructure/jobs/functions/normalizeJobProgress"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 const createJobDetails = (
   job: Job,
   details: { state: TJobState; name: string },
 ) => {
   if (!isString(job.id) || job.id === "") {
-    throw new Error("BullMQ job unexpectedly has no identifier")
+    throw new Error(DICTIONARY.jobs.missingDetailsId)
   }
 
   const progress = normalizeJobProgress(job.progress)

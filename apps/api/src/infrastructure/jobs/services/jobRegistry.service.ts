@@ -8,6 +8,7 @@ import { isObject } from "@shared/functions/checks/isObject"
 import type { IJobHandlerMetadata } from "../decorators/JobHandler/types/IJobHandlerMetadata"
 import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
 import type { IRegisteredJobHandler } from "../types/IRegisteredJobHandler"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class JobRegistryService implements OnModuleInit {
@@ -47,9 +48,7 @@ class JobRegistryService implements OnModuleInit {
       const { definition } = metadata
 
       if (this.handlers.has(definition.name)) {
-        throw new Error(
-          `Multiple handlers are registered for '${definition.name}'`,
-        )
+        throw new Error(DICTIONARY.jobs.multipleHandlers(definition.name))
       }
 
       const instance: unknown = provider.instance
@@ -59,9 +58,7 @@ class JobRegistryService implements OnModuleInit {
         !("handle" in instance) ||
         !isFunction(instance.handle)
       ) {
-        throw new Error(
-          `Job handler '${definition.name}' must provide handle()`,
-        )
+        throw new Error(DICTIONARY.jobs.handlerMethodRequired(definition.name))
       }
 
       this.handlers.set(definition.name, {

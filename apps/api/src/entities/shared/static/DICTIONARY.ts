@@ -1,5 +1,49 @@
 const DICTIONARY = {
+  tagRelation: {
+    selfRelation: "Тег не может быть связан сам с собой",
+  },
+  account: {
+    emailConfirmationInvalid:
+      "Код подтверждения смены email недействителен или истёк, при необходимости запросите новый",
+    emailUnavailable:
+      "Изменение email доступно после первоначальной настройки аккаунта",
+    emailResendTooSoon: "Повторный запрос смены email доступен через минуту",
+    emailMailSubject: "Подтверждение смены email",
+    emailMailText: "Код подтверждения смены email:",
+    emailMailExpiration:
+      "Код действует 4 часа. Если вы не запрашивали смену email, проигнорируйте письмо",
+    emailMailUnavailable: "Не удалось отправить письмо, повторите запрос",
+    emailCleanupFailed:
+      "Не удалось удалить подтверждение после ошибки отправки письма смены email",
+    passwordUnavailable:
+      "Пароль ещё не установлен, завершите первоначальную настройку аккаунта",
+    invalidPassword: "Текущий пароль недействителен",
+    setupConfirmationInvalid:
+      "Код подтверждения недействителен или истёк, при необходимости запросите новый",
+    setupUnavailable: "Первоначальная настройка аккаунта недоступна",
+    emailTaken: "Email уже занят",
+    setupResendTooSoon: "Повторный запрос доступен через минуту",
+    setupMailSubject: "Подтверждение настройки аккаунта",
+    setupMailText: "Код подтверждения настройки аккаунта:",
+    setupMailExpiration:
+      "Код действует 4 часа. Если вы не запрашивали настройку, проигнорируйте письмо",
+    setupMailUnavailable: "Не удалось отправить письмо, повторите запрос",
+    setupCleanupFailed:
+      "Не удалось удалить подтверждение после ошибки отправки письма настройки аккаунта",
+    usernameTaken: "Логин уже занят",
+  },
   auth: {
+    passwordResetConfirmationInvalid:
+      "Код сброса пароля недействителен или истёк, при необходимости запросите новый",
+    passwordResetMailSubject: "Сброс пароля",
+    passwordResetMailText: "Код подтверждения сброса пароля:",
+    passwordResetMailExpiration:
+      "Код действует 4 часа. Если вы не запрашивали сброс пароля, проигнорируйте письмо",
+    passwordResetMailUnavailable:
+      "Не удалось поставить письмо сброса пароля в очередь",
+    passwordResetCleanupFailed:
+      "Не удалось удалить подтверждение после ошибки отправки письма сброса пароля",
+    invalidLoginCredentials: "Логин или пароль недействительны",
     invalidCredentials: "Секретный код недействителен",
     unauthorized: "Авторизация отсутствует или недействительна",
     sessionNotFound: "Сессия не найдена",

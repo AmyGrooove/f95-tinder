@@ -3,6 +3,7 @@ import { InjectConnection } from "@nestjs/mongoose"
 import type { Connection } from "mongoose"
 
 import { isNil } from "@shared/functions/checks/isNil"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class MongoHealthService implements OnApplicationBootstrap {
@@ -14,7 +15,7 @@ class MongoHealthService implements OnApplicationBootstrap {
 
   async healthCheck() {
     if (isNil(this.connection.db)) {
-      throw new Error("MongoDB connection is unavailable")
+      throw new Error(DICTIONARY.database.unavailable)
     }
 
     await this.connection.db.admin().ping()

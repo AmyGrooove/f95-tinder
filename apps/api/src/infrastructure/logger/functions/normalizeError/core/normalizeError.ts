@@ -3,6 +3,7 @@ import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
 import type { INormalizedError } from "../../../types/INormalizedError"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 const normalizeError = (error: unknown): INormalizedError => {
   if (error instanceof Error) {
@@ -23,20 +24,20 @@ const normalizeError = (error: unknown): INormalizedError => {
 
   if (isArray(error)) {
     return {
-      message: "Unknown error",
+      message: DICTIONARY.logger.unknownError,
       details: { errors: error },
     }
   }
 
   if (isObject(error)) {
     return {
-      message: "Unknown error",
+      message: DICTIONARY.logger.unknownError,
       details: Object.fromEntries(Object.entries(error)),
     }
   }
 
   return {
-    message: "Unknown error",
+    message: DICTIONARY.logger.unknownError,
     details: null,
   }
 }

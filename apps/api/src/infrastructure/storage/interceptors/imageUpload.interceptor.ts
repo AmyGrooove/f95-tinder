@@ -27,6 +27,7 @@ import type { IFastifyMultipartFile } from "../types/IFastifyMultipartFile"
 import type { IFastifyMultipartRequest } from "../types/IFastifyMultipartRequest"
 import type { IImageUploadOptions } from "../types/IImageUploadOptions"
 import type { IProcessImageOptions } from "../types/IProcessImageOptions"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class ImageUploadInterceptor implements NestInterceptor {
@@ -62,7 +63,7 @@ class ImageUploadInterceptor implements NestInterceptor {
       if (this.isMultipartFile(part)) {
         if (input !== undefined || part.fieldname !== metadata.field) {
           part.file.resume()
-          throw new BadRequestException("Exactly one image file is required")
+          throw new BadRequestException(DICTIONARY.image.exactlyOneFileRequired)
         }
 
         input = await this.readFile(part, processingOptions.maxBytes)
@@ -85,7 +86,9 @@ class ImageUploadInterceptor implements NestInterceptor {
     }
 
     if (isNil(input) || isNil(mimeType)) {
-      throw new BadRequestException(`Missing image field '${metadata.field}'`)
+      throw new BadRequestException(
+        DICTIONARY.image.missingField(metadata.field),
+      )
     }
 
     const output = await this.imageProcessingService.processImage(
@@ -146,9 +149,7 @@ class ImageUploadInterceptor implements NestInterceptor {
         size += buffer.length
 
         if (size > maxBytes) {
-          throw new PayloadTooLargeException(
-            "Image upload exceeds the byte limit",
-          )
+          throw new PayloadTooLargeException(DICTIONARY.image.byteLimitExceeded)
         }
 
         chunks.push(buffer)

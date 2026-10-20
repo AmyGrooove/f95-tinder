@@ -12,15 +12,15 @@ class SchedulerHealthService implements OnApplicationBootstrap {
     this.startedAt = performance.now()
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  private recordHeartbeat() {
-    this.lastHeartbeatAt = performance.now()
-  }
-
   checkHealth() {
     const lastRunAt = this.lastHeartbeatAt ?? this.startedAt
 
     return performance.now() - lastRunAt <= SCHEDULER_HEALTH_TIMEOUT_MS
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  private recordHeartbeat() {
+    this.lastHeartbeatAt = performance.now()
   }
 }
 

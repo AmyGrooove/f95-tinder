@@ -11,6 +11,7 @@ import { JWT_ALGORITHM } from "../static/JWT_ALGORITHM"
 import { JWT_REFRESH_EXPIRATION } from "../static/JWT_REFRESH_EXPIRATION"
 import type { IAccessTokenPayload } from "../types/IAccessTokenPayload"
 import type { IRefreshTokenPayload } from "../types/IRefreshTokenPayload"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class SecurityJwtService {
@@ -78,12 +79,12 @@ class SecurityJwtService {
         !isString(payload.sessionId) ||
         !isString(payload.role)
       ) {
-        throw new UnauthorizedException("Access token is invalid")
+        throw new UnauthorizedException(DICTIONARY.security.accessTokenInvalid)
       }
 
       return payload
     } catch {
-      throw new UnauthorizedException("Access token is invalid")
+      throw new UnauthorizedException(DICTIONARY.security.accessTokenInvalid)
     }
   }
 
@@ -107,12 +108,12 @@ class SecurityJwtService {
         "role" in payload ||
         "roles" in payload
       ) {
-        throw new UnauthorizedException("Refresh token is invalid")
+        throw new UnauthorizedException(DICTIONARY.security.refreshTokenInvalid)
       }
 
       return payload
     } catch {
-      throw new UnauthorizedException("Refresh token is invalid")
+      throw new UnauthorizedException(DICTIONARY.security.refreshTokenInvalid)
     }
   }
 }

@@ -14,6 +14,7 @@ import type { IJobAddOptions } from "../types/IJobAddOptions"
 import type { IJobData } from "../types/IJobData"
 import type { IJobDefinition } from "../types/IJobDefinition"
 import type { IJobListOptions } from "../types/IJobListOptions"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class JobService {
@@ -30,7 +31,7 @@ class JobService {
       !isNil(options?.delay) &&
       (!isInt(options.delay) || options.delay < 0)
     ) {
-      throw new Error("Job delay must be a non-negative integer")
+      throw new Error(DICTIONARY.jobs.invalidDelay)
     }
 
     const job = await this.jobsQueue.add(
@@ -55,7 +56,7 @@ class JobService {
     )
 
     if (isNil(job.id)) {
-      throw new Error("BullMQ did not assign an identifier to the queued job")
+      throw new Error(DICTIONARY.jobs.missingQueuedId)
     }
 
     return job.id
@@ -119,7 +120,7 @@ class JobService {
       !isInt(offset) ||
       offset < 0
     ) {
-      throw new Error("Invalid job list range")
+      throw new Error(DICTIONARY.jobs.invalidListRange)
     }
 
     const items = []
@@ -180,7 +181,7 @@ class JobService {
     const job = await this.jobsQueue.getJob(id)
 
     if (isNil(job)) {
-      throw new Error(`Job '${id}' does not exist`)
+      throw new Error(DICTIONARY.jobs.notFound(id))
     }
 
     const data = parseJobData(job.data)
@@ -190,15 +191,13 @@ class JobService {
       data.name !== definition.name ||
       data.version !== definition.version
     ) {
-      throw new Error(
-        `Job '${id}' does not match definition '${definition.name}'`,
-      )
+      throw new Error(DICTIONARY.jobs.definitionMismatch(id, definition.name))
     }
 
     const state = await getJobState(job, data)
 
     if (state !== "queued") {
-      throw new Error(`Job '${id}' cannot be updated in state '${state}'`)
+      throw new Error(DICTIONARY.jobs.cannotUpdate(id, state))
     }
 
     await job.updateData({ ...data, payload })
@@ -234,14 +233,14 @@ class JobService {
     const job = await this.jobsQueue.getJob(id)
 
     if (isNil(job)) {
-      throw new Error(`Job '${id}' does not exist`)
+      throw new Error(DICTIONARY.jobs.notFound(id))
     }
 
     const data = parseJobData(job.data)
     const state = await getJobState(job, data)
 
     if (state !== "failed") {
-      throw new Error(`Job '${id}' cannot be retried in state '${state}'`)
+      throw new Error(DICTIONARY.jobs.cannotRetry(id, state))
     }
 
     if (data.cancellationState !== "none") {

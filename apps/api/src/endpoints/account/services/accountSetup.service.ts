@@ -43,34 +43,13 @@ class AccountSetupService {
   ) {}
 
   async confirmSetup(accessToken: unknown, body: ConfirmSetupBodyDto) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-
-    const userId = new Types.ObjectId(payload.sub)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, {
-        _id: 1,
-        passwordHash: 1,
-        email: 1,
-      }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
-
-    if (!isNil(user.passwordHash) || !isNil(user.email)) {
-      throw new ConflictException(DICTIONARY.account.setupUnavailable)
-    }
-
-    const pending = await this.consumeSetup(payload.sub, body.code)
+    const userId = await this.getSetupUserId(accessToken)
+    const pending = await this.consumeSetup(userId, body.code)
 
     try {
       const updatedUser = await this.userRepository.write.updateByFilter(
         {
-          _id: userId,
+          _id: new Types.ObjectId(userId),
           email: null,
           passwordHash: null,
           accessCodeHash: pending.accessCodeHash,
@@ -103,54 +82,13 @@ class AccountSetupService {
     }
   }
 
-  private consumeSetup(userId: string, code: string): Promise<IAccountSetup> {
-    return this.confirmationService.consume({
-      redis: this.redis,
-      key: `${this.configService.app.name}:account:setup:{${userId}}`,
-      code,
-      attempts: ACCOUNT_CONFIRMATION.attempts,
-      invalidMessage: DICTIONARY.account.setupConfirmationInvalid,
-      checkIsPending: (pending): pending is IAccountSetup => {
-        return (
-          pending.userId === userId &&
-          "email" in pending &&
-          isString(pending.email) &&
-          "passwordHash" in pending &&
-          isString(pending.passwordHash) &&
-          "accessCodeHash" in pending &&
-          isString(pending.accessCodeHash)
-        )
-      },
-    })
-  }
-
   async requestSetup(accessToken: unknown, body: SetupBodyDto) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, {
-        _id: 1,
-        email: 1,
-        passwordHash: 1,
-      }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
-
-    if (!isNil(user.passwordHash) || !isNil(user.email)) {
-      throw new ConflictException(DICTIONARY.account.setupUnavailable)
-    }
-
+    const userId = await this.getSetupUserId(accessToken)
     const accessCodeHash = createHash("sha256")
       .update(body.accessCode)
       .digest("hex")
     const isCredentialsMatch = await this.userRepository.read.checkIsExists({
-      _id: user._id,
+      _id: new Types.ObjectId(userId),
       accessCodeHash,
       passwordHash: null,
       email: null,
@@ -168,7 +106,7 @@ class AccountSetupService {
       throw new ConflictException(DICTIONARY.account.emailTaken)
     }
 
-    const key = `${this.configService.app.name}:account:setup:{${payload.sub}}`
+    const key = `${this.configService.app.name}:account:setup:{${userId}}`
     const cooldownKey = `${key}:cooldown`
 
     if ((await this.redis.exists(cooldownKey)) !== 0) {
@@ -184,7 +122,7 @@ class AccountSetupService {
       hashValue(code),
     ])
     const pending = JSON.stringify({
-      userId: payload.sub,
+      userId,
       email: body.email,
       passwordHash,
       accessCodeHash,
@@ -231,6 +169,51 @@ class AccountSetupService {
         { cause: error },
       )
     }
+  }
+
+  private consumeSetup(userId: string, code: string): Promise<IAccountSetup> {
+    return this.confirmationService.consume({
+      redis: this.redis,
+      key: `${this.configService.app.name}:account:setup:{${userId}}`,
+      code,
+      attempts: ACCOUNT_CONFIRMATION.attempts,
+      invalidMessage: DICTIONARY.account.setupConfirmationInvalid,
+      checkIsPending: (pending): pending is IAccountSetup => {
+        return (
+          pending.userId === userId &&
+          "email" in pending &&
+          isString(pending.email) &&
+          "passwordHash" in pending &&
+          isString(pending.passwordHash) &&
+          "accessCodeHash" in pending &&
+          isString(pending.accessCodeHash)
+        )
+      },
+    })
+  }
+
+  private async getSetupUserId(accessToken: unknown) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, {
+        _id: 1,
+        email: 1,
+        passwordHash: 1,
+      }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    if (!isNil(user.passwordHash) || !isNil(user.email)) {
+      throw new ConflictException(DICTIONARY.account.setupUnavailable)
+    }
+
+    return payload.sub
   }
 }
 

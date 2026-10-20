@@ -21,6 +21,7 @@ import { JOBS_SETTINGS } from "../static/JOBS_SETTINGS"
 import type { IJobData } from "../types/IJobData"
 import type { IJobContext } from "../types/IJobContext"
 import { JobRegistryService } from "./jobRegistry.service"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Processor(JOBS_QUEUE_NAME, {
   concurrency: JOBS_SETTINGS.concurrency,
@@ -43,7 +44,7 @@ class JobProcessorService extends WorkerHost {
 
   @OnWorkerEvent("error")
   onWorkerError(error: Error) {
-    this.loggerService.error("Job worker error", error, {
+    this.loggerService.error(DICTIONARY.jobs.workerError, error, {
       context: JobProcessorService.name,
       data: { queue: JOBS_QUEUE_NAME },
     })
@@ -53,28 +54,32 @@ class JobProcessorService extends WorkerHost {
     const id = job.id
 
     if (!isString(id) || id === "") {
-      throw new UnrecoverableError("BullMQ job does not have an identifier")
+      throw new UnrecoverableError(DICTIONARY.jobs.missingId)
     }
 
     let data: IJobData
     try {
       data = parseJobData(job.data)
     } catch (error) {
-      this.loggerService.error("Invalid persisted job envelope", error, {
-        context: JobProcessorService.name,
-        data: { jobName: job.name },
-        jobId: id,
-      })
-
-      throw new UnrecoverableError(
-        `Invalid persisted envelope for '${job.name}'`,
+      this.loggerService.error(
+        DICTIONARY.jobs.invalidPersistedEnvelope,
+        error,
+        {
+          context: JobProcessorService.name,
+          data: { jobName: job.name },
+          jobId: id,
+        },
       )
+
+      throw new UnrecoverableError(DICTIONARY.jobs.invalidEnvelope(job.name))
     }
 
     const registeredHandler = this.jobRegistry.get(job.name)
 
     if (isNil(registeredHandler)) {
-      throw new UnrecoverableError(`No handler is registered for '${job.name}'`)
+      throw new UnrecoverableError(
+        DICTIONARY.jobs.handlerNotRegistered(job.name),
+      )
     }
 
     if (
@@ -82,7 +87,7 @@ class JobProcessorService extends WorkerHost {
       data.version !== registeredHandler.definition.version
     ) {
       throw new UnrecoverableError(
-        `Incompatible payload version for '${job.name}'`,
+        DICTIONARY.jobs.incompatiblePayloadVersion(job.name),
       )
     }
 
@@ -96,7 +101,7 @@ class JobProcessorService extends WorkerHost {
           progress.progress > 100 ||
           (!isNil(progress.status) && !isString(progress.status))
         ) {
-          throw new Error("Job progress must be an integer between 0 and 100")
+          throw new Error(DICTIONARY.jobs.invalidProgress)
         }
 
         await job.updateProgress(progress)
@@ -108,7 +113,7 @@ class JobProcessorService extends WorkerHost {
           isNil(currentJob) ||
           parseJobData(currentJob.data).cancellationState !== "none"
         ) {
-          throw new JobCancelledError(`Job '${id}' was cancelled`)
+          throw new JobCancelledError(DICTIONARY.jobs.wasCancelled(id))
         }
       },
     }
@@ -122,7 +127,7 @@ class JobProcessorService extends WorkerHost {
         context,
       )
       await context.throwIfCancelled()
-      this.loggerService.info("Job completed", {
+      this.loggerService.info(DICTIONARY.jobs.completed, {
         context: JobProcessorService.name,
         data: {
           jobName: job.name,
@@ -147,7 +152,7 @@ class JobProcessorService extends WorkerHost {
             cancellationState: "cancelled",
           })
         }
-        this.loggerService.info("Job cancelled", {
+        this.loggerService.info(DICTIONARY.jobs.cancelled, {
           context: JobProcessorService.name,
           data: {
             jobName: job.name,
@@ -164,9 +169,9 @@ class JobProcessorService extends WorkerHost {
           ? new UnrecoverableError(error.message)
           : error instanceof Error
             ? error
-            : new Error("Job handler failed")
+            : new Error(DICTIONARY.jobs.handlerFailed)
 
-      this.loggerService.error("Job handler failed", error, {
+      this.loggerService.error(DICTIONARY.jobs.handlerFailed, error, {
         context: JobProcessorService.name,
         data: {
           jobName: job.name,

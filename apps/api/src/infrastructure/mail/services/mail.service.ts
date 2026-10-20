@@ -7,6 +7,7 @@ import { isString } from "@shared/functions/checks/isString"
 import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
 import type { IMailDeliveryResult } from "../types/IMailDeliveryResult"
 import type { ISendMailOptions } from "../types/ISendMailOptions"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class MailService {
@@ -37,18 +38,18 @@ class MailService {
         ? options.to.trim() === ""
         : options.to.length === 0)
     ) {
-      throw new Error("Mail recipient must not be empty")
+      throw new Error(DICTIONARY.mail.recipientRequired)
     }
 
     if (options.subject.trim() === "") {
-      throw new Error("Mail subject must not be empty")
+      throw new Error(DICTIONARY.mail.subjectRequired)
     }
 
     const isTextMissing = isNil(options.text) || options.text === ""
     const isHtmlMissing = isNil(options.html) || options.html === ""
 
     if (isTextMissing && isHtmlMissing) {
-      throw new Error("Mail content must include text or HTML")
+      throw new Error(DICTIONARY.mail.contentRequired)
     }
   }
 }

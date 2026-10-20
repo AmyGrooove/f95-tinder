@@ -18,8 +18,9 @@ import { SecurityCookieService } from "@infrastructure/security/services/cookie.
 import { SessionResponseDto } from "../dto/response/session.response"
 import { SessionParamsDto } from "../dto/params/session.params"
 import { SessionService } from "../services/session.service"
+import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-@ApiTags("Авторизация")
+@ApiTags(SWAGGER_DICTIONARY.tags.sessions)
 @Controller("auth/session")
 class SessionController {
   constructor(
@@ -32,21 +33,20 @@ class SessionController {
   @ApiCookieAuth("accessCookie")
   @ApiEndpoint({
     operationId: "AuthController_getSessions",
-    summary: "Получить действующие сессии текущего аккаунта",
-    description:
-      "Требует действующий JWT в cookie __Host-accessToken и неистёкшую серверную сессию текущего пользователя. Возвращает только его неистёкшие сессии, от новых к старым, с признаком текущей сессии. Токены и их хеши не возвращаются",
+    summary: SWAGGER_DICTIONARY.auth.getSessions.summary,
+    description: SWAGGER_DICTIONARY.auth.getSessions.description,
     response: {
       status: 200,
       type: SessionResponseDto,
       isArray: true,
-      description: "Действующие сессии текущего аккаунта",
+      description: SWAGGER_DICTIONARY.auth.getSessions.response,
     },
     errors: [
       {
         status: 401,
-        description: "Авторизация отсутствует или недействительна",
+        description: SWAGGER_DICTIONARY.common.unauthorized,
       },
-      { status: 429, description: "Превышен лимит запросов" },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
   getSessions(
@@ -61,20 +61,19 @@ class SessionController {
   @ApiCookieAuth("accessCookie")
   @ApiEndpoint({
     operationId: "AuthController_deleteOtherSessions",
-    summary: "Завершить все сессии текущего аккаунта, кроме текущей",
-    description:
-      "Без тела запроса. Требует действующий JWT в cookie __Host-accessToken, существующего пользователя и неистёкшую текущую серверную сессию. Удаляет все остальные сессии этого пользователя, сохраняя текущую сессию и обе auth cookies. Если других сессий нет, также возвращает 204. Действует встроенная CSRF-защита NestJS",
+    summary: SWAGGER_DICTIONARY.auth.deleteOtherSessions.summary,
+    description: SWAGGER_DICTIONARY.auth.deleteOtherSessions.description,
     response: {
       status: 204,
-      description: "Все остальные сессии текущего аккаунта завершены",
+      description: SWAGGER_DICTIONARY.auth.deleteOtherSessions.response,
     },
     errors: [
       {
         status: 401,
-        description: "Авторизация отсутствует или недействительна",
+        description: SWAGGER_DICTIONARY.common.unauthorized,
       },
-      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
-      { status: 429, description: "Превышен лимит запросов" },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
   async deleteOtherSessions(
@@ -89,29 +88,33 @@ class SessionController {
   @ApiCookieAuth("accessCookie")
   @ApiEndpoint({
     operationId: "AuthController_deleteSession",
-    summary: "Завершить выбранную собственную сессию",
-    description:
-      "Требует действующий JWT в cookie __Host-accessToken, существующего пользователя и неистёкшую текущую серверную сессию. Удаляет только выбранную неистёкшую сессию этого пользователя. Чужая, отсутствующая или истёкшая сессия возвращает 404. При удалении текущей сессии очищает обе auth cookies; при удалении другой cookies не изменяются. Действует встроенная CSRF-защита NestJS",
+    summary: SWAGGER_DICTIONARY.auth.deleteSession.summary,
+    description: SWAGGER_DICTIONARY.auth.deleteSession.description,
     response: {
       status: 204,
-      description: "Выбранная сессия завершена",
+      description: SWAGGER_DICTIONARY.auth.deleteSession.response,
       headers: {
         "Set-Cookie": {
-          description:
-            "Только при удалении текущей сессии: __Host-accessToken и __Host-refreshToken очищены; Path=/; HttpOnly; Secure; SameSite=Strict",
+          description: SWAGGER_DICTIONARY.auth.deleteSession.cookies,
           schema: { type: "string" },
         },
       },
     },
     errors: [
-      { status: 400, description: "Некорректный идентификатор сессии" },
+      {
+        status: 400,
+        description: SWAGGER_DICTIONARY.auth.deleteSession.errors.status400,
+      },
       {
         status: 401,
-        description: "Авторизация отсутствует или недействительна",
+        description: SWAGGER_DICTIONARY.common.unauthorized,
       },
-      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
-      { status: 404, description: "Сессия не найдена" },
-      { status: 429, description: "Превышен лимит запросов" },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      {
+        status: 404,
+        description: SWAGGER_DICTIONARY.auth.deleteSession.errors.status404,
+      },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
   async deleteSession(
@@ -135,16 +138,14 @@ class SessionController {
   @ApiCookieAuth("refreshCookie")
   @ApiEndpoint({
     operationId: "AuthController_refresh",
-    summary: "Обновить токены и продлить текущую сессию",
-    description:
-      "Без тела запроса и access-токена. Требует действующий refresh JWT в cookie __Host-refreshToken и соответствующую неистёкшую серверную сессию. Старый refresh-токен становится недействительным; при конкурентном обновлении только один запрос успешен, остальные получают 401 без изменения cookies. Для изменяющих запросов действует встроенная CSRF-защита NestJS",
+    summary: SWAGGER_DICTIONARY.auth.refresh.summary,
+    description: SWAGGER_DICTIONARY.auth.refresh.description,
     response: {
       status: 204,
-      description: "Токены заменены, текущая сессия продлена на 120 дней",
+      description: SWAGGER_DICTIONARY.auth.refresh.response,
       headers: {
         "Set-Cookie": {
-          description:
-            "__Host-accessToken (600 секунд) и __Host-refreshToken (10368000 секунд); Path=/; HttpOnly; Secure; SameSite=Strict",
+          description: SWAGGER_DICTIONARY.common.authCookies,
           schema: { type: "string" },
         },
       },
@@ -152,10 +153,10 @@ class SessionController {
     errors: [
       {
         status: 401,
-        description: "Авторизация отсутствует или недействительна",
+        description: SWAGGER_DICTIONARY.common.unauthorized,
       },
-      { status: 403, description: "Проверка защиты от CSRF не пройдена" },
-      { status: 429, description: "Превышен лимит запросов" },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
   async refresh(

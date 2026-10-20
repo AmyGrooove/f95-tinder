@@ -1,21 +1,37 @@
 import { ApiProperty } from "@nestjs/swagger"
 
 import { EUserRole } from "@entities/user/schemas/EUserRole"
+import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 class WhoamiUserResponseDto {
-  @ApiProperty({ description: "Идентификатор пользователя" })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.id,
+  })
   id: string
 
-  @ApiProperty({ description: "Логин", example: "quietfox042" })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.username,
+    example: "quietfox042",
+  })
   username: string
 
-  @ApiProperty({ description: "Отображаемое имя", example: "quietFox042" })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.displayName,
+    example: "quietFox042",
+  })
   displayName: string
 
-  @ApiProperty({ description: "URL аватара", type: String, nullable: true })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.avatarUrl,
+    type: String,
+    nullable: true,
+  })
   avatarUrl: string | null
 
-  @ApiProperty({ description: "Роль пользователя", enum: EUserRole })
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.role,
+    enum: EUserRole,
+  })
   role: EUserRole
 }
 

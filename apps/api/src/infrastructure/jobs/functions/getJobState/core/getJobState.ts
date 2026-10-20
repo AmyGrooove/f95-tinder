@@ -2,6 +2,7 @@ import type { Job } from "bullmq"
 
 import { JOB_CANCELLED_RESULT } from "../../../static/JOB_CANCELLED_RESULT"
 import type { IJobData } from "../../../types/IJobData"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 const getJobState = async (job: Job, data: IJobData) => {
   const state = await job.getState()
@@ -31,7 +32,7 @@ const getJobState = async (job: Job, data: IJobData) => {
         : "queued"
   }
 
-  throw new Error(`Unsupported BullMQ job state '${state}'`)
+  throw new Error(DICTIONARY.jobs.unsupportedState(state))
 }
 
 export { getJobState }

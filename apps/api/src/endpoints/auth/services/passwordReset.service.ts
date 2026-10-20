@@ -64,27 +64,6 @@ class PasswordResetService {
     requestContext.set("userId", pending.userId)
   }
 
-  private consumeReset(email: string, code: string): Promise<IPasswordReset> {
-    const emailHash = createHash("sha256").update(email).digest("hex")
-
-    return this.confirmationService.consume({
-      redis: this.redis,
-      key: `${this.configService.app.name}:auth:passwordReset:{${emailHash}}`,
-      code,
-      attempts: PASSWORD_RESET.attempts,
-      invalidMessage: DICTIONARY.auth.passwordResetConfirmationInvalid,
-      checkIsPending: (pending): pending is IPasswordReset => {
-        return (
-          isObjectIdOrHexString(pending.userId) &&
-          "email" in pending &&
-          pending.email === email &&
-          "passwordHash" in pending &&
-          isString(pending.passwordHash)
-        )
-      },
-    })
-  }
-
   async requestReset(body: PasswordResetBodyDto) {
     const emailHash = createHash("sha256").update(body.email).digest("hex")
     const key = `${this.configService.app.name}:auth:passwordReset:{${emailHash}}`
@@ -140,7 +119,7 @@ class PasswordResetService {
       try {
         await this.redis.eval(PASSWORD_RESET.discardScript, {
           keys: [key],
-          arguments: [pending],
+          arguments: [codeHash],
         })
       } catch (cleanupError) {
         this.loggerService.error(
@@ -149,6 +128,27 @@ class PasswordResetService {
         )
       }
     }
+  }
+
+  private consumeReset(email: string, code: string): Promise<IPasswordReset> {
+    const emailHash = createHash("sha256").update(email).digest("hex")
+
+    return this.confirmationService.consume({
+      redis: this.redis,
+      key: `${this.configService.app.name}:auth:passwordReset:{${emailHash}}`,
+      code,
+      attempts: PASSWORD_RESET.attempts,
+      invalidMessage: DICTIONARY.auth.passwordResetConfirmationInvalid,
+      checkIsPending: (pending): pending is IPasswordReset => {
+        return (
+          isObjectIdOrHexString(pending.userId) &&
+          "email" in pending &&
+          pending.email === email &&
+          "passwordHash" in pending &&
+          isString(pending.passwordHash)
+        )
+      },
+    })
   }
 }
 

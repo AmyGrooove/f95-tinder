@@ -11,6 +11,7 @@ import { ImageProcessingService } from "./services/imageProcessing.service"
 import { StorageHealthService } from "./services/storageHealth.service"
 import { StorageService } from "./services/storage.service"
 import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Module({
   imports: [InfrastructureConfigModule, LoggerModule],
@@ -31,9 +32,7 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
           isNil(storage.secretKey) ||
           storage.secretKey === ""
         ) {
-          throw new Error(
-            "Garage URL, region, and credentials must be configured",
-          )
+          throw new Error(DICTIONARY.storage.configurationRequired)
         }
 
         let endpoint: URL
@@ -41,11 +40,11 @@ import { STORAGE_CLIENT } from "./static/STORAGE_CLIENT"
         try {
           endpoint = new URL(storage.endpoint)
         } catch {
-          throw new Error("GARAGE_URL must be a valid HTTP(S) URL")
+          throw new Error(DICTIONARY.storage.invalidEndpointUrl)
         }
 
         if (endpoint.protocol !== "http:" && endpoint.protocol !== "https:") {
-          throw new Error("GARAGE_URL must use HTTP or HTTPS")
+          throw new Error(DICTIONARY.storage.invalidEndpointProtocol)
         }
 
         return new S3Client({

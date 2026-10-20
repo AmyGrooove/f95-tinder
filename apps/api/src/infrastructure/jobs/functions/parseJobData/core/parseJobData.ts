@@ -4,6 +4,7 @@ import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
 import type { IJobData } from "../../../types/IJobData"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 const parseJobData = (value: unknown): IJobData => {
   if (
@@ -25,7 +26,7 @@ const parseJobData = (value: unknown): IJobData => {
       value.cancellationState !== "cancelling" &&
       value.cancellationState !== "cancelled")
   ) {
-    throw new Error("Invalid persisted job data")
+    throw new Error(DICTIONARY.jobs.invalidPersistedData)
   }
 
   return {

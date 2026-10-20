@@ -22,6 +22,7 @@ import { isString } from "@shared/functions/checks/isString"
 import { DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS } from "../static/DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS"
 import { STORAGE_CLIENT } from "../static/STORAGE_CLIENT"
 import type { IStorageUploadResult } from "../types/IStorageUploadResult"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class StorageService implements OnModuleInit {
@@ -41,7 +42,7 @@ class StorageService implements OnModuleInit {
       } catch (error) {
         if (!this.isObjectNotFound(error)) {
           throw this.createStorageError(
-            "initialize bucket",
+            DICTIONARY.storage.operations.initializeBucket,
             bucket,
             "HeadBucket",
             error,
@@ -55,7 +56,7 @@ class StorageService implements OnModuleInit {
 
         if (!isBucketCreationEnabled) {
           throw new ServiceUnavailableException(
-            `Storage bucket '${bucket}' does not exist and auto-creation is disabled`,
+            DICTIONARY.storage.bucketMissing(bucket),
             { cause: error },
           )
         }
@@ -67,7 +68,7 @@ class StorageService implements OnModuleInit {
         )
       } catch (error) {
         throw this.createStorageError(
-          "initialize bucket",
+          DICTIONARY.storage.operations.initializeBucket,
           bucket,
           "CreateBucket",
           error,
@@ -79,7 +80,7 @@ class StorageService implements OnModuleInit {
       }
 
       throw this.createStorageError(
-        "initialize bucket",
+        DICTIONARY.storage.operations.initializeBucket,
         bucket,
         "unknown",
         error,
@@ -106,7 +107,7 @@ class StorageService implements OnModuleInit {
       const publicUrl = this.createPublicUrl(path)
 
       if (isNil(object.ContentLength)) {
-        throw new Error("Storage object size is unavailable")
+        throw new Error(DICTIONARY.storage.objectSizeUnavailable)
       }
 
       const processedUpload: IStorageUploadResult = {
@@ -122,7 +123,7 @@ class StorageService implements OnModuleInit {
       return processedUpload
     } catch (error) {
       throw this.createStorageError(
-        "upload",
+        DICTIONARY.storage.operations.upload,
         path,
         "PutObject/HeadObject",
         error,
@@ -140,12 +141,17 @@ class StorageService implements OnModuleInit {
       )
 
       if (!(object.Body instanceof Readable)) {
-        throw new Error("Storage object body is unavailable")
+        throw new Error(DICTIONARY.storage.objectBodyUnavailable)
       }
 
       return object.Body
     } catch (error) {
-      throw this.createStorageError("download", path, "GetObject", error)
+      throw this.createStorageError(
+        DICTIONARY.storage.operations.download,
+        path,
+        "GetObject",
+        error,
+      )
     }
   }
 
@@ -158,7 +164,12 @@ class StorageService implements OnModuleInit {
         }),
       )
     } catch (error) {
-      throw this.createStorageError("delete", path, "DeleteObject", error)
+      throw this.createStorageError(
+        DICTIONARY.storage.operations.delete,
+        path,
+        "DeleteObject",
+        error,
+      )
     }
   }
 
@@ -182,7 +193,7 @@ class StorageService implements OnModuleInit {
       }
 
       throw this.createStorageError(
-        "check existence",
+        DICTIONARY.storage.operations.checkExistence,
         path,
         "HeadObject",
         error,
@@ -204,7 +215,7 @@ class StorageService implements OnModuleInit {
       )
     } catch (error) {
       throw this.createStorageError(
-        "create read URL",
+        DICTIONARY.storage.operations.createReadUrl,
         path,
         "GetObject presign",
         error,
@@ -226,7 +237,7 @@ class StorageService implements OnModuleInit {
       )
     } catch (error) {
       throw this.createStorageError(
-        "create write URL",
+        DICTIONARY.storage.operations.createWriteUrl,
         path,
         "PutObject presign",
         error,
@@ -277,7 +288,7 @@ class StorageService implements OnModuleInit {
     this.logStorageError(command, path, cause)
 
     return new ServiceUnavailableException(
-      `Storage ${operation} failed for '${path}'`,
+      DICTIONARY.storage.operationFailed(operation, path),
       { cause },
     )
   }
@@ -289,7 +300,7 @@ class StorageService implements OnModuleInit {
     const metadata =
       error instanceof S3ServiceException ? error.$metadata : undefined
 
-    this.loggerService.error(`Storage ${command} failed`, error, {
+    this.loggerService.error(DICTIONARY.storage.commandFailed(command), error, {
       context: StorageService.name,
       data: {
         command,
