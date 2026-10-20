@@ -86,6 +86,14 @@ UserSchema.set("toJSON", {
 
 UserSchema.index({ username: 1 }, { name: "userUsernameUnique", unique: true })
 UserSchema.index(
+  { accessCodeHash: 1 },
+  {
+    name: "userAccessCodeHashUnique",
+    unique: true,
+    partialFilterExpression: { accessCodeHash: { $type: "string" } },
+  },
+)
+UserSchema.index(
   { email: 1 },
   {
     name: "userEmailUnique",

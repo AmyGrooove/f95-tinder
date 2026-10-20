@@ -17,6 +17,8 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 import { requestContext } from "@shared/functions/requestContext"
 
+import type { LoginCodeBodyDto } from "../dto/body/loginCode.body"
+
 @Injectable()
 class AuthService {
   constructor(
@@ -25,6 +27,47 @@ class AuthService {
     private readonly transactionService: MongoTransactionService,
     private readonly jwtService: SecurityJwtService,
   ) {}
+
+  async loginByCode(body: LoginCodeBodyDto, userAgent: string | undefined) {
+    const user = await this.userRepository.read.findOne(
+      {
+        accessCodeHash: createHash("sha256")
+          .update(body.accessCode)
+          .digest("hex"),
+        passwordHash: null,
+      },
+      { _id: 1, role: 1 },
+    )
+
+    if (isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.invalidCredentials)
+    }
+
+    const sessionId = new Types.ObjectId()
+    const userId = user._id.toHexString()
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAccessToken({
+        sub: userId,
+        sessionId: sessionId.toHexString(),
+        role: user.role,
+      }),
+      this.jwtService.signRefreshToken({
+        sub: userId,
+        sessionId: sessionId.toHexString(),
+      }),
+    ])
+
+    await this.sessionRepository.createNew({
+      id: sessionId,
+      userId: user._id,
+      refreshToken,
+      userAgent,
+    })
+
+    requestContext.set("userId", userId)
+
+    return { accessToken, refreshToken }
+  }
 
   async logout(accessToken: unknown): Promise<void> {
     if (!isString(accessToken) || accessToken.length === 0) {

@@ -1,4 +1,4 @@
-import { randomBytes, randomInt } from "node:crypto"
+import { createHash, randomBytes, randomInt } from "node:crypto"
 
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
@@ -9,7 +9,6 @@ import { MongoWriteRepository } from "@infrastructure/database/services/mongoWri
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPagination.repository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
-import { hashValue } from "@infrastructure/security/functions/hashValue"
 
 import { User } from "../schemas/user.schema"
 import type { TCreateUser } from "../schemas/user.schema"
@@ -51,7 +50,7 @@ class UserRepository {
 
   async createNew(options?: CreateOptions) {
     const accessCode = randomBytes(24).toString("base64url")
-    const accessCodeHash = await hashValue(accessCode)
+    const accessCodeHash = createHash("sha256").update(accessCode).digest("hex")
 
     const adjective = USERNAME_ADJECTIVES[randomInt(USERNAME_ADJECTIVES.length)]
     const noun = USERNAME_NOUNS[randomInt(USERNAME_NOUNS.length)]
