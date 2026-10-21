@@ -5,7 +5,7 @@ import { Types } from "mongoose"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
-class MongoObjectIdPipe implements PipeTransform<string, Types.ObjectId> {
+class MongoObjectIdHandler implements PipeTransform<string, Types.ObjectId> {
   transform(value: string) {
     if (!/^[a-fA-F0-9]{24}$/.test(value)) {
       throw new BadRequestException(DICTIONARY.database.invalidObjectId)
@@ -15,4 +15,4 @@ class MongoObjectIdPipe implements PipeTransform<string, Types.ObjectId> {
   }
 }
 
-export { MongoObjectIdPipe }
+export { MongoObjectIdHandler }

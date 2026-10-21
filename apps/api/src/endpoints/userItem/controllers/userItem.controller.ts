@@ -24,7 +24,7 @@ import { NoteBodyDto } from "../dto/body/note.body"
 import { CreateAttemptBodyDto } from "../dto/body/createAttempt.body"
 import { UpdateAttemptBodyDto } from "../dto/body/updateAttempt.body"
 import { UserItemResponseDto } from "../dto/response/userItem.response"
-import { MongoObjectIdPipe } from "@infrastructure/database/pipes/mongoObjectId.pipe"
+import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
 import { UserItemService } from "../services/userItem.service"
 import { USER_ITEM_ERRORS } from "../static/USER_ITEM_ERRORS"
 
@@ -76,7 +76,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   update(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: UpdateUserItemBodyDto,
   ) {
     return this.userItemService.update(accessToken, { id, body })
@@ -102,7 +102,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   remove(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
   ) {
     return this.userItemService.remove(accessToken, id)
   }
@@ -128,7 +128,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   updateStatus(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: StatusBodyDto,
   ) {
     return this.userItemService.update(accessToken, { id, body })
@@ -155,7 +155,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   updateFavorite(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: FavoriteBodyDto,
   ) {
     return this.userItemService.update(accessToken, { id, body })
@@ -182,7 +182,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   updateRating(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: RatingBodyDto,
   ) {
     return this.userItemService.update(accessToken, { id, body })
@@ -209,7 +209,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   updateNote(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: NoteBodyDto,
   ) {
     return this.userItemService.update(accessToken, { id, body })
@@ -236,7 +236,7 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   createAttempt(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: CreateAttemptBodyDto,
   ) {
     return this.userItemService.createAttempt(accessToken, { id, body })
@@ -268,8 +268,8 @@ class UserItemController {
   @Header("Cache-Control", "no-store")
   updateAttempt(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
-    @Param("attemptId", MongoObjectIdPipe) attemptId: Types.ObjectId,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
+    @Param("attemptId", MongoObjectIdHandler) attemptId: Types.ObjectId,
     @Body() body: UpdateAttemptBodyDto,
   ) {
     return this.userItemService.updateAttempt(accessToken, {

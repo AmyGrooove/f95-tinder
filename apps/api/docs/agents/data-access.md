@@ -64,7 +64,7 @@ Source inspection does not prove data migrations, deployed unique indexes, trans
 
 Pagination defaults to page 1 and limit 20, floors finite values and clamps explicit limits to 1–100 through [normalizePagination](../../src/shared/functions/pagination/normalizePagination/core/normalizePagination.ts). The paginated repository normalizes a non-empty caller sort through Mongoose Query.sort, otherwise uses a non-empty defaultSort, otherwise `{ _id: -1 }`. Object, string and tuple forms are supported without mutating caller/default sort objects. An absent `_id` is appended as the last descending tie-breaker; an explicit `_id` retains its direction and position. Equal sort values therefore have deterministic ordering, but offset pagination can still shift during concurrent writes. The repository runs items and count sequentially when a session is present, otherwise concurrently. [createPaginatedResult](../../src/shared/functions/pagination/createPaginatedResult/core/createPaginatedResult.ts) returns items, page, limit, total, pages and next/previous flags.
 
-[MongoObjectIdPipe](../../src/infrastructure/database/pipes/mongoObjectId.pipe.ts) validates 24-character hexadecimal route parameters and converts them to Types.ObjectId, returning 400 for invalid input. It is reusable at controller parameter boundaries and has no entity dependencies.
+[MongoObjectIdHandler](../../src/infrastructure/database/handlers/mongoObjectId.handler.ts) validates 24-character hexadecimal route parameters and converts them to Types.ObjectId, returning 400 for invalid input. It is reusable at controller parameter boundaries and has no entity dependencies.
 
 ## Library mutations
 
