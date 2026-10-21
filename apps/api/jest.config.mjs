@@ -17,6 +17,16 @@ const common = {
 }
 
 export default {
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/**/__tests__/**",
+    "!src/tests/**",
+    "!src/**/*.d.ts",
+    "!src/**/types/[IT]*.ts",
+  ],
+  coverageProvider: "v8",
+  coverageDirectory: "<rootDir>/coverage",
+  coverageReporters: ["text", "html", "json-summary"],
   projects: [
     {
       ...common,

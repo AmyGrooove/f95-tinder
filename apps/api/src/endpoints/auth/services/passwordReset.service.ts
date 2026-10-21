@@ -15,7 +15,7 @@ import { MailService } from "@infrastructure/mail/services/mail.service"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { PasswordResetBodyDto } from "../dto/body/passwordReset.body"
 import type { ConfirmPasswordResetBodyDto } from "../dto/body/confirmPasswordReset.body"

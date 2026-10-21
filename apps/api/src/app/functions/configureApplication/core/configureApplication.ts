@@ -4,7 +4,7 @@ import { ValidationPipe, VersioningType } from "@nestjs/common"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 const configureApplication = async (app: NestFastifyApplication) => {
   const appConfiguration = app.get(InfrastructureConfigService).app

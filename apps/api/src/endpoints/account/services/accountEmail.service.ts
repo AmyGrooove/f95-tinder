@@ -24,7 +24,7 @@ import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { EmailBodyDto } from "../dto/body/email.body"
 import type { ConfirmEmailBodyDto } from "../dto/body/confirmEmail.body"

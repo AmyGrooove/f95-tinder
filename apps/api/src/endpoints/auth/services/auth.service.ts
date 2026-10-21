@@ -15,7 +15,7 @@ import type { IAccessTokenPayload } from "@infrastructure/security/types/IAccess
 import type { IAuthTokens } from "@infrastructure/security/types/IAuthTokens"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { LoginCodeBodyDto } from "../dto/body/loginCode.body"
 import type { LoginBodyDto } from "../dto/body/login.body"

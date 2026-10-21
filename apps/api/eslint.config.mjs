@@ -49,7 +49,7 @@ const EXTERNAL_BOOLEAN_PROPERTIES = [
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**"],
+    ignores: ["dist/**", "coverage/**", "node_modules/**"],
   },
   eslint.configs.recommended,
   ...typescriptEslint.configs.recommended,

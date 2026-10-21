@@ -11,7 +11,7 @@ import { UserRepository } from "@entities/user/services/user.repository"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import { AuthService } from "./auth.service"
 

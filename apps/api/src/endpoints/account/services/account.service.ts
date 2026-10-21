@@ -14,7 +14,7 @@ import { MongoTransactionService } from "@infrastructure/database/services/mongo
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { isNil } from "@shared/functions/checks/isNil"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { WhoamiResponseDto } from "../dto/response/whoami.response"
 import type { AccountResponseDto } from "../dto/response/account.response"

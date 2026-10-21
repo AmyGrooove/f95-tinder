@@ -30,14 +30,17 @@ class MongoWriteRepository<
     payload: UpdateQuery<TSchema>,
     options?: QueryOptions<TSchema>,
   ): Promise<TDocument | null> {
+    const { new: isReturningUpdated, ...queryOptions } = options ?? {}
     const query = this.model.findByIdAndUpdate(
       id,
       payload as UpdateQuery<TDocument>,
-      options as QueryOptions<TDocument>,
+      queryOptions as QueryOptions<TDocument>,
     )
 
     query.setOptions({
-      new: options?.new ?? true,
+      returnDocument:
+        options?.returnDocument ??
+        (isReturningUpdated === false ? "before" : "after"),
       runValidators: options?.runValidators ?? true,
     })
 
@@ -51,14 +54,17 @@ class MongoWriteRepository<
     payload: UpdateQuery<TSchema>,
     options?: QueryOptions<TSchema>,
   ): Promise<TDocument | null> {
+    const { new: isReturningUpdated, ...queryOptions } = options ?? {}
     const document = await this.model
       .findOneAndUpdate(
         filter as QueryFilter<TDocument>,
         payload as UpdateQuery<TDocument>,
-        options as QueryOptions<TDocument>,
+        queryOptions as QueryOptions<TDocument>,
       )
       .setOptions({
-        new: options?.new ?? true,
+        returnDocument:
+          options?.returnDocument ??
+          (isReturningUpdated === false ? "before" : "after"),
         runValidators: options?.runValidators ?? true,
       })
       .exec()

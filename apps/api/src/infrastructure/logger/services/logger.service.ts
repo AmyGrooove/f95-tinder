@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
-import { requestContext } from "@shared/functions/requestContext"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import { normalizeError } from "../functions/normalizeError"
 import { redactLogValue } from "../functions/redactLogValue"
