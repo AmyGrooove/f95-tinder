@@ -1,4 +1,9 @@
 allowBuilds:
+  "@parcel/watcher": false
   "@scarf/scarf": true
+  cpu-features: false
   msgpackr-extract: true
+  protobufjs: false
   sharp: true
+  ssh2: false
+  unrs-resolver: false

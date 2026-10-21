@@ -12,6 +12,7 @@ const infrastructureConfiguration = registerAs(
 @Module({
   imports: [
     ConfigModule.forRoot({
+      ignoreEnvFile: process.env.NODE_ENV === "test",
       cache: true,
       isGlobal: true,
       load: [infrastructureConfiguration],

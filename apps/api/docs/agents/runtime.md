@@ -4,7 +4,7 @@ Read for startup, configuration, health, HTTP policy or build changes. Return to
 
 ## HTTP entrypoint
 
-[main.ts](../../src/main.ts) creates the Fastify Nest application and listens on `app.port` at `0.0.0.0`. Proxy trust is limited to loopback, link-local and unique-local addresses. Helmet is registered; CSP is removed for `/docs` and its nested/query routes.
+[main.ts](../../src/main.ts) creates the Fastify Nest application and listens on `app.port` at `0.0.0.0`. Shared HTTP setup lives in [configureApplication](../../src/app/functions/configureApplication/index.ts), reused by the integration-test application: CSRF, multipart, Helmet, request context, CORS, URI versioning and validation. Proxy trust is limited to loopback, link-local and unique-local addresses. CSP is removed for `/docs` and its nested/query routes.
 
 Swagger is mounted at `/docs`, with bearer scheme `authToken`. URI versioning is enabled without a default version; the [health controller](../../src/infrastructure/health/controllers/health.controller.ts) has no version metadata. There is no global route prefix in bootstrap.
 
@@ -28,7 +28,7 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 
 [HttpModule](../../src/infrastructure/http/http.module.ts) is imported by AppModule and configures `@nestjs/http-client` application-wide defaults: a 10-second timeout per attempt and disabled retries. It does not register a client; consumers register clients through `HttpClientModule.register()` or `registerAsync()`. Existing direct `fetch` calls are unaffected.
 
-[InfrastructureConfigModule](../../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. Consumers use [InfrastructureConfigService](../../src/infrastructure/config/services/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search`, `mail` and `sources`. The derived [configuration type](../../src/infrastructure/config/types/TInfrastructureConfiguration.ts) follows the factory return type.
+[InfrastructureConfigModule](../../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. It skips `.env` loading when `NODE_ENV=test`; the test application overrides the configuration namespace with isolated container addresses and test values. Consumers use [InfrastructureConfigService](../../src/infrastructure/config/services/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search`, `mail` and `sources`. The derived [configuration type](../../src/infrastructure/config/types/TInfrastructureConfiguration.ts) follows the factory return type.
 
 [createInfrastructureConfiguration](../../src/infrastructure/config/functions/createInfrastructureConfiguration/core/createInfrastructureConfiguration.ts) and its nested helpers define the current environment contract:
 

@@ -153,6 +153,22 @@ export default [
       ],
     },
   },
+  {
+    files: ["src/**/__tests__/**/*.ts", "src/tests/**/*.ts"],
+    settings: {
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver({
+          project: `${import.meta.dirname}/tsconfig.test.json`,
+        }),
+      ],
+    },
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.test.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   ...EXTERNAL_BOOLEAN_PROPERTIES.map(({ file, properties }) => ({
     files: [file],
     rules: {
