@@ -1,0 +1,167 @@
+АККАУНТ
+GET    /account/whoami — Получение данных текущего аккаунта
+GET    /account — Получение полных данных текущего аккаунта
+PATCH  /account/nickname — Обновление nickname текущего аккаунта
+PATCH  /account/username — Обновление username текущего аккаунта
+PATCH  /account/email — Обновление email текущего аккаунта
+
+АККАУНТ — ПАРОЛЬ
+POST   /account/password/reset — Отправка кода для сброса пароля на email
+PATCH  /account/password/reset — Подтверждение кода и обновление пароля
+PATCH  /account/password — Обновление пароля
+
+АККАУНТ — АВАТАР
+PATCH  /account/avatar — Обновление аватара текущего аккаунта
+DELETE /account/avatar — Удаление аватара текущего аккаунта
+
+ГЛАВНАЯ
+GET    /home — Получение данных для главной страницы
+GET    /home/collections
+GET    /home/row — Получение элемента главной страницы
+
+ГЛАВНАЯ — ПОЛЬЗОВАТЕЛЬ
+GET    /home/user/watch
+
+КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ
+GET    /collection/{ID}/userAnimeReactions — Получение реакций пользователя на аниме в коллекции
+GET    /collection/userReactions — Получение реакций пользователя на коллекции
+POST   /collection/{ID}/score
+POST   /collection/{ID}/favorite
+POST   /collection
+DELETE /collection
+PATCH  /collection/{ID}
+PATCH  /collection/{ID}/updateRequest
+
+КОЛЛЕКЦИЯ
+GET    /collection/{ID} — Получение информации о коллекции
+GET    /collection/{slug}/meta — Получение метаданных о коллекции
+GET    /collection/{ID}/animeList
+
+КОММЕНТАРИИ
+GET    /comments/{collectionType}/{ID}
+GET    /comments/{collectionType}/{ID}/count
+GET    /comments/{ID}
+
+КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ
+POST   /user/comments/{collectionType}/{ID}
+POST   /user/comments/{ID}
+PATCH  /user/comments/{ID}
+DELETE /user/comments/{ID}
+POST   /user/comments/{ID}/reaction
+
+СЕССИИ
+GET    /auth/session — Получение сессий текущего аккаунта
+DELETE /auth/session/delete — Удаление сессии
+PATCH  /auth/session/refresh — Обновление токена
+
+АВТОРИЗАЦИЯ
+POST   /auth/login — Авторизация по паролю
+POST   /auth/logout — Выход из системы
+
+АВТОРИЗАЦИЯ — YANDEX
+GET    /auth/yandex — Авторизация через Yandex
+GET    /auth/yandex/callback — Авторизация через Yandex
+
+АВТОРИЗАЦИЯ — GOOGLE
+GET    /auth/google — Авторизация через Google
+GET    /auth/google/callback — Авторизация через Google
+
+АВТОРИЗАЦИЯ — VK
+GET    /auth/vk — Авторизация через VK
+GET    /auth/vk/callback — Авторизация через VK
+
+ВРЕМЕННЫЙ АККАУНТ
+POST   /auth/temporary — Создание нового временного аккаунта
+POST   /auth/temporary/login — Авторизация по временному ключу
+PATCH  /auth/temporary/code — Создание нового временного ключа
+
+ПРОФИЛЬ
+GET    /profile/{ID}
+GET    /profile/{slug}/meta
+GET    /profile/{ID}/additional
+GET    /profile/{ID}/editList
+GET    /profile/{ID}/history
+GET    /profile/{ID}/achievements
+GET    /profile/{ID}/favoriteAnimes
+GET    /profile/{ID}/animeList
+
+ПРОФИЛЬ — ПОЛЬЗОВАТЕЛЬ
+PATCH  /profile/favoriteAnimes
+
+КЛУБ — ПОЛЬЗОВАТЕЛЬ
+PATCH  /club/{ID}/updateRequest
+
+КЛУБ
+GET    /club/{ID} — Получение основной информации о клубе
+GET    /club/{slug}/meta
+GET    /club/{ID}/animeList
+GET    /club/{ID}/persons
+
+ПЕРСОНЫ — ПОЛЬЗОВАТЕЛЬ
+PATCH  /person/{ID}/updateRequest
+
+ПЕРСОНЫ
+GET    /person/{ID}
+GET    /person/{slug}/meta
+GET    /person/{ID}/animeList
+GET    /person/{ID}/clubs
+
+ПРИЛОЖЕНИЕ — ANIBATTLE
+GET    /aniBattle — Получение списков аниме по статусам
+
+ПРИЛОЖЕНИЕ — ANIJUDGE
+GET    /aniJudge — Получение списка аниме для AniJudge
+
+ПРИЛОЖЕНИЕ — ANIPICK
+POST   /aniPick/skipList — Добавление аниме в список пропущенных
+GET    /aniPick — Получение списка аниме для AniPick
+
+ПОИСК
+GET    /search
+
+АНИМЕ
+GET    /anime/{ID} — Получение основной информации об аниме
+GET    /anime/{ID}/additional — Получение дополнительной информации об аниме
+GET    /anime/{ID}/mini — Получение мини информации об аниме
+GET    /anime/{ID}/base — Получение базовой информации об аниме
+GET    /anime/{slug}/meta — Получение метаданных об аниме
+
+АНИМЕ — ПЛЕЕР
+GET    /anime/{ID}/episodes — Получение списка эпизодов аниме
+GET    /anime/episode/{ID} — Получение плееров эпизода
+
+АНИМЕ — ПЛЕЕР ПОЛЬЗОВАТЕЛЯ
+PATCH  /anime/episode/{ID} — Изменение прогресса эпизода пользователя
+GET    /anime/{ID}/userEpisodes — Получение прогресса эпизодов пользователя
+
+АНИМЕ — ПОЛЬЗОВАТЕЛЬ
+PATCH  /anime/{ID}/updateRequest
+GET    /anime/userReactions — Получение реакций пользователя на аниме
+GET    /anime/{ID}/friendsStatus — Получение статусов и оценок друзей по аниме
+POST   /anime/{ID}/favorite — Добавление или удаление аниме из избранного
+POST   /anime/{ID}/score — Изменение оценки аниме пользователем
+POST   /anime/{ID}/userStatus — Установка статуса аниме в списке пользователя
+PATCH  /anime/{ID}/userReaction — Изменение реакции пользователя на аниме
+DELETE /anime/{ID}/userReaction — Удаление реакции пользователя на аниме
+
+ЗАБАНЕННЫЕ АНИМЕ
+POST   /bannedAnime — Добавление аниме в список забаненных
+
+ПАРСИНГ ДАННЫХ
+GET    /animeParse/queue — Получение задач парсинга
+POST   /animeParse/parseAnimesByYear — Парсинг данных об аниме по годам
+POST   /animeParse/updateNewAnime — Обновление новых аниме
+
+ГЛАВНАЯ ЛЕНТА
+POST   /mainFeed — Генерация ежедневной главной ленты
+
+ЖАЛОБЫ
+POST   /report
+GET    /report
+POST   /report/target
+
+ПРЕДЛОЖЕНИЯ
+POST   /proposal/fact
+POST   /proposal/quest
+POST   /proposal/achievement
+POST   /proposal

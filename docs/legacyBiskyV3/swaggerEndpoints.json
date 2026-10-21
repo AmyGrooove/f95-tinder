@@ -1,0 +1,602 @@
+[
+  {
+    "category": "АККАУНТ",
+    "method": "GET",
+    "path": "/account/whoami",
+    "description": "Получение данных текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ",
+    "method": "GET",
+    "path": "/account",
+    "description": "Получение полных данных текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ",
+    "method": "PATCH",
+    "path": "/account/nickname",
+    "description": "Обновление nickname текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ",
+    "method": "PATCH",
+    "path": "/account/username",
+    "description": "Обновление username текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ",
+    "method": "PATCH",
+    "path": "/account/email",
+    "description": "Обновление email текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ — ПАРОЛЬ",
+    "method": "POST",
+    "path": "/account/password/reset",
+    "description": "Отправка кода для сброса пароля на email"
+  },
+  {
+    "category": "АККАУНТ — ПАРОЛЬ",
+    "method": "PATCH",
+    "path": "/account/password/reset",
+    "description": "Подтверждение кода и обновление пароля"
+  },
+  {
+    "category": "АККАУНТ — ПАРОЛЬ",
+    "method": "PATCH",
+    "path": "/account/password",
+    "description": "Обновление пароля"
+  },
+  {
+    "category": "АККАУНТ — АВАТАР",
+    "method": "PATCH",
+    "path": "/account/avatar",
+    "description": "Обновление аватара текущего аккаунта"
+  },
+  {
+    "category": "АККАУНТ — АВАТАР",
+    "method": "DELETE",
+    "path": "/account/avatar",
+    "description": "Удаление аватара текущего аккаунта"
+  },
+  {
+    "category": "ГЛАВНАЯ",
+    "method": "GET",
+    "path": "/home",
+    "description": "Получение данных для главной страницы"
+  },
+  {
+    "category": "ГЛАВНАЯ",
+    "method": "GET",
+    "path": "/home/collections",
+    "description": null
+  },
+  {
+    "category": "ГЛАВНАЯ",
+    "method": "GET",
+    "path": "/home/row",
+    "description": "Получение элемента главной страницы"
+  },
+  {
+    "category": "ГЛАВНАЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "GET",
+    "path": "/home/user/watch",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "GET",
+    "path": "/collection/{ID}/userAnimeReactions",
+    "description": "Получение реакций пользователя на аниме в коллекции"
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "GET",
+    "path": "/collection/userReactions",
+    "description": "Получение реакций пользователя на коллекции"
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/collection/{ID}/score",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/collection/{ID}/favorite",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/collection",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "DELETE",
+    "path": "/collection",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/collection/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/collection/{ID}/updateRequest",
+    "description": null
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ",
+    "method": "GET",
+    "path": "/collection/{ID}",
+    "description": "Получение информации о коллекции"
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ",
+    "method": "GET",
+    "path": "/collection/{slug}/meta",
+    "description": "Получение метаданных о коллекции"
+  },
+  {
+    "category": "КОЛЛЕКЦИЯ",
+    "method": "GET",
+    "path": "/collection/{ID}/animeList",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ",
+    "method": "GET",
+    "path": "/comments/{collectionType}/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ",
+    "method": "GET",
+    "path": "/comments/{collectionType}/{ID}/count",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ",
+    "method": "GET",
+    "path": "/comments/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/user/comments/{collectionType}/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/user/comments/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/user/comments/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "DELETE",
+    "path": "/user/comments/{ID}",
+    "description": null
+  },
+  {
+    "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/user/comments/{ID}/reaction",
+    "description": null
+  },
+  {
+    "category": "СЕССИИ",
+    "method": "GET",
+    "path": "/auth/session",
+    "description": "Получение сессий текущего аккаунта"
+  },
+  {
+    "category": "СЕССИИ",
+    "method": "DELETE",
+    "path": "/auth/session/delete",
+    "description": "Удаление сессии"
+  },
+  {
+    "category": "СЕССИИ",
+    "method": "PATCH",
+    "path": "/auth/session/refresh",
+    "description": "Обновление токена"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ",
+    "method": "POST",
+    "path": "/auth/login",
+    "description": "Авторизация по паролю"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ",
+    "method": "POST",
+    "path": "/auth/logout",
+    "description": "Выход из системы"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — YANDEX",
+    "method": "GET",
+    "path": "/auth/yandex",
+    "description": "Авторизация через Yandex"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — YANDEX",
+    "method": "GET",
+    "path": "/auth/yandex/callback",
+    "description": "Авторизация через Yandex"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — GOOGLE",
+    "method": "GET",
+    "path": "/auth/google",
+    "description": "Авторизация через Google"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — GOOGLE",
+    "method": "GET",
+    "path": "/auth/google/callback",
+    "description": "Авторизация через Google"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — VK",
+    "method": "GET",
+    "path": "/auth/vk",
+    "description": "Авторизация через VK"
+  },
+  {
+    "category": "АВТОРИЗАЦИЯ — VK",
+    "method": "GET",
+    "path": "/auth/vk/callback",
+    "description": "Авторизация через VK"
+  },
+  {
+    "category": "ВРЕМЕННЫЙ АККАУНТ",
+    "method": "POST",
+    "path": "/auth/temporary",
+    "description": "Создание нового временного аккаунта"
+  },
+  {
+    "category": "ВРЕМЕННЫЙ АККАУНТ",
+    "method": "POST",
+    "path": "/auth/temporary/login",
+    "description": "Авторизация по временному ключу"
+  },
+  {
+    "category": "ВРЕМЕННЫЙ АККАУНТ",
+    "method": "PATCH",
+    "path": "/auth/temporary/code",
+    "description": "Создание нового временного ключа"
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{slug}/meta",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/additional",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/editList",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/history",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/achievements",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/favoriteAnimes",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ",
+    "method": "GET",
+    "path": "/profile/{ID}/animeList",
+    "description": null
+  },
+  {
+    "category": "ПРОФИЛЬ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/profile/favoriteAnimes",
+    "description": null
+  },
+  {
+    "category": "КЛУБ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/club/{ID}/updateRequest",
+    "description": null
+  },
+  {
+    "category": "КЛУБ",
+    "method": "GET",
+    "path": "/club/{ID}",
+    "description": "Получение основной информации о клубе"
+  },
+  {
+    "category": "КЛУБ",
+    "method": "GET",
+    "path": "/club/{slug}/meta",
+    "description": null
+  },
+  {
+    "category": "КЛУБ",
+    "method": "GET",
+    "path": "/club/{ID}/animeList",
+    "description": null
+  },
+  {
+    "category": "КЛУБ",
+    "method": "GET",
+    "path": "/club/{ID}/persons",
+    "description": null
+  },
+  {
+    "category": "ПЕРСОНЫ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/person/{ID}/updateRequest",
+    "description": null
+  },
+  {
+    "category": "ПЕРСОНЫ",
+    "method": "GET",
+    "path": "/person/{ID}",
+    "description": null
+  },
+  {
+    "category": "ПЕРСОНЫ",
+    "method": "GET",
+    "path": "/person/{slug}/meta",
+    "description": null
+  },
+  {
+    "category": "ПЕРСОНЫ",
+    "method": "GET",
+    "path": "/person/{ID}/animeList",
+    "description": null
+  },
+  {
+    "category": "ПЕРСОНЫ",
+    "method": "GET",
+    "path": "/person/{ID}/clubs",
+    "description": null
+  },
+  {
+    "category": "ПРИЛОЖЕНИЕ — ANIBATTLE",
+    "method": "GET",
+    "path": "/aniBattle",
+    "description": "Получение списков аниме по статусам"
+  },
+  {
+    "category": "ПРИЛОЖЕНИЕ — ANIJUDGE",
+    "method": "GET",
+    "path": "/aniJudge",
+    "description": "Получение списка аниме для AniJudge"
+  },
+  {
+    "category": "ПРИЛОЖЕНИЕ — ANIPICK",
+    "method": "POST",
+    "path": "/aniPick/skipList",
+    "description": "Добавление аниме в список пропущенных"
+  },
+  {
+    "category": "ПРИЛОЖЕНИЕ — ANIPICK",
+    "method": "GET",
+    "path": "/aniPick",
+    "description": "Получение списка аниме для AniPick"
+  },
+  {
+    "category": "ПОИСК",
+    "method": "GET",
+    "path": "/search",
+    "description": null
+  },
+  {
+    "category": "АНИМЕ",
+    "method": "GET",
+    "path": "/anime/{ID}",
+    "description": "Получение основной информации об аниме"
+  },
+  {
+    "category": "АНИМЕ",
+    "method": "GET",
+    "path": "/anime/{ID}/additional",
+    "description": "Получение дополнительной информации об аниме"
+  },
+  {
+    "category": "АНИМЕ",
+    "method": "GET",
+    "path": "/anime/{ID}/mini",
+    "description": "Получение мини информации об аниме"
+  },
+  {
+    "category": "АНИМЕ",
+    "method": "GET",
+    "path": "/anime/{ID}/base",
+    "description": "Получение базовой информации об аниме"
+  },
+  {
+    "category": "АНИМЕ",
+    "method": "GET",
+    "path": "/anime/{slug}/meta",
+    "description": "Получение метаданных об аниме"
+  },
+  {
+    "category": "АНИМЕ — ПЛЕЕР",
+    "method": "GET",
+    "path": "/anime/{ID}/episodes",
+    "description": "Получение списка эпизодов аниме"
+  },
+  {
+    "category": "АНИМЕ — ПЛЕЕР",
+    "method": "GET",
+    "path": "/anime/episode/{ID}",
+    "description": "Получение плееров эпизода"
+  },
+  {
+    "category": "АНИМЕ — ПЛЕЕР ПОЛЬЗОВАТЕЛЯ",
+    "method": "PATCH",
+    "path": "/anime/episode/{ID}",
+    "description": "Изменение прогресса эпизода пользователя"
+  },
+  {
+    "category": "АНИМЕ — ПЛЕЕР ПОЛЬЗОВАТЕЛЯ",
+    "method": "GET",
+    "path": "/anime/{ID}/userEpisodes",
+    "description": "Получение прогресса эпизодов пользователя"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/anime/{ID}/updateRequest",
+    "description": null
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "GET",
+    "path": "/anime/userReactions",
+    "description": "Получение реакций пользователя на аниме"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "GET",
+    "path": "/anime/{ID}/friendsStatus",
+    "description": "Получение статусов и оценок друзей по аниме"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/anime/{ID}/favorite",
+    "description": "Добавление или удаление аниме из избранного"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/anime/{ID}/score",
+    "description": "Изменение оценки аниме пользователем"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "POST",
+    "path": "/anime/{ID}/userStatus",
+    "description": "Установка статуса аниме в списке пользователя"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "PATCH",
+    "path": "/anime/{ID}/userReaction",
+    "description": "Изменение реакции пользователя на аниме"
+  },
+  {
+    "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
+    "method": "DELETE",
+    "path": "/anime/{ID}/userReaction",
+    "description": "Удаление реакции пользователя на аниме"
+  },
+  {
+    "category": "ЗАБАНЕННЫЕ АНИМЕ",
+    "method": "POST",
+    "path": "/bannedAnime",
+    "description": "Добавление аниме в список забаненных"
+  },
+  {
+    "category": "ПАРСИНГ ДАННЫХ",
+    "method": "GET",
+    "path": "/animeParse/queue",
+    "description": "Получение задач парсинга"
+  },
+  {
+    "category": "ПАРСИНГ ДАННЫХ",
+    "method": "POST",
+    "path": "/animeParse/parseAnimesByYear",
+    "description": "Парсинг данных об аниме по годам"
+  },
+  {
+    "category": "ПАРСИНГ ДАННЫХ",
+    "method": "POST",
+    "path": "/animeParse/updateNewAnime",
+    "description": "Обновление новых аниме"
+  },
+  {
+    "category": "ГЛАВНАЯ ЛЕНТА",
+    "method": "POST",
+    "path": "/mainFeed",
+    "description": "Генерация ежедневной главной ленты"
+  },
+  {
+    "category": "ЖАЛОБЫ",
+    "method": "POST",
+    "path": "/report",
+    "description": null
+  },
+  {
+    "category": "ЖАЛОБЫ",
+    "method": "GET",
+    "path": "/report",
+    "description": null
+  },
+  {
+    "category": "ЖАЛОБЫ",
+    "method": "POST",
+    "path": "/report/target",
+    "description": null
+  },
+  {
+    "category": "ПРЕДЛОЖЕНИЯ",
+    "method": "POST",
+    "path": "/proposal/fact",
+    "description": null
+  },
+  {
+    "category": "ПРЕДЛОЖЕНИЯ",
+    "method": "POST",
+    "path": "/proposal/quest",
+    "description": null
+  },
+  {
+    "category": "ПРЕДЛОЖЕНИЯ",
+    "method": "POST",
+    "path": "/proposal/achievement",
+    "description": null
+  },
+  {
+    "category": "ПРЕДЛОЖЕНИЯ",
+    "method": "POST",
+    "path": "/proposal",
+    "description": null
+  }
+]
