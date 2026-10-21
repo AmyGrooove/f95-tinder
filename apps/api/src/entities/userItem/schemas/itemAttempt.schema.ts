@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { Types } from "mongoose"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
@@ -12,6 +13,13 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
   timestamps: false,
 })
 class ItemAttempt {
+  @Prop({
+    type: Types.ObjectId,
+    required: true,
+    default: () => new Types.ObjectId(),
+  })
+  id: Types.ObjectId
+
   @Prop({
     type: Number,
     default: null,
@@ -52,7 +60,7 @@ const ItemAttemptSchema = SchemaFactory.createForClass(ItemAttempt)
 
 type TCreateItemAttempt = TCreateEntity<
   ItemAttempt,
-  "progress" | "unit" | "startedAt" | "completedAt"
+  "id" | "progress" | "unit" | "startedAt" | "completedAt"
 >
 
 export { ItemAttempt, ItemAttemptSchema }

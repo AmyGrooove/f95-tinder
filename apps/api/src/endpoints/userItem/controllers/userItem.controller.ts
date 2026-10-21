@@ -1,0 +1,283 @@
+import {
+  Body,
+  Controller,
+  Cookies,
+  Delete,
+  Header,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+} from "@nestjs/common"
+import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
+import { Types } from "mongoose"
+
+import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+
+import { CreateUserItemBodyDto } from "../dto/body/createUserItem.body"
+import { UpdateUserItemBodyDto } from "../dto/body/updateUserItem.body"
+import { StatusBodyDto } from "../dto/body/status.body"
+import { FavoriteBodyDto } from "../dto/body/favorite.body"
+import { RatingBodyDto } from "../dto/body/rating.body"
+import { NoteBodyDto } from "../dto/body/note.body"
+import { CreateAttemptBodyDto } from "../dto/body/createAttempt.body"
+import { UpdateAttemptBodyDto } from "../dto/body/updateAttempt.body"
+import { UserItemResponseDto } from "../dto/response/userItem.response"
+import { MongoObjectIdPipe } from "@infrastructure/database/pipes/mongoObjectId.pipe"
+import { UserItemService } from "../services/userItem.service"
+import { USER_ITEM_ERRORS } from "../static/USER_ITEM_ERRORS"
+
+@ApiTags(SWAGGER_DICTIONARY.tags.userItems)
+@ApiCookieAuth("accessCookie")
+@Controller("userItems")
+class UserItemController {
+  constructor(private readonly userItemService: UserItemService) {}
+
+  @Post()
+  @HttpCode(201)
+  @ApiEndpoint({
+    operationId: "UserItemController_create",
+    summary: SWAGGER_DICTIONARY.userItem.create,
+    description: SWAGGER_DICTIONARY.userItem.description,
+    response: {
+      status: 201,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  create(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Body() body: CreateUserItemBodyDto,
+  ) {
+    return this.userItemService.create(accessToken, body)
+  }
+
+  @Patch(":id")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_update",
+    summary: SWAGGER_DICTIONARY.userItem.update,
+    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  update(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: UpdateUserItemBodyDto,
+  ) {
+    return this.userItemService.update(accessToken, { id, body })
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_remove",
+    summary: SWAGGER_DICTIONARY.userItem.remove,
+    description: SWAGGER_DICTIONARY.userItem.description,
+    response: {
+      status: 204,
+      description: SWAGGER_DICTIONARY.userItem.removed,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  remove(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+  ) {
+    return this.userItemService.remove(accessToken, id)
+  }
+
+  @Patch(":id/status")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_updateStatus",
+    summary: SWAGGER_DICTIONARY.userItem.updateStatus,
+    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  updateStatus(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: StatusBodyDto,
+  ) {
+    return this.userItemService.update(accessToken, { id, body })
+  }
+
+  @Patch(":id/favorite")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_updateFavorite",
+    summary: SWAGGER_DICTIONARY.userItem.updateFavorite,
+    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  updateFavorite(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: FavoriteBodyDto,
+  ) {
+    return this.userItemService.update(accessToken, { id, body })
+  }
+
+  @Patch(":id/rating")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_updateRating",
+    summary: SWAGGER_DICTIONARY.userItem.updateRating,
+    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  updateRating(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: RatingBodyDto,
+  ) {
+    return this.userItemService.update(accessToken, { id, body })
+  }
+
+  @Patch(":id/note")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_updateNote",
+    summary: SWAGGER_DICTIONARY.userItem.updateNote,
+    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  updateNote(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: NoteBodyDto,
+  ) {
+    return this.userItemService.update(accessToken, { id, body })
+  }
+
+  @Post(":id/attempts")
+  @HttpCode(201)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_createAttempt",
+    summary: SWAGGER_DICTIONARY.userItem.createAttempt,
+    description: SWAGGER_DICTIONARY.userItem.attemptDescription,
+    response: {
+      status: 201,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  createAttempt(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Body() body: CreateAttemptBodyDto,
+  ) {
+    return this.userItemService.createAttempt(accessToken, { id, body })
+  }
+
+  @Patch(":id/attempts/:attemptId")
+  @HttpCode(200)
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiParam({
+    name: "attemptId",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "UserItemController_updateAttempt",
+    summary: SWAGGER_DICTIONARY.userItem.updateAttempt,
+    description: SWAGGER_DICTIONARY.userItem.attemptDescription,
+    response: {
+      status: 200,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  updateAttempt(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdPipe) id: Types.ObjectId,
+    @Param("attemptId", MongoObjectIdPipe) attemptId: Types.ObjectId,
+    @Body() body: UpdateAttemptBodyDto,
+  ) {
+    return this.userItemService.updateAttempt(accessToken, {
+      id,
+      attemptId,
+      body,
+    })
+  }
+}
+
+export { UserItemController }

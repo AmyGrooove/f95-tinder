@@ -1,7 +1,7 @@
 enum EUserItemStatus {
   PLANNED = "planned",
-  IN_PROGRESS = "in_progress",
-  ON_HOLD = "on_hold",
+  IN_PROGRESS = "inProgress",
+  ON_HOLD = "onHold",
   COMPLETED = "completed",
   DROPPED = "dropped",
 }

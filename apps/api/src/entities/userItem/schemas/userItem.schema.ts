@@ -19,8 +19,8 @@ class UserItem extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
   item: Types.ObjectId
 
-  @Prop({ type: String, enum: Object.values(EUserItemStatus), default: null })
-  status: EUserItemStatus | null
+  @Prop({ type: String, enum: Object.values(EUserItemStatus), required: true })
+  status: EUserItemStatus
 
   @Prop({
     type: Number,
@@ -51,7 +51,7 @@ class UserItem extends MongoEntity {
 
 type TCreateUserItem = TCreateEntity<
   UserItem,
-  "status" | "rating" | "isFavorite" | "note",
+  "rating" | "isFavorite" | "note",
   {
     attempts?: TCreateItemAttempt[]
   }

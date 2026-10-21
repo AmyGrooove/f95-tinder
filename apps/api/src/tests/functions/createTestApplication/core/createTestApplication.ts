@@ -14,6 +14,7 @@ import { createClient } from "redis"
 
 import { AccountModule } from "@endpoints/account/account.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
+import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { createDatabaseOptions } from "@infrastructure/database/functions/createDatabaseOptions"
@@ -97,7 +98,13 @@ const createTestApplication = async () => {
     const accountRedis = await connectRedis()
 
     const moduleRef = await Test.createTestingModule({
-      imports: [AuthModule, AccountModule, LoggerModule, ThrottlingModule],
+      imports: [
+        AuthModule,
+        AccountModule,
+        UserItemEndpointModule,
+        LoggerModule,
+        ThrottlingModule,
+      ],
       providers: [{ provide: APP_FILTER, useClass: AppExceptionFilter }],
     })
       .overrideModule(MailModule)

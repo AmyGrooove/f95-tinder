@@ -109,6 +109,7 @@ const DICTIONARY = {
   },
 
   database: {
+    invalidObjectId: "Некорректный идентификатор",
     unavailable: "Соединение с MongoDB недоступно",
   },
 
