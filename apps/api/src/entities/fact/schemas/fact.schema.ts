@@ -4,17 +4,14 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
-import { isString } from "@shared/functions/checks/isString"
+import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 
 @Schema({ collection: "Fact" })
 class Fact extends MongoEntity {
   @Prop({
     type: LanguageTextSchema,
     required: true,
-    validate: (value: LanguageText | null | undefined) =>
-      [value?.ru, value?.en].some(
-        (translation) => isString(translation) && translation.trim().length > 0,
-      ),
+    validate: checkIsLanguageTextFilled,
   })
   text: LanguageText
 

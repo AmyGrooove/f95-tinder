@@ -5,6 +5,9 @@ import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
 
 import { ItemModule } from "@entities/item/item.module"
+import { CollectionModule } from "@entities/collection/collection.module"
+import { CollectionItemModule } from "@entities/collectionItem/collectionItem.module"
+import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
 import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"
 import { RelationModule } from "@entities/relation/relation.module"
 import { ItemRelationRoleModule } from "@entities/itemRelationRole/itemRelationRole.module"
@@ -48,6 +51,9 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     AuthModule,
     AccountModule,
     ItemModule,
+    CollectionModule,
+    CollectionItemModule,
+    UserCollectionModule,
     BannedItemModule,
     RelationModule,
     ItemRelationRoleModule,

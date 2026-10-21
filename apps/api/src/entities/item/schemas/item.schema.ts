@@ -5,6 +5,7 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { EItemType } from "./EItemType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
+import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
 import { isArray } from "@shared/functions/checks/isArray"
@@ -18,10 +19,7 @@ class Item extends MongoEntity {
   @Prop({
     type: LanguageTextSchema,
     required: true,
-    validate: (value: LanguageText | null | undefined) =>
-      [value?.ru, value?.en].some(
-        (translation) => isString(translation) && translation.trim().length > 0,
-      ),
+    validate: checkIsLanguageTextFilled,
   })
   title: LanguageText
 
