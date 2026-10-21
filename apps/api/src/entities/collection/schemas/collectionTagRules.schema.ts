@@ -1,10 +1,9 @@
+import { checkIsUniqueObjectIdArray } from "@entities/shared/functions/checks/checkIsUniqueObjectIdArray"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isNil } from "@shared/functions/checks/isNil"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class CollectionTagRules {
@@ -12,10 +11,7 @@ class CollectionTagRules {
     type: [{ type: MongooseSchema.Types.ObjectId, ref: "Tag" }],
     required: true,
     default: [],
-    validate: (value: Types.ObjectId[]) =>
-      isArray(value) &&
-      value.every((entry) => !isNil(entry)) &&
-      new Set(value.map(String)).size === value.length,
+    validate: checkIsUniqueObjectIdArray,
   })
   all: Types.ObjectId[]
 
@@ -23,10 +19,7 @@ class CollectionTagRules {
     type: [{ type: MongooseSchema.Types.ObjectId, ref: "Tag" }],
     required: true,
     default: [],
-    validate: (value: Types.ObjectId[]) =>
-      isArray(value) &&
-      value.every((entry) => !isNil(entry)) &&
-      new Set(value.map(String)).size === value.length,
+    validate: checkIsUniqueObjectIdArray,
   })
   any: Types.ObjectId[]
 
@@ -34,10 +27,7 @@ class CollectionTagRules {
     type: [{ type: MongooseSchema.Types.ObjectId, ref: "Tag" }],
     required: true,
     default: [],
-    validate: (value: Types.ObjectId[]) =>
-      isArray(value) &&
-      value.every((entry) => !isNil(entry)) &&
-      new Set(value.map(String)).size === value.length,
+    validate: checkIsUniqueObjectIdArray,
   })
   exclude: Types.ObjectId[]
 }

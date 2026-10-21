@@ -1,10 +1,7 @@
+import { checkIsFeatureValue } from "@entities/shared/functions/checks/checkIsFeatureValue"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isBoolean } from "@shared/functions/checks/isBoolean"
-import { isDate } from "@shared/functions/checks/isDate"
-import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { isString } from "@shared/functions/checks/isString"
 import type { Types } from "mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 
@@ -19,11 +16,7 @@ class ItemFeature extends MongoEntity {
   @Prop({
     type: MongooseSchema.Types.Mixed,
     required: true,
-    validate: (value: unknown) =>
-      isFiniteNumber(value) ||
-      isString(value) ||
-      isBoolean(value) ||
-      isDate(value),
+    validate: checkIsFeatureValue,
   })
   value: number | string | boolean | Date
 }

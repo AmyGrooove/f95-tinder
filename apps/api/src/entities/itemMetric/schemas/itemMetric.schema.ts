@@ -1,3 +1,4 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateUserItemStatusCounts } from "./userItemStatusCounts.schema"
@@ -5,8 +6,6 @@ import type { TCreateRatingDistribution } from "./ratingDistribution.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import type { RatingDistribution } from "./ratingDistribution.schema"
 import { RatingDistributionSchema } from "./ratingDistribution.schema"
@@ -23,7 +22,7 @@ class ItemMetric extends MongoEntity {
     type: Number,
     required: true,
     min: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
     default: 0,
   })
   completedAttemptsCount: number
@@ -32,7 +31,7 @@ class ItemMetric extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   recommendationsCount: number
 
@@ -40,7 +39,7 @@ class ItemMetric extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   ratingsCount: number
 
@@ -66,7 +65,7 @@ class ItemMetric extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   favoritesCount: number
 }

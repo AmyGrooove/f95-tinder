@@ -1,8 +1,7 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
@@ -18,7 +17,7 @@ class UserRecommendationState extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   shownCount: number
 
@@ -26,7 +25,7 @@ class UserRecommendationState extends MongoEntity {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   skippedCount: number
 

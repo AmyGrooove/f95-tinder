@@ -1,11 +1,10 @@
+import { checkIsNullableRating } from "@entities/shared/functions/checks/checkIsNullableRating"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNil } from "@shared/functions/checks/isNil"
 
 @Schema({ collection: "UserCollection" })
 class UserCollection extends MongoEntity {
@@ -25,8 +24,7 @@ class UserCollection extends MongoEntity {
   @Prop({
     type: Number,
     default: null,
-    validate: (value: unknown) =>
-      isNil(value) || (isInt(value) && value >= 1 && value <= 10),
+    validate: checkIsNullableRating,
   })
   rating: number | null
 

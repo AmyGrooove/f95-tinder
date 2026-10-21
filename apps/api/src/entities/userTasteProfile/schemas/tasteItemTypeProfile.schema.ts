@@ -1,8 +1,7 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
@@ -41,7 +40,7 @@ class TasteItemTypeProfile {
     type: Number,
     required: true,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   interactionsCount: number
 }

@@ -1,11 +1,10 @@
+import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
+import { checkIsNullableRating } from "@entities/shared/functions/checks/checkIsNullableRating"
+import { checkIsArrayWithoutNil } from "@entities/shared/functions/checks/checkIsArrayWithoutNil"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateItemAttempt } from "./itemAttempt.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isNil } from "@shared/functions/checks/isNil"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isString } from "@shared/functions/checks/isString"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import { EUserItemStatus } from "./EUserItemStatus"
@@ -26,8 +25,7 @@ class UserItem extends MongoEntity {
   @Prop({
     type: Number,
     default: null,
-    validate: (value: unknown) =>
-      isNil(value) || (isInt(value) && value >= 1 && value <= 10),
+    validate: checkIsNullableRating,
   })
   rating: number | null
 
@@ -38,8 +36,7 @@ class UserItem extends MongoEntity {
     required: true,
     type: [ItemAttemptSchema],
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) && value.every((entry) => !isNil(entry)),
+    validate: checkIsArrayWithoutNil,
   })
   attempts: ItemAttempt[]
 
@@ -47,8 +44,7 @@ class UserItem extends MongoEntity {
     type: String,
     default: null,
     trim: true,
-    set: (value: unknown) =>
-      isString(value) && value.trim() === "" ? null : value,
+    set: normalizeEmptyStringToNull,
   })
   note: string | null
 }

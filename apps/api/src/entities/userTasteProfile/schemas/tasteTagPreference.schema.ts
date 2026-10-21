@@ -1,9 +1,8 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class TasteTagPreference {
@@ -17,7 +16,7 @@ class TasteTagPreference {
     type: Number,
     required: true,
     min: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   samples: number
 }

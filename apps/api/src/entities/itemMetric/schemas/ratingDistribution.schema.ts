@@ -1,6 +1,5 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 
 @Schema({
   _id: false,
@@ -12,7 +11,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   one: number
 
@@ -20,7 +19,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   two: number
 
@@ -28,7 +27,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   three: number
 
@@ -36,7 +35,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   four: number
 
@@ -44,7 +43,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   five: number
 
@@ -52,7 +51,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   six: number
 
@@ -60,7 +59,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   seven: number
 
@@ -68,7 +67,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   eight: number
 
@@ -76,7 +75,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   nine: number
 
@@ -84,7 +83,7 @@ class RatingDistribution {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   ten: number
 }

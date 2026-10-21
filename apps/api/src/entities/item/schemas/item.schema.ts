@@ -1,3 +1,4 @@
+import { checkIsNonEmptyStringArray } from "@entities/shared/functions/checks/checkIsNonEmptyStringArray"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
@@ -8,8 +9,6 @@ import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isString } from "@shared/functions/checks/isString"
 
 @Schema({ collection: "Item" })
 class Item extends MongoEntity {
@@ -27,9 +26,7 @@ class Item extends MongoEntity {
     type: [String],
     required: true,
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) &&
-      value.every((entry) => isString(entry) && entry.trim().length > 0),
+    validate: checkIsNonEmptyStringArray,
   })
   aliases: string[]
 

@@ -1,9 +1,9 @@
+import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
-import { isString } from "@shared/functions/checks/isString"
 import { EUserRole } from "./EUserRole"
 import type { LinkedAccount } from "./linkedAccount.schema"
 import { LinkedAccountSchema } from "./linkedAccount.schema"
@@ -16,8 +16,7 @@ class User extends MongoEntity {
     default: null,
     trim: true,
     lowercase: true,
-    set: (value: unknown) =>
-      isString(value) && value.trim() === "" ? null : value,
+    set: normalizeEmptyStringToNull,
   })
   email: string | null
 

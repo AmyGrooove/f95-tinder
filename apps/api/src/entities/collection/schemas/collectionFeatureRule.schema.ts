@@ -1,11 +1,10 @@
+import { checkIsFeatureValue } from "@entities/shared/functions/checks/checkIsFeatureValue"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
-import { isBoolean } from "@shared/functions/checks/isBoolean"
 import { isDate } from "@shared/functions/checks/isDate"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { isString } from "@shared/functions/checks/isString"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ECollectionFeatureOperator } from "./ECollectionFeatureOperator"
 
@@ -24,11 +23,7 @@ class CollectionFeatureRule {
   @Prop({
     type: MongooseSchema.Types.Mixed,
     required: true,
-    validate: (value: unknown) =>
-      isFiniteNumber(value) ||
-      isString(value) ||
-      isBoolean(value) ||
-      isDate(value),
+    validate: checkIsFeatureValue,
   })
   value: number | string | boolean | Date
 }

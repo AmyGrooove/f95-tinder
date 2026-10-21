@@ -1,12 +1,11 @@
+import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
-import { isString } from "@shared/functions/checks/isString"
 
 @Schema({ collection: "CollectionItem" })
 class CollectionItem extends MongoEntity {
@@ -23,7 +22,7 @@ class CollectionItem extends MongoEntity {
   @Prop({
     type: Number,
     required: true,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   position: number
 
@@ -31,8 +30,7 @@ class CollectionItem extends MongoEntity {
     type: String,
     default: null,
     trim: true,
-    set: (value: unknown) =>
-      isString(value) && value.trim() === "" ? null : value,
+    set: normalizeEmptyStringToNull,
   })
   note: string | null
 

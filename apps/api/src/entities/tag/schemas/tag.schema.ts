@@ -1,9 +1,8 @@
+import { checkIsNonEmptyStringArray } from "@entities/shared/functions/checks/checkIsNonEmptyStringArray"
 import { ETagGroup } from "./ETagGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isString } from "@shared/functions/checks/isString"
 import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
@@ -28,9 +27,7 @@ class Tag extends MongoEntity {
     required: true,
     type: [String],
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) &&
-      value.every((entry) => isString(entry) && entry.trim().length > 0),
+    validate: checkIsNonEmptyStringArray,
   })
   aliases: string[]
 

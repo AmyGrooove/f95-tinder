@@ -1,3 +1,4 @@
+import { checkIsArrayWithoutNil } from "@entities/shared/functions/checks/checkIsArrayWithoutNil"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
@@ -39,8 +40,7 @@ class CollectionRules {
     type: [CollectionFeatureRuleSchema],
     required: true,
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) && value.every((entry) => !isNil(entry)),
+    validate: checkIsArrayWithoutNil,
   })
   features: CollectionFeatureRule[]
 

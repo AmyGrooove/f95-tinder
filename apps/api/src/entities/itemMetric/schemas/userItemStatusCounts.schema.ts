@@ -1,6 +1,5 @@
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isInt } from "@shared/functions/checks/isInt"
-import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 
 @Schema({
   _id: false,
@@ -12,7 +11,7 @@ class UserItemStatusCounts {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   planned: number
 
@@ -20,7 +19,7 @@ class UserItemStatusCounts {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   inProgress: number
 
@@ -28,7 +27,7 @@ class UserItemStatusCounts {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   onHold: number
 
@@ -36,7 +35,7 @@ class UserItemStatusCounts {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   completed: number
 
@@ -44,7 +43,7 @@ class UserItemStatusCounts {
     required: true,
     type: Number,
     default: 0,
-    validate: (value: unknown) => isInt(value) && isNonNegativeSafe(value),
+    validate: checkIsNonNegativeSafeInteger,
   })
   dropped: number
 }

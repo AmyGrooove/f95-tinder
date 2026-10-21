@@ -1,9 +1,8 @@
+import { checkIsArrayWithoutNil } from "@entities/shared/functions/checks/checkIsArrayWithoutNil"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateTasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { isArray } from "@shared/functions/checks/isArray"
-import { isNil } from "@shared/functions/checks/isNil"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 import type { TasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
@@ -18,8 +17,7 @@ class UserTasteProfile extends MongoEntity {
     required: true,
     type: [TasteItemTypeProfileSchema],
     default: [],
-    validate: (value: unknown) =>
-      isArray(value) && value.every((entry) => !isNil(entry)),
+    validate: checkIsArrayWithoutNil,
   })
   profiles: TasteItemTypeProfile[]
 }
