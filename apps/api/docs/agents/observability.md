@@ -2,7 +2,7 @@
 
 Read for logs, request correlation, exception responses or shared execution context. Dependency health is documented in [runtime](runtime.md).
 
-[requestContext](../../src/shared/functions/context/requestContext/core/requestContext.ts) wraps AsyncLocalStorage with `run`, `get`, `getAll` and `set`. [Bootstrap](../../src/main.ts) creates an HTTP context containing Fastify request ID, method and URL path without query parameters. `set` changes only an existing context; it does not create one for background execution.
+[requestContext](../../src/shared/functions/context/requestContext/core/requestContext.ts) wraps AsyncLocalStorage with `run`, `get`, `getAll` and `set`. [configureApplication](../../src/app/functions/configureApplication/core/configureApplication.ts) creates an HTTP context containing Fastify request ID, method and URL path without query parameters. `set` changes only an existing context; it does not create one for background execution.
 
 [LoggerService](../../src/infrastructure/logger/services/logger.service.ts) exposes `info`, `warn` and `error`. It emits one JSON record per line to stdout for info/warn and stderr for errors. Records include timestamp, app name, environment, context, request metadata, optional job ID/data and normalized error. The active request ID takes priority over explicitly supplied request ID.
 
