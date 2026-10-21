@@ -57,7 +57,7 @@ Successful aggregate health responses contain `status`, `error` and `details`; t
 
 ## Persistence startup boundary
 
-AppModule imports 19 entity modules. DatabaseModule uses `autoIndex: true`, so application startup can apply schema index declarations. Source declarations do not establish deployed indexes or migrate existing data. Session declares a cleanup TTL ten minutes after expiresAt; authorization checks expiry explicitly. No TTL or cleanup job is declared for UserRecommendationState.
+AppModule imports 20 entity modules. DatabaseModule uses `autoIndex: true`, so application startup can apply schema index declarations. Source declarations do not establish deployed indexes or migrate existing data. Session declares a cleanup TTL ten minutes after expiresAt; authorization checks expiry explicitly. No TTL or cleanup job is declared for UserRecommendationState.
 
 ## Tooling
 

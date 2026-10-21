@@ -12,6 +12,7 @@ import { TagModule } from "@entities/tag/tag.module"
 import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 import { TagRelationModule } from "@entities/tagRelation/tagRelation.module"
 import { FeatureModule } from "@entities/feature/feature.module"
+import { FactModule } from "@entities/fact/fact.module"
 import { ItemFeatureModule } from "@entities/itemFeature/itemFeature.module"
 import { SourceModule } from "@entities/source/source.module"
 import { SourceItemModule } from "@entities/sourceItem/sourceItem.module"
@@ -54,6 +55,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     ItemTagModule,
     TagRelationModule,
     FeatureModule,
+    FactModule,
     ItemFeatureModule,
     SourceModule,
     SourceItemModule,
