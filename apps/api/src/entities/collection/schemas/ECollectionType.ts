@@ -1,7 +1,8 @@
 enum ECollectionType {
   CUSTOM = "custom",
   FRANCHISE = "franchise",
-  AUTO = "auto",
+  TAG = "tag",
+  FEATURE = "feature",
 }
 
 export { ECollectionType }
