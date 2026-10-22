@@ -1,5 +1,14 @@
-import { Controller, Get, Header, HttpCode, Param } from "@nestjs/common"
-import { ApiParam, ApiTags } from "@nestjs/swagger"
+import {
+  Body,
+  Controller,
+  Cookies,
+  Get,
+  Header,
+  HttpCode,
+  Param,
+  Post,
+} from "@nestjs/common"
+import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
@@ -8,11 +17,40 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { CollectionResponseDto } from "../dto/response/collection.response"
 import { CollectionService } from "../services/collection.service"
+import { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.collections)
 @Controller("collections")
 class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
+
+  @Post()
+  @HttpCode(201)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiEndpoint({
+    operationId: "CollectionController_create",
+    summary: SWAGGER_DICTIONARY.collection.create,
+    description: SWAGGER_DICTIONARY.collection.createDescription,
+    response: {
+      status: 201,
+      type: CollectionResponseDto,
+      description: SWAGGER_DICTIONARY.collection.response,
+    },
+    errors: [
+      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      { status: 404, description: SWAGGER_DICTIONARY.collection.itemNotFound },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
+    ],
+  })
+  create(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Body() body: CreateCollectionBodyDto,
+  ) {
+    return this.collectionService.create(accessToken, body)
+  }
 
   @Get(":id")
   @HttpCode(200)

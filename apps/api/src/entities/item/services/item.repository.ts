@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, QueryOptions, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -41,6 +41,17 @@ class ItemRepository {
     >(model)
     this.aggregation = new MongoAggregationRepository<HydratedDocument<Item>>(
       model,
+    )
+  }
+
+  findNotDeletedByIds(
+    ids: Types.ObjectId[],
+    options?: Pick<QueryOptions<Item>, "session">,
+  ) {
+    return this.read.findMany(
+      { _id: { $in: ids }, deletedAt: null },
+      { _id: 1 },
+      options,
     )
   }
 }

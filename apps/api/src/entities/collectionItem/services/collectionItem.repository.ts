@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, InsertManyOptions, Model } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -10,6 +10,7 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 
 import { CollectionItem } from "../schemas/collectionItem.schema"
 import type { TCreateCollectionItem } from "../schemas/collectionItem.schema"
+import type { ICreateCollectionItemsProps } from "../types/ICreateCollectionItemsProps"
 
 @Injectable()
 class CollectionItemRepository {
@@ -60,6 +61,16 @@ class CollectionItemRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<CollectionItem>
     >(model)
+  }
+
+  createForCollection(
+    props: ICreateCollectionItemsProps,
+    options?: Pick<InsertManyOptions, "session">,
+  ) {
+    return this.bulk.createMany(
+      props.items.map((item) => ({ ...item, collection: props.collectionId })),
+      options ?? {},
+    )
   }
 }
 
