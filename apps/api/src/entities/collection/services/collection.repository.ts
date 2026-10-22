@@ -56,6 +56,10 @@ class CollectionRepository {
     >(model)
   }
 
+  checkIsNotDeleted(id: Types.ObjectId) {
+    return this.read.checkIsExists({ _id: id, deletedAt: null })
+  }
+
   findNotDeletedById(id: Types.ObjectId) {
     return this.read.findOne(
       { _id: id, deletedAt: null },

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -60,6 +60,16 @@ class UserCollectionRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<UserCollection>
     >(model)
+  }
+
+  findByUserAndCollection(
+    userId: Types.ObjectId,
+    collectionId: Types.ObjectId,
+  ) {
+    return this.read.findOne(
+      { user: userId, collection: collectionId },
+      { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 },
+    )
   }
 }
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@jest/globals"
+import { describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
@@ -9,11 +9,37 @@ import type { User } from "@entities/user/schemas/user.schema"
 import type { Session } from "@entities/session/schemas/session.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
+import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
 
 describe("UserItemController HTTP", () => {
+  const synchronizeMutationReads = (count: number) => {
+    const repository = getTestApplication().app.get(UserItemRepository).read
+    const findOne = repository.findOne.bind(repository)
+    let reads = 0
+    let release = () => {}
+    const ready = new Promise<void>((resolve) => {
+      release = resolve
+    })
+
+    jest.spyOn(repository, "findOne").mockImplementation(async (...args) => {
+      const record = await findOne(...args)
+      reads += 1
+
+      if (reads <= count) {
+        if (reads === count) {
+          release()
+        }
+
+        await ready
+      }
+
+      return record
+    })
+  }
+
   const createItem = async () => {
     return getTestApplication()
       .app.get(ItemRepository)
@@ -220,13 +246,19 @@ describe("UserItemController HTTP", () => {
   it("частичный PATCH сохраняет пропущенные поля и историю", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
-    await app.inject({
+    const prepared = await app.inject({
       method: "PATCH",
       url: `/userItems/${entry.id}`,
       headers,
       payload: { rating: 8, isFavorite: true, note: "Заметка" },
     })
+    expect(prepared.statusCode).toBe(200)
     const before = await readEntry(entry.id)
+    expect(before).toMatchObject({
+      rating: 8,
+      isFavorite: true,
+      note: "Заметка",
+    })
     const response = await app.inject({
       method: "PATCH",
       url: `/userItems/${entry.id}`,
@@ -258,11 +290,17 @@ describe("UserItemController HTTP", () => {
     async ({ path, payload, expected }) => {
       const { app } = getTestApplication()
       const { entry, headers } = await createEntry()
-      await app.inject({
+      const prepared = await app.inject({
         method: "PATCH",
         url: `/userItems/${entry.id}`,
         headers,
         payload: { rating: 8, isFavorite: true, note: "Заметка" },
+      })
+      expect(prepared.statusCode).toBe(200)
+      expect(await readEntry(entry.id)).toMatchObject({
+        rating: 8,
+        isFavorite: true,
+        note: "Заметка",
       })
       const response = await app.inject({
         method: "PATCH",
@@ -295,6 +333,7 @@ describe("UserItemController HTTP", () => {
         payload: { isFavorite },
       })
       expect(response.statusCode).toBe(200)
+      expect(await readEntry(entry.id)).toMatchObject({ isFavorite: true })
     }
 
     expect(await readEntry(entry.id)).toMatchObject({ isFavorite: true })
@@ -316,6 +355,18 @@ describe("UserItemController HTTP", () => {
       startedAt: expect.any(String),
       completedAt: null,
     })
+    let previous = await readEntry(entry.id)
+    expect(previous).toMatchObject({
+      status: "inProgress",
+      attempts: [
+        {
+          id: new Types.ObjectId(firstAttempt?.id),
+          status: "inProgress",
+          startedAt: new Date(firstAttempt?.startedAt ?? ""),
+          completedAt: null,
+        },
+      ],
+    })
 
     for (const status of [
       "inProgress",
@@ -331,6 +382,34 @@ describe("UserItemController HTTP", () => {
         payload: { status },
       })
       expect(response.statusCode).toBe(200)
+      const record = await readEntry(entry.id)
+      const completedAt = status === "completed" ? expect.any(Date) : null
+      expect(record).toMatchObject({
+        status,
+        attempts: [
+          {
+            id: new Types.ObjectId(firstAttempt?.id),
+            status,
+            startedAt: previous.attempts[0]?.startedAt,
+            completedAt,
+          },
+        ],
+      })
+      expect(response.json<UserItemResponseDto>()).toMatchObject({
+        status,
+        attempts: [
+          {
+            id: firstAttempt?.id,
+            status,
+            startedAt: firstAttempt?.startedAt,
+            completedAt: record.attempts[0]?.completedAt?.toISOString() ?? null,
+          },
+        ],
+      })
+      if (previous.status === status) {
+        expect(record.attempts).toEqual(previous.attempts)
+      }
+      previous = record
     }
 
     const record = await readEntry(entry.id)
@@ -635,6 +714,7 @@ describe("UserItemController HTTP", () => {
   it("параллельные добавления текущих попыток сохраняют только одну", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry()
+    synchronizeMutationReads(2)
     const responses = await Promise.all(
       ["inProgress", "onHold"].map((status) =>
         app.inject({
@@ -657,6 +737,7 @@ describe("UserItemController HTTP", () => {
   it("параллельные исторические попытки и изменения полей не теряются", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry()
+    synchronizeMutationReads(4)
     const responses = await Promise.all([
       app.inject({
         method: "POST",

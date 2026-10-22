@@ -1,6 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
+import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
@@ -25,7 +26,9 @@ describe("AccountEmailController HTTP", () => {
     expect(mail.messages).toHaveLength(1)
     expect(mail.messages[0]).toMatchObject({ to: "new@example.com" })
     expect(await redis.ttl(key)).toBeGreaterThan(0)
+    expect(await redis.ttl(key)).toBeLessThanOrEqual(4 * 60 * 60)
     expect(await redis.ttl(`${key}:cooldown`)).toBeGreaterThan(0)
+    expect(await redis.ttl(`${key}:cooldown`)).toBeLessThanOrEqual(60)
     expect(
       await connection.collection<User>("User").findOne({ _id: user._id }),
     ).toMatchObject({ email: user.email })
@@ -108,6 +111,103 @@ describe("AccountEmailController HTTP", () => {
       await connection.collection<User>("User").findOne({ _id: user._id }),
     ).toMatchObject({ email: user.email })
   })
+
+  it.each(["email-taken", "password-changed", "email-changed"])(
+    "отклоняет подтверждение смены email после изменения данных: %s",
+    async (scenario) => {
+      const { app, connection, redis } = getTestApplication()
+      const { user, headers, password } = await createAccount("password")
+      const users = connection.collection<User>("User")
+      const requested = await app.inject({
+        method: "POST",
+        url: "/account/email",
+        headers,
+        payload: { email: "new@example.com", currentPassword: password },
+      })
+      expect(requested.statusCode).toBe(204)
+      const code = readConfirmationCode()
+
+      if (scenario === "email-taken") {
+        const other = await createAccount("password")
+        await users.updateOne(
+          { _id: other.user._id },
+          { $set: { email: "new@example.com" } },
+        )
+      } else {
+        await users.updateOne(
+          { _id: user._id },
+          {
+            $set:
+              scenario === "password-changed"
+                ? { passwordHash: await hashValue("Changed-password-123") }
+                : { email: "changed@example.com" },
+          },
+        )
+      }
+
+      const before = await users.find({}).toArray()
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/account/email",
+        headers,
+        payload: { code },
+      })
+
+      expect(response.statusCode).toBe(scenario === "email-taken" ? 409 : 400)
+      expect(response.cookies).toEqual([])
+      expect(await users.find({}).toArray()).toEqual(before)
+      expect(
+        await redis.exists(
+          `bisky-test:account:email:{${user._id.toHexString()}}`,
+        ),
+      ).toBe(0)
+    },
+  )
+
+  it.each(["expired", "exhausted"])(
+    "не меняет email по недействующей заявке: %s",
+    async (scenario) => {
+      const { app, connection, redis } = getTestApplication()
+      const { user, headers, password } = await createAccount("password")
+      const key = `bisky-test:account:email:{${user._id.toHexString()}}`
+      const requested = await app.inject({
+        method: "POST",
+        url: "/account/email",
+        headers,
+        payload: { email: "new@example.com", currentPassword: password },
+      })
+      expect(requested.statusCode).toBe(204)
+      const code = readConfirmationCode()
+
+      if (scenario === "expired") {
+        await redis.expire(key, 0)
+      } else {
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const response = await app.inject({
+            method: "PATCH",
+            url: "/account/email",
+            headers,
+            payload: { code: code === "000000" ? "000001" : "000000" },
+          })
+          expect(response.statusCode).toBe(400)
+        }
+      }
+
+      expect(await redis.exists(key)).toBe(0)
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/account/email",
+        headers,
+        payload: { code },
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.cookies).toEqual([])
+      expect(
+        await connection.collection<User>("User").findOne({ _id: user._id }),
+      ).toEqual(user)
+    },
+  )
 
   it("возвращает 409 для занятого email без отправки письма", async () => {
     const { app, mail } = getTestApplication()
@@ -211,25 +311,70 @@ describe("AccountEmailController HTTP", () => {
   )
 
   it.each([
-    {
-      method: "POST" as const,
-      payload: { email: "invalid", currentPassword: "short" },
-    },
-    { method: "PATCH" as const, payload: { code: "abcdef" } },
+    { email: "invalid" },
+    { email: 123 },
+    { email: null },
+    { currentPassword: "short" },
+    { currentPassword: "я".repeat(37) },
+    { currentPassword: 123 },
+    { currentPassword: null },
+    { extra: true },
   ])(
-    "возвращает 400 для некорректных данных $method /account/email",
-    async ({ method, payload }) => {
-      const { app, mail } = getTestApplication()
+    "отклоняет отдельное некорректное поле запроса смены email: %j",
+    async (invalidField) => {
+      const { app, mail, connection, redis } = getTestApplication()
+      const { user, headers, password } = await createAccount("password")
+      const response = await app.inject({
+        method: "POST",
+        url: "/account/email",
+        headers,
+        payload: {
+          email: "new@example.com",
+          currentPassword: password,
+          ...invalidField,
+        },
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.json()).toMatchObject({
+        error: { details: { errors: expect.any(Array) } },
+      })
+      expect(response.cookies).toEqual([])
+      expect(mail.messages).toHaveLength(0)
+      expect(
+        await redis.exists(
+          `bisky-test:account:email:{${user._id.toHexString()}}`,
+        ),
+      ).toBe(0)
+      expect(
+        await connection.collection<User>("User").findOne({ _id: user._id }),
+      ).toEqual(user)
+    },
+  )
+
+  it.each([
+    {},
+    { code: "abcdef" },
+    { code: "12345" },
+    { code: "1234567" },
+    { code: 123456 },
+    { code: "123456", extra: true },
+  ])(
+    "отклоняет некорректное тело подтверждения email на уровне DTO: %j",
+    async (payload) => {
+      const { app } = getTestApplication()
       const { headers } = await createAccount("password")
       const response = await app.inject({
-        method,
+        method: "PATCH",
         url: "/account/email",
         headers,
         payload,
       })
 
       expect(response.statusCode).toBe(400)
-      expect(mail.messages).toHaveLength(0)
+      expect(response.json()).toMatchObject({
+        error: { details: { errors: expect.any(Array) } },
+      })
     },
   )
 })

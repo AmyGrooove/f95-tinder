@@ -25,7 +25,9 @@ describe("AccountSetupController HTTP", () => {
     expect(mail.messages).toHaveLength(1)
     expect(mail.messages[0]).toMatchObject({ to: "setup@example.com" })
     expect(await redis.ttl(key)).toBeGreaterThan(0)
+    expect(await redis.ttl(key)).toBeLessThanOrEqual(4 * 60 * 60)
     expect(await redis.ttl(`${key}:cooldown`)).toBeGreaterThan(0)
+    expect(await redis.ttl(`${key}:cooldown`)).toBeLessThanOrEqual(60)
     expect(
       await connection.collection<User>("User").findOne({ _id: user._id }),
     ).toMatchObject({
@@ -159,6 +161,87 @@ describe("AccountSetupController HTTP", () => {
     expect(mail.messages).toHaveLength(1)
   })
 
+  it.each(["email-taken", "access-code-changed"])(
+    "отклоняет подтверждение настройки после изменения данных: %s",
+    async (scenario) => {
+      const { app, connection, redis } = getTestApplication()
+      const { user, headers, accessCode, password } = await createAccount()
+      const users = connection.collection<User>("User")
+      const requested = await app.inject({
+        method: "POST",
+        url: "/account/setup",
+        headers,
+        payload: { email: "setup@example.com", password, accessCode },
+      })
+      expect(requested.statusCode).toBe(204)
+      const code = readConfirmationCode()
+
+      if (scenario === "email-taken") {
+        const other = await createAccount("password")
+        await users.updateOne(
+          { _id: other.user._id },
+          { $set: { email: "setup@example.com" } },
+        )
+      } else {
+        const reissued = await app.inject({
+          method: "PATCH",
+          url: "/auth/login/code",
+          headers,
+          payload: { accessCode },
+        })
+        expect(reissued.statusCode).toBe(200)
+        expect(reissued.json<{ accessCode: string }>().accessCode).not.toBe(
+          accessCode,
+        )
+      }
+
+      const before = await users.find({}).toArray()
+      const response = await app.inject({
+        method: "PATCH",
+        url: "/account/setup",
+        headers,
+        payload: { code },
+      })
+
+      expect(response.statusCode).toBe(scenario === "email-taken" ? 409 : 400)
+      expect(response.cookies).toEqual([])
+      expect(await users.find({}).toArray()).toEqual(before)
+      expect(
+        await redis.exists(
+          `bisky-test:account:setup:{${user._id.toHexString()}}`,
+        ),
+      ).toBe(0)
+    },
+  )
+
+  it("не настраивает аккаунт по истёкшей заявке", async () => {
+    const { app, connection, redis } = getTestApplication()
+    const { user, headers, accessCode, password } = await createAccount()
+    const requested = await app.inject({
+      method: "POST",
+      url: "/account/setup",
+      headers,
+      payload: { email: "setup@example.com", password, accessCode },
+    })
+    expect(requested.statusCode).toBe(204)
+    const code = readConfirmationCode()
+    const key = `bisky-test:account:setup:{${user._id.toHexString()}}`
+    await redis.expire(key, 0)
+    expect(await redis.exists(key)).toBe(0)
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/account/setup",
+      headers,
+      payload: { code },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.cookies).toEqual([])
+    expect(
+      await connection.collection<User>("User").findOne({ _id: user._id }),
+    ).toEqual(user)
+  })
+
   it("при сбое почты возвращает 503, удаляет заявку и позволяет повторную отправку", async () => {
     const { app, redis, mail } = getTestApplication()
     const { user, headers, accessCode, password } = await createAccount()
@@ -252,25 +335,76 @@ describe("AccountSetupController HTTP", () => {
   )
 
   it.each([
-    {
-      method: "POST" as const,
-      payload: { email: "invalid", password: "short", accessCode: "short" },
-    },
-    { method: "PATCH" as const, payload: { code: "12345" } },
+    { email: "invalid" },
+    { email: 123 },
+    { email: null },
+    { password: "short" },
+    { password: "я".repeat(37) },
+    { password: 123 },
+    { password: null },
+    { accessCode: "A".repeat(31) },
+    { accessCode: "A".repeat(33) },
+    { accessCode: "!".repeat(32) },
+    { accessCode: 123 },
+    { accessCode: null },
+    { extra: true },
   ])(
-    "возвращает 400 для некорректных данных $method /account/setup",
-    async ({ method, payload }) => {
-      const { app, mail } = getTestApplication()
+    "отклоняет отдельное некорректное поле запроса настройки: %j",
+    async (invalidField) => {
+      const { app, mail, connection, redis } = getTestApplication()
+      const { user, headers, accessCode, password } = await createAccount()
+      const response = await app.inject({
+        method: "POST",
+        url: "/account/setup",
+        headers,
+        payload: {
+          email: "setup@example.com",
+          password,
+          accessCode,
+          ...invalidField,
+        },
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.json()).toMatchObject({
+        error: { details: { errors: expect.any(Array) } },
+      })
+      expect(response.cookies).toEqual([])
+      expect(mail.messages).toHaveLength(0)
+      expect(
+        await redis.exists(
+          `bisky-test:account:setup:{${user._id.toHexString()}}`,
+        ),
+      ).toBe(0)
+      expect(
+        await connection.collection<User>("User").findOne({ _id: user._id }),
+      ).toEqual(user)
+    },
+  )
+
+  it.each([
+    {},
+    { code: "abcdef" },
+    { code: "12345" },
+    { code: "1234567" },
+    { code: 123456 },
+    { code: "123456", extra: true },
+  ])(
+    "отклоняет некорректное тело подтверждения настройки на уровне DTO: %j",
+    async (payload) => {
+      const { app } = getTestApplication()
       const { headers } = await createAccount()
       const response = await app.inject({
-        method,
+        method: "PATCH",
         url: "/account/setup",
         headers,
         payload,
       })
 
       expect(response.statusCode).toBe(400)
-      expect(mail.messages).toHaveLength(0)
+      expect(response.json()).toMatchObject({
+        error: { details: { errors: expect.any(Array) } },
+      })
     },
   )
 })
