@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Cookies,
+  Delete,
   Get,
   Header,
   HttpCode,
@@ -77,6 +78,41 @@ class CollectionController {
   })
   getById(@Param("id", MongoObjectIdHandler) id: Types.ObjectId) {
     return this.collectionService.getById(id)
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "CollectionController_remove",
+    summary: SWAGGER_DICTIONARY.collection.remove,
+    description: SWAGGER_DICTIONARY.collection.removeDescription,
+    response: {
+      status: 204,
+      description: SWAGGER_DICTIONARY.collection.removed,
+    },
+    errors: [
+      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      {
+        status: 404,
+        description: SWAGGER_DICTIONARY.collection.removeNotFound,
+      },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
+    ],
+  })
+  remove(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
+  ) {
+    return this.collectionService.remove(accessToken, id)
   }
 }
 

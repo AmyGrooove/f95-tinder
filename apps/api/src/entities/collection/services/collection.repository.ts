@@ -60,6 +60,14 @@ class CollectionRepository {
     return this.read.checkIsExists({ _id: id, deletedAt: null })
   }
 
+  softDeleteByAuthor(id: Types.ObjectId, authorId: Types.ObjectId) {
+    return this.write.updateByFilter(
+      { _id: id, author: authorId, deletedAt: null },
+      { $set: { deletedAt: new Date() } },
+      { projection: { _id: 1 } },
+    )
+  }
+
   findNotDeletedById(id: Types.ObjectId) {
     return this.read.findOne(
       { _id: id, deletedAt: null },

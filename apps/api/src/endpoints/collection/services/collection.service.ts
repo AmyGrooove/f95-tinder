@@ -136,6 +136,29 @@ class CollectionService {
     return this.mapResponse(collection)
   }
 
+  async remove(accessToken: unknown, id: Types.ObjectId) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, { _id: 1 }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    const collection = await this.collectionRepository.softDeleteByAuthor(
+      id,
+      user._id,
+    )
+
+    if (isNil(collection)) {
+      throw new NotFoundException(DICTIONARY.collection.notFound)
+    }
+  }
+
   private prepareBlock(block: CreateBlockBodyDto): TCreateCollectionBlock {
     const id = isUndefined(block.id)
       ? new Types.ObjectId()
