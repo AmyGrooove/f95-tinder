@@ -13,6 +13,7 @@ const DICTIONARY = {
     activeAttemptCompletedAt: "Текущая попытка не может иметь дату завершения",
   },
   collection: {
+    ownRatingForbidden: "Нельзя оценивать свою подборку",
     titleRequired: "Название подборки требует хотя бы один непустой перевод",
     duplicateBlocks: "ID блоков не должны повторяться",
     duplicateItems: "Произведение не может повторяться в подборке",
