@@ -3,9 +3,10 @@ import type { ProjectionType, QueryFilter, QueryOptions } from "mongoose"
 import { isNil } from "@shared/functions/checks/isNil"
 import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import type { IPaginatedResult } from "@shared/types/IPaginatedResult"
+import type { IPaginatedResult } from "../types/IPaginatedResult"
 
 import { MongoCoreRepository } from "./mongoCore.repository"
+import { isString } from "@shared/functions/checks/isString"
 
 class MongoPaginationRepository<
   TSchema,
@@ -30,10 +31,9 @@ class MongoPaginationRepository<
 
     const sort: Parameters<typeof query.sort>[0] = options?.sort
 
-    query.sort(
-      typeof sort === "string" && sort.trim() === "" ? undefined : sort,
-      { override: true },
-    )
+    query.sort(isString(sort) && sort.trim() === "" ? undefined : sort, {
+      override: true,
+    })
 
     if (Object.keys(query.getOptions().sort ?? {}).length === 0) {
       query.sort(this.defaultSort)

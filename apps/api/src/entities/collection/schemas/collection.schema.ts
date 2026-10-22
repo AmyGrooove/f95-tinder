@@ -16,10 +16,10 @@ import { ECollectionVisibility } from "./ECollectionVisibility"
 import { ECollectionOwnership } from "./ECollectionOwnership"
 import { ECollectionType } from "./ECollectionType"
 import type {
-  CollectionGroup,
-  TCreateCollectionGroup,
-} from "./collectionGroup.schema"
-import { CollectionGroupSchema } from "./collectionGroup.schema"
+  CollectionBlock,
+  TCreateCollectionBlock,
+} from "./collectionBlock.schema"
+import { CollectionBlockSchema } from "./collectionBlock.schema"
 import type {
   CollectionRules,
   TCreateCollectionRules,
@@ -71,15 +71,15 @@ class Collection extends MongoEntity {
   rules: CollectionRules | null
 
   @Prop({
-    type: [CollectionGroupSchema],
+    type: [CollectionBlockSchema],
     required: true,
     default: [],
-    validate: (value: CollectionGroup[]) =>
+    validate: (value: CollectionBlock[]) =>
       isArray(value) &&
       value.every((entry) => !isNil(entry)) &&
       new Set(value.map((entry) => String(entry.id))).size === value.length,
   })
-  groups: CollectionGroup[]
+  blocks: CollectionBlock[]
 
   @Prop({ type: Date, default: null })
   deletedAt: Date | null
@@ -89,7 +89,7 @@ type TCreateCollection = TCreateEntity<
   Collection,
   "media" | "description" | "visibility" | "author" | "type" | "deletedAt",
   {
-    groups?: TCreateCollectionGroup[]
+    blocks?: TCreateCollectionBlock[]
     rules?: TCreateCollectionRules | null
   }
 >
@@ -113,8 +113,8 @@ CollectionSchema.pre("validate", function () {
       this.invalidate("rules", DICTIONARY.collection.rulesRequired)
     }
 
-    if (!isNil(this.groups) && this.groups.length > 0) {
-      this.invalidate("groups", DICTIONARY.collection.automaticGroups)
+    if (!isNil(this.blocks) && this.blocks.length > 0) {
+      this.invalidate("blocks", DICTIONARY.collection.automaticBlocks)
     }
   } else if (!isNil(this.rules)) {
     this.invalidate("rules", DICTIONARY.collection.manualRules)

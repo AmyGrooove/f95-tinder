@@ -34,11 +34,11 @@ class CollectionItem extends MongoEntity {
   })
   note: string | null
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, default: null })
-  groupId: Types.ObjectId | null
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
+  groupId: Types.ObjectId
 }
 
-type TCreateCollectionItem = TCreateEntity<CollectionItem, "note" | "groupId">
+type TCreateCollectionItem = TCreateEntity<CollectionItem, "note">
 
 const CollectionItemSchema = SchemaFactory.createForClass(CollectionItem)
 
