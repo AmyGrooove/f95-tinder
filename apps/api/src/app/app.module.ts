@@ -4,6 +4,7 @@ import { APP_FILTER } from "@nestjs/core"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
+import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -52,6 +53,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     AuthModule,
     AccountModule,
     UserItemEndpointModule,
+    CollectionEndpointModule,
     ItemModule,
     CollectionModule,
     CollectionItemModule,

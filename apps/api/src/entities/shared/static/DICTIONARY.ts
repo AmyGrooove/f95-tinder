@@ -13,6 +13,7 @@ const DICTIONARY = {
     activeAttemptCompletedAt: "Текущая попытка не может иметь дату завершения",
   },
   collection: {
+    notFound: "Подборка не найдена или удалена",
     groupContent: "Текст группы задаётся в названии и описании",
     textContentRequired: "Текстовый блок требует хотя бы один непустой перевод",
     textGroupFields: "Название и описание допустимы только для группы",

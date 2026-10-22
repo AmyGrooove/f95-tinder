@@ -1,6 +1,7 @@
 const SWAGGER_DICTIONARY = {
   examples: { displayName: "Иван" },
   tags: {
+    collections: "Подборки",
     userItems: "Личная библиотека",
     passwordReset: "Восстановление пароля",
     sessions: "Сессии",
@@ -9,6 +10,13 @@ const SWAGGER_DICTIONARY = {
     accountCredentials: "Учётные данные аккаунта",
     account: "Аккаунт",
     auth: "Авторизация",
+  },
+  collection: {
+    get: "Получить основные данные подборки",
+    description:
+      "Доступно без авторизации. Возвращает все блоки в авторском порядке без состава Item и личных реакций. authorId=null означает подборку сайта",
+    response: "Основные данные и полная структура блоков подборки",
+    notFound: "Подборка не найдена или удалена",
   },
   userItem: {
     create: "Добавить произведение в библиотеку",

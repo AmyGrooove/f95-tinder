@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -54,6 +54,23 @@ class CollectionRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<Collection>
     >(model)
+  }
+
+  findNotDeletedById(id: Types.ObjectId) {
+    return this.read.findOne(
+      { _id: id, deletedAt: null },
+      {
+        _id: 1,
+        title: 1,
+        description: 1,
+        media: 1,
+        author: 1,
+        type: 1,
+        blocks: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    )
   }
 }
 
