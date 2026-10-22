@@ -19,6 +19,7 @@ import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { CreateUserItemBodyDto } from "../dto/body/createUserItem.body"
@@ -84,19 +85,19 @@ class UserItemService {
       mutate: (userItem) => {
         const { status, rating, isFavorite, note } = props.body
 
-        if (status !== undefined) {
+        if (!isNil(status)) {
           this.changeStatus(userItem, status)
         }
 
-        if (rating !== undefined) {
+        if (!isUndefined(rating)) {
           userItem.rating = rating
         }
 
-        if (isFavorite !== undefined) {
+        if (!isNil(isFavorite)) {
           userItem.isFavorite = isFavorite
         }
 
-        if (note !== undefined) {
+        if (!isUndefined(note)) {
           userItem.note = note
         }
       },
@@ -127,7 +128,7 @@ class UserItemService {
           progress: body.progress ?? null,
           unit: body.unit ?? EUnit.MINUTE,
           startedAt:
-            body.startedAt === undefined && isActive
+            isUndefined(body.startedAt) && isActive
               ? new Date()
               : this.parseDate(body.startedAt),
           completedAt: this.parseDate(body.completedAt),
@@ -159,29 +160,29 @@ class UserItemService {
         const isPreviouslyActive = this.checkIsActive(attempt.status)
         const { status, progress, unit, startedAt, completedAt } = props.body
 
-        if (status !== undefined) {
+        if (!isNil(status)) {
           attempt.status = status
 
           if (this.checkIsActive(status)) {
             attempt.completedAt = null
-          } else if (isPreviouslyActive && completedAt === undefined) {
+          } else if (isPreviouslyActive && isUndefined(completedAt)) {
             attempt.completedAt = new Date()
           }
         }
 
-        if (progress !== undefined) {
+        if (!isUndefined(progress)) {
           attempt.progress = progress
         }
 
-        if (unit !== undefined) {
+        if (!isNil(unit)) {
           attempt.unit = unit
         }
 
-        if (startedAt !== undefined) {
+        if (!isUndefined(startedAt)) {
           attempt.startedAt = this.parseDate(startedAt)
         }
 
-        if (completedAt !== undefined) {
+        if (!isUndefined(completedAt)) {
           attempt.completedAt = this.parseDate(completedAt)
         }
 
@@ -332,7 +333,7 @@ class UserItemService {
   }
 
   private requireChanges(body: object) {
-    if (Object.values(body).every((value) => value === undefined)) {
+    if (Object.values(body).every(isUndefined)) {
       throw new BadRequestException(DICTIONARY.userItem.emptyUpdate)
     }
   }

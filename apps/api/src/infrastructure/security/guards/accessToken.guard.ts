@@ -7,6 +7,7 @@ import {
 import { SecurityJwtService } from "../services/jwt.service"
 import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
+import { isNil } from "@shared/functions/checks/isNil"
 
 @Injectable()
 class AccessTokenGuard implements CanActivate {
@@ -21,7 +22,7 @@ class AccessTokenGuard implements CanActivate {
     const authorizationHeader = request.headers.authorization
 
     if (
-      authorizationHeader === undefined ||
+      isNil(authorizationHeader) ||
       !/^Bearer [^\s]+$/i.test(authorizationHeader)
     ) {
       throw new UnauthorizedException(DICTIONARY.security.accessTokenRequired)

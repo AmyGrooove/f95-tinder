@@ -116,7 +116,7 @@ class StorageService implements OnModuleInit {
         mimeType: contentType,
       }
 
-      if (publicUrl !== undefined) {
+      if (!isNil(publicUrl)) {
         processedUpload.publicUrl = publicUrl
       }
 

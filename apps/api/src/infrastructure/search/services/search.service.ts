@@ -5,6 +5,8 @@ import {
   type Meilisearch,
 } from "meilisearch"
 
+import { isNil } from "@shared/functions/checks/isNil"
+
 import { SEARCH_CLIENT } from "../static/SEARCH_CLIENT"
 import type { ISearchDocument } from "../types/ISearchDocument"
 import type { ISearchIndexOptions } from "../types/ISearchIndexOptions"
@@ -26,7 +28,7 @@ class SearchService {
   ) {
     let initialization = this.indexInitializations.get(name)
 
-    if (initialization === undefined) {
+    if (isNil(initialization)) {
       initialization = this.initializeIndex(name, options).finally(() => {
         this.indexInitializations.delete(name)
       })

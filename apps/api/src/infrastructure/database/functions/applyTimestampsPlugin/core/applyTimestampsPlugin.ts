@@ -1,7 +1,9 @@
 import type { Schema } from "mongoose"
 
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+
 const applyTimestampsPlugin = (schema: Schema) => {
-  if (schema.get("timestamps") === undefined) {
+  if (isUndefined(schema.get("timestamps"))) {
     schema.set("timestamps", true)
   }
 }

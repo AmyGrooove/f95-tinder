@@ -17,6 +17,7 @@ import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { normalizeMultipartFields } from "../functions/normalizeMultipartFields"
 import { ImageProcessingService } from "../services/imageProcessing.service"
@@ -61,7 +62,7 @@ class ImageUploadInterceptor implements NestInterceptor {
 
     for await (const part of request.parts()) {
       if (this.isMultipartFile(part)) {
-        if (input !== undefined || part.fieldname !== metadata.field) {
+        if (!isNil(input) || part.fieldname !== metadata.field) {
           part.file.resume()
           throw new BadRequestException(DICTIONARY.image.exactlyOneFileRequired)
         }
@@ -74,7 +75,7 @@ class ImageUploadInterceptor implements NestInterceptor {
       if (this.isMultipartField(part)) {
         const previousValue = multipartFields[part.fieldname]
 
-        if (previousValue === undefined) {
+        if (isUndefined(previousValue)) {
           multipartFields[part.fieldname] = part.value
           continue
         }

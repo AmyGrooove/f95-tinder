@@ -10,15 +10,17 @@ import {
 } from "class-validator"
 
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 class UpdateUserItemBodyDto {
   @ApiPropertyOptional({ enum: EUserItemStatus })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsEnum(EUserItemStatus)
   status?: EUserItemStatus
 
   @ApiPropertyOptional({ type: Boolean })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsBoolean()
   isFavorite?: boolean
 
@@ -28,18 +30,14 @@ class UpdateUserItemBodyDto {
     maximum: 10,
     nullable: true,
   })
-  @ValidateIf(
-    (_object: unknown, value: unknown) => value !== undefined && value !== null,
-  )
+  @ValidateIf((_object: unknown, value: unknown) => !isNil(value))
   @IsInt()
   @Min(1)
   @Max(10)
   rating?: number | null
 
   @ApiPropertyOptional({ type: String, nullable: true })
-  @ValidateIf(
-    (_object: unknown, value: unknown) => value !== undefined && value !== null,
-  )
+  @ValidateIf((_object: unknown, value: unknown) => !isNil(value))
   @IsString()
   note?: string | null
 }
