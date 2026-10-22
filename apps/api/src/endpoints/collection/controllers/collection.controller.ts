@@ -7,6 +7,7 @@ import {
   Header,
   HttpCode,
   Param,
+  Patch,
   Post,
 } from "@nestjs/common"
 import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
@@ -19,6 +20,7 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { CollectionResponseDto } from "../dto/response/collection.response"
 import { CollectionService } from "../services/collection.service"
 import { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
+import { UpdateCollectionBodyDto } from "../dto/body/updateCollection.body"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.collections)
 @Controller("collections")
@@ -78,6 +80,47 @@ class CollectionController {
   })
   getById(@Param("id", MongoObjectIdHandler) id: Types.ObjectId) {
     return this.collectionService.getById(id)
+  }
+
+  @Patch(":id")
+  @HttpCode(200)
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiParam({
+    name: "id",
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
+  @ApiEndpoint({
+    operationId: "CollectionController_update",
+    summary: SWAGGER_DICTIONARY.collection.update,
+    description: SWAGGER_DICTIONARY.collection.updateDescription,
+    response: {
+      status: 200,
+      type: CollectionResponseDto,
+      description: SWAGGER_DICTIONARY.collection.response,
+    },
+    errors: [
+      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      {
+        status: 404,
+        description: SWAGGER_DICTIONARY.collection.updateNotFound,
+      },
+      {
+        status: 409,
+        description: SWAGGER_DICTIONARY.collection.versionConflict,
+      },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
+    ],
+  })
+  update(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
+    @Body() body: UpdateCollectionBodyDto,
+  ) {
+    return this.collectionService.update(accessToken, { id, body })
   }
 
   @Delete(":id")

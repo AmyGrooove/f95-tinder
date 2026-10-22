@@ -9,6 +9,9 @@ import { TextBlockResponseDto } from "./textBlock.response"
 
 @ApiExtraModels(GroupBlockResponseDto, TextBlockResponseDto)
 class CollectionResponseDto {
+  @ApiProperty({ type: Number, minimum: 0, maximum: Number.MAX_SAFE_INTEGER })
+  version: number
+
   @ApiProperty({ type: String })
   id: string
 

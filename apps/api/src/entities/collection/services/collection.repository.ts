@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model, Types } from "mongoose"
+import type { HydratedDocument, Model, QueryOptions, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -10,6 +10,7 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 
 import { Collection } from "../schemas/collection.schema"
 import type { TCreateCollection } from "../schemas/collection.schema"
+import type { IUpdateCollectionProps } from "../types/IUpdateCollectionProps"
 
 @Injectable()
 class CollectionRepository {
@@ -75,11 +76,33 @@ class CollectionRepository {
     )
   }
 
-  findNotDeletedById(id: Types.ObjectId) {
+  updateVersioned(
+    props: IUpdateCollectionProps,
+    options?: Pick<QueryOptions<Collection>, "session">,
+  ) {
+    return this.write.updateByFilter(
+      {
+        _id: props.id,
+        author: props.authorId,
+        deletedAt: null,
+        ...(props.version === 0
+          ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
+          : { version: props.version }),
+      },
+      { $set: { ...props.changes, version: props.version + 1 } },
+      options,
+    )
+  }
+
+  findNotDeletedById(
+    id: Types.ObjectId,
+    options?: Pick<QueryOptions<Collection>, "session">,
+  ) {
     return this.read.findOne(
       { _id: id, deletedAt: null },
       {
         _id: 1,
+        version: 1,
         title: 1,
         description: 1,
         media: 1,
@@ -89,6 +112,7 @@ class CollectionRepository {
         createdAt: 1,
         updatedAt: 1,
       },
+      options,
     )
   }
 }

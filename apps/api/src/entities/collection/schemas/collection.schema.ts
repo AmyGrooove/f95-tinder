@@ -9,6 +9,7 @@ import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
+import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { ECollectionType } from "./ECollectionType"
@@ -20,6 +21,14 @@ import { CollectionBlockSchema } from "./collectionBlock.schema"
 
 @Schema({ collection: "Collection" })
 class Collection extends MongoEntity {
+  @Prop({
+    type: Number,
+    required: true,
+    default: 0,
+    validate: checkIsNonNegativeSafeInteger,
+  })
+  version: number
+
   @Prop({
     type: LanguageTextSchema,
     required: true,
@@ -61,7 +70,7 @@ class Collection extends MongoEntity {
 
 type TCreateCollection = TCreateEntity<
   Collection,
-  "media" | "description" | "author" | "type" | "deletedAt",
+  "media" | "description" | "author" | "type" | "deletedAt" | "version",
   {
     blocks?: TCreateCollectionBlock[]
   }

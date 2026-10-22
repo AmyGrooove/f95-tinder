@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -28,6 +29,8 @@ import { requestContext } from "@shared/functions/context/requestContext"
 import type { CollectionResponseDto } from "../dto/response/collection.response"
 import type { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
 import type { CreateBlockBodyDto } from "../dto/body/createBlock.body"
+import type { UpdateCollectionBodyDto } from "../dto/body/updateCollection.body"
+import type { IUpdateCollectionRequestProps } from "../types/IUpdateCollectionRequestProps"
 
 @Injectable()
 class CollectionService {
@@ -136,6 +139,176 @@ class CollectionService {
     return this.mapResponse(collection)
   }
 
+  async update(accessToken: unknown, props: IUpdateCollectionRequestProps) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, { _id: 1 }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+
+    const { id, body } = props
+    const isChangeProvided =
+      [
+        body.title,
+        body.description,
+        body.media,
+        body.type,
+        body.blockOrder,
+      ].some((value) => !isUndefined(value)) ||
+      [
+        body.upsertBlocks,
+        body.removeBlockIds,
+        body.upsertItems,
+        body.removeItemIds,
+      ].some((values) => !isUndefined(values) && values.length > 0)
+
+    if (!isChangeProvided) {
+      throw new BadRequestException(DICTIONARY.collection.emptyUpdate)
+    }
+
+    if (!isUndefined(body.title) && !checkIsLanguageTextFilled(body.title)) {
+      throw new BadRequestException(DICTIONARY.collection.titleRequired)
+    }
+
+    const collection = await this.transactionService.run(
+      async (transactionSession) => {
+        const current = await this.collectionRepository.findNotDeletedById(id, {
+          session: transactionSession,
+        })
+
+        if (
+          isNil(current) ||
+          isNil(current.author) ||
+          !current.author.equals(user._id)
+        ) {
+          throw new NotFoundException(DICTIONARY.collection.notFound)
+        }
+
+        if (current.version !== body.version) {
+          throw new ConflictException(DICTIONARY.collection.versionConflict)
+        }
+
+        if (current.version === Number.MAX_SAFE_INTEGER) {
+          throw new ConflictException(DICTIONARY.collection.versionLimit)
+        }
+
+        const blocks = this.prepareUpdatedBlocks(current.blocks, body)
+        const groupIds = new Set(
+          blocks
+            .filter((block) => block.type === ECollectionBlockType.GROUP)
+            .map((block) => block.id.toHexString()),
+        )
+        const removedGroupIds = current.blocks
+          .filter(
+            (block) =>
+              block.type === ECollectionBlockType.GROUP &&
+              !groupIds.has(block.id.toHexString()),
+          )
+          .map((block) => block.id)
+        const removeItemIds = this.normalizeUniqueIds(
+          body.removeItemIds ?? [],
+          DICTIONARY.collection.invalidItemChanges,
+        ).map((itemId) => new Types.ObjectId(itemId))
+        const removedItemIds = new Set(
+          removeItemIds.map((itemId) => itemId.toHexString()),
+        )
+        const items = (body.upsertItems ?? []).map((item) => ({
+          item: new Types.ObjectId(item.itemId),
+          groupId: new Types.ObjectId(item.groupId),
+          position: item.position,
+          note: item.note,
+        }))
+        const itemIds = items.map((item) => item.item.toHexString())
+
+        if (
+          new Set(itemIds).size !== itemIds.length ||
+          itemIds.some((itemId) => removedItemIds.has(itemId))
+        ) {
+          throw new BadRequestException(
+            DICTIONARY.collection.invalidItemChanges,
+          )
+        }
+
+        if (items.some((item) => !groupIds.has(item.groupId.toHexString()))) {
+          throw new BadRequestException(DICTIONARY.collection.invalidGroup)
+        }
+
+        if (removeItemIds.length > 0) {
+          const memberships =
+            await this.collectionItemRepository.findByCollectionAndItems(
+              { collectionId: id, itemIds: removeItemIds },
+              { session: transactionSession },
+            )
+
+          if (memberships.length !== removeItemIds.length) {
+            throw new BadRequestException(
+              DICTIONARY.collection.membershipNotFound,
+            )
+          }
+        }
+
+        if (items.length > 0) {
+          const existingItems = await this.itemRepository.findNotDeletedByIds(
+            items.map((item) => item.item),
+            { session: transactionSession },
+          )
+
+          if (existingItems.length !== items.length) {
+            throw new NotFoundException(DICTIONARY.collection.itemNotFound)
+          }
+        }
+
+        const updated = await this.collectionRepository.updateVersioned(
+          {
+            id,
+            authorId: user._id,
+            version: body.version,
+            changes: {
+              title: body.title ?? current.title,
+              description: body.description ?? current.description,
+              media: body.media ?? current.media,
+              type: body.type ?? current.type,
+              blocks,
+            },
+          },
+          { session: transactionSession },
+        )
+
+        if (isNil(updated)) {
+          throw new ConflictException(DICTIONARY.collection.versionConflict)
+        }
+
+        if (items.length > 0) {
+          await this.collectionItemRepository.upsertForCollection(
+            { collectionId: id, items },
+            { session: transactionSession },
+          )
+        }
+
+        if (removeItemIds.length > 0 || removedGroupIds.length > 0) {
+          await this.collectionItemRepository.removeForCollection(
+            {
+              collectionId: id,
+              itemIds: removeItemIds,
+              groupIds: removedGroupIds,
+            },
+            { session: transactionSession },
+          )
+        }
+
+        return updated
+      },
+    )
+
+    return this.mapResponse(collection)
+  }
+
   async remove(accessToken: unknown, id: Types.ObjectId) {
     const payload = await this.authService.verifyAccessToken(accessToken)
     const [session, user] = await Promise.all([
@@ -159,7 +332,91 @@ class CollectionService {
     }
   }
 
-  private prepareBlock(block: CreateBlockBodyDto): TCreateCollectionBlock {
+  private normalizeUniqueIds(ids: string[], message: string) {
+    const normalized = ids.map((id) => new Types.ObjectId(id).toHexString())
+
+    if (new Set(normalized).size !== normalized.length) {
+      throw new BadRequestException(message)
+    }
+
+    return normalized
+  }
+
+  private prepareUpdatedBlocks(
+    current: CollectionBlock[],
+    body: UpdateCollectionBodyDto,
+  ) {
+    const blocks = new Map(
+      current.map((block) => [block.id.toHexString(), block]),
+    )
+    const removedIds = new Set(
+      this.normalizeUniqueIds(
+        body.removeBlockIds ?? [],
+        DICTIONARY.collection.invalidBlockChanges,
+      ),
+    )
+    const upserts = (body.upsertBlocks ?? []).map((block) =>
+      this.prepareBlock(block),
+    )
+    const upsertIds = upserts.map((block) => block.id.toHexString())
+
+    if (
+      new Set(upsertIds).size !== upsertIds.length ||
+      upsertIds.some((id) => removedIds.has(id))
+    ) {
+      throw new BadRequestException(DICTIONARY.collection.invalidBlockChanges)
+    }
+
+    for (const id of removedIds) {
+      if (!blocks.delete(id)) {
+        throw new BadRequestException(DICTIONARY.collection.blockNotFound)
+      }
+    }
+
+    for (const block of upserts) {
+      const id = block.id.toHexString()
+      const existing = blocks.get(id)
+
+      if (!isNil(existing) && existing.type !== block.type) {
+        throw new BadRequestException(DICTIONARY.collection.blockTypeChange)
+      }
+
+      blocks.set(id, {
+        id: block.id,
+        type: block.type,
+        title: block.title ?? null,
+        description: block.description ?? null,
+        content: block.content ?? null,
+      })
+    }
+
+    if (isUndefined(body.blockOrder)) {
+      return [...blocks.values()]
+    }
+
+    const order = this.normalizeUniqueIds(
+      body.blockOrder,
+      DICTIONARY.collection.invalidBlockOrder,
+    )
+
+    if (order.length !== blocks.size) {
+      throw new BadRequestException(DICTIONARY.collection.invalidBlockOrder)
+    }
+
+    return order.map((id) => {
+      const block = blocks.get(id)
+
+      if (isNil(block)) {
+        throw new BadRequestException(DICTIONARY.collection.invalidBlockOrder)
+      }
+
+      return block
+    })
+  }
+
+  private prepareBlock(
+    block: CreateBlockBodyDto,
+  ): TCreateCollectionBlock & Pick<CollectionBlock, "id"> {
     const id = isUndefined(block.id)
       ? new Types.ObjectId()
       : new Types.ObjectId(block.id)
@@ -197,6 +454,7 @@ class CollectionService {
   ): CollectionResponseDto {
     return {
       id: collection._id.toHexString(),
+      version: collection.version,
       authorId: collection.author?.toHexString() ?? null,
       type: collection.type,
       title: collection.title,
