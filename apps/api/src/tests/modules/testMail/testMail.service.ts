@@ -8,7 +8,18 @@ class TestMailService implements Pick<MailService, "send"> {
   readonly messages: ISendMailOptions[] = []
 
   async send(options: ISendMailOptions) {
-    this.messages.push(structuredClone(options))
+    const message = structuredClone(options)
+
+    if (options.attachments !== undefined) {
+      message.attachments = options.attachments.map((attachment) => ({
+        ...attachment,
+        content: Buffer.isBuffer(attachment.content)
+          ? Buffer.from(attachment.content)
+          : attachment.content,
+      }))
+    }
+
+    this.messages.push(message)
 
     return { id: randomUUID(), status: "queued" } satisfies IMailDeliveryResult
   }

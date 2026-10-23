@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { RedisModule } from "@nestjs-redis/client"
 
-import { AuthModule } from "@endpoints/auth"
+import { AuthModule } from "@endpoints/auth/auth.module"
 import { SessionModule } from "@entities/session/session.module"
 import { UserModule } from "@entities/user/user.module"
 import { SecurityModule } from "@infrastructure/security/security.module"

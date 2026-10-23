@@ -16,7 +16,7 @@ import type { TCollectionFeatureFilter } from "@entities/collectionItem/types/TC
 import type { ICollectionItemCard } from "@entities/collectionItem/types/ICollectionItemCard"
 import { FeatureRepository } from "@entities/feature/services/feature.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
-import { AuthService } from "@endpoints/auth"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"

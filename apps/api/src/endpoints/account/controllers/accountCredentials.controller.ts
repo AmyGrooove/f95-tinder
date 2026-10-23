@@ -12,15 +12,14 @@ import { Throttle } from "@nestjs/throttler"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
-import {
-  LoginCodeResponseDto,
-  LoginCodeBodyDto,
-  AuthService,
-} from "@endpoints/auth"
+
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { AccountService } from "../services/account.service"
 import { PasswordBodyDto } from "../dto/body/password.body"
+import { LoginCodeBodyDto } from "@endpoints/auth/dto/body/loginCode.body"
+import { LoginCodeResponseDto } from "@endpoints/auth/dto/response/loginCode.response"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountCredentials)
 @Controller()

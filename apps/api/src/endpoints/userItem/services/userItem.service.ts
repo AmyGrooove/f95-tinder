@@ -8,7 +8,7 @@ import {
 import { mongo, Types } from "mongoose"
 import type { HydratedDocument } from "mongoose"
 
-import { AuthService } from "@endpoints/auth"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"

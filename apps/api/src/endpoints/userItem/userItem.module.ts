@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common"
 
-import { AuthModule } from "@endpoints/auth"
+import { AuthModule } from "@endpoints/auth/auth.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserModule } from "@entities/user/user.module"

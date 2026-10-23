@@ -18,11 +18,16 @@ const createTestConfiguration = (mongoUri: string, redisUrl: string) => {
     redis: {
       url: redisUrl,
       host: redis.hostname,
-      port: Number(redis.port),
-      database: 0,
-      isTls: false,
-      password: undefined,
-      username: undefined,
+      port: redis.port === "" ? undefined : Number(redis.port),
+      database:
+        redis.pathname === "" || redis.pathname === "/"
+          ? 0
+          : Number(redis.pathname.slice(1)),
+      isTls: redis.protocol === "rediss:",
+      password:
+        redis.password === "" ? undefined : decodeURIComponent(redis.password),
+      username:
+        redis.username === "" ? undefined : decodeURIComponent(redis.username),
     },
     jwt: {
       accessSecret: randomUUID(),

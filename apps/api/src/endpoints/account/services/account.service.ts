@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common"
 import { mongo, Types } from "mongoose"
 
-import { AuthService } from "@endpoints/auth"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 
 import { SessionRepository } from "@entities/session/services/session.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"

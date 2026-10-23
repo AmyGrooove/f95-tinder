@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common"
 import { Types } from "mongoose"
 
-import { AuthService } from "@endpoints/auth"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollection.repository"

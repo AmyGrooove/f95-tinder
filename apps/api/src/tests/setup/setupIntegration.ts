@@ -22,8 +22,11 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
-  await application?.close()
-  application = undefined
+  try {
+    await application?.close()
+  } finally {
+    application = undefined
+  }
 }, 60_000)
 
 export { getTestApplication }

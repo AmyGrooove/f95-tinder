@@ -2,7 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals"
 import { ConflictException, UnauthorizedException } from "@nestjs/common"
 import { Test } from "@nestjs/testing"
 
-import { AuthService } from "@endpoints/auth"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
 
 import { AccountCredentialsController } from "../controllers/accountCredentials.controller"

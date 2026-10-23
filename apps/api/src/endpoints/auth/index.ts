@@ -1,6 +1,0 @@
-export { AuthModule } from "./auth.module"
-export { AuthService } from "./services/auth.service"
-export { ConfirmationService } from "./services/confirmation.service"
-export type { IConfirmation } from "./types/IConfirmation"
-export { LoginCodeBodyDto } from "./dto/body/loginCode.body"
-export { LoginCodeResponseDto } from "./dto/response/loginCode.response"

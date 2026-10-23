@@ -1,4 +1,4 @@
-import type { IConfirmation } from "@endpoints/auth"
+import type { IConfirmation } from "@endpoints/auth/types/IConfirmation"
 
 interface IAccountSetup extends IConfirmation {
   email: string

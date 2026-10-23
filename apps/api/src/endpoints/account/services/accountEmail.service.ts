@@ -13,8 +13,6 @@ import { InjectRedis } from "@nestjs-redis/client"
 import { mongo, Types } from "mongoose"
 import type { RedisClientType } from "redis"
 
-import { AuthService, ConfirmationService } from "@endpoints/auth"
-
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
@@ -30,6 +28,8 @@ import type { EmailBodyDto } from "../dto/body/email.body"
 import type { ConfirmEmailBodyDto } from "../dto/body/confirmEmail.body"
 import { ACCOUNT_CONFIRMATION } from "../static/ACCOUNT_CONFIRMATION"
 import type { IAccountEmail } from "../types/IAccountEmail"
+import { AuthService } from "@endpoints/auth/services/auth.service"
+import { ConfirmationService } from "@endpoints/auth/services/confirmation.service"
 
 @Injectable()
 class AccountEmailService {

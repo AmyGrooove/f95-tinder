@@ -6,7 +6,7 @@ import { ItemModule } from "@entities/item/item.module"
 import { FeatureModule } from "@entities/feature/feature.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
-import { AuthModule } from "@endpoints/auth"
+import { AuthModule } from "@endpoints/auth/auth.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 
 import { CollectionController } from "./controllers/collection.controller"
