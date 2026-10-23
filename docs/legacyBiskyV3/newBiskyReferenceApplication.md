@@ -4,7 +4,7 @@
 
 Это **аналитические предложения**, а не согласованная спецификация страниц, дизайна, архитектуры или нового API. Старые 58 desktop-экспортов помогают увидеть возможные сценарии; их наличие не включает функцию в MVP. Старый Swagger остаётся историческим источником. Названия новых маршрутов здесь не фиксируются: сначала нужно согласовать поведение общих операций.
 
-Основание: [актуальный навигатор](../readme.md), [основы](../projectFoundations.md) и разделы о [данных](../projectFoundations/dataStructure.md), [наполнении](../projectFoundations/catalogWorkflow.md), [рекомендациях](../projectFoundations/recommendations.md), [библиотеке](../projectFoundations/library.md), [расширяемости](../projectFoundations/extensibility.md), [MVP](../mvpScope.md), [аккаунт](../accountAndAuthSpec.md). Код приложения в рамках обновления не аудировался; наличие реализации не выводится из макета.
+Основание: [актуальный навигатор](../README.md), [основы](../product/foundations.md) и разделы о [данных](../product/foundations/dataStructure.md), [наполнении](../product/foundations/catalogWorkflow.md), [рекомендациях](../product/foundations/recommendations.md), [библиотеке](../product/foundations/library.md), [расширяемости](../product/foundations/extensibility.md), [MVP](../product/mvpScope.md), [аккаунт](../api/accountAndAuthSpec.md). Код приложения в рамках обновления не аудировался; наличие реализации не выводится из макета.
 
 ## Рекомендуемый первый цикл
 

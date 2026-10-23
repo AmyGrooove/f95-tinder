@@ -1,8 +1,8 @@
 # Подборки: спецификация API
 
-Согласовано 22 октября 2026 года. Все десять маршрутов из таблицы ниже реализованы в [модуле подборок](../apps/api/src/endpoints/collection/collection.module.ts). Контракт `/items` уточнён при реализации 23 октября 2026 года. Разделы реализованных контрактов описывают текущий код; отдельно отмеченные расширения и числовые лимиты не входят в него. Поведение в работающем окружении отдельно не проверено.
+Согласовано 22 октября 2026 года. Все десять маршрутов из таблицы ниже реализованы в [модуле подборок](../../apps/api/src/endpoints/collection/collection.module.ts). Контракт `/items` уточнён при реализации 23 октября 2026 года. Разделы реализованных контрактов описывают текущий код; отдельно отмеченные расширения и числовые лимиты не входят в него. Поведение в работающем окружении отдельно не проверено.
 
-Связанные документы: [сущности](entities.md), [личная библиотека](projectFoundations/library.md), [границы MVP](mvpScope.md). Эта спецификация определяет отдельно согласованный объём подборок; прежнее исключение публичных подборок из стартового MVP не означает отказа от описанного здесь API.
+Связанные документы: [сущности](entities.md), [личная библиотека](librarySpec.md), [границы MVP](../product/mvpScope.md). Эта спецификация определяет отдельно согласованный объём подборок; прежнее исключение публичных подборок из стартового MVP не означает отказа от описанного здесь API.
 
 ## Модель
 
@@ -153,7 +153,7 @@ Query-параметры: `mode=grouped|flat`, `sort=collection|title`, `directi
 - Нет отдельной пагинации групп, вложенной пагинации или загрузки по limit элементов одновременно из каждой группы.
 - При заданном groupId та же пагинация работает внутри выбранной группы.
 
-Ответ соответствует [IPaginatedResult](../apps/api/src/infrastructure/database/types/IPaginatedResult.ts): `items`, `page`, `limit`, `total`, `pages`, `isNextPage`, `isPreviousPage` на одном уровне. Отдельная обёртка pagination не добавляется. IListResponse с nextCursor для этого маршрута не используется.
+Ответ соответствует [IPaginatedResult](../../apps/api/src/infrastructure/database/types/IPaginatedResult.ts): `items`, `page`, `limit`, `total`, `pages`, `isNextPage`, `isPreviousPage` на одном уровне. Отдельная обёртка pagination не добавляется. IListResponse с nextCursor для этого маршрута не используется.
 
 ### Текстовые блоки
 
@@ -233,7 +233,7 @@ CollectionItemRepository.getFilterOptions выполняет агрегацию 
 
 ## Точки входа и дальнейшие уточнения
 
-Точные DTO и проверки находятся в [контроллерах](../apps/api/src/endpoints/collection/controllers), [DTO](../apps/api/src/endpoints/collection/dto) и [сервисах](../apps/api/src/endpoints/collection/services). Для изменения запросов чтения сначала следует проверить CollectionReadController и CollectionContentService, для записи — CollectionController и CollectionService, для личных реакций — CollectionUserController и CollectionUserService.
+Точные DTO и проверки находятся в [контроллерах](../../apps/api/src/endpoints/collection/controllers), [DTO](../../apps/api/src/endpoints/collection/dto) и [сервисах](../../apps/api/src/endpoints/collection/services). Для изменения запросов чтения сначала следует проверить CollectionReadController и CollectionContentService, для записи — CollectionController и CollectionService, для личных реакций — CollectionUserController и CollectionUserService.
 
 Параметры `/items`, формат массивов и features, ошибки и статусы ответов закреплены в разделах реализованных контрактов выше. Они больше не являются предварительными вариантами DTO.
 
