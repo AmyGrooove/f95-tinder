@@ -61,7 +61,7 @@ class ImageUploadInterceptor implements NestInterceptor {
     let mimeType: string | undefined
 
     for await (const part of request.parts()) {
-      if (this.isMultipartFile(part)) {
+      if (this.checkIsMultipartFile(part)) {
         if (!isNil(input) || part.fieldname !== metadata.field) {
           part.file.resume()
           throw new BadRequestException(DICTIONARY.image.exactlyOneFileRequired)
@@ -72,7 +72,7 @@ class ImageUploadInterceptor implements NestInterceptor {
         continue
       }
 
-      if (this.isMultipartField(part)) {
+      if (this.checkIsMultipartField(part)) {
         const previousValue = multipartFields[part.fieldname]
 
         if (isUndefined(previousValue)) {
@@ -162,7 +162,7 @@ class ImageUploadInterceptor implements NestInterceptor {
     }
   }
 
-  private isMultipartFile(part: unknown): part is IFastifyMultipartFile {
+  private checkIsMultipartFile(part: unknown): part is IFastifyMultipartFile {
     return (
       isObject(part) &&
       "type" in part &&
@@ -172,7 +172,7 @@ class ImageUploadInterceptor implements NestInterceptor {
     )
   }
 
-  private isMultipartField(
+  private checkIsMultipartField(
     part: unknown,
   ): part is { fieldname: string; value: unknown } {
     return (

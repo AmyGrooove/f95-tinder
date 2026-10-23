@@ -1,4 +1,4 @@
-import { getRequiredEnvironmentValue } from "@infrastructure/config/functions/createInfrastructureConfiguration/functions/getRequiredEnvironmentValue"
+import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -6,10 +6,10 @@ import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
 import type { TEnvironmentNode } from "../types/TEnvironmentNode"
 
 const createAppConfiguration = () => {
-  const environmentValue = process.env.NODE_ENV as TEnvironmentNode | undefined
+  const environmentValue = process.env.NODE_ENV
   const environment = isNil(environmentValue)
     ? "development"
-    : (environmentValue.trim() as TEnvironmentNode)
+    : environmentValue.trim()
   const name = getRequiredEnvironmentValue("APP_NAME")
   const version = getRequiredEnvironmentValue("APP_VERSION")
   const description = getRequiredEnvironmentValue("APP_DESCRIPTION")
@@ -27,7 +27,7 @@ const createAppConfiguration = () => {
         return corsOrigin
       }
 
-      let url: URL | undefined
+      let url: URL
 
       try {
         url = new URL(corsOrigin)
@@ -36,7 +36,6 @@ const createAppConfiguration = () => {
       }
 
       if (
-        isNil(url) ||
         (url.protocol !== "http:" && url.protocol !== "https:") ||
         url.pathname !== "/" ||
         url.search !== "" ||
@@ -83,7 +82,7 @@ const createAppConfiguration = () => {
   }
 
   return {
-    environment,
+    environment: environment satisfies TEnvironmentNode,
     name,
     version,
     description,

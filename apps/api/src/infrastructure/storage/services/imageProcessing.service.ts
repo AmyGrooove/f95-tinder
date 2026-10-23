@@ -19,7 +19,11 @@ class ImageProcessingService {
       throw new BadRequestException(DICTIONARY.image.emptyUpload)
     }
 
-    if (!SUPPORTED_IMAGE_MIME_TYPES.includes(declaredMimeType as never)) {
+    if (
+      !SUPPORTED_IMAGE_MIME_TYPES.some(
+        (mimeType) => mimeType === declaredMimeType,
+      )
+    ) {
       throw new BadRequestException(DICTIONARY.image.unsupportedMimeType)
     }
 
@@ -38,7 +42,9 @@ class ImageProcessingService {
       const height = metadata.height
       const pages = metadata.pages ?? 1
 
-      if (!SUPPORTED_IMAGE_MIME_TYPES.includes(mediaType as never)) {
+      if (
+        !SUPPORTED_IMAGE_MIME_TYPES.some((mimeType) => mimeType === mediaType)
+      ) {
         throw new BadRequestException(
           DICTIONARY.image.unsupportedDecodedMimeType,
         )
@@ -80,7 +86,9 @@ class ImageProcessingService {
         throw error
       }
 
-      throw new BadRequestException(DICTIONARY.image.processingFailed)
+      throw new BadRequestException(DICTIONARY.image.processingFailed, {
+        cause: error,
+      })
     }
   }
 }

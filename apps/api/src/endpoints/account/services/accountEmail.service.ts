@@ -69,7 +69,9 @@ class AccountEmailService {
         error.code === 11000 &&
         error.keyPattern?.email === 1
       ) {
-        throw new ConflictException(DICTIONARY.account.emailTaken)
+        throw new ConflictException(DICTIONARY.account.emailTaken, {
+          cause: error,
+        })
       }
 
       throw error

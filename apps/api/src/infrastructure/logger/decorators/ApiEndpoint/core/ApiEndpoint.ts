@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger"
 
 import type { IApiEndpointOptions } from "../types/IApiEndpointOptions"
 import { isNil } from "@shared/functions/checks/isNil"
-import { HTTP_STATUS_ERROR_CODES } from "../../AppExceptionFilter/static/HTTP_STATUS_ERROR_CODES"
+import { HTTP_STATUS_ERROR_CODES } from "../../AppExceptionFilter"
 import { SWAGGER_DICTIONARY } from "@shared/static/SWAGGER_DICTIONARY"
 
 const ApiEndpoint = (options: IApiEndpointOptions) => {

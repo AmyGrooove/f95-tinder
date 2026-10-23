@@ -1,4 +1,5 @@
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import type { CollectionItemsResponseDto } from "../../../dto/response/collectionItems.response"
@@ -30,8 +31,12 @@ const createCollectionDisplayBlocks = ({
         displayBlocks.push({
           id,
           type: ECollectionBlockType.GROUP,
-          title: block.title,
-          description: block.description,
+          title: isNil(block.title)
+            ? null
+            : { ru: block.title.ru, en: block.title.en },
+          description: isNil(block.description)
+            ? null
+            : { ru: block.description.ru, en: block.description.en },
           beforeItemId: firstItem.id,
         })
       }
@@ -54,7 +59,10 @@ const createCollectionDisplayBlocks = ({
       displayBlocks.push({
         id,
         type: ECollectionBlockType.TEXT,
-        content: block.content ?? { ru: null, en: null },
+        content: {
+          ru: block.content?.ru ?? null,
+          en: block.content?.en ?? null,
+        },
         beforeItemId: page.items[offset - start]?.id ?? null,
       })
     }

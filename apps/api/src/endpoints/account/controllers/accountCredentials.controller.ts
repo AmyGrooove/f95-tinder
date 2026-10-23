@@ -17,9 +17,9 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { AccountService } from "../services/account.service"
 import { PasswordBodyDto } from "../dto/body/password.body"
+import { AuthService } from "@endpoints/auth/services/auth.service"
 import { LoginCodeBodyDto } from "@endpoints/auth/dto/body/loginCode.body"
 import { LoginCodeResponseDto } from "@endpoints/auth/dto/response/loginCode.response"
-import { AuthService } from "@endpoints/auth/services/auth.service"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountCredentials)
 @Controller()
@@ -116,9 +116,9 @@ class AccountCredentialsController {
   ): Promise<LoginCodeResponseDto> {
     const result = await this.authService.reissueCode(accessToken, body)
 
-    this.securityCookieService.setAuthCookies(reply, result)
+    this.securityCookieService.setAuthCookies(reply, result.tokens)
 
-    return { accessCode: result.accessCode }
+    return result.response
   }
 }
 

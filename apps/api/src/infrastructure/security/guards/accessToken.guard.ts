@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common"
 import { SecurityJwtService } from "../services/jwt.service"
-import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
+import type { ICurrentUserRequest } from "../types/ICurrentUserRequest"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 

@@ -3,9 +3,9 @@ import type { Job } from "bullmq"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-import type { TJobState } from "@infrastructure/jobs/types/TJobState"
-import type { IJobDetails } from "@infrastructure/jobs/types/IJobDetails"
-import { normalizeJobProgress } from "@infrastructure/jobs/functions/normalizeJobProgress"
+import type { TJobState } from "../../../types/TJobState"
+import type { IJobDetails } from "../../../types/IJobDetails"
+import { normalizeJobProgress } from "../../normalizeJobProgress"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 const createJobDetails = (

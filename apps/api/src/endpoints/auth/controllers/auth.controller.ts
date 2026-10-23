@@ -182,9 +182,9 @@ class AuthController {
   ): Promise<RegisterResponseDto> {
     const result = await this.authService.register(userAgent)
 
-    this.securityCookieService.setAuthCookies(reply, result)
+    this.securityCookieService.setAuthCookies(reply, result.tokens)
 
-    return { username: result.username, accessCode: result.accessCode }
+    return result.response
   }
 }
 

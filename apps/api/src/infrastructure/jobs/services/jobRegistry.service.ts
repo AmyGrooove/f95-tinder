@@ -5,7 +5,7 @@ import { isFunction } from "@shared/functions/checks/isFunction"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
 
-import type { IJobHandlerMetadata } from "../decorators/JobHandler/types/IJobHandlerMetadata"
+import type { IJobHandlerMetadata } from "../decorators/JobHandler"
 import { JOB_HANDLER_METADATA_KEY } from "../static/JOB_HANDLER_METADATA_KEY"
 import type { IRegisteredJobHandler } from "../types/IRegisteredJobHandler"
 import { DICTIONARY } from "@shared/static/DICTIONARY"

@@ -3,13 +3,10 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common"
 import { Types } from "mongoose"
 import type { HydratedDocument } from "mongoose"
 
-import { AuthService } from "@endpoints/auth/services/auth.service"
-import { UserRepository } from "@entities/user/services/user.repository"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
@@ -24,13 +21,13 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { CollectionResponseDto } from "../dto/response/collection.response"
 import type { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
 import type { CreateBlockBodyDto } from "../dto/body/createBlock.body"
 import type { UpdateCollectionBodyDto } from "../dto/body/updateCollection.body"
 import type { IUpdateCollectionRequestProps } from "../types/IUpdateCollectionRequestProps"
+import { CollectionAuthService } from "./collectionAuth.service"
 
 @Injectable()
 class CollectionService {
@@ -38,23 +35,12 @@ class CollectionService {
     private readonly collectionRepository: CollectionRepository,
     private readonly collectionItemRepository: CollectionItemRepository,
     private readonly itemRepository: ItemRepository,
-    private readonly userRepository: UserRepository,
-    private readonly authService: AuthService,
+    private readonly collectionAuthService: CollectionAuthService,
     private readonly transactionService: MongoTransactionService,
   ) {}
 
   async create(accessToken: unknown, body: CreateCollectionBodyDto) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, { _id: 1 }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
+    const userId = await this.collectionAuthService.authenticate(accessToken)
 
     if (!checkIsLanguageTextFilled(body.title)) {
       throw new BadRequestException(DICTIONARY.collection.titleRequired)
@@ -105,7 +91,7 @@ class CollectionService {
 
         const created = await this.collectionRepository.write.create(
           {
-            author: user._id,
+            author: userId,
             title: body.title,
             description: body.description,
             type: body.type,
@@ -140,17 +126,7 @@ class CollectionService {
   }
 
   async update(accessToken: unknown, props: IUpdateCollectionRequestProps) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, { _id: 1 }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
+    const userId = await this.collectionAuthService.authenticate(accessToken)
 
     const { id, body } = props
     const isChangeProvided =
@@ -185,7 +161,7 @@ class CollectionService {
         if (
           isNil(current) ||
           isNil(current.author) ||
-          !current.author.equals(user._id)
+          !current.author.equals(userId)
         ) {
           throw new NotFoundException(DICTIONARY.collection.notFound)
         }
@@ -267,7 +243,7 @@ class CollectionService {
         const updated = await this.collectionRepository.updateVersioned(
           {
             id,
-            authorId: user._id,
+            authorId: userId,
             version: body.version,
             changes: {
               title: body.title ?? current.title,
@@ -310,21 +286,11 @@ class CollectionService {
   }
 
   async remove(accessToken: unknown, id: Types.ObjectId) {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, { _id: 1 }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
+    const userId = await this.collectionAuthService.authenticate(accessToken)
 
     const collection = await this.collectionRepository.softDeleteByAuthor(
       id,
-      user._id,
+      userId,
     )
 
     if (isNil(collection)) {
@@ -457,8 +423,11 @@ class CollectionService {
       version: collection.version,
       authorId: collection.author?.toHexString() ?? null,
       type: collection.type,
-      title: collection.title,
-      description: collection.description,
+      title: { ru: collection.title.ru, en: collection.title.en },
+      description: {
+        ru: collection.description.ru,
+        en: collection.description.en,
+      },
       media: collection.media.map((media) => ({
         src: media.src,
         language: media.language,
@@ -479,15 +448,22 @@ class CollectionService {
       return {
         id,
         type: ECollectionBlockType.GROUP,
-        title: block.title,
-        description: block.description,
+        title: isNil(block.title)
+          ? null
+          : { ru: block.title.ru, en: block.title.en },
+        description: isNil(block.description)
+          ? null
+          : { ru: block.description.ru, en: block.description.en },
       }
     }
 
     return {
       id,
       type: ECollectionBlockType.TEXT,
-      content: block.content ?? { ru: null, en: null },
+      content: {
+        ru: block.content?.ru ?? null,
+        en: block.content?.en ?? null,
+      },
     }
   }
 }

@@ -9,14 +9,14 @@ import {
   Patch,
   Res,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
+import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
 
 import { SessionResponseDto } from "../dto/response/session.response"
-import { SessionParamsDto } from "../dto/params/session.params"
 import { SessionService } from "../services/session.service"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
@@ -86,6 +86,12 @@ class SessionController {
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
+  @ApiParam({
+    name: "sessionId",
+    description: SWAGGER_DICTIONARY.auth.dto.sessionParams.sessionId,
+    type: String,
+    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+  })
   @ApiEndpoint({
     operationId: "AuthController_deleteSession",
     summary: SWAGGER_DICTIONARY.auth.deleteSession.summary,
@@ -119,12 +125,12 @@ class SessionController {
   })
   async deleteSession(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param() params: SessionParamsDto,
+    @Param("sessionId", MongoObjectIdHandler) sessionId: Types.ObjectId,
     @Res({ passthrough: true }) reply: unknown,
   ) {
     const isCurrent = await this.sessionService.deleteSession(
       accessToken,
-      new Types.ObjectId(params.sessionId),
+      sessionId,
     )
 
     if (isCurrent) {

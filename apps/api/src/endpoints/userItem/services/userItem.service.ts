@@ -18,6 +18,7 @@ import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
+import { isDate } from "@shared/functions/checks/isDate"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { requestContext } from "@shared/functions/context/requestContext"
@@ -206,7 +207,7 @@ class UserItemService {
 
     requestContext.set("userId", payload.sub)
 
-    return new Types.ObjectId(payload.sub)
+    return user._id
   }
 
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
@@ -325,7 +326,7 @@ class UserItemService {
 
     const date = new Date(value)
 
-    if (!Number.isFinite(date.getTime())) {
+    if (!isDate(date)) {
       throw new BadRequestException(DICTIONARY.userItem.invalidDate)
     }
 

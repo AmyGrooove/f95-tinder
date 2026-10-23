@@ -1,11 +1,10 @@
-import { getRequiredEnvironmentValue } from "@infrastructure/config/functions/createInfrastructureConfiguration/functions/getRequiredEnvironmentValue"
-import { isNil } from "@shared/functions/checks/isNil"
+import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
 
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
 import type { TEnvironmentKey } from "../../../types/TEnvironmentKey"
 
 const getEnvironmentUrl = (key: TEnvironmentKey, protocols: string[]) => {
-  let url: URL | undefined
+  let url: URL
 
   try {
     url = new URL(getRequiredEnvironmentValue(key))
@@ -13,7 +12,7 @@ const getEnvironmentUrl = (key: TEnvironmentKey, protocols: string[]) => {
     throw new Error(`${CONFIG_ERROR_MESSAGES.INVALID_ENVIRONMENT_URL}: ${key}`)
   }
 
-  if (isNil(url) || !protocols.includes(url.protocol)) {
+  if (!protocols.includes(url.protocol)) {
     throw new Error(`${CONFIG_ERROR_MESSAGES.INVALID_URL_PROTOCOL}: ${key}`)
   }
 

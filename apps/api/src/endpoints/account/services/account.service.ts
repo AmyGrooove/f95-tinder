@@ -153,7 +153,9 @@ class AccountService {
         error.code === 11000 &&
         error.keyPattern?.username === 1
       ) {
-        throw new ConflictException(DICTIONARY.account.usernameTaken)
+        throw new ConflictException(DICTIONARY.account.usernameTaken, {
+          cause: error,
+        })
       }
 
       throw error

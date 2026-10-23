@@ -73,23 +73,27 @@ describe("AuthController", () => {
     it("возвращает только логин и код регистрации, передавая токены в cookies", async () => {
       const { controller, service, cookies } = await createController()
       const result = {
-        username: "username",
-        accessCode: "A".repeat(32),
-        accessToken: "access",
-        refreshToken: "refresh",
+        tokens: {
+          accessToken: "access",
+          refreshToken: "refresh",
+        },
+        response: {
+          username: "username",
+          accessCode: "A".repeat(32),
+        },
       }
       const reply = {}
       service.register.mockResolvedValue(result)
 
       await expect(controller.register(userAgent, reply)).resolves.toEqual({
-        username: result.username,
-        accessCode: result.accessCode,
+        username: result.response.username,
+        accessCode: result.response.accessCode,
       })
 
       expect(service.register).toHaveBeenCalledTimes(1)
       expect(service.register).toHaveBeenCalledWith(userAgent)
       expect(cookies.setAuthCookies).toHaveBeenCalledTimes(1)
-      expect(cookies.setAuthCookies).toHaveBeenCalledWith(reply, result)
+      expect(cookies.setAuthCookies).toHaveBeenCalledWith(reply, result.tokens)
       expect(cookies.clearAuthCookies).not.toHaveBeenCalled()
     })
   })

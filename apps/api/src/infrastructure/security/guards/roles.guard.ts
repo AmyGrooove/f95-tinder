@@ -7,10 +7,10 @@ import {
 } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 
-import { ROLES_METADATA_KEY } from "@infrastructure/security/decorators/Roles"
+import { ROLES_METADATA_KEY } from "../decorators/Roles"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import type { ICurrentUserRequest } from "@infrastructure/security/types/ICurrentUserRequest"
+import type { ICurrentUserRequest } from "../types/ICurrentUserRequest"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()

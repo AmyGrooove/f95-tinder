@@ -89,9 +89,13 @@ describe("AccountCredentialsController", () => {
     const { controller, authService, cookieService } = await createController()
     const body = { accessCode: "a".repeat(32) }
     const result = {
-      accessToken: "new-access-token",
-      refreshToken: "new-refresh-token",
-      accessCode: "b".repeat(32),
+      tokens: {
+        accessToken: "new-access-token",
+        refreshToken: "new-refresh-token",
+      },
+      response: {
+        accessCode: "b".repeat(32),
+      },
     }
     const reply = {}
     authService.reissueCode.mockResolvedValue(result)
@@ -99,13 +103,16 @@ describe("AccountCredentialsController", () => {
     await expect(
       controller.reissueCode("access-token", body, reply),
     ).resolves.toEqual({
-      accessCode: result.accessCode,
+      accessCode: result.response.accessCode,
     })
 
     expect(authService.reissueCode).toHaveBeenCalledTimes(1)
     expect(authService.reissueCode).toHaveBeenCalledWith("access-token", body)
     expect(cookieService.setAuthCookies).toHaveBeenCalledTimes(1)
-    expect(cookieService.setAuthCookies).toHaveBeenCalledWith(reply, result)
+    expect(cookieService.setAuthCookies).toHaveBeenCalledWith(
+      reply,
+      result.tokens,
+    )
   })
 
   it("сохраняет ошибку перевыпуска кода и не устанавливает cookies", async () => {

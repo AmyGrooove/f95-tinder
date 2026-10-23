@@ -19,6 +19,8 @@ import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { LoginCodeBodyDto } from "../dto/body/loginCode.body"
 import type { LoginBodyDto } from "../dto/body/login.body"
+import type { LoginCodeResponseDto } from "../dto/response/loginCode.response"
+import type { RegisterResponseDto } from "../dto/response/register.response"
 import type { ICreateAuthSessionProps } from "../types/ICreateAuthSessionProps"
 
 @Injectable()
@@ -168,7 +170,15 @@ class AuthService {
 
     requestContext.set("userId", payload.sub)
 
-    return result
+    return {
+      tokens: {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
+      response: {
+        accessCode: result.accessCode,
+      } satisfies LoginCodeResponseDto,
+    }
   }
 
   async register(userAgent: string | undefined) {
@@ -198,7 +208,16 @@ class AuthService {
 
         requestContext.set("userId", userId)
 
-        return registration
+        return {
+          tokens: {
+            accessToken: registration.accessToken,
+            refreshToken: registration.refreshToken,
+          },
+          response: {
+            username: registration.username,
+            accessCode: registration.accessCode,
+          } satisfies RegisterResponseDto,
+        }
       } catch (error) {
         if (
           error instanceof mongo.MongoServerError &&

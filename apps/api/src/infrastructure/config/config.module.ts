@@ -1,13 +1,8 @@
 import { Module } from "@nestjs/common"
-import { ConfigModule, registerAs } from "@nestjs/config"
+import { ConfigModule } from "@nestjs/config"
 
-import { createInfrastructureConfiguration } from "./functions/createInfrastructureConfiguration"
 import { InfrastructureConfigService } from "./services/config.service"
-
-const infrastructureConfiguration = registerAs(
-  "infrastructure",
-  createInfrastructureConfiguration,
-)
+import { INFRASTRUCTURE_CONFIGURATION } from "./static/INFRASTRUCTURE_CONFIGURATION"
 
 @Module({
   imports: [
@@ -15,7 +10,7 @@ const infrastructureConfiguration = registerAs(
       ignoreEnvFile: process.env.NODE_ENV === "test",
       cache: true,
       isGlobal: true,
-      load: [infrastructureConfiguration],
+      load: [INFRASTRUCTURE_CONFIGURATION],
     }),
   ],
   providers: [InfrastructureConfigService],
@@ -23,4 +18,5 @@ const infrastructureConfiguration = registerAs(
 })
 class InfrastructureConfigModule {}
 
-export { InfrastructureConfigModule, infrastructureConfiguration }
+export { InfrastructureConfigModule }
+export { INFRASTRUCTURE_CONFIGURATION as infrastructureConfiguration } from "./static/INFRASTRUCTURE_CONFIGURATION"

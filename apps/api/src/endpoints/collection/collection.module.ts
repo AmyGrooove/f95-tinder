@@ -15,6 +15,7 @@ import { CollectionReadController } from "./controllers/collectionRead.controlle
 import { CollectionService } from "./services/collection.service"
 import { CollectionUserService } from "./services/collectionUser.service"
 import { CollectionContentService } from "./services/collectionContent.service"
+import { CollectionAuthService } from "./services/collectionAuth.service"
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CollectionContentService } from "./services/collectionContent.service"
     CollectionReadController,
   ],
   providers: [
+    CollectionAuthService,
     CollectionService,
     CollectionUserService,
     CollectionContentService,

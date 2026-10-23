@@ -79,11 +79,7 @@ describe("SessionController", () => {
       })
 
       await expect(
-        controller.deleteSession(
-          "access",
-          { sessionId: sessionId.toHexString() },
-          reply,
-        ),
+        controller.deleteSession("access", sessionId, reply),
       ).resolves.toBeUndefined()
 
       expect(service.deleteSession).toHaveBeenCalledTimes(1)
@@ -132,11 +128,7 @@ describe("SessionController", () => {
           case "deleteOtherSessions":
             return controller.deleteOtherSessions(undefined)
           case "deleteSession":
-            return controller.deleteSession(
-              undefined,
-              { sessionId: new Types.ObjectId().toHexString() },
-              {},
-            )
+            return controller.deleteSession(undefined, new Types.ObjectId(), {})
           case "refresh":
             return controller.refresh(undefined, {})
         }
@@ -157,11 +149,7 @@ describe("SessionController", () => {
     service.deleteSession.mockRejectedValue(error)
 
     await expect(
-      controller.deleteSession(
-        "access",
-        { sessionId: new Types.ObjectId().toHexString() },
-        {},
-      ),
+      controller.deleteSession("access", new Types.ObjectId(), {}),
     ).rejects.toBe(error)
 
     expect(cookies.setAuthCookies).not.toHaveBeenCalled()

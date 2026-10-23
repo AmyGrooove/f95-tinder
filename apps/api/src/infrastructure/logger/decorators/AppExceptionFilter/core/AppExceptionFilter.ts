@@ -2,7 +2,7 @@ import { ArgumentsHost, Catch, HttpException, HttpStatus } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core"
 import type { FastifyReply, FastifyRequest } from "fastify"
 
-import { LoggerService } from "@infrastructure/logger/services/logger.service"
+import { LoggerService } from "../../../services/logger.service"
 import { createStructuredResponse } from "../functions/createStructuredResponse"
 import type { IErrorEnvelope } from "../types/IErrorEnvelope"
 import { DICTIONARY } from "@shared/static/DICTIONARY"

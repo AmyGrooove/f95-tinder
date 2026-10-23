@@ -15,14 +15,11 @@ import type { TCollectionFeatureOptions } from "@entities/collectionItem/types/T
 import type { TCollectionFeatureFilter } from "@entities/collectionItem/types/TCollectionFeatureFilter"
 import type { ICollectionItemCard } from "@entities/collectionItem/types/ICollectionItemCard"
 import { FeatureRepository } from "@entities/feature/services/feature.repository"
-import { UserRepository } from "@entities/user/services/user.repository"
-import { AuthService } from "@endpoints/auth/services/auth.service"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isString } from "@shared/functions/checks/isString"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { requestContext } from "@shared/functions/context/requestContext"
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
 
@@ -35,6 +32,7 @@ import type { CollectionFeatureFilterQueryDto } from "../dto/query/collectionFea
 import type { CollectionItemResponseDto } from "../dto/response/collectionItem.response"
 import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 import { createCollectionDisplayBlocks } from "../functions/createCollectionDisplayBlocks"
+import { CollectionAuthService } from "./collectionAuth.service"
 
 @Injectable()
 class CollectionContentService {
@@ -42,8 +40,7 @@ class CollectionContentService {
     private readonly collectionRepository: CollectionRepository,
     private readonly collectionItemRepository: CollectionItemRepository,
     private readonly featureRepository: FeatureRepository,
-    private readonly authService: AuthService,
-    private readonly userRepository: UserRepository,
+    private readonly collectionAuthService: CollectionAuthService,
   ) {}
 
   async getFilters(
@@ -219,19 +216,7 @@ class CollectionContentService {
       return undefined
     }
 
-    const payload = await this.authService.verifyAccessToken(accessToken)
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, { _id: 1 }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", payload.sub)
-
-    return user._id
+    return this.collectionAuthService.authenticate(accessToken)
   }
 
   private async prepareFeatureFilters(
