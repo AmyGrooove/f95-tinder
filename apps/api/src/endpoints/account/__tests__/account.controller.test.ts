@@ -1,13 +1,56 @@
 import { describe, expect, it, jest } from "@jest/globals"
-import { ConflictException, UnauthorizedException } from "@nestjs/common"
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+  ValidationPipe,
+} from "@nestjs/common"
 import { Test } from "@nestjs/testing"
 
 import { EUserRole } from "@entities/user/schemas/EUserRole"
 
 import { AccountController } from "../controllers/account.controller"
 import { AccountService } from "../services/account.service"
+import { DisplayNameBodyDto } from "../dto/body/displayName.body"
+import { UsernameBodyDto } from "../dto/body/username.body"
 
 describe("AccountController", () => {
+  it.each([
+    { field: "username", value: "a".repeat(32), isValid: true },
+    { field: "username", value: `  ${"A".repeat(32)}  `, isValid: true },
+    { field: "username", value: "a".repeat(33), isValid: false },
+    { field: "displayName", value: "Я".repeat(40), isValid: true },
+    { field: "displayName", value: `  ${"Я".repeat(40)}  `, isValid: true },
+    { field: "displayName", value: "😀".repeat(40), isValid: true },
+    { field: "displayName", value: "Я".repeat(41), isValid: false },
+    { field: "displayName", value: "😀".repeat(41), isValid: false },
+  ])(
+    "проверяет длину $field после нормализации: $value, допустимость: $isValid",
+    async ({ field, value, isValid }) => {
+      const pipe = new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      })
+      const result = pipe.transform(
+        { [field]: value },
+        {
+          type: "body",
+          metatype: field === "username" ? UsernameBodyDto : DisplayNameBodyDto,
+        },
+      )
+
+      if (isValid) {
+        await expect(result).resolves.toMatchObject({
+          [field]:
+            field === "username" ? value.trim().toLowerCase() : value.trim(),
+        })
+      } else {
+        await expect(result).rejects.toBeInstanceOf(BadRequestException)
+      }
+    },
+  )
+
   const createController = async () => {
     const service = {
       updateDisplayName: jest.fn<AccountService["updateDisplayName"]>(),

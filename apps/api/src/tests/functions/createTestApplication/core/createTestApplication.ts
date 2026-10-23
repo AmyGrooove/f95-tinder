@@ -13,6 +13,7 @@ import { createConnection } from "mongoose"
 import { createClient } from "redis"
 
 import { AccountModule } from "@endpoints/account/account.module"
+import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
@@ -102,6 +103,7 @@ const createTestApplication = async () => {
         AuthModule,
         AccountModule,
         UserItemEndpointModule,
+        CollectionEndpointModule,
         LoggerModule,
         ThrottlingModule,
       ],

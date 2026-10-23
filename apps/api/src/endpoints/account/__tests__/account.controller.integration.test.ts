@@ -140,6 +140,35 @@ describe("AccountController HTTP", () => {
     ).toMatchObject({ username: "newusername123" })
   })
 
+  it.each([
+    { field: "username", value: "a".repeat(32) },
+    { field: "username", value: `  ${"A".repeat(32)}  ` },
+    { field: "displayName", value: "Я".repeat(40) },
+    { field: "displayName", value: `  ${"Я".repeat(40)}  ` },
+    { field: "displayName", value: "😀".repeat(40) },
+  ])(
+    "сохраняет $field на границе длины после нормализации: $value",
+    async ({ field, value }) => {
+      const { app, connection } = getTestApplication()
+      const { user, headers } = await createAccount()
+      const response = await app.inject({
+        method: "PATCH",
+        url: `/account/${field}`,
+        headers,
+        payload: { [field]: value },
+      })
+
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
+      expect(
+        await connection.collection<User>("User").findOne({ _id: user._id }),
+      ).toMatchObject({
+        [field]:
+          field === "username" ? value.trim().toLowerCase() : value.trim(),
+      })
+    },
+  )
+
   it("возвращает 409 при занятом имени и сохраняет прежнее имя", async () => {
     const { app, connection } = getTestApplication()
     const first = await createAccount()
@@ -162,6 +191,9 @@ describe("AccountController HTTP", () => {
   it.each([
     { url: "/account/displayName", payload: { displayName: "   " } },
     { url: "/account/username", payload: { username: "bad name!" } },
+    { url: "/account/username", payload: { username: "a".repeat(33) } },
+    { url: "/account/displayName", payload: { displayName: "Я".repeat(41) } },
+    { url: "/account/displayName", payload: { displayName: "😀".repeat(41) } },
     {
       url: "/account/displayName",
       payload: { displayName: "Имя", role: "admin" },

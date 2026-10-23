@@ -3,7 +3,6 @@ import {
   Controller,
   Cookies,
   Delete,
-  Get,
   Header,
   HttpCode,
   Param,
@@ -53,33 +52,6 @@ class CollectionController {
     @Body() body: CreateCollectionBodyDto,
   ) {
     return this.collectionService.create(accessToken, body)
-  }
-
-  @Get(":id")
-  @HttpCode(200)
-  @Header("Cache-Control", "no-store")
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-  })
-  @ApiEndpoint({
-    operationId: "CollectionController_getById",
-    summary: SWAGGER_DICTIONARY.collection.get,
-    description: SWAGGER_DICTIONARY.collection.description,
-    response: {
-      status: 200,
-      type: CollectionResponseDto,
-      description: SWAGGER_DICTIONARY.collection.response,
-    },
-    errors: [
-      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
-      { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
-      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
-    ],
-  })
-  getById(@Param("id", MongoObjectIdHandler) id: Types.ObjectId) {
-    return this.collectionService.getById(id)
   }
 
   @Patch(":id")

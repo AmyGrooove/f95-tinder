@@ -13,6 +13,11 @@ const DICTIONARY = {
     activeAttemptCompletedAt: "Текущая попытка не может иметь дату завершения",
   },
   collection: {
+    invalidPagination: "Слишком большое смещение страницы",
+    invalidRatingRange: "Минимальная оценка не может превышать максимальную",
+    unavailableMode: "Режим grouped недоступен для этой подборки",
+    invalidFeatureFilters:
+      "Некорректные условия характеристик: проверьте ID, типы значений и границы",
     emptyUpdate: "Укажите хотя бы одно изменение подборки",
     versionConflict: "Версия подборки устарела, загрузите актуальные данные",
     versionLimit: "Достигнут предел версии подборки",

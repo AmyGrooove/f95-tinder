@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -53,6 +53,13 @@ class FeatureRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<Feature>
     >(model)
+  }
+
+  findFilterDefinitionsByIds(ids: Types.ObjectId[]) {
+    return this.read.findMany(
+      { _id: { $in: ids } },
+      { _id: 1, key: 1, valueType: 1 },
+    )
   }
 }
 
