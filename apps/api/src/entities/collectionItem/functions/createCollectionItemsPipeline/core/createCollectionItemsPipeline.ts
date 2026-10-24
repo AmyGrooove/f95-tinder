@@ -3,9 +3,7 @@ import type { PipelineStage } from "mongoose"
 import { Item } from "@entities/item/schemas/item.schema"
 import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { ItemFeature } from "@entities/itemFeature/schemas/itemFeature.schema"
-import { UserItem } from "@entities/userItem/schemas/userItem.schema"
-import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { ItemMetric } from "@entities/itemMetric/schemas/itemMetric.schema"
 import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { escapeRegex } from "@shared/functions/regex/escapeRegex"
@@ -131,98 +129,34 @@ const createCollectionItemsPipeline = (
     )
   }
 
-  if (!isUndefined(props.userId)) {
+  if (!isUndefined(props.ratingMin) || !isUndefined(props.ratingMax)) {
     pipeline.push(
       {
         $lookup: {
-          from: UserItem.name,
+          from: ItemMetric.name,
           localField: "item",
           foreignField: "item",
           pipeline: [
             {
               $match: {
-                user: props.userId,
-                $or: [
-                  { status: { $ne: EUserItemStatus.SKIPPED } },
-                  { expiresAt: { $gt: new Date() } },
-                ],
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                status: 1,
-                rating: 1,
-                isFavorite: 1,
-                currentAttempt: {
-                  $cond: [
-                    {
-                      $in: [
-                        "$status",
-                        [EUserItemStatus.IN_PROGRESS, EUserItemStatus.ON_HOLD],
-                      ],
-                    },
-                    { $ifNull: [{ $arrayElemAt: ["$attempts", -1] }, null] },
-                    null,
-                  ],
+                ratingAverage: {
+                  $ne: null,
+                  ...(!isUndefined(props.ratingMin)
+                    ? { $gte: props.ratingMin }
+                    : {}),
+                  ...(!isUndefined(props.ratingMax)
+                    ? { $lte: props.ratingMax }
+                    : {}),
                 },
               },
             },
-            {
-              $project: {
-                _id: 1,
-                status: 1,
-                rating: 1,
-                isFavorite: 1,
-                "currentAttempt.id": 1,
-                "currentAttempt.isCompleted": 1,
-                "currentAttempt.progress": 1,
-                "currentAttempt.unit": 1,
-                "currentAttempt.startedAt": 1,
-              },
-            },
+            { $project: { _id: 1 } },
           ],
-          as: "userItemDocument",
+          as: "matchedMetric",
         },
       },
-      {
-        $set: {
-          userItem: {
-            $ifNull: [{ $arrayElemAt: ["$userItemDocument", 0] }, null],
-          },
-        },
-      },
+      { $match: { "matchedMetric.0": { $exists: true } } },
     )
-
-    if (!isUndefined(props.isInLibrary)) {
-      pipeline.push({
-        $match: {
-          "userItem.status": props.isInLibrary
-            ? { $in: [...USER_ITEM_LIBRARY_STATUSES] }
-            : { $nin: [...USER_ITEM_LIBRARY_STATUSES] },
-        },
-      })
-    }
-
-    if (!isUndefined(props.statuses)) {
-      pipeline.push({ $match: { "userItem.status": { $in: props.statuses } } })
-    }
-
-    if (!isUndefined(props.isFavorite)) {
-      pipeline.push({ $match: { "userItem.isFavorite": props.isFavorite } })
-    }
-
-    if (!isUndefined(props.ratingMin) || !isUndefined(props.ratingMax)) {
-      pipeline.push({
-        $match: {
-          "userItem.rating": {
-            $ne: null,
-            ...(!isUndefined(props.ratingMin) ? { $gte: props.ratingMin } : {}),
-            ...(!isUndefined(props.ratingMax) ? { $lte: props.ratingMax } : {}),
-          },
-        },
-      })
-    }
   }
 
   const sort: Record<string, 1 | -1> =
@@ -274,7 +208,6 @@ const createCollectionItemsPipeline = (
               title: "$itemDocument.title",
               media: "$itemDocument.media",
             },
-            ...(!isUndefined(props.userId) ? { userItem: 1 } : {}),
           },
         },
       ],

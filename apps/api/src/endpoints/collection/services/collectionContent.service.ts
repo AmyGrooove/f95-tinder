@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common"
 import { Types } from "mongoose"
 import { isISO8601 } from "class-validator"
@@ -32,7 +31,6 @@ import type { CollectionFeatureFilterQueryDto } from "../dto/query/collectionFea
 import type { CollectionItemResponseDto } from "../dto/response/collectionItem.response"
 import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 import { createCollectionDisplayBlocks } from "../functions/createCollectionDisplayBlocks"
-import { CollectionAuthService } from "./collectionAuth.service"
 
 @Injectable()
 class CollectionContentService {
@@ -40,7 +38,6 @@ class CollectionContentService {
     private readonly collectionRepository: CollectionRepository,
     private readonly collectionItemRepository: CollectionItemRepository,
     private readonly featureRepository: FeatureRepository,
-    private readonly collectionAuthService: CollectionAuthService,
   ) {}
 
   async getFilters(
@@ -79,23 +76,10 @@ class CollectionContentService {
     }
   }
 
-  async getItems(
-    accessToken: unknown,
-    { id, query }: IGetCollectionItemsRequestProps,
-  ): Promise<CollectionItemsResponseDto> {
-    const isPersonalFilter = [
-      query.statuses,
-      query.isInLibrary,
-      query.isFavorite,
-      query.ratingMin,
-      query.ratingMax,
-    ].some((value) => !isUndefined(value))
-    const userId = await this.authenticateOptional(accessToken)
-
-    if (isPersonalFilter && isUndefined(userId)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
+  async getItems({
+    id,
+    query,
+  }: IGetCollectionItemsRequestProps): Promise<CollectionItemsResponseDto> {
     const { page, limit } = normalizePagination(query, 20)
 
     if (!Number.isSafeInteger((page - 1) * limit)) {
@@ -149,10 +133,6 @@ class CollectionContentService {
       ),
       features,
       query: query.query,
-      userId,
-      statuses: query.statuses,
-      isInLibrary: query.isInLibrary,
-      isFavorite: query.isFavorite,
       ratingMin: query.ratingMin,
       ratingMax: query.ratingMax,
     })
@@ -162,15 +142,15 @@ class CollectionContentService {
       page,
       limit,
     )
-    const isFiltered =
-      isPersonalFilter ||
-      [
-        query.groupId,
-        query.query,
-        query.tags,
-        query.excludeTags,
-        query.features,
-      ].some((value) => !isUndefined(value))
+    const isFiltered = [
+      query.groupId,
+      query.query,
+      query.tags,
+      query.excludeTags,
+      query.features,
+      query.ratingMin,
+      query.ratingMax,
+    ].some((value) => !isUndefined(value))
 
     return {
       ...response,
@@ -209,14 +189,6 @@ class CollectionContentService {
     }
 
     return { collection, groupIds, groupId }
-  }
-
-  private async authenticateOptional(accessToken: unknown) {
-    if (isUndefined(accessToken)) {
-      return undefined
-    }
-
-    return this.collectionAuthService.authenticate(accessToken)
   }
 
   private async prepareFeatureFilters(
@@ -349,7 +321,7 @@ class CollectionContentService {
   }
 
   private mapItem(card: ICollectionItemCard): CollectionItemResponseDto {
-    const item: CollectionItemResponseDto = {
+    return {
       id: card.item._id.toHexString(),
       type: card.item.type,
       title: { ru: card.item.title.ru, en: card.item.title.en },
@@ -364,31 +336,6 @@ class CollectionContentService {
         note: card.note,
       },
     }
-
-    if (!isUndefined(card.userItem)) {
-      const userItem = card.userItem
-      const attempt = userItem?.currentAttempt
-
-      item.userItem = isNil(userItem)
-        ? null
-        : {
-            id: userItem._id.toHexString(),
-            status: userItem.status,
-            rating: userItem.rating,
-            isFavorite: userItem.isFavorite,
-            currentAttempt: isNil(attempt)
-              ? null
-              : {
-                  id: attempt.id.toHexString(),
-                  isCompleted: attempt.isCompleted,
-                  progress: attempt.progress,
-                  unit: attempt.unit,
-                  startedAt: attempt.startedAt?.toISOString() ?? null,
-                },
-          }
-    }
-
-    return item
   }
 
   private mapFeature(

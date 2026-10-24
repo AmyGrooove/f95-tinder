@@ -24,7 +24,7 @@ Password helpers already exist as [hashValue](../../src/infrastructure/security/
 
 ## Account and authentication routes
 
-[CollectionAuthService.authenticate](../../src/endpoints/collection/services/collectionAuth.service.ts) centralizes access-cookie JWT, active owned Session and existing User checks for collection endpoints and sets the request-context user ID. CollectionContentService skips authentication only when the access cookie is absent; personal filters still require authentication.
+[CollectionAuthService.authenticate](../../src/endpoints/collection/services/collectionAuth.service.ts) centralizes access-cookie JWT, active owned Session and existing User checks for collection endpoints and sets the request-context user ID. CollectionContentService reads public collection content without authentication or UserItem data; access cookies are not checked for these reads.
 
 `POST /auth/password/reset` uses [PasswordResetController.requestPasswordReset](../../src/endpoints/auth/controllers/passwordReset.controller.ts), [PasswordResetBodyDto](../../src/endpoints/auth/dto/body/passwordReset.body.ts) and [PasswordResetService](../../src/endpoints/auth/services/passwordReset.service.ts). It accepts a trimmed lowercase email of at most 254 characters without authentication. Valid requests return 204 with Cache-Control:no-store for unknown accounts, accounts without a password, cooldown requests and mail queue submission failures. The IP limit is 5 requests per minute; global CSRF protection applies. It preserves User, Session and cookies.
 

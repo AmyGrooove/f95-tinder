@@ -1,13 +1,5 @@
-import {
-  Controller,
-  Cookies,
-  Get,
-  Header,
-  HttpCode,
-  Param,
-  Query,
-} from "@nestjs/common"
-import { ApiParam, ApiSecurity, ApiTags } from "@nestjs/swagger"
+import { Controller, Get, Header, HttpCode, Param, Query } from "@nestjs/common"
+import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
@@ -60,8 +52,6 @@ class CollectionReadController {
   @Get(":id/items")
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
-  @ApiSecurity({})
-  @ApiSecurity("accessCookie")
   @ApiParam({
     name: "id",
     type: String,
@@ -78,17 +68,15 @@ class CollectionReadController {
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
-      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
   getItems(
-    @Cookies("__Host-accessToken") accessToken: unknown,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Query() query: CollectionItemsQueryDto,
   ) {
-    return this.collectionContentService.getItems(accessToken, { id, query })
+    return this.collectionContentService.getItems({ id, query })
   }
 
   @Get(":id/filters")

@@ -184,104 +184,107 @@ describe("CollectionReadController HTTP", () => {
     ).toBe(400)
   })
 
-  it("добавляет личные данные только текущего пользователя и применяет личные фильтры", async () => {
-    const { app } = getTestApplication()
-    const { collection, first, second, owner } = await createCollection()
-    const library = await app.inject({
+  it("возвращает одинаковый публичный состав гостю и владельцу с личными данными", async () => {
+    const { app, connection } = getTestApplication()
+    const { collection, first, owner } = await createCollection()
+    const created = await app.inject({
       method: "POST",
       url: "/userItems",
       headers: owner.headers,
-      payload: { itemId: first._id.toHexString(), status: "planned" },
+      payload: { itemId: first._id.toHexString(), status: "inProgress" },
     })
-    expect(library.statusCode).toBe(201)
-    const base = `/collections/${collection.id}/items?mode=flat`
-    const response = await app.inject({
+    expect(created.statusCode).toBe(201)
+    const updated = await app.inject({
+      method: "PATCH",
+      url: "/userItems/" + created.json<{ id: string }>().id,
+      headers: owner.headers,
+      payload: { rating: 10, isFavorite: true, note: "Секретная заметка" },
+    })
+    expect(updated.statusCode).toBe(200)
+    const before = await connection
+      .collection("UserItem")
+      .findOne({ item: first._id })
+    const url = "/collections/" + collection.id + "/items"
+    const guest = await app.inject({ method: "GET", url })
+    const signedIn = await app.inject({
       method: "GET",
-      url: base,
+      url,
       headers: owner.headers,
     })
-    expect(response.statusCode).toBe(200)
-    expect(response.json()).toMatchObject({
-      items: [
-        {
-          id: first._id.toHexString(),
-          userItem: { status: "planned", rating: null, isFavorite: false },
-        },
-        { id: second._id.toHexString(), userItem: null },
-      ],
-    })
-    for (const filter of [
-      "isInLibrary=true",
-      "statuses=planned",
-      "isFavorite=false",
-    ]) {
-      const filtered = await app.inject({
-        method: "GET",
-        url: `${base}&${filter}`,
-        headers: owner.headers,
-      })
-      expect(filtered.statusCode).toBe(200)
-      expect(filtered.json()).toMatchObject({
-        total: 1,
-        items: [{ id: first._id.toHexString() }],
-      })
+    expect(guest.statusCode).toBe(200)
+    expect(signedIn.statusCode).toBe(200)
+    expect(signedIn.json()).toEqual(guest.json())
+    expect(signedIn.headers["cache-control"]).toBe("no-store")
+    for (const card of signedIn.json<{ items: Record<string, unknown>[] }>()
+      .items) {
+      expect(Object.keys(card).sort()).toEqual([
+        "id",
+        "media",
+        "membership",
+        "title",
+        "type",
+      ])
     }
-    const absent = await app.inject({
-      method: "GET",
-      url: `${base}&isInLibrary=false`,
-      headers: owner.headers,
-    })
-    expect(absent.statusCode).toBe(200)
-    expect(absent.json()).toMatchObject({
-      total: 1,
-      items: [{ id: second._id.toHexString(), userItem: null }],
-    })
+    expect(
+      await connection.collection("UserItem").findOne({ item: first._id }),
+    ).toEqual(before)
   })
 
   it.each([
+    "isInLibrary=true",
     "isInLibrary=false",
+    "isFavorite=true",
     "isFavorite=false",
     "statuses=planned",
-    "ratingMin=1",
-    "ratingMax=10",
-  ])("требует авторизацию для личного фильтра %s", async (query) => {
-    const { app } = getTestApplication()
-    const { collection } = await createCollection()
-    expect(
-      (
-        await app.inject({
-          method: "GET",
-          url: `/collections/${collection.id}/items?${query}`,
-        })
-      ).statusCode,
-    ).toBe(401)
-  })
+    "statuses=skipped,blocked",
+  ])(
+    "отклоняет удалённый личный фильтр %s и у гостя, и у владельца",
+    async (query) => {
+      const { app } = getTestApplication()
+      const { collection, owner } = await createCollection()
+      const url = "/collections/" + collection.id + "/items?" + query
+      for (const headers of [{}, owner.headers]) {
+        const response = await app.inject({ method: "GET", url, headers })
+        expect(response.statusCode).toBe(400)
+      }
+    },
+  )
 
-  it("отклоняет переданный неверный cookie и истёкшую сессию даже без личных фильтров", async () => {
+  it("игнорирует неверную cookie, истёкшую и отозванную сессию при публичном чтении", async () => {
     const { app, connection } = getTestApplication()
     const { collection, owner } = await createCollection()
-    const url = `/collections/${collection.id}/items`
-    expect(
-      (
-        await app.inject({
-          method: "GET",
-          url,
-          headers: { cookie: "__Host-accessToken=invalid" },
-        })
-      ).statusCode,
-    ).toBe(401)
+    const url = "/collections/" + collection.id + "/items"
+    const guest = await app.inject({ method: "GET", url })
+    expect(guest.statusCode).toBe(200)
+    const invalid = await app.inject({
+      method: "GET",
+      url,
+      headers: { cookie: "__Host-accessToken=invalid" },
+    })
+    expect(invalid.statusCode).toBe(200)
+    expect(invalid.json()).toEqual(guest.json())
     await connection
       .collection<Session>("Session")
       .updateOne(
         { _id: owner.session._id },
         { $set: { expiresAt: new Date(Date.now() - 1000) } },
       )
-    expect(
-      (await app.inject({ method: "GET", url, headers: owner.headers }))
-        .statusCode,
-    ).toBe(401)
+    const expired = await app.inject({
+      method: "GET",
+      url,
+      headers: owner.headers,
+    })
+    expect(expired.statusCode).toBe(200)
+    expect(expired.json()).toEqual(guest.json())
+    await connection.collection("Session").deleteOne({ _id: owner.session._id })
+    const revoked = await app.inject({
+      method: "GET",
+      url,
+      headers: owner.headers,
+    })
+    expect(revoked.statusCode).toBe(200)
+    expect(revoked.json()).toEqual(guest.json())
   })
-
   it("ограничивает доступные теги группой, сохраняя режимы всей подборки", async () => {
     const { app, connection } = getTestApplication()
     const { collection, first, second, firstGroupId } = await createCollection()
@@ -444,6 +447,13 @@ describe("CollectionReadController HTTP", () => {
     "isFavorite=1",
     "ratingMin=0",
     "ratingMax=11",
+    "ratingMin=10.1",
+    "ratingMax=0.9",
+    "ratingMin=NaN",
+    "ratingMax=Infinity",
+    "ratingMin=",
+    "ratingMax=bad",
+    "ratingMin=7&ratingMin=8",
     "ratingMin=10&ratingMax=1",
     "query=%20%20",
     "unknown=1",
@@ -521,164 +531,237 @@ describe("CollectionReadController HTTP", () => {
       }
     },
   )
-  it("исключения skipped и blocked доступны по статусу, но не считаются библиотекой", async () => {
-    const { app } = getTestApplication()
-    const { collection, first, second, owner } = await createCollection()
-    for (const entry of [
-      { item: first, operation: "skip" },
-      { item: second, operation: "block" },
-    ]) {
-      expect(
-        (
-          await app.inject({
-            method: "POST",
-            url: "/userItems/" + entry.operation,
-            headers: owner.headers,
-            payload: { itemId: entry.item._id.toHexString() },
-          })
-        ).statusCode,
-      ).toBe(201)
-    }
-    const base = "/collections/" + collection.id + "/items?mode=flat"
-    const library = await app.inject({
-      method: "GET",
-      url: base + "&isInLibrary=true",
-      headers: owner.headers,
-    })
-    expect(library.statusCode).toBe(200)
-    expect(library.json()).toMatchObject({ total: 0, items: [] })
-    const outside = await app.inject({
-      method: "GET",
-      url: base + "&isInLibrary=false",
-      headers: owner.headers,
-    })
-    expect(outside.statusCode).toBe(200)
-    expect(outside.json()).toMatchObject({
-      total: 2,
-      items: [
+
+  it.each([
+    ["ratingMin=7.5", [0, 1]],
+    ["ratingMax=8.25", [0, 1]],
+    ["ratingMin=7.5&ratingMax=7.5", [0]],
+    ["ratingMin=8.25&ratingMax=8.25", [1]],
+    ["ratingMin=7.6&ratingMax=8.25", [1]],
+    ["ratingMin=1&ratingMax=10", [0, 1]],
+    ["ratingMin=9", []],
+    ["ratingMax=7.4", []],
+  ] satisfies Array<[string, number[]]>)(
+    "фильтрует гостевую выдачу по общей оценке с включительными границами: %s",
+    async (query, indexes) => {
+      const { app, connection } = getTestApplication()
+      const { collection, first, second, owner } = await createCollection()
+      await connection.collection("ItemMetric").insertMany([
+        { item: first._id, ratingAverage: 7.5 },
+        { item: second._id, ratingAverage: 8.25 },
+        { item: new Types.ObjectId(), ratingAverage: 9 },
+      ])
+      await connection.collection("UserItem").insertMany([
         {
-          id: first._id.toHexString(),
-          userItem: { status: "skipped", currentAttempt: null },
+          user: owner.user._id,
+          item: first._id,
+          status: "blocked",
+          rating: 10,
+          isFavorite: true,
+          note: "Приватно",
+          attempts: [],
         },
         {
-          id: second._id.toHexString(),
-          userItem: { status: "blocked", currentAttempt: null },
+          user: owner.user._id,
+          item: second._id,
+          status: "planned",
+          rating: 1,
+          isFavorite: false,
+          attempts: [],
         },
-      ],
-    })
-    for (const status of ["skipped", "blocked"]) {
-      const filtered = await app.inject({
+      ])
+      const url = "/collections/" + collection.id + "/items?" + query
+      const guest = await app.inject({ method: "GET", url })
+      const signedIn = await app.inject({
         method: "GET",
-        url: base + "&statuses=" + status,
+        url,
         headers: owner.headers,
       })
-      expect(filtered.statusCode).toBe(200)
-      expect(filtered.json()).toMatchObject({
-        total: 1,
+      expect(guest.statusCode).toBe(200)
+      expect(signedIn.statusCode).toBe(200)
+      expect(signedIn.json()).toEqual(guest.json())
+      const body = guest.json<{
+        total: number
+        items: Array<{ id: string }>
+        displayBlocks: Array<{ type: string }>
+      }>()
+      expect(body.total).toBe(indexes.length)
+      expect(body.items.map((item) => item.id)).toEqual(
+        indexes.map((index) => [first, second][index]?._id.toHexString()),
+      )
+      expect(body.displayBlocks.every((block) => block.type === "group")).toBe(
+        true,
+      )
+      for (const item of body.items) {
+        expect(item).not.toHaveProperty("userItem")
+      }
+    },
+  )
+
+  it.each([undefined, null])(
+    "не подменяет неизвестную общую оценку %s личной оценкой и сохраняет Item без фильтра",
+    async (average) => {
+      const { app, connection } = getTestApplication()
+      const { collection, first, second, owner } = await createCollection()
+      await connection
+        .collection("ItemMetric")
+        .insertOne({ item: second._id, ratingAverage: 8 })
+      if (average === null) {
+        await connection
+          .collection("ItemMetric")
+          .insertOne({ item: first._id, ratingAverage: null })
+      }
+      await connection.collection("UserItem").insertOne({
+        user: owner.user._id,
+        item: first._id,
+        status: "planned",
+        rating: 10,
+        isFavorite: false,
+        attempts: [],
+      })
+      const base = "/collections/" + collection.id + "/items?mode=flat"
+      const unfiltered = await app.inject({ method: "GET", url: base })
+      expect(unfiltered.statusCode).toBe(200)
+      expect(unfiltered.json()).toMatchObject({
+        total: 2,
         items: [
-          {
-            id: (status === "skipped" ? first : second)._id.toHexString(),
-            userItem: { status },
-          },
+          { id: first._id.toHexString() },
+          { id: second._id.toHexString() },
         ],
       })
-    }
-  })
+      for (const query of [
+        "ratingMin=1",
+        "ratingMax=10",
+        "ratingMin=1&ratingMax=10",
+      ]) {
+        const response = await app.inject({
+          method: "GET",
+          url: base + "&" + query,
+          headers: owner.headers,
+        })
+        expect(response.statusCode).toBe(200)
+        expect(response.json()).toMatchObject({
+          total: 1,
+          items: [{ id: second._id.toHexString() }],
+        })
+      }
+    },
+  )
 
-  it("не возвращает просроченный skipped как личное состояние карточки", async () => {
+  it("считает total и страницы после фильтра общей оценки и совмещает его с поиском и группой", async () => {
     const { app, connection } = getTestApplication()
-    const { collection, first, owner } = await createCollection()
-    await connection.collection("UserItem").insertOne({
-      user: owner.user._id,
-      item: first._id,
-      status: "skipped",
-      expiresAt: new Date(Date.now() - 1000),
-      rating: null,
-      isFavorite: false,
-      attempts: [],
-    })
-    const base = "/collections/" + collection.id + "/items?mode=flat"
-    const response = await app.inject({
+    const { collection, first, second, secondGroupId } =
+      await createCollection()
+    await connection.collection("ItemMetric").insertMany([
+      { item: first._id, ratingAverage: 7.5 },
+      { item: second._id, ratingAverage: 8.25 },
+    ])
+    const base =
+      "/collections/" +
+      collection.id +
+      "/items?mode=flat&ratingMin=7.5&ratingMax=8.25&limit=1"
+    const secondPage = await app.inject({
       method: "GET",
-      url: base,
-      headers: owner.headers,
+      url: base + "&page=2",
     })
-    expect(response.statusCode).toBe(200)
-    expect(response.json()).toMatchObject({
-      items: [
-        { id: first._id.toHexString(), userItem: null },
-        { userItem: null },
-      ],
+    expect(secondPage.statusCode).toBe(200)
+    expect(secondPage.json()).toMatchObject({
+      total: 2,
+      pages: 2,
+      page: 2,
+      isPreviousPage: true,
+      isNextPage: false,
+      items: [{ id: second._id.toHexString() }],
     })
     const filtered = await app.inject({
       method: "GET",
-      url: base + "&statuses=skipped",
-      headers: owner.headers,
+      url: base + "&groupId=" + secondGroupId + "&query=Beta",
     })
     expect(filtered.statusCode).toBe(200)
-    expect(filtered.json()).toMatchObject({ total: 0, items: [] })
+    expect(filtered.json()).toMatchObject({
+      total: 1,
+      pages: 1,
+      items: [{ id: second._id.toHexString() }],
+    })
+    const narrowedBase =
+      "/collections/" + collection.id + "/items?mode=flat&ratingMin=8&limit=1"
+    const narrowed = await app.inject({ method: "GET", url: narrowedBase })
+    expect(narrowed.statusCode).toBe(200)
+    expect(narrowed.json()).toMatchObject({
+      total: 1,
+      pages: 1,
+      page: 1,
+      isPreviousPage: false,
+      isNextPage: false,
+      items: [{ id: second._id.toHexString() }],
+    })
+    const narrowedNext = await app.inject({
+      method: "GET",
+      url: narrowedBase + "&page=2",
+    })
+    expect(narrowedNext.statusCode).toBe(200)
+    expect(narrowedNext.json()).toMatchObject({ total: 1, pages: 1, items: [] })
+    const pastLastPage = await app.inject({
+      method: "GET",
+      url: base + "&page=3",
+    })
+    expect(pastLastPage.statusCode).toBe(200)
+    expect(pastLastPage.json()).toMatchObject({ total: 2, pages: 2, items: [] })
   })
 
-  it("возвращает последнюю попытку с процентами и isCompleted только при inProgress или onHold", async () => {
-    const { app } = getTestApplication()
-    const { collection, first, owner } = await createCollection()
-    const created = await app.inject({
-      method: "POST",
-      url: "/userItems",
-      headers: owner.headers,
-      payload: { itemId: first._id.toHexString(), status: "inProgress" },
-    })
-    expect(created.statusCode).toBe(201)
-    const id = created.json<{ id: string }>().id
-    const added = await app.inject({
-      method: "POST",
-      url: "/userItems/" + id + "/attempts",
-      headers: owner.headers,
-      payload: { progress: 65, unit: "percent", isCompleted: false },
-    })
-    expect(added.statusCode).toBe(201)
-    const attempts = added.json<{ attempts: Array<{ id: string }> }>().attempts
-    const base = "/collections/" + collection.id + "/items?mode=flat"
-    for (const status of [
-      "inProgress",
-      "onHold",
-      "completed",
-      "planned",
-      "blocked",
-    ]) {
-      expect(
-        (
-          await app.inject({
-            method: "PATCH",
-            url: "/userItems/" + id,
-            headers: owner.headers,
-            payload: { status },
-          })
-        ).statusCode,
-      ).toBe(200)
+  it.each([
+    "planned",
+    "inProgress",
+    "onHold",
+    "completed",
+    "dropped",
+    "skipped",
+    "blocked",
+    "expiredSkip",
+  ])(
+    "не меняет публичный состав и не раскрывает личную запись в состоянии %s",
+    async (state) => {
+      const { app, connection } = getTestApplication()
+      const { collection, first, owner } = await createCollection()
+      const url = "/collections/" + collection.id + "/items"
+      const before = await app.inject({ method: "GET", url })
+      expect(before.statusCode).toBe(200)
+      const isSkipped = state === "skipped" || state === "expiredSkip"
+      await connection.collection("UserItem").insertOne({
+        user: owner.user._id,
+        item: first._id,
+        status: isSkipped ? "skipped" : state,
+        rating: isSkipped ? null : 9,
+        isFavorite: !isSkipped,
+        note: isSkipped ? null : "Приватная заметка",
+        attempts: isSkipped
+          ? []
+          : [
+              {
+                id: new Types.ObjectId(),
+                isCompleted: false,
+                progress: 65,
+                unit: "percent",
+                startedAt: null,
+                completedAt: null,
+              },
+            ],
+        expiresAt: isSkipped
+          ? new Date(
+              Date.now() + (state === "expiredSkip" ? -60_000 : 86_400_000),
+            )
+          : null,
+      })
       const response = await app.inject({
         method: "GET",
-        url: base,
+        url,
         headers: owner.headers,
       })
       expect(response.statusCode).toBe(200)
-      const card = response.json<{
-        items: Array<{ userItem: { currentAttempt: unknown } }>
-      }>().items[0]
-      expect(card?.userItem).toMatchObject({ status })
-      if (status === "inProgress" || status === "onHold") {
-        expect(card?.userItem.currentAttempt).toEqual({
-          id: attempts.at(-1)?.id,
-          isCompleted: false,
-          progress: 65,
-          unit: "percent",
-          startedAt: null,
-        })
-      } else {
-        expect(card?.userItem.currentAttempt).toBeNull()
-      }
-      expect(card?.userItem).not.toHaveProperty("note")
-      expect(card?.userItem).not.toHaveProperty("attempts")
-    }
-  })
+      expect(response.json()).toEqual(before.json())
+      expect(response.body).not.toContain("userItem")
+      expect(response.body).not.toContain("Приватная заметка")
+      expect(response.body).not.toContain("attempts")
+    },
+  )
 })

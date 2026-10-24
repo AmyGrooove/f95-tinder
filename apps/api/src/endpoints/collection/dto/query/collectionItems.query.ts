@@ -3,11 +3,11 @@ import { Transform, Type } from "class-transformer"
 import {
   ArrayNotEmpty,
   IsArray,
-  IsBoolean,
   IsEnum,
   IsIn,
   IsInt,
   IsMongoId,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -17,7 +17,6 @@ import {
   ValidateNested,
 } from "class-validator"
 
-import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 
@@ -68,34 +67,10 @@ class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
   @ValidateNested({ each: true })
   features?: CollectionFeatureFilterQueryDto[]
 
-  @ApiPropertyOptional({ enum: EUserItemStatus, isArray: true })
-  @IsOptional()
-  @Transform(({ value }: { value: unknown }) => parseCollectionQueryList(value))
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsEnum(EUserItemStatus, { each: true })
-  statuses?: EUserItemStatus[]
-
-  @ApiPropertyOptional({ type: Boolean })
-  @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    value === "true" ? true : value === "false" ? false : value,
-  )
-  @IsBoolean()
-  isInLibrary?: boolean
-
-  @ApiPropertyOptional({ type: Boolean })
-  @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    value === "true" ? true : value === "false" ? false : value,
-  )
-  @IsBoolean()
-  isFavorite?: boolean
-
   @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
+  @IsNumber()
   @Min(1)
   @Max(10)
   ratingMin?: number
@@ -103,7 +78,7 @@ class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
   @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
+  @IsNumber()
   @Min(1)
   @Max(10)
   ratingMax?: number

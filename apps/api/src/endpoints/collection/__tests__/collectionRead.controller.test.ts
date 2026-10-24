@@ -1,9 +1,5 @@
 import { describe, expect, it, jest } from "@jest/globals"
-import {
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
-} from "@nestjs/common"
+import { BadRequestException, NotFoundException } from "@nestjs/common"
 import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
 
@@ -57,28 +53,25 @@ describe("CollectionReadController", () => {
     expect(service.getById).toHaveBeenCalledWith(id)
   })
 
-  it.each([undefined, "token"])(
-    "передаёт cookie %s, id и query для страницы произведений",
-    async (token) => {
-      const { controller, content, id } = await createController()
-      const query = { page: 2, limit: 1, isFavorite: false }
-      const result = {
-        items: [],
-        page: 2,
-        limit: 1,
-        total: 0,
-        pages: 0,
-        isNextPage: false,
-        isPreviousPage: true,
-        mode: ECollectionMode.FLAT,
-        displayBlocks: [],
-      }
-      content.getItems.mockResolvedValue(result)
-      await expect(controller.getItems(token, id, query)).resolves.toBe(result)
-      expect(content.getItems).toHaveBeenCalledTimes(1)
-      expect(content.getItems).toHaveBeenCalledWith(token, { id, query })
-    },
-  )
+  it("передаёт id и публичные фильтры для страницы произведений", async () => {
+    const { controller, content, id } = await createController()
+    const query = { page: 2, limit: 1, ratingMin: 7.5, ratingMax: 9 }
+    const result = {
+      items: [],
+      page: 2,
+      limit: 1,
+      total: 0,
+      pages: 0,
+      isNextPage: false,
+      isPreviousPage: true,
+      mode: ECollectionMode.FLAT,
+      displayBlocks: [],
+    }
+    content.getItems.mockResolvedValue(result)
+    await expect(controller.getItems(id, query)).resolves.toBe(result)
+    expect(content.getItems).toHaveBeenCalledTimes(1)
+    expect(content.getItems).toHaveBeenCalledWith({ id, query })
+  })
 
   it("передаёт область группы и возвращает доступные фильтры", async () => {
     const { controller, content, id } = await createController()
@@ -101,11 +94,13 @@ describe("CollectionReadController", () => {
     await expect(controller.getById(id)).rejects.toBe(error)
   })
 
-  it("сохраняет ошибку авторизации страницы произведений", async () => {
+  it("сохраняет ошибку некорректного диапазона общей оценки", async () => {
     const { controller, content, id } = await createController()
-    const error = new UnauthorizedException()
+    const error = new BadRequestException()
     content.getItems.mockRejectedValue(error)
-    await expect(controller.getItems(undefined, id, {})).rejects.toBe(error)
+    await expect(
+      controller.getItems(id, { ratingMin: 9, ratingMax: 2 }),
+    ).rejects.toBe(error)
   })
 
   it("сохраняет ошибку некорректной группы фильтров", async () => {

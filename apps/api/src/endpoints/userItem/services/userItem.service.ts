@@ -31,6 +31,8 @@ import type { IUpdateAttemptProps } from "../types/IUpdateAttemptProps"
 import type { IUpdateUserItemProps } from "../types/IUpdateUserItemProps"
 import type { IMutateUserItemProps } from "../types/IMutateUserItemProps"
 import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
+import type { QueryUserItemsBodyDto } from "../dto/body/queryUserItems.body"
+import type { UserItemSummaryResponseDto } from "../dto/response/userItemSummary.response"
 
 @Injectable()
 class UserItemService {
@@ -41,6 +43,44 @@ class UserItemService {
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
   ) {}
+
+  async query(
+    accessToken: unknown,
+    body: QueryUserItemsBodyDto,
+  ): Promise<UserItemSummaryResponseDto[]> {
+    const userId = await this.authenticate(accessToken)
+    const ids = body.ids.map((id) => new Types.ObjectId(id))
+    const records = await this.userItemRepository.read.findMany(
+      {
+        _id: { $in: ids },
+        user: userId,
+        $or: [
+          { status: { $ne: EUserItemStatus.SKIPPED } },
+          { expiresAt: { $gt: new Date() } },
+        ],
+      },
+      { _id: 1, item: 1, rating: 1, isFavorite: 1, status: 1 },
+    )
+    const recordsById = new Map(
+      records.map((record) => [record._id.toHexString(), record]),
+    )
+
+    return ids.flatMap((id) => {
+      const record = recordsById.get(id.toHexString())
+
+      return isNil(record)
+        ? []
+        : [
+            {
+              id: record._id.toHexString(),
+              itemId: record.item.toHexString(),
+              rating: record.rating,
+              isFavorite: record.isFavorite,
+              status: record.status,
+            },
+          ]
+    })
+  }
 
   async create(accessToken: unknown, body: CreateUserItemBodyDto) {
     return this.createWithStatus(accessToken, body)
