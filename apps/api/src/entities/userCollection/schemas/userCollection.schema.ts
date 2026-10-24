@@ -16,7 +16,7 @@ class UserCollection extends MongoEntity {
     required: true,
     ref: "Collection",
   })
-  collection: Types.ObjectId
+  collectionId: Types.ObjectId
 
   @Prop({ type: Boolean, required: true, default: false })
   isFavorite: boolean
@@ -40,11 +40,11 @@ type TCreateUserCollection = TCreateEntity<
 const UserCollectionSchema = SchemaFactory.createForClass(UserCollection)
 
 UserCollectionSchema.index(
-  { user: 1, collection: 1 },
+  { user: 1, collectionId: 1 },
   { name: "userCollectionUnique", unique: true },
 )
 UserCollectionSchema.index(
-  { collection: 1, user: 1 },
+  { collectionId: 1, user: 1 },
   { name: "collectionUsersLookup" },
 )
 

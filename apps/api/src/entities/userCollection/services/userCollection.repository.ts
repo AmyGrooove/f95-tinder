@@ -65,7 +65,7 @@ class UserCollectionRepository {
   }
 
   async upsertReaction(props: IUpsertUserCollectionReactionProps) {
-    const filter = { user: props.userId, collection: props.collectionId }
+    const filter = { user: props.userId, collectionId: props.collectionId }
     const update = { $set: props.reaction }
     const projection = { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 }
 
@@ -80,7 +80,7 @@ class UserCollectionRepository {
         error instanceof mongo.MongoServerError &&
         error.code === 11000 &&
         error.keyPattern?.user === 1 &&
-        error.keyPattern?.collection === 1
+        error.keyPattern?.collectionId === 1
       ) {
         return this.write.updateByFilter(filter, update, { projection })
       }
@@ -94,7 +94,7 @@ class UserCollectionRepository {
     collectionId: Types.ObjectId,
   ) {
     return this.read.findOne(
-      { user: userId, collection: collectionId },
+      { user: userId, collectionId },
       { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 },
     )
   }

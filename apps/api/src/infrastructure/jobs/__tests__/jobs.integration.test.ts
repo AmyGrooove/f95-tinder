@@ -13,10 +13,9 @@ import { Test, type TestingModule } from "@nestjs/testing"
 import type { Queue } from "bullmq"
 
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestRedis } from "@test/setup/setupRedis"
 
 import { JobHandler } from "../decorators/JobHandler"
 import { JobCancelledError } from "../errors/JobCancelledError"
@@ -76,9 +75,7 @@ describe("JobsModule Redis", () => {
 
   beforeEach(async () => {
     handle.mockReset().mockResolvedValue({ result: "done" })
-    const configuration = getTestApplication().app.get(
-      InfrastructureConfigService,
-    )
+    const { configuration } = getTestRedis()
     moduleRef = await Test.createTestingModule({
       imports: [JobsModule],
       providers: [Handler],

@@ -37,8 +37,14 @@ export default {
     {
       ...common,
       displayName: "integration",
+      moduleNameMapper: {
+        "^@infrastructure/security/functions/hashValue$":
+          "<rootDir>/src/tests/functions/hashValue/index.ts",
+        ...common.moduleNameMapper,
+      },
       testMatch: ["<rootDir>/src/**/__tests__/*.integration.test.ts"],
-      setupFilesAfterEnv: ["<rootDir>/src/tests/setup/setupIntegration.ts"],
+      globalSetup: "<rootDir>/scripts/tests/setupIntegration.mjs",
+      globalTeardown: "<rootDir>/scripts/tests/teardownIntegration.mjs",
     },
   ],
   testTimeout: 30_000,

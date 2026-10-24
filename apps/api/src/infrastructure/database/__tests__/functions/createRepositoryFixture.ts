@@ -1,7 +1,7 @@
 import { Schema } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestDatabase } from "@test/setup/setupDatabase"
 
 import { MongoAggregationRepository } from "../../services/mongoAggregation.repository"
 import { MongoBulkRepository } from "../../services/mongoBulk.repository"
@@ -16,7 +16,7 @@ interface IRepositoryRecord {
 }
 
 const createRepositoryFixture = async (name: string) => {
-  const { connection } = getTestApplication()
+  const { connection } = getTestDatabase()
   const schema = new Schema<IRepositoryRecord>({
     key: { type: String, required: true, unique: true },
     score: { type: Number, required: true, min: 0 },

@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "nest start --watch",
     "tunnel": "node --env-file=.env.tunnel scripts/tunnel.mjs",
-    "build": "nest build",
     "start": "node dist/main.js",
+    "build": "nest build",
     "type-check": "tsc --project tsconfig.test.json",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

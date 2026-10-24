@@ -40,6 +40,8 @@ The source tree does not contain the former `data/movie_*.json` dictionaries. Th
 
 The current application registers 23 root entity schemas. Their collection names match schema class names. Source declarations do not establish deployment of collections or indexes.
 
+CollectionItem and UserCollection reference Collection through the required ObjectId field `collectionId`. Their query filters, aggregation matches and compound indexes use this field. Existing documents with `collection` and indexes on that field require migration before using the updated API; no database migration was performed.
+
 [Source](../../src/entities/source/schemas/source.schema.ts) uses a unique camelCase key and nullable logoUrl/baseUrl/apiUrl. [UserSourceAccount](../../src/entities/userSourceAccount/schemas/userSourceAccount.schema.ts) stores user, source and externalId with unique user/source and source/externalId pairs; external ownership verification is not implemented. [SourceItem](../../src/entities/sourceItem/schemas/sourceItem.schema.ts) permits item=null before matching, has unique(source,externalId) and allows multiple source records for one Item. [ItemMetric](../../src/entities/itemMetric/schemas/itemMetric.schema.ts) stores one aggregate per Item: completed attempts, recommendations, ratings, favorites, distribution and status counts. Its counters are nonnegative safe integers; recalculation is not implemented. Session declares refresh-hash uniqueness, a user/expiry lookup and sessionExpiryTtl with expireAfterSeconds:600. Refresh, code reissue and password change update lastRefreshedAt through SessionRepository.updateRefreshToken.
 
 Raw artifact uploads are provided by SourceDataWriterService and StorageService. Import runs, approvals, provenance and publication checkpoints are not represented by current root entities; their application workflow remains to be implemented.
@@ -66,7 +68,6 @@ Source inspection does not prove data migrations, deployed unique indexes, trans
 Pagination defaults to page 1 and limit 20, floors finite values and clamps explicit limits to 1–100 through [normalizePagination](../../src/shared/functions/pagination/normalizePagination/core/normalizePagination.ts). The paginated repository normalizes a non-empty caller sort through Mongoose Query.sort, otherwise uses a non-empty defaultSort, otherwise `{ _id: -1 }`. Object, string and tuple forms are supported without mutating caller/default sort objects. An absent `_id` is appended as the last descending tie-breaker; an explicit `_id` retains its direction and position. Equal sort values therefore have deterministic ordering, but offset pagination can still shift during concurrent writes. The repository runs items and count sequentially when a session is present, otherwise concurrently. [createPaginatedResult](../../src/shared/functions/pagination/createPaginatedResult/core/createPaginatedResult.ts) returns items, page, limit, total, pages and next/previous flags.
 
 [MongoObjectIdHandler](../../src/infrastructure/database/handlers/mongoObjectId.handler.ts) validates 24-character hexadecimal route parameters and converts them to Types.ObjectId, returning 400 for invalid input. It is reusable at controller parameter boundaries and has no entity dependencies.
-
 
 ## Endpoint-owned invariants
 

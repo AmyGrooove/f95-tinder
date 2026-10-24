@@ -4,8 +4,7 @@ import { Test } from "@nestjs/testing"
 import type { TestingModule } from "@nestjs/testing"
 
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestRedis } from "@test/setup/setupRedis"
 
 import { CacheModule } from "../cache.module"
 import { CacheService } from "../services/cache.service"
@@ -17,9 +16,7 @@ describe("CacheModule Redis", () => {
   let health: CacheHealthService
 
   beforeAll(async () => {
-    const configuration = getTestApplication().app.get(
-      InfrastructureConfigService,
-    )
+    const { configuration } = getTestRedis()
     moduleRef = await Test.createTestingModule({ imports: [CacheModule] })
       .overrideProvider(infrastructureConfiguration.KEY)
       .useValue({ app: configuration.app, redis: configuration.redis })
@@ -44,7 +41,7 @@ describe("CacheModule Redis", () => {
         await service.set("round-trip", value)
 
         await expect(service.get("round-trip")).resolves.toStrictEqual(value)
-        expect(await getTestApplication().redis.dbSize()).toBe(1)
+        expect(await getTestRedis().redis.dbSize()).toBe(1)
       },
     )
 
@@ -60,7 +57,7 @@ describe("CacheModule Redis", () => {
 
       await expect(service.delete("delete")).resolves.toBeUndefined()
       await expect(service.get("delete")).resolves.toBeNull()
-      expect(await getTestApplication().redis.dbSize()).toBe(0)
+      expect(await getTestRedis().redis.dbSize()).toBe(0)
     })
 
     it("позволяет удалить отсутствующий ключ", async () => {
@@ -68,7 +65,7 @@ describe("CacheModule Redis", () => {
     })
 
     it("задаёт TTL в миллисекундах и возвращает null после истечения", async () => {
-      const { redis } = getTestApplication()
+      const { redis } = getTestRedis()
       await service.set("expires", "value", 1_000)
       await expect(service.get("expires")).resolves.toBe("value")
       const keys = await redis.keys("*")
@@ -84,7 +81,7 @@ describe("CacheModule Redis", () => {
     })
 
     it("хранит значение без срока истечения при TTL 0", async () => {
-      const { redis } = getTestApplication()
+      const { redis } = getTestRedis()
       await service.set("persistent", "value", 0)
       const keys = await redis.keys("*")
 
@@ -98,7 +95,7 @@ describe("CacheModule Redis", () => {
     it("успешно проверяет Redis и удаляет временный ключ", async () => {
       await expect(health.healthCheck()).resolves.toBe(true)
 
-      expect(await getTestApplication().redis.dbSize()).toBe(0)
+      expect(await getTestRedis().redis.dbSize()).toBe(0)
     })
 
     it("сохраняет существующие значения при проверке Redis", async () => {
@@ -108,12 +105,11 @@ describe("CacheModule Redis", () => {
       await expect(service.get("existing")).resolves.toStrictEqual({
         value: 42,
       })
-      expect(await getTestApplication().redis.dbSize()).toBe(1)
+      expect(await getTestRedis().redis.dbSize()).toBe(1)
     })
 
     it("проверяет Redis при инициализации Nest-модуля и удаляет временный ключ", async () => {
-      const { app, redis } = getTestApplication()
-      const configuration = app.get(InfrastructureConfigService)
+      const { configuration, redis } = getTestRedis()
       const startupModule = await Test.createTestingModule({
         imports: [CacheModule],
       })

@@ -13,8 +13,7 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 import { Test } from "@nestjs/testing"
 
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestRedis } from "@test/setup/setupRedis"
 
 import { CacheModule } from "../../../cache.module"
 import { CacheService } from "../../../services/cache.service"
@@ -55,9 +54,7 @@ describe("CacheEndpoint HTTP", () => {
   let cache: CacheService
 
   beforeAll(async () => {
-    const configuration = getTestApplication().app.get(
-      InfrastructureConfigService,
-    )
+    const { configuration } = getTestRedis()
     const moduleRef = await Test.createTestingModule({
       imports: [CacheModule],
       controllers: [TestController],
@@ -108,7 +105,7 @@ describe("CacheEndpoint HTTP", () => {
   }
 
   const readTtl = async () => {
-    const { redis } = getTestApplication()
+    const { redis } = getTestRedis()
     const keys = await redis.keys("*")
     expect(keys).toHaveLength(1)
 
@@ -171,6 +168,6 @@ describe("CacheEndpoint HTTP", () => {
     expect(await request("/cache-endpoint", "POST")).toBe(2)
 
     expect(controller.calls).toBe(2)
-    expect(await getTestApplication().redis.dbSize()).toBe(0)
+    expect(await getTestRedis().redis.dbSize()).toBe(0)
   })
 })

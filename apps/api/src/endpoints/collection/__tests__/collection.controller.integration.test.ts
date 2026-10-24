@@ -67,7 +67,7 @@ describe("CollectionController HTTP", () => {
     expect(collection).not.toHaveProperty("items")
     const memberships = await connection
       .collection<CollectionItem>("CollectionItem")
-      .find({ collection: new Types.ObjectId(collection.id) })
+      .find({ collectionId: new Types.ObjectId(collection.id) })
       .sort({ position: -1 })
       .toArray()
     expect(memberships).toMatchObject([
@@ -206,7 +206,7 @@ describe("CollectionController HTTP", () => {
     ).toMatchObject({ version: 1, title: { ru: null, en: "Updated" } })
     const memberships = await connection
       .collection<CollectionItem>("CollectionItem")
-      .find({ collection: new Types.ObjectId(collection.id) })
+      .find({ collectionId: new Types.ObjectId(collection.id) })
       .toArray()
     expect(memberships).toHaveLength(1)
     expect(memberships[0]).toMatchObject({
@@ -429,7 +429,7 @@ describe("CollectionController HTTP", () => {
     expect(response.statusCode).toBe(200)
     expect(
       await connection.collection("CollectionItem").findOne({
-        collection: new Types.ObjectId(collection.id),
+        collectionId: new Types.ObjectId(collection.id),
         item: first._id,
       }),
     ).toMatchObject({ note: null })

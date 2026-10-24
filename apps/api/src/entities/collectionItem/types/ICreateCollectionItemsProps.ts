@@ -4,7 +4,7 @@ import type { TCreateCollectionItem } from "../schemas/collectionItem.schema"
 
 interface ICreateCollectionItemsProps {
   collectionId: Types.ObjectId
-  items: Omit<TCreateCollectionItem, "collection">[]
+  items: Omit<TCreateCollectionItem, "collectionId">[]
 }
 
 export type { ICreateCollectionItemsProps }

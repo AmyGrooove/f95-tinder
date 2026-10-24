@@ -4,11 +4,10 @@ import { getQueueToken } from "@nestjs/bullmq"
 import { Test, type TestingModule } from "@nestjs/testing"
 import { Queue } from "bullmq"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import { JOBS_QUEUE_NAME } from "@infrastructure/jobs/static/JOBS_QUEUE_NAME"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestRedis } from "@test/setup/setupRedis"
 
 import { MailService } from "../services/mail.service"
 import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
@@ -20,7 +19,7 @@ describe("MailService Redis", () => {
   let jobs: JobService
 
   beforeAll(async () => {
-    const { redis } = getTestApplication().app.get(InfrastructureConfigService)
+    const { redis } = getTestRedis().configuration
     queue = new Queue(JOBS_QUEUE_NAME, {
       connection: { host: redis.host, port: redis.port, db: redis.database },
       prefix: `mail-test-${randomUUID()}`,

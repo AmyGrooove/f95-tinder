@@ -14,7 +14,7 @@ class CollectionItem extends MongoEntity {
     required: true,
     ref: "Collection",
   })
-  collection: Types.ObjectId
+  collectionId: Types.ObjectId
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
   item: Types.ObjectId
@@ -43,15 +43,15 @@ type TCreateCollectionItem = TCreateEntity<CollectionItem, "note">
 const CollectionItemSchema = SchemaFactory.createForClass(CollectionItem)
 
 CollectionItemSchema.index(
-  { collection: 1, item: 1 },
+  { collectionId: 1, item: 1 },
   { name: "collectionItemUnique", unique: true },
 )
 CollectionItemSchema.index(
-  { collection: 1, groupId: 1, position: 1, _id: 1 },
+  { collectionId: 1, groupId: 1, position: 1, _id: 1 },
   { name: "collectionGroupItemsLookup" },
 )
 CollectionItemSchema.index(
-  { item: 1, collection: 1 },
+  { item: 1, collectionId: 1 },
   { name: "itemCollectionsLookup" },
 )
 

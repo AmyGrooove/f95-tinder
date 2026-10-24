@@ -101,7 +101,7 @@ class CollectionItemRepository {
     return this.aggregation.aggregate<ICollectionGroupCount>([
       {
         $match: {
-          collection: props.collectionId,
+          collectionId: props.collectionId,
           groupId: { $in: props.groupIds },
         },
       },
@@ -128,7 +128,7 @@ class CollectionItemRepository {
       [
         {
           $match: {
-            collection: props.collectionId,
+            collectionId: props.collectionId,
             groupId: { $in: props.groupIds },
           },
         },
@@ -297,7 +297,7 @@ class CollectionItemRepository {
     options?: Pick<MongooseBulkWriteOptions, "session">,
   ) {
     return this.read.findMany(
-      { collection: props.collectionId, item: { $in: props.itemIds } },
+      { collectionId: props.collectionId, item: { $in: props.itemIds } },
       { _id: 1, item: 1 },
       options,
     )
@@ -310,7 +310,7 @@ class CollectionItemRepository {
     return this.bulk.bulkWrite(
       props.items.map((item) => ({
         updateOne: {
-          filter: { collection: props.collectionId, item: item.item },
+          filter: { collectionId: props.collectionId, item: item.item },
           update: {
             $set: {
               groupId: item.groupId,
@@ -321,7 +321,10 @@ class CollectionItemRepository {
                   }
                 : {}),
             },
-            $setOnInsert: { collection: props.collectionId, item: item.item },
+            $setOnInsert: {
+              collectionId: props.collectionId,
+              item: item.item,
+            },
           },
           upsert: true,
         },
@@ -336,7 +339,7 @@ class CollectionItemRepository {
   ) {
     return this.bulk.deleteMany(
       {
-        collection: props.collectionId,
+        collectionId: props.collectionId,
         $or: [
           { item: { $in: props.itemIds } },
           { groupId: { $in: props.groupIds } },
@@ -351,7 +354,10 @@ class CollectionItemRepository {
     options?: Pick<InsertManyOptions, "session">,
   ) {
     return this.bulk.createMany(
-      props.items.map((item) => ({ ...item, collection: props.collectionId })),
+      props.items.map((item) => ({
+        ...item,
+        collectionId: props.collectionId,
+      })),
       options ?? {},
     )
   }

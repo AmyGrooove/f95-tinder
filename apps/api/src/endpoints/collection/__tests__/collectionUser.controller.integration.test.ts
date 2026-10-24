@@ -84,7 +84,7 @@ describe("CollectionUserController HTTP", () => {
       expect(
         await connection.collection<UserCollection>("UserCollection").findOne({
           user: user._id,
-          collection: new Types.ObjectId(collection.id),
+          collectionId: new Types.ObjectId(collection.id),
         }),
       ).toMatchObject(expected)
       const read = await app.inject({

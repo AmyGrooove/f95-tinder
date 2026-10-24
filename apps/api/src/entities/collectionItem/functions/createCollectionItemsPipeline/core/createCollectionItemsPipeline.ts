@@ -17,7 +17,7 @@ const createCollectionItemsPipeline = (
   const pipeline: PipelineStage[] = [
     {
       $match: {
-        collection: props.collectionId,
+        collectionId: props.collectionId,
         groupId: isUndefined(props.groupId)
           ? { $in: props.groupIds }
           : props.groupId,
