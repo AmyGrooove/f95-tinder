@@ -1,4 +1,13 @@
-import { Controller, Get, Header, HttpCode, Param, Query } from "@nestjs/common"
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  HttpCode,
+  Param,
+  Query,
+  QueryMethod,
+} from "@nestjs/common"
 import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
@@ -9,7 +18,7 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { CollectionResponseDto } from "../dto/response/collection.response"
 import { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 import { CollectionFiltersResponseDto } from "../dto/response/collectionFilters.response"
-import { CollectionItemsQueryDto } from "../dto/query/collectionItems.query"
+import { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
 import { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
@@ -49,7 +58,7 @@ class CollectionReadController {
     return this.collectionService.getById(id)
   }
 
-  @Get(":id/items")
+  @QueryMethod(":id/items")
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
   @ApiParam({
@@ -74,7 +83,7 @@ class CollectionReadController {
   })
   getItems(
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Query() query: CollectionItemsQueryDto,
+    @Body() query: CollectionItemsBodyDto,
   ) {
     return this.collectionContentService.getItems({ id, query })
   }
@@ -103,10 +112,10 @@ class CollectionReadController {
     ],
   })
   getFilters(
+    @Query() _query: CollectionFiltersQueryDto,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Query() query: CollectionFiltersQueryDto,
   ) {
-    return this.collectionContentService.getFilters(id, query)
+    return this.collectionContentService.getFilters(id)
   }
 }
 

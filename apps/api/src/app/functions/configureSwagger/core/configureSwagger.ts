@@ -8,6 +8,7 @@ const configureSwagger = (app: NestFastifyApplication) => {
   const fastify = app.getHttpAdapter().getInstance()
 
   const swaggerConfig = new DocumentBuilder()
+    .setOpenAPIVersion("3.2.0")
     .setTitle(appConfiguration.name)
     .setDescription(appConfiguration.description)
     .setVersion(appConfiguration.version)

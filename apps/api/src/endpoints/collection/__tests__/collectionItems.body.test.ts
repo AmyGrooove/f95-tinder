@@ -2,16 +2,35 @@ import { describe, expect, it } from "@jest/globals"
 import { plainToInstance } from "class-transformer"
 import { validate } from "class-validator"
 
-import { CollectionItemsQueryDto } from "../dto/query/collectionItems.query"
+import { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
 
-describe("CollectionItemsQueryDto", () => {
+describe("CollectionItemsBodyDto", () => {
+  it.each([1, 20, 60])(
+    "принимает размер страницы %i в допустимом диапазоне",
+    async (limit) => {
+      const dto = plainToInstance(CollectionItemsBodyDto, { limit })
+      expect(await validate(dto)).toEqual([])
+      expect(dto.limit).toBe(limit)
+    },
+  )
+
+  it.each([0, 60.5, 61, 100])(
+    "отклоняет недопустимый размер страницы %i",
+    async (limit) => {
+      const dto = plainToInstance(CollectionItemsBodyDto, { limit })
+      expect(await validate(dto)).toEqual([
+        expect.objectContaining({ property: "limit" }),
+      ])
+    },
+  )
+
   it.each([
     {},
     { ratingMin: "1" },
     { ratingMax: "10" },
     { ratingMin: "7.25", ratingMax: "8.5" },
   ])("принимает публичные числовые границы общей оценки %j", async (query) => {
-    const dto = plainToInstance(CollectionItemsQueryDto, query)
+    const dto = plainToInstance(CollectionItemsBodyDto, query)
     expect(
       await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
     ).toEqual([])
@@ -26,7 +45,7 @@ describe("CollectionItemsQueryDto", () => {
   it.each(["statuses", "isInLibrary", "isFavorite"])(
     "отклоняет удалённый личный фильтр %s",
     async (field) => {
-      const dto = plainToInstance(CollectionItemsQueryDto, { [field]: "false" })
+      const dto = plainToInstance(CollectionItemsBodyDto, { [field]: "false" })
       const errors = await validate(dto, {
         whitelist: true,
         forbidNonWhitelisted: true,
@@ -52,7 +71,7 @@ describe("CollectionItemsQueryDto", () => {
         "bad",
         ["7", "8"],
       ]) {
-        const dto = plainToInstance(CollectionItemsQueryDto, { [field]: value })
+        const dto = plainToInstance(CollectionItemsBodyDto, { [field]: value })
         expect(await validate(dto)).toEqual([
           expect.objectContaining({ property: field }),
         ])

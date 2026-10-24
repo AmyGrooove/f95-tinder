@@ -1,5 +1,20 @@
-import { describe, expect, it, jest } from "@jest/globals"
-import { BadRequestException, NotFoundException } from "@nestjs/common"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from "@jest/globals"
+import {
+  BadRequestException,
+  NotFoundException,
+  ValidationPipe,
+} from "@nestjs/common"
+import { FastifyAdapter } from "@nestjs/platform-fastify"
+import type { NestFastifyApplication } from "@nestjs/platform-fastify"
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
 
@@ -9,6 +24,7 @@ import { CollectionReadController } from "../controllers/collectionRead.controll
 import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
 import { ECollectionMode } from "../types/ECollectionMode"
+import { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 
 describe("CollectionReadController", () => {
   const createController = async () => {
@@ -26,12 +42,148 @@ describe("CollectionReadController", () => {
     }).compile()
 
     return {
+      moduleRef,
       controller: moduleRef.get(CollectionReadController),
       service,
       content,
       id: new Types.ObjectId(),
     }
   }
+
+  describe("QUERY /collections/:id/items", () => {
+    let app: NestFastifyApplication
+    let context: Awaited<ReturnType<typeof createController>>
+
+    beforeAll(async () => {
+      context = await createController()
+      app = context.moduleRef.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+        { logger: false },
+      )
+      app.useGlobalPipes(
+        new ValidationPipe({
+          transform: true,
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }),
+      )
+      await app.init()
+      await app.getHttpAdapter().getInstance().ready()
+    })
+
+    beforeEach(() => {
+      jest.resetAllMocks()
+    })
+
+    afterAll(async () => app?.close())
+
+    it("читает JSON-тело QUERY и передаёт фильтры сервису без изменений", async () => {
+      const payload = {
+        page: 2,
+        limit: 10,
+        query: " Alpha ",
+        tags: [new Types.ObjectId().toHexString()],
+        excludeTags: [new Types.ObjectId().toHexString()],
+        features: [
+          { featureId: new Types.ObjectId().toHexString(), values: [false] },
+        ],
+      }
+      const result = {
+        items: [],
+        page: 2,
+        limit: 10,
+        total: 0,
+        pages: 0,
+        isNextPage: false,
+        isPreviousPage: true,
+        mode: ECollectionMode.FLAT,
+        displayBlocks: [],
+      }
+      context.content.getItems.mockResolvedValue(result)
+      const response = await app.inject({
+        method: "QUERY",
+        url: `/collections/${context.id.toHexString()}/items`,
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(response.statusCode).toBe(200)
+      expect(response.headers["cache-control"]).toBe("no-store")
+      expect(response.json()).toEqual(result)
+      expect(context.content.getItems).toHaveBeenCalledWith({
+        id: context.id,
+        query: { ...payload, query: "Alpha" },
+      })
+    })
+
+    it.each([{}])("принимает пустой набор фильтров %j", async (payload) => {
+      context.content.getItems.mockResolvedValue({
+        items: [],
+        page: 1,
+        limit: 20,
+        total: 0,
+        pages: 0,
+        isNextPage: false,
+        isPreviousPage: false,
+        mode: ECollectionMode.FLAT,
+        displayBlocks: [],
+      })
+      const response = await app.inject({
+        method: "QUERY",
+        url: `/collections/${context.id.toHexString()}/items`,
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(response.statusCode).toBe(200)
+      expect(context.content.getItems).toHaveBeenCalledWith({
+        id: context.id,
+        query: {},
+      })
+    })
+
+    it.each([
+      undefined,
+      { tags: [] },
+      { tags: "507f1f77bcf86cd799439011" },
+      { excludeTags: ["invalid"] },
+      { features: "[]" },
+      { features: [{ featureId: "invalid", values: [false] }] },
+      { features: [{ featureId: "507f1f77bcf86cd799439011", unknown: true }] },
+      { page: 0 },
+      { query: " " },
+      { isFavorite: false },
+    ])(
+      "отклоняет некорректное JSON-тело %j до вызова сервиса",
+      async (payload) => {
+        const response = await app.inject({
+          method: "QUERY",
+          url: `/collections/${context.id.toHexString()}/items`,
+          payload,
+        } as unknown as Parameters<typeof app.inject>[0])
+        expect(response.statusCode).toBe(400)
+        expect(context.content.getItems).not.toHaveBeenCalled()
+      },
+    )
+
+    it("возвращает 404 для прежнего метода GET", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: `/collections/${context.id.toHexString()}/items`,
+      })
+      expect(response.statusCode).toBe(404)
+      expect(context.content.getItems).not.toHaveBeenCalled()
+    })
+
+    it("описывает QUERY с JSON-телом в OpenAPI", () => {
+      const document = SwaggerModule.createDocument(
+        app,
+        new DocumentBuilder().setOpenAPIVersion("3.2.0").build(),
+      )
+      const path = document.paths["/collections/{id}/items"]
+      expect(path).not.toHaveProperty("get")
+      expect(path).toHaveProperty(
+        "query.requestBody.content.application/json.schema.$ref",
+        "#/components/schemas/CollectionItemsBodyDto",
+      )
+    })
+  })
 
   it("читает публичные метаданные по ObjectId и возвращает результат сервиса", async () => {
     const { controller, service, id } = await createController()
@@ -73,18 +225,17 @@ describe("CollectionReadController", () => {
     expect(content.getItems).toHaveBeenCalledWith({ id, query })
   })
 
-  it("передаёт область группы и возвращает доступные фильтры", async () => {
+  it("передаёт id и возвращает доступные фильтры всей подборки", async () => {
     const { controller, content, id } = await createController()
-    const query = { groupId: new Types.ObjectId().toHexString() }
     const result = {
       tags: [],
       features: [],
       sorting: { availableModes: [ECollectionMode.FLAT] },
     }
     content.getFilters.mockResolvedValue(result)
-    await expect(controller.getFilters(id, query)).resolves.toBe(result)
+    await expect(controller.getFilters({}, id)).resolves.toBe(result)
     expect(content.getFilters).toHaveBeenCalledTimes(1)
-    expect(content.getFilters).toHaveBeenCalledWith(id, query)
+    expect(content.getFilters).toHaveBeenCalledWith(id)
   })
 
   it("сохраняет ошибку отсутствующей подборки", async () => {
@@ -103,10 +254,62 @@ describe("CollectionReadController", () => {
     ).rejects.toBe(error)
   })
 
-  it("сохраняет ошибку некорректной группы фильтров", async () => {
+  it("сохраняет ошибку отсутствующей подборки при чтении фильтров", async () => {
     const { controller, content, id } = await createController()
-    const error = new BadRequestException()
+    const error = new NotFoundException()
     content.getFilters.mockRejectedValue(error)
-    await expect(controller.getFilters(id, {})).rejects.toBe(error)
+    await expect(controller.getFilters({}, id)).rejects.toBe(error)
+  })
+
+  it("не объявляет query-параметры фильтров в Swagger", async () => {
+    const { moduleRef } = await createController()
+    const app = moduleRef.createNestApplication(new FastifyAdapter())
+
+    try {
+      const document = SwaggerModule.createDocument(app, {
+        info: { title: "Collections", version: "1" },
+        openapi: "3.0.0",
+      })
+      expect(
+        document.paths["/collections/{id}/filters"].get?.parameters,
+      ).toEqual([expect.objectContaining({ name: "id", in: "path" })])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it("принимает отсутствие query-параметров фильтров", async () => {
+    const pipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    })
+    await expect(
+      pipe.transform(
+        {},
+        { type: "query", metatype: CollectionFiltersQueryDto },
+      ),
+    ).resolves.toEqual({})
+  })
+
+  it.each([
+    { groupId: new Types.ObjectId().toHexString() },
+    { groupId: "invalid" },
+    { groupId: "" },
+    { page: "1" },
+    { query: "Alpha" },
+    { unknown: "1" },
+  ])("отклоняет неподдерживаемый query фильтров: %j", async (query) => {
+    const pipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    })
+    await expect(
+      pipe.transform(query, {
+        type: "query",
+        metatype: CollectionFiltersQueryDto,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException)
   })
 })

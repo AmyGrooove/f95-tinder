@@ -22,7 +22,6 @@ import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
 import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
 
-import type { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 import type { CollectionFiltersResponseDto } from "../dto/response/collectionFilters.response"
 import { ECollectionMode } from "../types/ECollectionMode"
 import { ECollectionSort } from "../types/ECollectionSort"
@@ -40,19 +39,12 @@ class CollectionContentService {
     private readonly featureRepository: FeatureRepository,
   ) {}
 
-  async getFilters(
-    id: Types.ObjectId,
-    query: CollectionFiltersQueryDto,
-  ): Promise<CollectionFiltersResponseDto> {
-    const { collection, groupIds, groupId } = await this.getContentContext(
-      id,
-      query.groupId,
-    )
+  async getFilters(id: Types.ObjectId): Promise<CollectionFiltersResponseDto> {
+    const { collection, groupIds } = await this.getContentContext(id)
 
     const options = await this.collectionItemRepository.getFilterOptions({
       collectionId: id,
       groupIds,
-      groupId,
     })
     const isGroupedModeAvailable =
       options.nonEmptyGroupIds.length >= 2 ||

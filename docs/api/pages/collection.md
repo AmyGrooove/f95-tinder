@@ -7,8 +7,8 @@
 | Маршрут | Покрытие |
 | --- | --- |
 | `GET /collections/:id` | Метаданные, authorId, version, медиа, полная структура group/text без списков Item, даты |
-| `GET /collections/:id/items` | Единая пагинация Item, grouped/flat, авторский порядок или название, поиск, теги/характеристики и диапазон общей оценки; заметки включений |
-| `GET /collections/:id/filters` | Доступные теги, числовые/датовые/булевы характеристики и режимы; необязательный groupId |
+| `QUERY /collections/:id/items` | Единая пагинация Item, grouped/flat, авторский порядок или название, поиск, теги/характеристики и диапазон общей оценки; заметки включений |
+| `GET /collections/:id/filters` | Доступные теги, числовые/датовые/булевы характеристики и режимы всей подборки; без query |
 | `GET /collections/:id/user` | Собственная оценка коллекции, избранное и скрытие |
 | `PATCH /collections/:id/rating` | Целая оценка 1–10 или null; автору нельзя поставить оценку своей коллекции |
 | `PATCH /collections/:id/favorite` | Избранное коллекции |
@@ -17,7 +17,7 @@
 
 Код: [CollectionReadController](../../../apps/api/src/endpoints/collection/controllers/collectionRead.controller.ts), [CollectionContentService](../../../apps/api/src/endpoints/collection/services/collectionContent.service.ts), [CollectionService](../../../apps/api/src/endpoints/collection/services/collection.service.ts), [CollectionUserService](../../../apps/api/src/endpoints/collection/services/collectionUser.service.ts).
 
-Чтение состава публичное: возвращает только Item и данные включения в подборку, без userItem. Cookie авторизации не проверяется. Для личного состояния карточек нужно отдельное чтение UserItem; оно пока не реализовано (LIB-01).
+Чтение состава публичное: возвращает только Item и данные включения в подборку, без userItem. Cookie авторизации не проверяется. Краткий QUERY /userItems читает состояние по известным ID UserItem; для карточек состава, где доступны только ID Item, поиск личной записи по Item ещё нужен (LIB-01).
 
 Фильтры по статусу, наличию в библиотеке и избранному, а также «Скрыть завершённое» исключены из объёма страницы. ratingMin/ratingMax фильтруют по сохранённой общей оценке ItemMetric.ratingAverage до пагинации и доступны гостям. Расчёт/обновление метрики пока не реализованы (ITEM-02); неизвестная оценка исключается при активном диапазоне.
 

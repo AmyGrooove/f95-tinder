@@ -13,12 +13,12 @@ class QueryUserItemsBodyDto {
   @ApiProperty({
     type: [String],
     minItems: 1,
-    maxItems: 100,
+    maxItems: 60,
     uniqueItems: true,
   })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(60)
   @ArrayUnique((id: unknown) => (isString(id) ? id.toLowerCase() : id))
   @IsMongoId({ each: true })
   ids: string[]

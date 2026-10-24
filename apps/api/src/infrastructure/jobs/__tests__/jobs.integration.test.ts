@@ -61,8 +61,8 @@ describe("JobsModule Redis", () => {
       const details = await service.get(id)
       if (
         details?.state === state &&
-        (state !== "cancelled" ||
-          (await (await queue.getJob(id))?.getState()) === "completed")
+        (!["completed", "failed", "cancelled"].includes(state) ||
+          details.finishedAt !== undefined)
       ) {
         return details
       }

@@ -17,7 +17,9 @@ import {
 import { FastifyAdapter } from "@nestjs/platform-fastify"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 import { Test } from "@nestjs/testing"
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 import { Types } from "mongoose"
+import type { FastifyInstance } from "fastify"
 
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { EUnit } from "@entities/shared/schemas/EUnit"
@@ -55,6 +57,7 @@ describe("UserItemController", () => {
     updatedAt: "2026-01-02T00:00:00.000Z",
   }
   const service = {
+    query: jest.fn<UserItemService["query"]>(),
     create: jest.fn<UserItemService["create"]>(),
     skip: jest.fn<UserItemService["skip"]>(),
     block: jest.fn<UserItemService["block"]>(),
@@ -65,6 +68,131 @@ describe("UserItemController", () => {
   }
   const logger = { error: jest.fn<LoggerService["error"]>() }
   let app: NestFastifyApplication
+  const getFastify = (): FastifyInstance => {
+    return app.getHttpAdapter().getInstance()
+  }
+
+  it("включает QUERY с JSON-телом и кратким массивом ответа в генерируемое описание", () => {
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder().setOpenAPIVersion("3.2.0").build(),
+    )
+    expect(document.paths["/userItems"]?.query).toMatchObject({
+      operationId: "UserItemController_query",
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/QueryUserItemsBodyDto" },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: {
+                type: "array",
+                items: {
+                  $ref: "#/components/schemas/UserItemSummaryResponseDto",
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+    expect(
+      document.components?.schemas?.UserItemSummaryResponseDto,
+    ).toMatchObject({
+      required: ["id", "itemId", "rating", "isFavorite", "status"],
+    })
+    expect(
+      document.components?.schemas?.UserItemSummaryResponseDto,
+    ).not.toHaveProperty("properties.attempts")
+    expect(
+      document.components?.schemas?.UserItemSummaryResponseDto,
+    ).not.toHaveProperty("properties.note")
+  })
+
+  it("читает краткие записи методом QUERY с JSON-телом и запрещает кеширование", async () => {
+    const summary = {
+      id,
+      itemId,
+      rating: 9,
+      isFavorite: false,
+      status: EUserItemStatus.COMPLETED,
+    }
+    service.query.mockResolvedValue([summary])
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers,
+      payload: { ids: [id] },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual([summary])
+    expect(response.headers["cache-control"]).toBe("no-store")
+    expect(response.headers["accept-query"]).toBe("application/json")
+    expect(service.query).toHaveBeenCalledWith("access-token", { ids: [id] })
+  })
+
+  it.each([
+    {},
+    { ids: [] },
+    { ids: null },
+    { ids: id },
+    { ids: [null] },
+    { ids: ["bad"] },
+    { ids: [id, id] },
+    { ids: [id, id.toUpperCase()] },
+    { ids: [id], userId: itemId },
+  ])(
+    "отклоняет некорректное тело QUERY %j до вызова сервиса",
+    async (payload) => {
+      const response = await getFastify().inject({
+        method: "QUERY",
+        url: "/userItems",
+        headers,
+        payload,
+      })
+      expect(response.statusCode).toBe(400)
+      expect(service.query).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([61, 100])(
+    "отклоняет %i ID UserItem до вызова сервиса",
+    async (count) => {
+      const response = await getFastify().inject({
+        method: "QUERY",
+        url: "/userItems",
+        headers,
+        payload: {
+          ids: Array.from({ length: count }, () =>
+            new Types.ObjectId().toHexString(),
+          ),
+        },
+      })
+      expect(response.statusCode).toBe(400)
+      expect(service.query).not.toHaveBeenCalled()
+    },
+  )
+
+  it("принимает верхнюю границу в 60 уникальных ID UserItem", async () => {
+    const ids = Array.from({ length: 60 }, () =>
+      new Types.ObjectId().toHexString(),
+    )
+    service.query.mockResolvedValue([])
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers,
+      payload: { ids },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual([])
+    expect(service.query).toHaveBeenCalledWith("access-token", { ids })
+  })
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

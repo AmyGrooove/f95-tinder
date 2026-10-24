@@ -6,11 +6,11 @@ Read for startup, configuration, health, HTTP policy or build changes. Return to
 
 [main.ts](../../src/main.ts) creates the Fastify Nest application and listens on `app.port` at `0.0.0.0`. Shared HTTP setup lives in [configureApplication](../../src/app/functions/configureApplication/index.ts), reused by the integration-test application: CSRF, multipart, Helmet, request context, CORS, URI versioning and validation. Proxy trust is limited to loopback, link-local and unique-local addresses. CSP is removed for `/docs` and its nested/query routes.
 
-Swagger is mounted at `/docs`, with bearer scheme `authToken` and cookie schemes `accessCookie` / `refreshCookie`. URI versioning is enabled without a default version; current health, account and auth controllers have no version metadata. There is no global route prefix.
+Swagger uses OpenAPI 3.2.0 so QUERY operations remain in the generated schema. It is mounted at `/docs`, with bearer scheme `authToken` and cookie schemes `accessCookie` / `refreshCookie`. URI versioning is enabled without a default version; current health, account and auth controllers have no version metadata. There is no global route prefix.
 
 Global validation transforms input, whitelists DTO fields and rejects non-whitelisted fields. Multipart limits allow one file up to 25 MiB, 20 fields, 64 KiB per field and 21 parts. Image processing applies additional limits; see [storage](storage.md).
 
-[AppModule](../../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement all 20 routes in [the account/auth specification](../../../../docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../../src/endpoints/userItem/userItem.module.ts), exposing five mutation routes under /userItems. There are no library GET routes.
+[AppModule](../../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement all 20 routes in [the account/auth specification](../../../../docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../../src/endpoints/userItem/userItem.module.ts), exposing seven mutation routes and QUERY /userItems for summaries by UserItem ID. It does not provide lookup by Item or full library reads.
 
 [SourceModule](../../src/entities/source/source.module.ts) provides reusable source services, but no movie collection handler, collection/status endpoint or importer currently invokes them. Film classification, ban enforcement, incremental/full collection, scheduling and prepared-package application still require an application scenario.
 
@@ -18,7 +18,7 @@ Global validation transforms input, whitelists DTO fields and rejects non-whitel
 
 [SourceModule](../../src/entities/source/source.module.ts) exports SourceRepository, PageCollectorService, KodikService and SourceDataWriterService, and imports StorageModule. [KodikService](../../src/entities/source/services/kodik.service.ts) exposes `getSource`, `list`, `search`, `findById` and `serializePage`. Its named HTTP client uses a 30-second timeout, disabled retries and rejected redirects. It validates the response envelope and material identity, preserves extra source fields, restricts pagination URLs to the Kodik origin and `/list`, and sanitizes tokens in serialized pages and job errors. Array parameters are serialized as comma-separated values and false values are retained.
 
-CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
+CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled; allowed methods include QUERY. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
 
 Bootstrap enables NestJS `enableCsrfProtection()` for the application before registering request hooks and before listening. It checks Fetch Metadata with an Origin/Host fallback for state-changing requests. Explicit `CORS_ORIGINS` entries are also passed as `trustedOrigins`; a development `*` entry is omitted because CSRF trust requires exact origins. Development CORS reflection does not grant CSRF trust. There are no route exclusions or required `X-Requested-With` headers.
 

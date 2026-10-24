@@ -22,12 +22,18 @@ import { isString } from "@shared/functions/checks/isString"
 
 import { ECollectionMode } from "../../types/ECollectionMode"
 import { ECollectionSort } from "../../types/ECollectionSort"
-import { parseCollectionQueryList } from "../../functions/parseCollectionQueryList"
-import { parseCollectionFeatureFilters } from "../../functions/parseCollectionFeatureFilters"
-import { CollectionFiltersQueryDto } from "./collectionFilters.query"
-import { CollectionFeatureFilterQueryDto } from "./collectionFeatureFilter.query"
+import { CollectionFeatureFilterQueryDto } from "../query/collectionFeatureFilter.query"
 
-class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
+class CollectionItemsBodyDto {
+  @ApiPropertyOptional({
+    type: String,
+    pattern: "^[a-fA-F0-9]{24}$",
+    description: SWAGGER_DICTIONARY.collection.filterGroup,
+  })
+  @IsOptional()
+  @IsMongoId()
+  groupId?: string
+
   @ApiPropertyOptional({ type: String })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
@@ -39,7 +45,6 @@ class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) => parseCollectionQueryList(value))
   @IsArray()
   @ArrayNotEmpty()
   @IsMongoId({ each: true })
@@ -47,20 +52,17 @@ class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) => parseCollectionQueryList(value))
   @IsArray()
   @ArrayNotEmpty()
   @IsMongoId({ each: true })
   excludeTags?: string[]
 
   @ApiPropertyOptional({
-    type: String,
+    type: [CollectionFeatureFilterQueryDto],
     description: SWAGGER_DICTIONARY.collection.featureFilters,
   })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    parseCollectionFeatureFilters(value),
-  )
+  @Type(() => CollectionFeatureFilterQueryDto)
   @IsArray()
   @ArrayNotEmpty()
   @IsObject({ each: true })
@@ -119,13 +121,13 @@ class CollectionItemsQueryDto extends CollectionFiltersQueryDto {
   @Max(Number.MAX_SAFE_INTEGER)
   page?: number
 
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 60, default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(60)
   limit?: number
 }
 
-export { CollectionItemsQueryDto }
+export { CollectionItemsBodyDto }

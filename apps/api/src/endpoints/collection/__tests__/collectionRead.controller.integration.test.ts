@@ -7,6 +7,24 @@ import { getTestApplication } from "@test/setup/setupIntegration"
 import { createCollection } from "./functions/createCollection"
 
 describe("CollectionReadController HTTP", () => {
+  it("принимает максимальный размер страницы 60 без изменения total", async () => {
+    const { app } = getTestApplication()
+    const { collection } = await createCollection()
+    const response = await app.inject({
+      method: "QUERY",
+      url: "/collections/" + collection.id + "/items",
+      payload: { limit: 60, mode: "flat" },
+    } as unknown as Parameters<typeof app.inject>[0])
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      limit: 60,
+      page: 1,
+      pages: 1,
+      total: 2,
+    })
+    expect(response.json<{ items: unknown[] }>().items).toHaveLength(2)
+  })
+
   it("публично возвращает только метаданные и блоки в авторском порядке", async () => {
     const { app } = getTestApplication()
     const { collection } = await createCollection()
@@ -26,9 +44,10 @@ describe("CollectionReadController HTTP", () => {
     const { app } = getTestApplication()
     const { collection, first, second, firstGroupId } = await createCollection()
     const response = await app.inject({
-      method: "GET",
-      url: `/collections/${collection.id}/items?mode=flat&limit=1`,
-    })
+      method: "QUERY",
+      url: `/collections/${collection.id}/items`,
+      payload: { mode: "flat", limit: 1 },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.headers["cache-control"]).toBe("no-store")
     expect(response.json()).toEqual({
@@ -51,9 +70,10 @@ describe("CollectionReadController HTTP", () => {
       displayBlocks: [],
     })
     const next = await app.inject({
-      method: "GET",
-      url: `/collections/${collection.id}/items?mode=flat&limit=1&page=2`,
-    })
+      method: "QUERY",
+      url: `/collections/${collection.id}/items`,
+      payload: { mode: "flat", limit: 1, page: 2 },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(next.statusCode).toBe(200)
     expect(next.json()).toMatchObject({
       items: [{ id: second._id.toHexString() }],
@@ -69,9 +89,10 @@ describe("CollectionReadController HTTP", () => {
     const { collection, first, second, firstGroupId, secondGroupId, textId } =
       await createCollection()
     const response = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url: `/collections/${collection.id}/items`,
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
       mode: "grouped",
@@ -102,27 +123,36 @@ describe("CollectionReadController HTTP", () => {
     const { collection, second, secondGroupId } = await createCollection()
     const base = `/collections/${collection.id}/items`
     const grouped = await app.inject({
-      method: "GET",
-      url: `${base}?groupId=${secondGroupId}&query=%20Beta%20&mode=flat`,
-    })
+      method: "QUERY",
+      url: base,
+      payload: { groupId: secondGroupId, query: " Beta ", mode: "flat" },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(grouped.statusCode).toBe(200)
     expect(grouped.json()).toMatchObject({
       total: 1,
       items: [{ id: second._id.toHexString() }],
     })
     const sorted = await app.inject({
-      method: "GET",
-      url: `${base}?sort=title&language=en&direction=desc&mode=flat&limit=1`,
-    })
+      method: "QUERY",
+      url: base,
+      payload: {
+        sort: "title",
+        language: "en",
+        direction: "desc",
+        mode: "flat",
+        limit: 1,
+      },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(sorted.statusCode).toBe(200)
     expect(sorted.json()).toMatchObject({
       total: 2,
       items: [{ id: second._id.toHexString() }],
     })
     const empty = await app.inject({
-      method: "GET",
-      url: `${base}?query=missing&mode=flat`,
-    })
+      method: "QUERY",
+      url: base,
+      payload: { query: "missing", mode: "flat" },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(empty.statusCode).toBe(200)
     expect(empty.json()).toMatchObject({
       items: [],
@@ -140,9 +170,10 @@ describe("CollectionReadController HTTP", () => {
       .updateOne({ _id: first._id }, { $set: { deletedAt: new Date() } })
     await connection.collection("Item").deleteOne({ _id: second._id })
     const response = await app.inject({
-      method: "GET",
-      url: `/collections/${collection.id}/items?mode=flat`,
-    })
+      method: "QUERY",
+      url: `/collections/${collection.id}/items`,
+      payload: { mode: "flat" },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({ items: [], total: 0 })
     expect(await connection.collection("CollectionItem").countDocuments()).toBe(
@@ -154,9 +185,10 @@ describe("CollectionReadController HTTP", () => {
     const { app } = getTestApplication()
     const { collection } = await createCollection({ blocks: [], items: [] })
     const response = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url: `/collections/${collection.id}/items`,
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
       items: [],
@@ -177,9 +209,10 @@ describe("CollectionReadController HTTP", () => {
     expect(
       (
         await app.inject({
-          method: "GET",
-          url: `/collections/${collection.id}/items?mode=grouped`,
-        })
+          method: "QUERY",
+          url: `/collections/${collection.id}/items`,
+          payload: { mode: "grouped" },
+        } as unknown as Parameters<typeof app.inject>[0])
       ).statusCode,
     ).toBe(400)
   })
@@ -205,12 +238,17 @@ describe("CollectionReadController HTTP", () => {
       .collection("UserItem")
       .findOne({ item: first._id })
     const url = "/collections/" + collection.id + "/items"
-    const guest = await app.inject({ method: "GET", url })
+    const guest = await app.inject({
+      method: "QUERY",
+      url,
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     const signedIn = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url,
       headers: owner.headers,
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(guest.statusCode).toBe(200)
     expect(signedIn.statusCode).toBe(200)
     expect(signedIn.json()).toEqual(guest.json())
@@ -231,20 +269,25 @@ describe("CollectionReadController HTTP", () => {
   })
 
   it.each([
-    "isInLibrary=true",
-    "isInLibrary=false",
-    "isFavorite=true",
-    "isFavorite=false",
-    "statuses=planned",
-    "statuses=skipped,blocked",
+    { isInLibrary: true },
+    { isInLibrary: false },
+    { isFavorite: true },
+    { isFavorite: false },
+    { statuses: ["planned"] },
+    { statuses: ["skipped", "blocked"] },
   ])(
     "отклоняет удалённый личный фильтр %s и у гостя, и у владельца",
     async (query) => {
       const { app } = getTestApplication()
       const { collection, owner } = await createCollection()
-      const url = "/collections/" + collection.id + "/items?" + query
+      const url = "/collections/" + collection.id + "/items"
       for (const headers of [{}, owner.headers]) {
-        const response = await app.inject({ method: "GET", url, headers })
+        const response = await app.inject({
+          method: "QUERY",
+          url,
+          headers,
+          payload: query,
+        } as unknown as Parameters<typeof app.inject>[0])
         expect(response.statusCode).toBe(400)
       }
     },
@@ -254,13 +297,18 @@ describe("CollectionReadController HTTP", () => {
     const { app, connection } = getTestApplication()
     const { collection, owner } = await createCollection()
     const url = "/collections/" + collection.id + "/items"
-    const guest = await app.inject({ method: "GET", url })
+    const guest = await app.inject({
+      method: "QUERY",
+      url,
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(guest.statusCode).toBe(200)
     const invalid = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url,
       headers: { cookie: "__Host-accessToken=invalid" },
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(invalid.statusCode).toBe(200)
     expect(invalid.json()).toEqual(guest.json())
     await connection
@@ -270,22 +318,24 @@ describe("CollectionReadController HTTP", () => {
         { $set: { expiresAt: new Date(Date.now() - 1000) } },
       )
     const expired = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url,
       headers: owner.headers,
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(expired.statusCode).toBe(200)
     expect(expired.json()).toEqual(guest.json())
     await connection.collection("Session").deleteOne({ _id: owner.session._id })
     const revoked = await app.inject({
-      method: "GET",
+      method: "QUERY",
       url,
       headers: owner.headers,
-    })
+      payload: {},
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(revoked.statusCode).toBe(200)
     expect(revoked.json()).toEqual(guest.json())
   })
-  it("ограничивает доступные теги группой, сохраняя режимы всей подборки", async () => {
+  it("возвращает доступные теги и режимы всей подборки и отклоняет query", async () => {
     const { app, connection } = getTestApplication()
     const { collection, first, second, firstGroupId } = await createCollection()
     const tagA = new Types.ObjectId()
@@ -320,24 +370,28 @@ describe("CollectionReadController HTTP", () => {
       features: [],
       sorting: { availableModes: ["flat", "grouped"] },
     })
-    const scoped = await app.inject({
-      method: "GET",
-      url: `${base}/filters?groupId=${firstGroupId}`,
-    })
-    expect(scoped.statusCode).toBe(200)
-    expect(scoped.json()).toMatchObject({
-      tags: [{ id: tagA.toHexString() }],
-      sorting: { availableModes: ["flat", "grouped"] },
-    })
-    expect(scoped.json<{ tags: unknown[] }>().tags).toHaveLength(1)
     for (const query of [
-      `tags=${tagA.toHexString()}`,
-      `excludeTags=${tagB.toHexString()}`,
+      `groupId=${firstGroupId}`,
+      "groupId=",
+      "query=Alpha",
+      "page=1",
+      "unknown=1",
+    ]) {
+      const response = await app.inject({
+        method: "GET",
+        url: `${base}/filters?${query}`,
+      })
+      expect(response.statusCode).toBe(400)
+    }
+    for (const query of [
+      { tags: [tagA.toHexString()] },
+      { excludeTags: [tagB.toHexString()] },
     ]) {
       const items = await app.inject({
-        method: "GET",
-        url: `${base}/items?mode=flat&${query}`,
-      })
+        method: "QUERY",
+        url: `${base}/items`,
+        payload: { mode: "flat", ...query },
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(items.statusCode).toBe(200)
       expect(items.json()).toMatchObject({
         total: 1,
@@ -400,9 +454,10 @@ describe("CollectionReadController HTTP", () => {
       { featureId: booleanId.toHexString(), values: [true] },
     ]) {
       const items = await app.inject({
-        method: "GET",
-        url: `/collections/${collection.id}/items?mode=flat&features=${encodeURIComponent(JSON.stringify([filter]))}`,
-      })
+        method: "QUERY",
+        url: `/collections/${collection.id}/items`,
+        payload: { mode: "flat", features: [filter] },
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(items.statusCode).toBe(200)
       expect(items.json()).toMatchObject({
         total: 1,
@@ -423,74 +478,79 @@ describe("CollectionReadController HTTP", () => {
       expect(
         (
           await app.inject({
-            method: "GET",
-            url: `/collections/${collection.id}/items?features=${encodeURIComponent(JSON.stringify(filters))}`,
-          })
+            method: "QUERY",
+            url: `/collections/${collection.id}/items`,
+            payload: { features: filters },
+          } as unknown as Parameters<typeof app.inject>[0])
         ).statusCode,
       ).toBe(400)
     }
   })
 
   it.each([
-    "page=0",
-    "page=1.5",
-    "limit=101",
-    "limit=0",
-    "mode=unknown",
-    "sort=unknown",
-    "direction=up",
-    "language=fr",
-    "tags=bad",
-    "excludeTags=bad",
-    "features=bad",
-    "statuses=unknown",
-    "isFavorite=1",
-    "ratingMin=0",
-    "ratingMax=11",
-    "ratingMin=10.1",
-    "ratingMax=0.9",
-    "ratingMin=NaN",
-    "ratingMax=Infinity",
-    "ratingMin=",
-    "ratingMax=bad",
-    "ratingMin=7&ratingMin=8",
-    "ratingMin=10&ratingMax=1",
-    "query=%20%20",
-    "unknown=1",
-    "page=9007199254740991&limit=100",
-  ])("отклоняет некорректный query страницы: %s", async (query) => {
+    { page: 0 },
+    { page: 1.5 },
+    { limit: 61 },
+    { limit: 100 },
+    { limit: 0 },
+    { mode: "unknown" },
+    { sort: "unknown" },
+    { direction: "up" },
+    { language: "fr" },
+    { tags: "bad" },
+    { excludeTags: "bad" },
+    { features: "bad" },
+    { statuses: ["unknown"] },
+    { isFavorite: 1 },
+    { ratingMin: 0 },
+    { ratingMax: 11 },
+    { ratingMin: 10.1 },
+    { ratingMax: 0.9 },
+    { ratingMin: "NaN" },
+    { ratingMax: "Infinity" },
+    { ratingMin: "" },
+    { ratingMax: "bad" },
+    { ratingMin: [7, 8] },
+    { ratingMin: 10, ratingMax: 1 },
+    { query: "  " },
+    { unknown: "1" },
+    { page: 9007199254740991, limit: 60 },
+  ])("отклоняет некорректное тело запроса страницы: %j", async (query) => {
     const { app } = getTestApplication()
     const { collection, owner } = await createCollection()
     expect(
       (
         await app.inject({
-          method: "GET",
-          url: `/collections/${collection.id}/items?${query}`,
+          method: "QUERY",
+          url: `/collections/${collection.id}/items`,
+          payload: query,
           headers: owner.headers,
-        })
+        } as unknown as Parameters<typeof app.inject>[0])
       ).statusCode,
     ).toBe(400)
   })
 
   it.each(["", "/items", "/filters"])(
-    "проверяет id и скрывает удалённую или отсутствующую подборку для GET %s",
+    "проверяет id и скрывает удалённую или отсутствующую подборку для %s",
     async (suffix) => {
       const { app, connection } = getTestApplication()
       const { collection } = await createCollection()
       expect(
         (
           await app.inject({
-            method: "GET",
+            method: suffix === "/items" ? "QUERY" : "GET",
             url: `/collections/invalid${suffix}`,
-          })
+            ...(suffix === "/items" ? { payload: {} } : {}),
+          } as unknown as Parameters<typeof app.inject>[0])
         ).statusCode,
       ).toBe(400)
       expect(
         (
           await app.inject({
-            method: "GET",
+            method: suffix === "/items" ? "QUERY" : "GET",
             url: `/collections/${new Types.ObjectId().toHexString()}${suffix}`,
-          })
+            ...(suffix === "/items" ? { payload: {} } : {}),
+          } as unknown as Parameters<typeof app.inject>[0])
         ).statusCode,
       ).toBe(404)
       await connection
@@ -502,9 +562,10 @@ describe("CollectionReadController HTTP", () => {
       expect(
         (
           await app.inject({
-            method: "GET",
+            method: suffix === "/items" ? "QUERY" : "GET",
             url: `/collections/${collection.id}${suffix}`,
-          })
+            ...(suffix === "/items" ? { payload: {} } : {}),
+          } as unknown as Parameters<typeof app.inject>[0])
         ).statusCode,
       ).toBe(404)
     },
@@ -523,9 +584,12 @@ describe("CollectionReadController HTTP", () => {
         expect(
           (
             await app.inject({
-              method: "GET",
-              url: `/collections/${collection.id}/${path}?groupId=${groupId}`,
-            })
+              method: path === "items" ? "QUERY" : "GET",
+              url: `/collections/${collection.id}/${path}`,
+              ...(path === "items"
+                ? { payload: { groupId } }
+                : { query: { groupId } }),
+            } as unknown as Parameters<typeof app.inject>[0])
           ).statusCode,
         ).toBe(400)
       }
@@ -533,15 +597,15 @@ describe("CollectionReadController HTTP", () => {
   )
 
   it.each([
-    ["ratingMin=7.5", [0, 1]],
-    ["ratingMax=8.25", [0, 1]],
-    ["ratingMin=7.5&ratingMax=7.5", [0]],
-    ["ratingMin=8.25&ratingMax=8.25", [1]],
-    ["ratingMin=7.6&ratingMax=8.25", [1]],
-    ["ratingMin=1&ratingMax=10", [0, 1]],
-    ["ratingMin=9", []],
-    ["ratingMax=7.4", []],
-  ] satisfies Array<[string, number[]]>)(
+    [{ ratingMin: 7.5 }, [0, 1]],
+    [{ ratingMax: 8.25 }, [0, 1]],
+    [{ ratingMin: 7.5, ratingMax: 7.5 }, [0]],
+    [{ ratingMin: 8.25, ratingMax: 8.25 }, [1]],
+    [{ ratingMin: 7.6, ratingMax: 8.25 }, [1]],
+    [{ ratingMin: 1, ratingMax: 10 }, [0, 1]],
+    [{ ratingMin: 9 }, []],
+    [{ ratingMax: 7.4 }, []],
+  ] satisfies Array<[Record<string, number>, number[]]>)(
     "фильтрует гостевую выдачу по общей оценке с включительными границами: %s",
     async (query, indexes) => {
       const { app, connection } = getTestApplication()
@@ -570,13 +634,18 @@ describe("CollectionReadController HTTP", () => {
           attempts: [],
         },
       ])
-      const url = "/collections/" + collection.id + "/items?" + query
-      const guest = await app.inject({ method: "GET", url })
-      const signedIn = await app.inject({
-        method: "GET",
+      const url = "/collections/" + collection.id + "/items"
+      const guest = await app.inject({
+        method: "QUERY",
         url,
+        payload: query,
+      } as unknown as Parameters<typeof app.inject>[0])
+      const signedIn = await app.inject({
+        method: "QUERY",
+        url,
+        payload: query,
         headers: owner.headers,
-      })
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(guest.statusCode).toBe(200)
       expect(signedIn.statusCode).toBe(200)
       expect(signedIn.json()).toEqual(guest.json())
@@ -619,8 +688,12 @@ describe("CollectionReadController HTTP", () => {
         isFavorite: false,
         attempts: [],
       })
-      const base = "/collections/" + collection.id + "/items?mode=flat"
-      const unfiltered = await app.inject({ method: "GET", url: base })
+      const base = "/collections/" + collection.id + "/items"
+      const unfiltered = await app.inject({
+        method: "QUERY",
+        url: base,
+        payload: { mode: "flat" },
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(unfiltered.statusCode).toBe(200)
       expect(unfiltered.json()).toMatchObject({
         total: 2,
@@ -630,15 +703,16 @@ describe("CollectionReadController HTTP", () => {
         ],
       })
       for (const query of [
-        "ratingMin=1",
-        "ratingMax=10",
-        "ratingMin=1&ratingMax=10",
+        { ratingMin: 1 },
+        { ratingMax: 10 },
+        { ratingMin: 1, ratingMax: 10 },
       ]) {
         const response = await app.inject({
-          method: "GET",
-          url: base + "&" + query,
+          method: "QUERY",
+          url: base,
+          payload: { mode: "flat", ...query },
           headers: owner.headers,
-        })
+        } as unknown as Parameters<typeof app.inject>[0])
         expect(response.statusCode).toBe(200)
         expect(response.json()).toMatchObject({
           total: 1,
@@ -656,14 +730,13 @@ describe("CollectionReadController HTTP", () => {
       { item: first._id, ratingAverage: 7.5 },
       { item: second._id, ratingAverage: 8.25 },
     ])
-    const base =
-      "/collections/" +
-      collection.id +
-      "/items?mode=flat&ratingMin=7.5&ratingMax=8.25&limit=1"
+    const base = "/collections/" + collection.id + "/items"
+    const payload = { mode: "flat", ratingMin: 7.5, ratingMax: 8.25, limit: 1 }
     const secondPage = await app.inject({
-      method: "GET",
-      url: base + "&page=2",
-    })
+      method: "QUERY",
+      url: base,
+      payload: { ...payload, page: 2 },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(secondPage.statusCode).toBe(200)
     expect(secondPage.json()).toMatchObject({
       total: 2,
@@ -674,18 +747,23 @@ describe("CollectionReadController HTTP", () => {
       items: [{ id: second._id.toHexString() }],
     })
     const filtered = await app.inject({
-      method: "GET",
-      url: base + "&groupId=" + secondGroupId + "&query=Beta",
-    })
+      method: "QUERY",
+      url: base,
+      payload: { ...payload, groupId: secondGroupId, query: "Beta" },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(filtered.statusCode).toBe(200)
     expect(filtered.json()).toMatchObject({
       total: 1,
       pages: 1,
       items: [{ id: second._id.toHexString() }],
     })
-    const narrowedBase =
-      "/collections/" + collection.id + "/items?mode=flat&ratingMin=8&limit=1"
-    const narrowed = await app.inject({ method: "GET", url: narrowedBase })
+    const narrowedBase = "/collections/" + collection.id + "/items"
+    const narrowedPayload = { mode: "flat", ratingMin: 8, limit: 1 }
+    const narrowed = await app.inject({
+      method: "QUERY",
+      url: narrowedBase,
+      payload: narrowedPayload,
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(narrowed.statusCode).toBe(200)
     expect(narrowed.json()).toMatchObject({
       total: 1,
@@ -696,15 +774,17 @@ describe("CollectionReadController HTTP", () => {
       items: [{ id: second._id.toHexString() }],
     })
     const narrowedNext = await app.inject({
-      method: "GET",
-      url: narrowedBase + "&page=2",
-    })
+      method: "QUERY",
+      url: narrowedBase,
+      payload: { ...narrowedPayload, page: 2 },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(narrowedNext.statusCode).toBe(200)
     expect(narrowedNext.json()).toMatchObject({ total: 1, pages: 1, items: [] })
     const pastLastPage = await app.inject({
-      method: "GET",
-      url: base + "&page=3",
-    })
+      method: "QUERY",
+      url: base,
+      payload: { ...payload, page: 3 },
+    } as unknown as Parameters<typeof app.inject>[0])
     expect(pastLastPage.statusCode).toBe(200)
     expect(pastLastPage.json()).toMatchObject({ total: 2, pages: 2, items: [] })
   })
@@ -724,7 +804,11 @@ describe("CollectionReadController HTTP", () => {
       const { app, connection } = getTestApplication()
       const { collection, first, owner } = await createCollection()
       const url = "/collections/" + collection.id + "/items"
-      const before = await app.inject({ method: "GET", url })
+      const before = await app.inject({
+        method: "QUERY",
+        url,
+        payload: {},
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(before.statusCode).toBe(200)
       const isSkipped = state === "skipped" || state === "expiredSkip"
       await connection.collection("UserItem").insertOne({
@@ -753,10 +837,11 @@ describe("CollectionReadController HTTP", () => {
           : null,
       })
       const response = await app.inject({
-        method: "GET",
+        method: "QUERY",
         url,
         headers: owner.headers,
-      })
+        payload: {},
+      } as unknown as Parameters<typeof app.inject>[0])
       expect(response.statusCode).toBe(200)
       expect(response.json()).toEqual(before.json())
       expect(response.body).not.toContain("userItem")

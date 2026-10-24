@@ -1,10 +1,10 @@
 import type { Types } from "mongoose"
 
-import type { CollectionItemsQueryDto } from "../dto/query/collectionItems.query"
+import type { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
 
 interface IGetCollectionItemsRequestProps {
   id: Types.ObjectId
-  query: CollectionItemsQueryDto
+  query: CollectionItemsBodyDto
 }
 
 export type { IGetCollectionItemsRequestProps }

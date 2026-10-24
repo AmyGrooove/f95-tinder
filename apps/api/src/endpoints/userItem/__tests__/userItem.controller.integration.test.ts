@@ -1,5 +1,6 @@
 import { describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
+import type { FastifyInstance } from "fastify"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { EItemType } from "@entities/item/schemas/EItemType"
@@ -15,6 +16,68 @@ import { getTestApplication } from "@test/setup/setupIntegration"
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
 
 describe("UserItemController HTTP", () => {
+  it.each([61, 100])(
+    "отклоняет QUERY с %i ID без чтения и изменения личных записей",
+    async (count) => {
+      const { app, connection } = getTestApplication()
+      const owner = await createAccount()
+      const repository = app.get(UserItemRepository)
+      const read = jest.spyOn(repository.read, "findMany")
+      const response = await getFastify().inject({
+        method: "QUERY",
+        url: "/userItems",
+        headers: owner.headers,
+        payload: {
+          ids: Array.from({ length: count }, () =>
+            new Types.ObjectId().toHexString(),
+          ),
+        },
+      })
+      expect(response.statusCode).toBe(400)
+      expect(read).not.toHaveBeenCalled()
+      expect(await connection.collection("UserItem").countDocuments()).toBe(0)
+    },
+  )
+
+  it("возвращает все 60 запрошенных собственных записей без усечения", async () => {
+    const { connection } = getTestApplication()
+    const owner = await createAccount()
+    const records = Array.from({ length: 60 }, () => ({
+      _id: new Types.ObjectId(),
+      user: owner.user._id,
+      item: new Types.ObjectId(),
+      status: EUserItemStatus.PLANNED,
+      rating: null,
+      isFavorite: false,
+      attempts: [],
+      note: null,
+      expiresAt: null,
+    }))
+    await connection.collection("UserItem").insertMany(records)
+    const requested = [...records].reverse()
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: { ids: requested.map((record) => record._id.toHexString()) },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual(
+      requested.map((record) => ({
+        id: record._id.toHexString(),
+        itemId: record.item.toHexString(),
+        rating: null,
+        isFavorite: false,
+        status: EUserItemStatus.PLANNED,
+      })),
+    )
+    expect(await connection.collection("UserItem").countDocuments()).toBe(60)
+  })
+
+  const getFastify = (): FastifyInstance => {
+    return getTestApplication().app.getHttpAdapter().getInstance()
+  }
+
   const synchronizeMutationReads = (count: number) => {
     const repository = getTestApplication().app.get(UserItemRepository).read
     const findOne = repository.findOne.bind(repository)
@@ -1325,4 +1388,192 @@ describe("UserItemController HTTP", () => {
       }),
     ).toBe(3)
   }, 150_000)
+
+  it("читает только краткие собственные записи по ID UserItem в порядке запроса", async () => {
+    const { connection } = getTestApplication()
+    const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
+    const foreign = await createEntry()
+    const otherItem = await createItem()
+    const second = await getFastify().inject({
+      method: "POST",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: { itemId: otherItem._id.toHexString(), status: "planned" },
+    })
+    expect(second.statusCode).toBe(201)
+    const secondEntry = second.json<UserItemResponseDto>()
+    const updated = await getFastify().inject({
+      method: "PATCH",
+      url: "/userItems/" + owner.entry.id,
+      headers: owner.headers,
+      payload: { rating: 8, isFavorite: true, note: "Приватная заметка" },
+    })
+    expect(updated.statusCode).toBe(200)
+    await connection
+      .collection("Item")
+      .updateOne({ _id: owner.item._id }, { $set: { deletedAt: new Date() } })
+    const before = await readEntry(owner.entry.id)
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: {
+        ids: [
+          secondEntry.id,
+          foreign.entry.id,
+          new Types.ObjectId().toHexString(),
+          owner.item._id.toHexString(),
+          owner.entry.id.toUpperCase(),
+        ],
+      },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers["cache-control"]).toBe("no-store")
+    expect(response.headers["accept-query"]).toBe("application/json")
+    expect(response.json()).toEqual([
+      {
+        id: secondEntry.id,
+        itemId: otherItem._id.toHexString(),
+        rating: null,
+        isFavorite: false,
+        status: "planned",
+      },
+      {
+        id: owner.entry.id,
+        itemId: owner.item._id.toHexString(),
+        rating: 8,
+        isFavorite: true,
+        status: "inProgress",
+      },
+    ])
+    expect(await readEntry(owner.entry.id)).toEqual(before)
+  })
+
+  it("не возвращает просроченный skipped, сохраняя активный skipped и бессрочный blocked", async () => {
+    const { connection } = getTestApplication()
+    const owner = await createAccount()
+    const entries: UserItemResponseDto[] = []
+    for (const operation of ["skip", "skip", "block"]) {
+      const item = await createItem()
+      const response = await getFastify().inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers: owner.headers,
+        payload: { itemId: item._id.toHexString() },
+      })
+      expect(response.statusCode).toBe(201)
+      entries.push(response.json<UserItemResponseDto>())
+    }
+    const [expired, active, blocked] = entries
+    expect(expired).toBeDefined()
+    await connection
+      .collection("UserItem")
+      .updateOne(
+        { _id: new Types.ObjectId(expired?.id) },
+        { $set: { expiresAt: new Date(Date.now() - 1000) } },
+      )
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: { ids: entries.map((entry) => entry.id) },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual(
+      [active, blocked].map((entry) => ({
+        id: entry?.id,
+        itemId: entry?.itemId,
+        rating: null,
+        isFavorite: false,
+        status: entry?.status,
+      })),
+    )
+  })
+
+  it.each(["missing", "invalid", "expired", "revoked", "missingUser"])(
+    "не разрешает QUERY при недействительной авторизации %s",
+    async (state) => {
+      const { connection } = getTestApplication()
+      const owner = await createEntry()
+      if (state === "expired") {
+        await connection
+          .collection("Session")
+          .updateOne(
+            { _id: owner.session._id },
+            { $set: { expiresAt: new Date(Date.now() - 1000) } },
+          )
+      }
+      if (state === "revoked") {
+        await connection
+          .collection("Session")
+          .deleteOne({ _id: owner.session._id })
+      }
+      if (state === "missingUser") {
+        await connection.collection("User").deleteOne({ _id: owner.user._id })
+      }
+      const headers =
+        state === "missing"
+          ? {}
+          : state === "invalid"
+            ? { cookie: "__Host-accessToken=invalid" }
+            : owner.headers
+      const response = await getFastify().inject({
+        method: "QUERY",
+        url: "/userItems",
+        headers,
+        payload: { ids: [owner.entry.id] },
+      })
+      expect(response.statusCode).toBe(401)
+    },
+  )
+
+  it("возвращает пустой массив для недоступных ID и не создаёт личных записей", async () => {
+    const { connection } = getTestApplication()
+    const owner = await createAccount()
+    const response = await getFastify().inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: {
+        ids: Array.from({ length: 60 }, () =>
+          new Types.ObjectId().toHexString(),
+        ),
+      },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual([])
+    expect(await connection.collection("UserItem").countDocuments()).toBe(0)
+  })
+
+  it("разрешает CORS preflight для QUERY и сохраняет проверку доверенного origin", async () => {
+    const owner = await createEntry()
+    const preflight = await getFastify().inject({
+      method: "OPTIONS",
+      url: "/userItems",
+      headers: {
+        origin: "http://localhost",
+        "access-control-request-method": "QUERY",
+        "access-control-request-headers": "content-type",
+      },
+    })
+    expect(preflight.statusCode).toBe(204)
+    expect(
+      preflight.headers["access-control-allow-methods"]
+        ?.split(",")
+        .map((method) => method.trim()),
+    ).toContain("QUERY")
+    expect(preflight.headers["access-control-allow-credentials"]).toBe("true")
+    for (const [origin, status] of [
+      ["http://localhost", 200],
+      ["https://untrusted.example", 403],
+    ] satisfies Array<[string, number]>) {
+      const response = await getFastify().inject({
+        method: "QUERY",
+        url: "/userItems",
+        headers: { ...owner.headers, origin, "sec-fetch-site": "cross-site" },
+        payload: { ids: [owner.entry.id] },
+      })
+      expect(response.statusCode).toBe(status)
+    }
+  })
 })
