@@ -4,7 +4,6 @@ import { EUnit } from "@entities/shared/schemas/EUnit"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
-import { EUserItemStatus } from "./EUserItemStatus"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 
 @Schema({
@@ -32,7 +31,7 @@ class ItemAttempt {
   @Prop({
     type: String,
     required: true,
-    enum: [EUnit.MINUTE],
+    enum: [EUnit.MINUTE, EUnit.PERCENT],
     default: EUnit.MINUTE,
   })
   unit: EUnit
@@ -43,24 +42,22 @@ class ItemAttempt {
   @Prop({ type: Date, default: null })
   completedAt: Date | null
 
-  @Prop({
-    type: String,
-    required: true,
-    enum: [
-      EUserItemStatus.IN_PROGRESS,
-      EUserItemStatus.ON_HOLD,
-      EUserItemStatus.COMPLETED,
-      EUserItemStatus.DROPPED,
-    ],
-  })
-  status: Exclude<EUserItemStatus, EUserItemStatus.PLANNED>
+  @Prop({ type: Boolean, required: true, default: false })
+  isCompleted: boolean
 }
 
 const ItemAttemptSchema = SchemaFactory.createForClass(ItemAttempt)
 
+ItemAttemptSchema.path("progress").validate(function (
+  this: ItemAttempt,
+  value: number | null,
+) {
+  return isNil(value) || this.unit !== EUnit.PERCENT || value <= 100
+})
+
 type TCreateItemAttempt = TCreateEntity<
   ItemAttempt,
-  "id" | "progress" | "unit" | "startedAt" | "completedAt"
+  "id" | "progress" | "unit" | "startedAt" | "completedAt" | "isCompleted"
 >
 
 export { ItemAttempt, ItemAttemptSchema }

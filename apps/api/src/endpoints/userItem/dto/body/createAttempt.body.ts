@@ -1,27 +1,23 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
-import { IsIn, IsInt, IsISO8601, Min, Max, ValidateIf } from "class-validator"
+import { ApiPropertyOptional } from "@nestjs/swagger"
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsISO8601,
+  Min,
+  Max,
+  ValidateIf,
+} from "class-validator"
 
-import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 class CreateAttemptBodyDto {
-  @ApiProperty({
-    enum: [
-      EUserItemStatus.IN_PROGRESS,
-      EUserItemStatus.ON_HOLD,
-      EUserItemStatus.COMPLETED,
-      EUserItemStatus.DROPPED,
-    ],
-  })
-  @IsIn([
-    EUserItemStatus.IN_PROGRESS,
-    EUserItemStatus.ON_HOLD,
-    EUserItemStatus.COMPLETED,
-    EUserItemStatus.DROPPED,
-  ])
-  status: Exclude<EUserItemStatus, EUserItemStatus.PLANNED>
+  @ApiPropertyOptional({ type: Boolean, default: false })
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
+  @IsBoolean()
+  isCompleted?: boolean
 
   @ApiPropertyOptional({
     type: Number,
@@ -35,10 +31,13 @@ class CreateAttemptBodyDto {
   @Max(Number.MAX_SAFE_INTEGER)
   progress?: number | null
 
-  @ApiPropertyOptional({ enum: [EUnit.MINUTE], default: EUnit.MINUTE })
+  @ApiPropertyOptional({
+    enum: [EUnit.MINUTE, EUnit.PERCENT],
+    default: EUnit.MINUTE,
+  })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
-  @IsIn([EUnit.MINUTE])
-  unit?: EUnit.MINUTE
+  @IsIn([EUnit.MINUTE, EUnit.PERCENT])
+  unit?: EUnit.MINUTE | EUnit.PERCENT
 
   @ApiPropertyOptional({ type: String, format: "date-time", nullable: true })
   @ValidateIf((_object: unknown, value: unknown) => !isNil(value))

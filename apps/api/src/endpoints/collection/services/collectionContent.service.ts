@@ -380,7 +380,7 @@ class CollectionContentService {
               ? null
               : {
                   id: attempt.id.toHexString(),
-                  status: attempt.status,
+                  isCompleted: attempt.isCompleted,
                   progress: attempt.progress,
                   unit: attempt.unit,
                   startedAt: attempt.startedAt?.toISOString() ?? null,

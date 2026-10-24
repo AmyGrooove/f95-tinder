@@ -22,6 +22,9 @@ class UserItem extends MongoEntity {
   @Prop({ type: String, enum: Object.values(EUserItemStatus), required: true })
   status: EUserItemStatus
 
+  @Prop({ type: Date, default: null })
+  expiresAt: Date | null
+
   @Prop({
     type: Number,
     default: null,
@@ -51,7 +54,7 @@ class UserItem extends MongoEntity {
 
 type TCreateUserItem = TCreateEntity<
   UserItem,
-  "rating" | "isFavorite" | "note",
+  "rating" | "isFavorite" | "note" | "expiresAt",
   {
     attempts?: TCreateItemAttempt[]
   }
@@ -65,13 +68,13 @@ UserItemSchema.index(
 )
 UserItemSchema.index({ item: 1, user: 1 }, { name: "itemUsersLookup" })
 
-UserItemSchema.path("attempts").validate(
-  (value: ItemAttempt[]) =>
-    value.filter(
-      (entry) =>
-        entry.status === EUserItemStatus.IN_PROGRESS ||
-        entry.status === EUserItemStatus.ON_HOLD,
-    ).length <= 1,
+UserItemSchema.index(
+  { expiresAt: 1 },
+  {
+    name: "userItemSkippedExpiry",
+    expireAfterSeconds: 0,
+    partialFilterExpression: { status: EUserItemStatus.SKIPPED },
+  },
 )
 
 export { UserItem, UserItemSchema }

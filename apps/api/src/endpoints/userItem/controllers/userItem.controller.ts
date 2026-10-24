@@ -16,6 +16,7 @@ import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { CreateUserItemBodyDto } from "../dto/body/createUserItem.body"
+import { CreateExclusionBodyDto } from "../dto/body/createExclusion.body"
 import { UpdateUserItemBodyDto } from "../dto/body/updateUserItem.body"
 import { CreateAttemptBodyDto } from "../dto/body/createAttempt.body"
 import { UpdateAttemptBodyDto } from "../dto/body/updateAttempt.body"
@@ -49,6 +50,48 @@ class UserItemController {
     @Body() body: CreateUserItemBodyDto,
   ) {
     return this.userItemService.create(accessToken, body)
+  }
+
+  @Post("skip")
+  @HttpCode(201)
+  @ApiEndpoint({
+    operationId: "UserItemController_skip",
+    summary: SWAGGER_DICTIONARY.userItem.skip,
+    description: SWAGGER_DICTIONARY.userItem.skipDescription,
+    response: {
+      status: 201,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  skip(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Body() body: CreateExclusionBodyDto,
+  ) {
+    return this.userItemService.skip(accessToken, body)
+  }
+
+  @Post("block")
+  @HttpCode(201)
+  @ApiEndpoint({
+    operationId: "UserItemController_block",
+    summary: SWAGGER_DICTIONARY.userItem.block,
+    description: SWAGGER_DICTIONARY.userItem.blockDescription,
+    response: {
+      status: 201,
+      type: UserItemResponseDto,
+      description: SWAGGER_DICTIONARY.userItem.response,
+    },
+    errors: USER_ITEM_ERRORS,
+  })
+  @Header("Cache-Control", "no-store")
+  block(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Body() body: CreateExclusionBodyDto,
+  ) {
+    return this.userItemService.block(accessToken, body)
   }
 
   @Patch(":id")

@@ -28,7 +28,6 @@ import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserSourceAccountModule } from "@entities/userSourceAccount/userSourceAccount.module"
 import { SessionModule } from "@entities/session/session.module"
 import { UserTasteProfileModule } from "@entities/userTasteProfile/userTasteProfile.module"
-import { UserRecommendationStateModule } from "@entities/userRecommendationState/userRecommendationState.module"
 
 import { CacheModule } from "@infrastructure/cache/cache.module"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
@@ -76,7 +75,6 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     UserSourceAccountModule,
     SessionModule,
     UserTasteProfileModule,
-    UserRecommendationStateModule,
   ],
   providers: [
     {

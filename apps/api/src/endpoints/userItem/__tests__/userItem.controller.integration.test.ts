@@ -84,6 +84,7 @@ describe("UserItemController HTTP", () => {
       id: expect.stringMatching(/^[a-f0-9]{24}$/),
       itemId: item._id.toHexString(),
       status: EUserItemStatus.PLANNED,
+      expiresAt: null,
       rating: null,
       isFavorite: false,
       note: null,
@@ -95,6 +96,7 @@ describe("UserItemController HTTP", () => {
       user: user._id,
       item: item._id,
       status: EUserItemStatus.PLANNED,
+      expiresAt: null,
       rating: null,
       isFavorite: false,
       note: null,
@@ -114,7 +116,9 @@ describe("UserItemController HTTP", () => {
     expect(entry.attempts).toHaveLength(1)
     expect(entry.attempts[0]).toMatchObject({
       id: expect.stringMatching(/^[a-f0-9]{24}$/),
-      status,
+      isCompleted: status === EUserItemStatus.COMPLETED,
+      startedAt: null,
+      completedAt: null,
       progress: null,
       unit: "minute",
     })
@@ -122,7 +126,10 @@ describe("UserItemController HTTP", () => {
     expect(record.attempts[0]?.id).toEqual(
       new Types.ObjectId(entry.attempts[0]?.id),
     )
-    expect(record.attempts[0]?.status).toBe(status)
+    expect(record.attempts[0]?.isCompleted).toBe(
+      status === EUserItemStatus.COMPLETED,
+    )
+    expect(record.attempts[0]).not.toHaveProperty("status")
   })
 
   it.each([false, true])(
@@ -232,14 +239,14 @@ describe("UserItemController HTTP", () => {
       rating: 9,
       isFavorite: true,
       note: "Пересмотреть",
-      attempts: [{ status: "completed" }],
+      attempts: [{ isCompleted: true }],
     })
     expect(await readEntry(entry.id)).toMatchObject({
       status: "completed",
       rating: 9,
       isFavorite: true,
       note: "Пересмотреть",
-      attempts: [{ status: "completed" }],
+      attempts: [{ isCompleted: true }],
     })
   })
 
@@ -339,35 +346,10 @@ describe("UserItemController HTTP", () => {
     expect(await readEntry(entry.id)).toMatchObject({ isFavorite: true })
   })
 
-  it("начинает, приостанавливает и завершает одну попытку без дублей при повторе статуса", async () => {
+  it("создаёт первую попытку при смене статуса и отмечает её завершённой без выдуманных дат", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry()
-    const start = await app.inject({
-      method: "PATCH",
-      url: `/userItems/${entry.id}`,
-      headers,
-      payload: { status: "inProgress" },
-    })
-    expect(start.statusCode).toBe(200)
-    const firstAttempt = start.json<UserItemResponseDto>().attempts[0]
-    expect(firstAttempt).toMatchObject({
-      status: "inProgress",
-      startedAt: expect.any(String),
-      completedAt: null,
-    })
-    let previous = await readEntry(entry.id)
-    expect(previous).toMatchObject({
-      status: "inProgress",
-      attempts: [
-        {
-          id: new Types.ObjectId(firstAttempt?.id),
-          status: "inProgress",
-          startedAt: new Date(firstAttempt?.startedAt ?? ""),
-          completedAt: null,
-        },
-      ],
-    })
-
+    let attemptId: string | undefined
     for (const status of [
       "inProgress",
       "onHold",
@@ -377,84 +359,136 @@ describe("UserItemController HTTP", () => {
     ]) {
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}`,
+        url: "/userItems/" + entry.id,
         headers,
         payload: { status },
       })
       expect(response.statusCode).toBe(200)
-      const record = await readEntry(entry.id)
-      const completedAt = status === "completed" ? expect.any(Date) : null
-      expect(record).toMatchObject({
-        status,
-        attempts: [
-          {
-            id: new Types.ObjectId(firstAttempt?.id),
-            status,
-            startedAt: previous.attempts[0]?.startedAt,
-            completedAt,
-          },
-        ],
+      const result = response.json<UserItemResponseDto>()
+      expect(result.status).toBe(status)
+      expect(result.attempts).toHaveLength(1)
+      attemptId = attemptId ?? result.attempts[0]?.id
+      expect(result.attempts[0]).toEqual({
+        id: attemptId,
+        isCompleted: status === "completed",
+        progress: null,
+        unit: "minute",
+        startedAt: null,
+        completedAt: null,
       })
-      expect(response.json<UserItemResponseDto>()).toMatchObject({
-        status,
-        attempts: [
-          {
-            id: firstAttempt?.id,
-            status,
-            startedAt: firstAttempt?.startedAt,
-            completedAt: record.attempts[0]?.completedAt?.toISOString() ?? null,
-          },
-        ],
+      expect((await readEntry(entry.id)).attempts[0]).toMatchObject({
+        id: new Types.ObjectId(attemptId),
+        isCompleted: status === "completed",
+        startedAt: null,
+        completedAt: null,
       })
-      if (previous.status === status) {
-        expect(record.attempts).toEqual(previous.attempts)
-      }
-      previous = record
     }
-
-    const record = await readEntry(entry.id)
-    expect(record.status).toBe("completed")
-    expect(record.attempts).toHaveLength(1)
-    expect(record.attempts[0]).toMatchObject({
-      id: new Types.ObjectId(firstAttempt?.id),
-      status: "completed",
-      startedAt: expect.any(Date),
-      completedAt: expect.any(Date),
-    })
   })
 
-  it("начинает повторный просмотр с новой попыткой, сохраняя завершённую", async () => {
+  it.each(["planned", "blocked"])(
+    "переход в %s сохраняет личные данные и попытки, но запрещает новые",
+    async (status) => {
+      const { app } = getTestApplication()
+      const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
+      const prepared = await app.inject({
+        method: "PATCH",
+        url: "/userItems/" + entry.id,
+        headers,
+        payload: { rating: 10, isFavorite: true, note: "Сохранить" },
+      })
+      expect(prepared.statusCode).toBe(200)
+      const before = await readEntry(entry.id)
+      const changed = await app.inject({
+        method: "PATCH",
+        url: "/userItems/" + entry.id,
+        headers,
+        payload: { status },
+      })
+      expect(changed.statusCode).toBe(200)
+      expect(await readEntry(entry.id)).toMatchObject({
+        status,
+        expiresAt: null,
+        rating: 10,
+        isFavorite: true,
+        note: "Сохранить",
+        attempts: before.attempts,
+      })
+      const beforeAttempt = await readEntry(entry.id)
+      const rejected = await app.inject({
+        method: "POST",
+        url: "/userItems/" + entry.id + "/attempts",
+        headers,
+        payload: {},
+      })
+      expect(rejected.statusCode).toBe(409)
+      expect(await readEntry(entry.id)).toEqual(beforeAttempt)
+      const edited = await app.inject({
+        method: "PATCH",
+        url: "/userItems/" + entry.id + "/attempts/" + entry.attempts[0]?.id,
+        headers,
+        payload: { progress: 80 },
+      })
+      expect(edited.statusCode).toBe(200)
+      expect(await readEntry(entry.id)).toMatchObject({
+        status,
+        attempts: [{ isCompleted: true, progress: 80 }],
+      })
+    },
+  )
+
+  it("смена статуса не создаёт повторную попытку автоматически, а POST добавляет её без потери истории", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
     const before = await readEntry(entry.id)
-    const response = await app.inject({
+    const changed = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}`,
+      url: "/userItems/" + entry.id,
       headers,
       payload: { status: "inProgress" },
     })
-
-    expect(response.statusCode).toBe(200)
-    const record = await readEntry(entry.id)
-    expect(record.attempts).toHaveLength(2)
-    expect(record.attempts[0]).toEqual(before.attempts[0])
-    expect(record.attempts[1]).toMatchObject({
-      status: "inProgress",
+    expect(changed.statusCode).toBe(200)
+    expect((await readEntry(entry.id)).attempts).toEqual(before.attempts)
+    const added = await app.inject({
+      method: "POST",
+      url: "/userItems/" + entry.id + "/attempts",
+      headers,
+      payload: {},
+    })
+    expect(added.statusCode).toBe(201)
+    const result = added.json<UserItemResponseDto>()
+    expect(result.status).toBe("inProgress")
+    expect(result.attempts).toHaveLength(2)
+    expect(result.attempts[0]).toEqual(entry.attempts[0])
+    expect(result.attempts[1]).toMatchObject({
+      isCompleted: false,
+      progress: null,
+      startedAt: null,
       completedAt: null,
     })
+    const completed = await app.inject({
+      method: "PATCH",
+      url: "/userItems/" + entry.id,
+      headers,
+      payload: { status: "completed" },
+    })
+    expect(completed.statusCode).toBe(200)
+    expect(
+      completed
+        .json<UserItemResponseDto>()
+        .attempts.map((attempt) => attempt.isCompleted),
+    ).toEqual([true, true])
   })
 
-  it("конфликт статуса откатывает весь общий PATCH, включая оценку и заметку", async () => {
+  it("конфликт skipped откатывает весь PATCH, включая оценку и заметку", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
     const before = await readEntry(entry.id)
     const response = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}`,
+      url: "/userItems/" + entry.id,
       headers,
-      payload: { status: "planned", rating: 10, note: "Изменение" },
+      payload: { status: "skipped", rating: 10, note: "Изменение" },
     })
-
     expect(response.statusCode).toBe(409)
     expect(await readEntry(entry.id)).toEqual(before)
   })
@@ -481,22 +515,21 @@ describe("UserItemController HTTP", () => {
     expect(await readEntry(entry.id)).toEqual(before)
   })
 
-  it("добавляет прошлую попытку с датами и сохраняет текущий статус и попытку", async () => {
+  it("добавляет прошлую попытку с датами, сохраняя общий статус и прежнюю историю", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
     const before = await readEntry(entry.id)
     const response = await app.inject({
       method: "POST",
-      url: `/userItems/${entry.id}/attempts`,
+      url: "/userItems/" + entry.id + "/attempts",
       headers,
       payload: {
-        status: "completed",
+        isCompleted: true,
         progress: 90,
         startedAt: "2026-01-01T10:00:00.000Z",
         completedAt: "2026-01-01T11:30:00.000Z",
       },
     })
-
     expect(response.statusCode).toBe(201)
     const record = await readEntry(entry.id)
     expect(record.status).toBe("inProgress")
@@ -504,7 +537,7 @@ describe("UserItemController HTTP", () => {
     expect(record.attempts[0]).toEqual(before.attempts[0])
     expect(record.attempts[1]).toMatchObject({
       id: expect.any(Types.ObjectId),
-      status: "completed",
+      isCompleted: true,
       progress: 90,
       unit: "minute",
       startedAt: new Date("2026-01-01T10:00:00.000Z"),
@@ -512,175 +545,84 @@ describe("UserItemController HTTP", () => {
     })
   })
 
-  it("историческая попытка без дат сохраняется с null и не меняет planned", async () => {
-    const { app } = getTestApplication()
-    const { entry, headers } = await createEntry()
-    const response = await app.inject({
-      method: "POST",
-      url: `/userItems/${entry.id}/attempts`,
-      headers,
-      payload: { status: "dropped" },
-    })
-
-    expect(response.statusCode).toBe(201)
-    expect(await readEntry(entry.id)).toMatchObject({
-      status: "planned",
-      attempts: [
-        {
-          status: "dropped",
-          progress: null,
-          startedAt: null,
-          completedAt: null,
-        },
-      ],
-    })
-  })
-
-  it("создаёт текущую попытку через POST и синхронизирует статус записи", async () => {
-    const { app } = getTestApplication()
-    const { entry, headers } = await createEntry()
-    const response = await app.inject({
-      method: "POST",
-      url: `/userItems/${entry.id}/attempts`,
-      headers,
-      payload: { status: "onHold", progress: 0 },
-    })
-
-    expect(response.statusCode).toBe(201)
-    expect(await readEntry(entry.id)).toMatchObject({
-      status: "onHold",
-      attempts: [
-        {
-          status: "onHold",
-          progress: 0,
-          startedAt: expect.any(Date),
-          completedAt: null,
-        },
-      ],
-    })
-  })
-
-  it("изменяет прогресс попытки по стабильному ID и завершает её вместе с записью", async () => {
+  it("редактирует прогресс и полный просмотр по стабильному ID без смены общего статуса", async () => {
     const { app } = getTestApplication()
     const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
-    const attempt = entry.attempts[0]
-    const url = `/userItems/${entry.id}/attempts/${attempt?.id}`
-    const progress = await app.inject({
-      method: "PATCH",
-      url,
-      headers,
-      payload: { progress: 45 },
-    })
-    expect(progress.statusCode).toBe(200)
-    expect(progress.json<UserItemResponseDto>().attempts[0]?.id).toBe(
-      attempt?.id,
-    )
-    const finished = await app.inject({
-      method: "PATCH",
-      url,
-      headers,
-      payload: { status: "completed", progress: 90 },
-    })
-
-    expect(finished.statusCode).toBe(200)
-    expect(await readEntry(entry.id)).toMatchObject({
-      status: "completed",
-      attempts: [
-        {
-          id: new Types.ObjectId(attempt?.id),
-          status: "completed",
-          progress: 90,
-          completedAt: expect.any(Date),
-        },
-      ],
-    })
-  })
-
-  it("редактирует и очищает историческую попытку без изменения текущего статуса", async () => {
-    const { app } = getTestApplication()
-    const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
-    const response = await app.inject({
-      method: "PATCH",
-      url: `/userItems/${entry.id}/attempts/${entry.attempts[0]?.id}`,
-      headers,
-      payload: {
-        status: "dropped",
+    const url = "/userItems/" + entry.id + "/attempts/" + entry.attempts[0]?.id
+    for (const payload of [
+      { progress: 45 },
+      { progress: 100, unit: "percent", isCompleted: true },
+      {
         progress: null,
+        isCompleted: false,
         startedAt: null,
         completedAt: null,
       },
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(await readEntry(entry.id)).toMatchObject({
-      status: "completed",
-      attempts: [
-        {
-          status: "dropped",
-          progress: null,
-          startedAt: null,
-          completedAt: null,
-        },
-      ],
-    })
-  })
-
-  it("не позволяет создать вторую текущую попытку", async () => {
-    const { app } = getTestApplication()
-    const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
-    const before = await readEntry(entry.id)
-    const response = await app.inject({
-      method: "POST",
-      url: `/userItems/${entry.id}/attempts`,
-      headers,
-      payload: { status: "onHold" },
-    })
-
-    expect(response.statusCode).toBe(409)
-    expect(await readEntry(entry.id)).toEqual(before)
-  })
-
-  it("не позволяет возобновить историческую попытку при другой текущей", async () => {
-    const { app } = getTestApplication()
-    const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
-    await app.inject({
-      method: "POST",
-      url: `/userItems/${entry.id}/attempts`,
-      headers,
-      payload: { status: "inProgress" },
-    })
-    const before = await readEntry(entry.id)
-    const response = await app.inject({
-      method: "PATCH",
-      url: `/userItems/${entry.id}/attempts/${entry.attempts[0]?.id}`,
-      headers,
-      payload: { status: "onHold" },
-    })
-
-    expect(response.statusCode).toBe(409)
-    expect(await readEntry(entry.id)).toEqual(before)
-  })
-
-  it.each([
-    {
-      status: "completed",
-      startedAt: "2026-02-01T00:00:00.000Z",
-      completedAt: "2026-01-01T00:00:00.000Z",
-    },
-    { status: "inProgress", completedAt: "2026-01-01T00:00:00.000Z" },
-  ])(
-    "отклоняет несогласованные даты создания попытки и сохраняет запись: %j",
-    async (payload) => {
-      const { app } = getTestApplication()
-      const { entry, headers } = await createEntry()
-      const before = await readEntry(entry.id)
+    ]) {
       const response = await app.inject({
-        method: "POST",
-        url: `/userItems/${entry.id}/attempts`,
+        method: "PATCH",
+        url,
         headers,
         payload,
       })
+      expect(response.statusCode).toBe(200)
+      expect(response.json<UserItemResponseDto>().status).toBe("inProgress")
+      expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject({
+        id: entry.attempts[0]?.id,
+        ...payload,
+      })
+      expect((await readEntry(entry.id)).attempts[0]).toMatchObject({
+        id: new Types.ObjectId(entry.attempts[0]?.id),
+        ...payload,
+      })
+    }
+  })
 
+  it.each([0, 100])(
+    "сохраняет граничный прогресс %i процентов без автоматического полного просмотра",
+    async (progress) => {
+      const { app } = getTestApplication()
+      const { entry, headers } = await createEntry(EUserItemStatus.ON_HOLD)
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + entry.id + "/attempts",
+        headers,
+        payload: { unit: "percent", progress },
+      })
+      expect(response.statusCode).toBe(201)
+      expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
+        unit: "percent",
+        progress,
+        isCompleted: false,
+        startedAt: null,
+        completedAt: null,
+      })
+    },
+  )
+
+  it.each([
+    { unit: "percent", progress: 101 },
+    { unit: "percent", progress: -1 },
+    { unit: "percent", progress: 0.5 },
+    { progress: Number.MAX_SAFE_INTEGER + 1 },
+    {
+      startedAt: "2026-02-01T00:00:00.000Z",
+      completedAt: "2026-01-01T00:00:00.000Z",
+    },
+    { isCompleted: null },
+    { status: "completed" },
+  ])(
+    "отклоняет некорректное создание попытки без изменения записи: %j",
+    async (payload) => {
+      const { app } = getTestApplication()
+      const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
+      const before = await readEntry(entry.id)
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + entry.id + "/attempts",
+        headers,
+        payload,
+      })
       expect(response.statusCode).toBe(400)
       expect(await readEntry(entry.id)).toEqual(before)
     },
@@ -691,9 +633,11 @@ describe("UserItemController HTTP", () => {
     async (payload) => {
       const { app } = getTestApplication()
       const { entry, headers } = await createEntry(EUserItemStatus.COMPLETED)
+      const url =
+        "/userItems/" + entry.id + "/attempts/" + entry.attempts[0]?.id
       const prepared = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/attempts/${entry.attempts[0]?.id}`,
+        url,
         headers,
         payload: { completedAt: "2026-01-01T00:00:00.000Z" },
       })
@@ -701,84 +645,123 @@ describe("UserItemController HTTP", () => {
       const before = await readEntry(entry.id)
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/attempts/${entry.attempts[0]?.id}`,
+        url,
         headers,
         payload,
       })
-
       expect(response.statusCode).toBe(400)
       expect(await readEntry(entry.id)).toEqual(before)
     },
   )
 
-  it("параллельные добавления текущих попыток сохраняют только одну", async () => {
+  it("проверяет итоговые unit и progress при частичной смене единицы", async () => {
     const { app } = getTestApplication()
-    const { entry, headers } = await createEntry()
+    const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
+    const url = "/userItems/" + entry.id + "/attempts/" + entry.attempts[0]?.id
+    const prepared = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { progress: 120 },
+    })
+    expect(prepared.statusCode).toBe(200)
+    const before = await readEntry(entry.id)
+    const rejected = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { unit: "percent" },
+    })
+    expect(rejected.statusCode).toBe(400)
+    expect(await readEntry(entry.id)).toEqual(before)
+    const accepted = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { unit: "percent", progress: 100 },
+    })
+    expect(accepted.statusCode).toBe(200)
+    const invalidProgress = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { progress: 101 },
+    })
+    expect(invalidProgress.statusCode).toBe(400)
+    expect((await readEntry(entry.id)).attempts[0]).toMatchObject({
+      unit: "percent",
+      progress: 100,
+    })
+  })
+
+  it("параллельные добавления попыток сохраняются без потери истории", async () => {
+    const { app } = getTestApplication()
+    const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
+    const before = await readEntry(entry.id)
     synchronizeMutationReads(2)
     const responses = await Promise.all(
-      ["inProgress", "onHold"].map((status) =>
+      [10, 20].map((progress) =>
         app.inject({
           method: "POST",
-          url: `/userItems/${entry.id}/attempts`,
+          url: "/userItems/" + entry.id + "/attempts",
           headers,
-          payload: { status },
+          payload: { progress },
         }),
       ),
     )
-
-    expect(responses.map((response) => response.statusCode).sort()).toEqual([
-      201, 409,
-    ])
+    expect(responses.map((response) => response.statusCode)).toEqual([201, 201])
     const record = await readEntry(entry.id)
-    expect(record.attempts).toHaveLength(1)
-    expect(record.status).toBe(record.attempts[0]?.status)
+    expect(record.status).toBe("inProgress")
+    expect(record.attempts).toHaveLength(3)
+    expect(record.attempts[0]).toEqual(before.attempts[0])
+    expect(record.attempts.slice(1)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ progress: 10 }),
+        expect.objectContaining({ progress: 20 }),
+      ]),
+    )
   })
 
   it("параллельные исторические попытки и изменения полей не теряются", async () => {
     const { app } = getTestApplication()
-    const { entry, headers } = await createEntry()
+    const { entry, headers } = await createEntry(EUserItemStatus.IN_PROGRESS)
     synchronizeMutationReads(4)
+    const url = "/userItems/" + entry.id
     const responses = await Promise.all([
       app.inject({
         method: "POST",
-        url: `/userItems/${entry.id}/attempts`,
+        url: url + "/attempts",
         headers,
-        payload: { status: "completed", progress: 90 },
+        payload: { isCompleted: true, progress: 90 },
       }),
       app.inject({
         method: "POST",
-        url: `/userItems/${entry.id}/attempts`,
+        url: url + "/attempts",
         headers,
-        payload: { status: "dropped", progress: 30 },
+        payload: { isCompleted: false, progress: 30 },
       }),
+      app.inject({ method: "PATCH", url, headers, payload: { rating: 8 } }),
       app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}`,
-        headers,
-        payload: { rating: 8 },
-      }),
-      app.inject({
-        method: "PATCH",
-        url: `/userItems/${entry.id}`,
+        url,
         headers,
         payload: { isFavorite: true },
       }),
     ])
-
     expect(responses.map((response) => response.statusCode).sort()).toEqual([
       200, 200, 201, 201,
     ])
     const record = await readEntry(entry.id)
     expect(record).toMatchObject({
-      status: "planned",
+      status: "inProgress",
       rating: 8,
       isFavorite: true,
     })
-    expect(record.attempts).toHaveLength(2)
+    expect(record.attempts).toHaveLength(3)
     expect(record.attempts).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ status: "completed", progress: 90 }),
-        expect.objectContaining({ status: "dropped", progress: 30 }),
+        expect.objectContaining({ isCompleted: true, progress: 90 }),
+        expect.objectContaining({ isCompleted: false, progress: 30 }),
       ]),
     )
   })
@@ -789,7 +772,7 @@ describe("UserItemController HTTP", () => {
     { method: "PATCH", path: "", payload: { isFavorite: true } },
     { method: "PATCH", path: "", payload: { rating: 9 } },
     { method: "PATCH", path: "", payload: { note: "Заметка" } },
-    { method: "POST", path: "/attempts", payload: { status: "completed" } },
+    { method: "POST", path: "/attempts", payload: { isCompleted: true } },
     { method: "PATCH", path: "/attempts/current", payload: { progress: 10 } },
   ] as const)(
     "возвращает 404 без изменения чужой записи для $method $path",
@@ -950,4 +933,396 @@ describe("UserItemController HTTP", () => {
     })
     expect(repeated.statusCode).toBe(404)
   })
+  it.each(["skip", "block"])(
+    "создаёт %s с пустыми личными данными и корректным сроком",
+    async (operation) => {
+      const { app } = getTestApplication()
+      const { headers } = await createAccount()
+      const item = await createItem()
+      const before = Date.now()
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers,
+        payload: { itemId: item._id.toHexString() },
+      })
+      const after = Date.now()
+      expect(response.statusCode).toBe(201)
+      expect(response.headers["cache-control"]).toBe("no-store")
+      const entry = response.json<UserItemResponseDto>()
+      expect(entry).toMatchObject({
+        itemId: item._id.toHexString(),
+        status: operation === "skip" ? "skipped" : "blocked",
+        rating: null,
+        isFavorite: false,
+        note: null,
+        attempts: [],
+      })
+      const record = await readEntry(entry.id)
+      expect(record.status).toBe(entry.status)
+      if (operation === "skip") {
+        const duration = 90 * 24 * 60 * 60 * 1000
+        const expiry = new Date(entry.expiresAt ?? "").getTime()
+        expect(expiry).toBeGreaterThanOrEqual(before + duration)
+        expect(expiry).toBeLessThanOrEqual(after + duration)
+        expect(record.expiresAt).toEqual(new Date(expiry))
+      } else {
+        expect(entry.expiresAt).toBeNull()
+        expect(record.expiresAt).toBeNull()
+      }
+      const removed = await app.inject({
+        method: "DELETE",
+        url: "/userItems/" + entry.id,
+        headers,
+      })
+      expect(removed.statusCode).toBe(204)
+      expect(
+        await getTestApplication()
+          .connection.collection("UserItem")
+          .countDocuments(),
+      ).toBe(0)
+    },
+  )
+
+  it.each(["skip", "block"])(
+    "не заменяет библиотечную запись через %s",
+    async (operation) => {
+      const { app } = getTestApplication()
+      const { entry, item, headers } = await createEntry(
+        EUserItemStatus.COMPLETED,
+      )
+      const before = await readEntry(entry.id)
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers,
+        payload: { itemId: item._id.toHexString() },
+      })
+      expect(response.statusCode).toBe(409)
+      expect(await readEntry(entry.id)).toEqual(before)
+    },
+  )
+
+  it.each(["skip", "block"])(
+    "повтор %s и обычный POST не заменяют существующее исключение",
+    async (operation) => {
+      const { app } = getTestApplication()
+      const { headers } = await createAccount()
+      const item = await createItem()
+      const created = await app.inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers,
+        payload: { itemId: item._id.toHexString() },
+      })
+      expect(created.statusCode).toBe(201)
+      const entry = created.json<UserItemResponseDto>()
+      const before = await readEntry(entry.id)
+      for (const target of [
+        "/userItems/skip",
+        "/userItems/block",
+        "/userItems",
+      ]) {
+        const response = await app.inject({
+          method: "POST",
+          url: target,
+          headers,
+          payload:
+            target === "/userItems"
+              ? { itemId: item._id.toHexString(), status: "planned" }
+              : { itemId: item._id.toHexString() },
+        })
+        expect(response.statusCode).toBe(409)
+        expect(await readEntry(entry.id)).toEqual(before)
+      }
+    },
+  )
+
+  it("одновременные skip и block создают одну личную запись", async () => {
+    const { app, connection } = getTestApplication()
+    const { headers, user } = await createAccount()
+    const item = await createItem()
+    const responses = await Promise.all(
+      ["skip", "block"].map((operation) =>
+        app.inject({
+          method: "POST",
+          url: "/userItems/" + operation,
+          headers,
+          payload: { itemId: item._id.toHexString() },
+        }),
+      ),
+    )
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([
+      201, 409,
+    ])
+    expect(
+      await connection
+        .collection("UserItem")
+        .countDocuments({ user: user._id, item: item._id }),
+    ).toBe(1)
+  })
+
+  it.each([{ rating: 8 }, { isFavorite: true }, { note: "Заметка" }])(
+    "не допускает skipped при наличии личных данных: %j",
+    async (payload) => {
+      const { app } = getTestApplication()
+      const { entry, headers } = await createEntry()
+      const url = "/userItems/" + entry.id
+      expect(
+        (await app.inject({ method: "PATCH", url, headers, payload }))
+          .statusCode,
+      ).toBe(200)
+      const before = await readEntry(entry.id)
+      const response = await app.inject({
+        method: "PATCH",
+        url,
+        headers,
+        payload: { status: "skipped" },
+      })
+      expect(response.statusCode).toBe(409)
+      expect(await readEntry(entry.id)).toEqual(before)
+    },
+  )
+
+  it("очистка личных полей и переход в skipped выполняются атомарно", async () => {
+    const { app } = getTestApplication()
+    const { entry, headers } = await createEntry()
+    const url = "/userItems/" + entry.id
+    expect(
+      (
+        await app.inject({
+          method: "PATCH",
+          url,
+          headers,
+          payload: { rating: 8, isFavorite: true, note: "Заметка" },
+        })
+      ).statusCode,
+    ).toBe(200)
+    const response = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: {
+        status: "skipped",
+        rating: null,
+        isFavorite: false,
+        note: null,
+      },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      status: "skipped",
+      rating: null,
+      isFavorite: false,
+      note: null,
+      attempts: [],
+      expiresAt: expect.any(String),
+    })
+    for (const payload of [
+      { rating: 8 },
+      { isFavorite: true },
+      { note: "Заметка" },
+    ]) {
+      const before = await readEntry(entry.id)
+      const rejected = await app.inject({
+        method: "PATCH",
+        url,
+        headers,
+        payload,
+      })
+      expect(rejected.statusCode).toBe(409)
+      expect(await readEntry(entry.id)).toEqual(before)
+    }
+    const rejectedAttempt = await app.inject({
+      method: "POST",
+      url: url + "/attempts",
+      headers,
+      payload: {},
+    })
+    expect(rejectedAttempt.statusCode).toBe(409)
+  })
+
+  it("повтор skipped сохраняет срок, а выход из него очищает expiresAt", async () => {
+    const { app } = getTestApplication()
+    const { entry, headers } = await createEntry()
+    const url = "/userItems/" + entry.id
+    const first = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { status: "skipped" },
+    })
+    expect(first.statusCode).toBe(200)
+    const deadline = first.json<UserItemResponseDto>().expiresAt
+    const repeated = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { status: "skipped" },
+    })
+    expect(repeated.statusCode).toBe(200)
+    expect(repeated.json<UserItemResponseDto>().expiresAt).toBe(deadline)
+    const blocked = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { status: "blocked" },
+    })
+    expect(blocked.statusCode).toBe(200)
+    expect((await readEntry(entry.id)).expiresAt).toBeNull()
+    const library = await app.inject({
+      method: "PATCH",
+      url,
+      headers,
+      payload: { status: "inProgress" },
+    })
+    expect(library.statusCode).toBe(200)
+    expect(library.json()).toMatchObject({
+      expiresAt: null,
+      status: "inProgress",
+      attempts: [{ isCompleted: false }],
+    })
+  })
+
+  it("просроченный skipped нельзя редактировать, но он не мешает новому добавлению", async () => {
+    const { app, connection } = getTestApplication()
+    const { entry, item, headers } = await createEntry()
+    await connection
+      .collection("UserItem")
+      .updateOne(
+        { _id: new Types.ObjectId(entry.id) },
+        { $set: { status: "skipped", expiresAt: new Date(Date.now() - 1000) } },
+      )
+    const expired = await app.inject({
+      method: "PATCH",
+      url: "/userItems/" + entry.id,
+      headers,
+      payload: { status: "planned" },
+    })
+    expect(expired.statusCode).toBe(404)
+    const fresh = await app.inject({
+      method: "POST",
+      url: "/userItems",
+      headers,
+      payload: { itemId: item._id.toHexString(), status: "planned" },
+    })
+    expect(fresh.statusCode).toBe(201)
+    expect(fresh.json<UserItemResponseDto>().id).not.toBe(entry.id)
+    expect(
+      await connection
+        .collection("UserItem")
+        .countDocuments({ item: item._id }),
+    ).toBe(1)
+  })
+
+  it.each(["skip", "block"])(
+    "проверяет доступ и доступность Item для %s",
+    async (operation) => {
+      const { app, connection } = getTestApplication()
+      const { headers } = await createAccount()
+      const item = await createItem()
+      const url = "/userItems/" + operation
+      const payload = { itemId: item._id.toHexString() }
+      const unauthenticated = await app.inject({
+        method: "POST",
+        url,
+        headers: { origin: "http://localhost" },
+        payload,
+      })
+      expect(unauthenticated.statusCode).toBe(401)
+      const csrf = await app.inject({
+        method: "POST",
+        url,
+        headers: { ...headers, origin: "https://untrusted.example" },
+        payload,
+      })
+      expect(csrf.statusCode).toBe(403)
+      await connection
+        .collection("Item")
+        .updateOne({ _id: item._id }, { $set: { deletedAt: new Date() } })
+      for (const itemId of [
+        item._id.toHexString(),
+        new Types.ObjectId().toHexString(),
+      ]) {
+        const missing = await app.inject({
+          method: "POST",
+          url,
+          headers,
+          payload: { itemId },
+        })
+        expect(missing.statusCode).toBe(404)
+      }
+      expect(await connection.collection("UserItem").countDocuments()).toBe(0)
+    },
+  )
+
+  it("TTL удаляет только просроченный skipped и сохраняет blocked и библиотечную запись", async () => {
+    const { connection } = getTestApplication()
+    const { entry, user } = await createEntry()
+    const expired = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const skipId = new Types.ObjectId()
+    const blockId = new Types.ObjectId()
+    const futureId = new Types.ObjectId()
+    await connection.collection("UserItem").insertMany([
+      {
+        _id: skipId,
+        user: user._id,
+        item: new Types.ObjectId(),
+        status: "skipped",
+        expiresAt: expired,
+        rating: null,
+        isFavorite: false,
+        note: null,
+        attempts: [],
+      },
+      {
+        _id: blockId,
+        user: user._id,
+        item: new Types.ObjectId(),
+        status: "blocked",
+        expiresAt: expired,
+      },
+      {
+        _id: futureId,
+        user: user._id,
+        item: new Types.ObjectId(),
+        status: "skipped",
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      },
+    ])
+    await connection
+      .collection("UserItem")
+      .updateOne(
+        { _id: new Types.ObjectId(entry.id) },
+        { $set: { expiresAt: expired } },
+      )
+    const indexes = await connection.collection("UserItem").indexes()
+    expect(indexes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "userItemSkippedExpiry",
+          key: { expiresAt: 1 },
+          expireAfterSeconds: 0,
+          partialFilterExpression: { status: "skipped" },
+        }),
+      ]),
+    )
+    const deadline = Date.now() + 120_000
+    while (
+      (await connection
+        .collection("UserItem")
+        .countDocuments({ _id: skipId })) > 0 &&
+      Date.now() < deadline
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+    expect(
+      await connection.collection("UserItem").findOne({ _id: skipId }),
+    ).toBeNull()
+    expect(
+      await connection.collection("UserItem").countDocuments({
+        _id: { $in: [blockId, futureId, new Types.ObjectId(entry.id)] },
+      }),
+    ).toBe(3)
+  }, 150_000)
 })

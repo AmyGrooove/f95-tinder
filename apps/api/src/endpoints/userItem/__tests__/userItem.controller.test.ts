@@ -37,13 +37,14 @@ describe("UserItemController", () => {
     id,
     itemId,
     status: EUserItemStatus.COMPLETED,
+    expiresAt: null,
     rating: 9,
     isFavorite: false,
     note: null,
     attempts: [
       {
         id: attemptId,
-        status: EUserItemStatus.COMPLETED,
+        isCompleted: true,
         progress: 90,
         unit: EUnit.MINUTE,
         startedAt: "2026-01-01T10:00:00.000Z",
@@ -55,6 +56,8 @@ describe("UserItemController", () => {
   }
   const service = {
     create: jest.fn<UserItemService["create"]>(),
+    skip: jest.fn<UserItemService["skip"]>(),
+    block: jest.fn<UserItemService["block"]>(),
     update: jest.fn<UserItemService["update"]>(),
     remove: jest.fn<UserItemService["remove"]>(),
     createAttempt: jest.fn<UserItemService["createAttempt"]>(),
@@ -91,6 +94,8 @@ describe("UserItemController", () => {
   beforeEach(() => {
     jest.resetAllMocks()
     service.create.mockResolvedValue(result)
+    service.skip.mockResolvedValue(result)
+    service.block.mockResolvedValue(result)
     service.update.mockResolvedValue(result)
     service.remove.mockResolvedValue(undefined)
     service.createAttempt.mockResolvedValue(result)
@@ -133,6 +138,8 @@ describe("UserItemController", () => {
     { payload: { status: EUserItemStatus.ON_HOLD } },
     { payload: { status: EUserItemStatus.COMPLETED } },
     { payload: { status: EUserItemStatus.DROPPED } },
+    { payload: { status: EUserItemStatus.SKIPPED } },
+    { payload: { status: EUserItemStatus.BLOCKED } },
     { payload: { isFavorite: true } },
     { payload: { isFavorite: false } },
     { payload: { rating: 1 } },
@@ -180,23 +187,23 @@ describe("UserItemController", () => {
   })
 
   it.each([
-    { status: EUserItemStatus.IN_PROGRESS },
-    { status: EUserItemStatus.ON_HOLD, progress: 0 },
+    {},
+    { isCompleted: false, progress: 0 },
     {
-      status: EUserItemStatus.COMPLETED,
+      isCompleted: true,
       progress: 90,
       unit: EUnit.MINUTE,
       startedAt: "2026-01-01T10:00:00.000Z",
       completedAt: "2026-01-01T11:30:00.000Z",
     },
     {
-      status: EUserItemStatus.DROPPED,
+      isCompleted: false,
       progress: null,
       startedAt: null,
       completedAt: null,
     },
   ] as const)(
-    "передаёт данные текущей или исторической попытки $status и возвращает 201",
+    "передаёт данные попытки %j и возвращает 201",
     async (payload) => {
       const response = await app.inject({
         method: "POST",
@@ -218,8 +225,10 @@ describe("UserItemController", () => {
 
   it.each([
     { progress: 0 },
+    { progress: 100, unit: EUnit.PERCENT },
+    { isCompleted: false },
     { progress: null, startedAt: null, completedAt: null },
-    { status: EUserItemStatus.COMPLETED, progress: 90, unit: EUnit.MINUTE },
+    { isCompleted: true, progress: 90, unit: EUnit.MINUTE },
     { completedAt: "2026-01-01T11:30:00.000Z" },
   ] as const)(
     "изменяет переданные поля попытки, преобразуя оба ID в ObjectId: %j",
@@ -244,6 +253,16 @@ describe("UserItemController", () => {
   )
 
   it.each([
+    {
+      method: "POST",
+      url: "/userItems",
+      payload: { itemId, status: "skipped" },
+    },
+    {
+      method: "POST",
+      url: "/userItems",
+      payload: { itemId, status: "blocked" },
+    },
     { method: "POST", url: "/userItems", payload: { itemId } },
     { method: "POST", url: "/userItems", payload: { itemId, status: null } },
     { method: "POST", url: "/userItems", payload: { status: "planned" } },
@@ -303,24 +322,23 @@ describe("UserItemController", () => {
   )
 
   it.each([
-    {},
     { status: null },
+    { isCompleted: null },
+    { isCompleted: "true" },
     { status: EUserItemStatus.PLANNED },
-    { status: EUserItemStatus.IN_PROGRESS, progress: -1 },
-    { status: EUserItemStatus.IN_PROGRESS, progress: 0.5 },
+    { progress: -1 },
+    { progress: 0.5 },
     {
-      status: EUserItemStatus.IN_PROGRESS,
       progress: Number.MAX_SAFE_INTEGER + 1,
     },
-    { status: EUserItemStatus.IN_PROGRESS, progress: "5" },
-    { status: EUserItemStatus.IN_PROGRESS, unit: null },
-    { status: EUserItemStatus.IN_PROGRESS, unit: EUnit.USD },
-    { status: EUserItemStatus.IN_PROGRESS, startedAt: "invalid" },
+    { progress: "5" },
+    { unit: null },
+    { unit: EUnit.USD },
+    { startedAt: "invalid" },
     {
-      status: EUserItemStatus.COMPLETED,
       completedAt: "2026-02-30T10:00:00.000Z",
     },
-    { status: EUserItemStatus.COMPLETED, id: attemptId },
+    { id: attemptId },
   ])("отклоняет некорректное тело создания попытки: %j", async (payload) => {
     const response = await app.inject({
       method: "POST",
@@ -336,6 +354,8 @@ describe("UserItemController", () => {
   it.each([
     { status: null },
     { status: EUserItemStatus.PLANNED },
+    { isCompleted: null },
+    { isCompleted: "false" },
     { progress: -1 },
     { progress: Number.MAX_SAFE_INTEGER + 1 },
     { unit: null },
@@ -388,6 +408,18 @@ describe("UserItemController", () => {
   it.each([
     {
       method: "POST",
+      url: "/userItems/skip",
+      payload: { itemId },
+      serviceMethod: "skip",
+    },
+    {
+      method: "POST",
+      url: "/userItems/block",
+      payload: { itemId },
+      serviceMethod: "block",
+    },
+    {
+      method: "POST",
       url: "/userItems",
       payload: { itemId, status: "planned" },
       serviceMethod: "create",
@@ -402,7 +434,7 @@ describe("UserItemController", () => {
     {
       method: "POST",
       url: `/userItems/${id}/attempts`,
-      payload: { status: "completed" },
+      payload: { isCompleted: true },
       serviceMethod: "createAttempt",
     },
     {
@@ -492,20 +524,20 @@ describe("UserItemController", () => {
     })
   })
 
-  it("сохраняет конфликт текущих попыток из сервиса", async () => {
+  it("сохраняет запрет добавления попытки для текущего статуса", async () => {
     service.createAttempt.mockRejectedValue(
-      new ConflictException("Текущая попытка уже есть"),
+      new ConflictException("Добавление попытки запрещено"),
     )
     const response = await app.inject({
       method: "POST",
       url: `/userItems/${id}/attempts`,
       headers,
-      payload: { status: "inProgress" },
+      payload: { isCompleted: false },
     })
 
     expect(response.statusCode).toBe(409)
     expect(response.json()).toMatchObject({
-      error: { message: "Текущая попытка уже есть" },
+      error: { message: "Добавление попытки запрещено" },
     })
   })
 
@@ -546,6 +578,77 @@ describe("UserItemController", () => {
       for (const mock of Object.values(service)) {
         expect(mock).not.toHaveBeenCalled()
       }
+    },
+  )
+
+  it.each(["skip", "block"] as const)(
+    "создаёт исключение через %s с кодом 201 и запретом кеширования",
+    async (operation) => {
+      const exclusion = {
+        ...result,
+        status:
+          operation === "skip"
+            ? EUserItemStatus.SKIPPED
+            : EUserItemStatus.BLOCKED,
+        rating: null,
+        attempts: [],
+        expiresAt: operation === "skip" ? "2026-04-01T00:00:00.000Z" : null,
+      }
+      service[operation].mockResolvedValue(exclusion)
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers,
+        payload: { itemId },
+      })
+      expect(response.statusCode).toBe(201)
+      expect(response.headers["cache-control"]).toBe("no-store")
+      expect(response.json()).toEqual(exclusion)
+      expect(service[operation]).toHaveBeenCalledWith("access-token", {
+        itemId,
+      })
+      expect(service.create).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(["skip", "block"] as const)(
+    "отклоняет некорректное тело %s до вызова сервиса",
+    async (operation) => {
+      for (const payload of [
+        {},
+        { itemId: null },
+        { itemId: "invalid" },
+        { itemId, status: "planned" },
+        { itemId, rating: 8 },
+      ]) {
+        const response = await app.inject({
+          method: "POST",
+          url: "/userItems/" + operation,
+          headers,
+          payload,
+        })
+        expect(response.statusCode).toBe(400)
+        expect(service[operation]).not.toHaveBeenCalled()
+      }
+    },
+  )
+
+  it.each(["skip", "block"] as const)(
+    "сохраняет конфликт существующей записи для %s",
+    async (operation) => {
+      service[operation].mockRejectedValue(
+        new ConflictException("Запись уже существует"),
+      )
+      const response = await app.inject({
+        method: "POST",
+        url: "/userItems/" + operation,
+        headers,
+        payload: { itemId },
+      })
+      expect(response.statusCode).toBe(409)
+      expect(response.json()).toMatchObject({
+        error: { message: "Запись уже существует" },
+      })
     },
   )
 

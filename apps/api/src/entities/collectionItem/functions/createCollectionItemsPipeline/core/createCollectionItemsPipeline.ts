@@ -5,6 +5,7 @@ import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { ItemFeature } from "@entities/itemFeature/schemas/itemFeature.schema"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { escapeRegex } from "@shared/functions/regex/escapeRegex"
@@ -138,7 +139,15 @@ const createCollectionItemsPipeline = (
           localField: "item",
           foreignField: "item",
           pipeline: [
-            { $match: { user: props.userId } },
+            {
+              $match: {
+                user: props.userId,
+                $or: [
+                  { status: { $ne: EUserItemStatus.SKIPPED } },
+                  { expiresAt: { $gt: new Date() } },
+                ],
+              },
+            },
             {
               $project: {
                 _id: 1,
@@ -146,27 +155,14 @@ const createCollectionItemsPipeline = (
                 rating: 1,
                 isFavorite: 1,
                 currentAttempt: {
-                  $ifNull: [
+                  $cond: [
                     {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$attempts",
-                            as: "attempt",
-                            cond: {
-                              $in: [
-                                "$$attempt.status",
-                                [
-                                  EUserItemStatus.IN_PROGRESS,
-                                  EUserItemStatus.ON_HOLD,
-                                ],
-                              ],
-                            },
-                          },
-                        },
-                        0,
+                      $in: [
+                        "$status",
+                        [EUserItemStatus.IN_PROGRESS, EUserItemStatus.ON_HOLD],
                       ],
                     },
+                    { $ifNull: [{ $arrayElemAt: ["$attempts", -1] }, null] },
                     null,
                   ],
                 },
@@ -179,7 +175,7 @@ const createCollectionItemsPipeline = (
                 rating: 1,
                 isFavorite: 1,
                 "currentAttempt.id": 1,
-                "currentAttempt.status": 1,
+                "currentAttempt.isCompleted": 1,
                 "currentAttempt.progress": 1,
                 "currentAttempt.unit": 1,
                 "currentAttempt.startedAt": 1,
@@ -200,7 +196,11 @@ const createCollectionItemsPipeline = (
 
     if (!isUndefined(props.isInLibrary)) {
       pipeline.push({
-        $match: { "userItem._id": { $exists: props.isInLibrary } },
+        $match: {
+          "userItem.status": props.isInLibrary
+            ? { $in: [...USER_ITEM_LIBRARY_STATUSES] }
+            : { $nin: [...USER_ITEM_LIBRARY_STATUSES] },
+        },
       })
     }
 

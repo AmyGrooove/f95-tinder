@@ -24,11 +24,13 @@ import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { CreateUserItemBodyDto } from "../dto/body/createUserItem.body"
+import type { CreateExclusionBodyDto } from "../dto/body/createExclusion.body"
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
 import type { ICreateAttemptProps } from "../types/ICreateAttemptProps"
 import type { IUpdateAttemptProps } from "../types/IUpdateAttemptProps"
 import type { IUpdateUserItemProps } from "../types/IUpdateUserItemProps"
 import type { IMutateUserItemProps } from "../types/IMutateUserItemProps"
+import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
 
 @Injectable()
 class UserItemService {
@@ -41,6 +43,27 @@ class UserItemService {
   ) {}
 
   async create(accessToken: unknown, body: CreateUserItemBodyDto) {
+    return this.createWithStatus(accessToken, body)
+  }
+
+  async skip(accessToken: unknown, body: CreateExclusionBodyDto) {
+    return this.createWithStatus(accessToken, {
+      ...body,
+      status: EUserItemStatus.SKIPPED,
+    })
+  }
+
+  async block(accessToken: unknown, body: CreateExclusionBodyDto) {
+    return this.createWithStatus(accessToken, {
+      ...body,
+      status: EUserItemStatus.BLOCKED,
+    })
+  }
+
+  private async createWithStatus(
+    accessToken: unknown,
+    body: CreateUserItemBodyDto,
+  ) {
     const userId = await this.authenticate(accessToken)
     const itemId = new Types.ObjectId(body.itemId)
     const isAvailable = await this.itemRepository.read.checkIsExists({
@@ -52,15 +75,25 @@ class UserItemService {
       throw new NotFoundException(DICTIONARY.userItem.itemNotFound)
     }
 
+    await this.userItemRepository.write.deleteByFilter({
+      user: userId,
+      item: itemId,
+      status: EUserItemStatus.SKIPPED,
+      expiresAt: { $lte: new Date() },
+    })
+
     try {
       const userItem = await this.userItemRepository.write.create({
         user: userId,
         item: itemId,
         status: body.status,
-        attempts:
-          body.status === EUserItemStatus.PLANNED
-            ? []
-            : [this.createStatusAttempt(body.status)],
+        expiresAt:
+          body.status === EUserItemStatus.SKIPPED
+            ? new Date(Date.now() + USER_ITEM_SKIP_DURATION_MS)
+            : null,
+        attempts: this.checkRequiresAttempt(body.status)
+          ? [this.createStatusAttempt(body.status)]
+          : [],
       })
 
       return this.mapResponse(userItem)
@@ -122,24 +155,20 @@ class UserItemService {
       id: props.id,
       mutate: (userItem) => {
         const { body } = props
-        const isActive = this.checkIsActive(body.status)
+        if (!this.checkRequiresAttempt(userItem.status)) {
+          throw new ConflictException(DICTIONARY.userItem.attemptNotAllowed)
+        }
+
         const attempt: ItemAttempt = {
           id: new Types.ObjectId(),
-          status: body.status,
+          isCompleted: body.isCompleted ?? false,
           progress: body.progress ?? null,
           unit: body.unit ?? EUnit.MINUTE,
-          startedAt:
-            isUndefined(body.startedAt) && isActive
-              ? new Date()
-              : this.parseDate(body.startedAt),
+          startedAt: this.parseDate(body.startedAt),
           completedAt: this.parseDate(body.completedAt),
         }
 
         userItem.attempts.push(attempt)
-
-        if (isActive) {
-          userItem.status = attempt.status
-        }
       },
     })
   }
@@ -158,17 +187,11 @@ class UserItemService {
           throw new NotFoundException(DICTIONARY.userItem.attemptNotFound)
         }
 
-        const isPreviouslyActive = this.checkIsActive(attempt.status)
-        const { status, progress, unit, startedAt, completedAt } = props.body
+        const { isCompleted, progress, unit, startedAt, completedAt } =
+          props.body
 
-        if (!isNil(status)) {
-          attempt.status = status
-
-          if (this.checkIsActive(status)) {
-            attempt.completedAt = null
-          } else if (isPreviouslyActive && isUndefined(completedAt)) {
-            attempt.completedAt = new Date()
-          }
+        if (!isUndefined(isCompleted)) {
+          attempt.isCompleted = isCompleted
         }
 
         if (!isUndefined(progress)) {
@@ -185,10 +208,6 @@ class UserItemService {
 
         if (!isUndefined(completedAt)) {
           attempt.completedAt = this.parseDate(completedAt)
-        }
-
-        if (isPreviouslyActive || this.checkIsActive(attempt.status)) {
-          userItem.status = attempt.status
         }
       },
     })
@@ -214,7 +233,14 @@ class UserItemService {
     const userId = await this.authenticate(accessToken)
 
     return this.transactionService.run(async (session) => {
-      const filter = { _id: props.id, user: userId }
+      const filter = {
+        _id: props.id,
+        user: userId,
+        $or: [
+          { status: { $ne: EUserItemStatus.SKIPPED } },
+          { expiresAt: { $gt: new Date() } },
+        ],
+      }
       const userItem = await this.userItemRepository.read.findOne(
         filter,
         undefined,
@@ -226,13 +252,14 @@ class UserItemService {
       }
 
       props.mutate(userItem)
-      this.validateAttempts(userItem.attempts)
+      this.validateUserItem(userItem)
 
       const updated = await this.userItemRepository.write.updateByFilter(
         filter,
         {
           $set: {
             status: userItem.status,
+            expiresAt: userItem.expiresAt,
             rating: userItem.rating,
             isFavorite: userItem.isFavorite,
             note: userItem.note,
@@ -251,58 +278,64 @@ class UserItemService {
   }
 
   private changeStatus(userItem: UserItem, status: EUserItemStatus) {
-    if (userItem.status === status) {
-      return
+    if (this.checkRequiresAttempt(status) && userItem.attempts.length === 0) {
+      userItem.attempts.push(this.createStatusAttempt(status))
     }
 
-    const attempt = userItem.attempts.find((entry) =>
-      this.checkIsActive(entry.status),
-    )
+    const attempt = userItem.attempts.at(-1)
 
-    if (status === EUserItemStatus.PLANNED) {
-      if (!isNil(attempt)) {
-        throw new ConflictException(DICTIONARY.userItem.activeAttemptPlanned)
-      }
-    } else if (!isNil(attempt)) {
-      attempt.status = status
-      attempt.completedAt = this.checkIsActive(status) ? null : new Date()
-    } else {
-      userItem.attempts.push(this.createStatusAttempt(status))
+    if (status === EUserItemStatus.COMPLETED && !isNil(attempt)) {
+      attempt.isCompleted = true
+    }
+
+    if (status !== EUserItemStatus.SKIPPED) {
+      userItem.expiresAt = null
+    } else if (userItem.status !== EUserItemStatus.SKIPPED) {
+      userItem.expiresAt = new Date(Date.now() + USER_ITEM_SKIP_DURATION_MS)
     }
 
     userItem.status = status
   }
 
-  private createStatusAttempt(
-    status: Exclude<EUserItemStatus, EUserItemStatus.PLANNED>,
-  ): ItemAttempt {
-    const isActive = this.checkIsActive(status)
-
+  private createStatusAttempt(status: EUserItemStatus): ItemAttempt {
     return {
       id: new Types.ObjectId(),
-      status,
+      isCompleted: status === EUserItemStatus.COMPLETED,
       progress: null,
       unit: EUnit.MINUTE,
-      startedAt: isActive ? new Date() : null,
-      completedAt: isActive ? null : new Date(),
+      startedAt: null,
+      completedAt: null,
     }
   }
 
-  private checkIsActive(status: EUserItemStatus) {
+  private checkRequiresAttempt(status: EUserItemStatus) {
     return (
       status === EUserItemStatus.IN_PROGRESS ||
-      status === EUserItemStatus.ON_HOLD
+      status === EUserItemStatus.ON_HOLD ||
+      status === EUserItemStatus.COMPLETED ||
+      status === EUserItemStatus.DROPPED
     )
   }
 
-  private validateAttempts(attempts: ItemAttempt[]) {
+  private validateUserItem(userItem: UserItem) {
     if (
-      attempts.filter((entry) => this.checkIsActive(entry.status)).length > 1
+      userItem.status === EUserItemStatus.SKIPPED &&
+      (!isNil(userItem.rating) ||
+        userItem.isFavorite ||
+        !isNil(userItem.note) ||
+        userItem.attempts.length > 0)
     ) {
-      throw new ConflictException(DICTIONARY.userItem.activeAttemptExists)
+      throw new ConflictException(DICTIONARY.userItem.skipHasPersonalData)
     }
 
-    for (const attempt of attempts) {
+    if (
+      this.checkRequiresAttempt(userItem.status) &&
+      userItem.attempts.length === 0
+    ) {
+      throw new ConflictException(DICTIONARY.userItem.attemptRequired)
+    }
+
+    for (const attempt of userItem.attempts) {
       if (
         !isNil(attempt.startedAt) &&
         !isNil(attempt.completedAt) &&
@@ -311,10 +344,12 @@ class UserItemService {
         throw new BadRequestException(DICTIONARY.userItem.invalidDates)
       }
 
-      if (this.checkIsActive(attempt.status) && !isNil(attempt.completedAt)) {
-        throw new BadRequestException(
-          DICTIONARY.userItem.activeAttemptCompletedAt,
-        )
+      if (
+        attempt.unit === EUnit.PERCENT &&
+        !isNil(attempt.progress) &&
+        attempt.progress > 100
+      ) {
+        throw new BadRequestException(DICTIONARY.userItem.invalidPercent)
       }
     }
   }
@@ -346,12 +381,13 @@ class UserItemService {
       id: userItem._id.toHexString(),
       itemId: userItem.item.toHexString(),
       status: userItem.status,
+      expiresAt: userItem.expiresAt?.toISOString() ?? null,
       rating: userItem.rating,
       isFavorite: userItem.isFavorite,
       note: userItem.note,
       attempts: userItem.attempts.map((attempt) => ({
         id: attempt.id.toHexString(),
-        status: attempt.status,
+        isCompleted: attempt.isCompleted,
         progress: attempt.progress,
         unit: attempt.unit,
         startedAt: attempt.startedAt?.toISOString() ?? null,

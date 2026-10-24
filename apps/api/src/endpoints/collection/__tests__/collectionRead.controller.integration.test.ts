@@ -521,4 +521,164 @@ describe("CollectionReadController HTTP", () => {
       }
     },
   )
+  it("исключения skipped и blocked доступны по статусу, но не считаются библиотекой", async () => {
+    const { app } = getTestApplication()
+    const { collection, first, second, owner } = await createCollection()
+    for (const entry of [
+      { item: first, operation: "skip" },
+      { item: second, operation: "block" },
+    ]) {
+      expect(
+        (
+          await app.inject({
+            method: "POST",
+            url: "/userItems/" + entry.operation,
+            headers: owner.headers,
+            payload: { itemId: entry.item._id.toHexString() },
+          })
+        ).statusCode,
+      ).toBe(201)
+    }
+    const base = "/collections/" + collection.id + "/items?mode=flat"
+    const library = await app.inject({
+      method: "GET",
+      url: base + "&isInLibrary=true",
+      headers: owner.headers,
+    })
+    expect(library.statusCode).toBe(200)
+    expect(library.json()).toMatchObject({ total: 0, items: [] })
+    const outside = await app.inject({
+      method: "GET",
+      url: base + "&isInLibrary=false",
+      headers: owner.headers,
+    })
+    expect(outside.statusCode).toBe(200)
+    expect(outside.json()).toMatchObject({
+      total: 2,
+      items: [
+        {
+          id: first._id.toHexString(),
+          userItem: { status: "skipped", currentAttempt: null },
+        },
+        {
+          id: second._id.toHexString(),
+          userItem: { status: "blocked", currentAttempt: null },
+        },
+      ],
+    })
+    for (const status of ["skipped", "blocked"]) {
+      const filtered = await app.inject({
+        method: "GET",
+        url: base + "&statuses=" + status,
+        headers: owner.headers,
+      })
+      expect(filtered.statusCode).toBe(200)
+      expect(filtered.json()).toMatchObject({
+        total: 1,
+        items: [
+          {
+            id: (status === "skipped" ? first : second)._id.toHexString(),
+            userItem: { status },
+          },
+        ],
+      })
+    }
+  })
+
+  it("не возвращает просроченный skipped как личное состояние карточки", async () => {
+    const { app, connection } = getTestApplication()
+    const { collection, first, owner } = await createCollection()
+    await connection.collection("UserItem").insertOne({
+      user: owner.user._id,
+      item: first._id,
+      status: "skipped",
+      expiresAt: new Date(Date.now() - 1000),
+      rating: null,
+      isFavorite: false,
+      attempts: [],
+    })
+    const base = "/collections/" + collection.id + "/items?mode=flat"
+    const response = await app.inject({
+      method: "GET",
+      url: base,
+      headers: owner.headers,
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      items: [
+        { id: first._id.toHexString(), userItem: null },
+        { userItem: null },
+      ],
+    })
+    const filtered = await app.inject({
+      method: "GET",
+      url: base + "&statuses=skipped",
+      headers: owner.headers,
+    })
+    expect(filtered.statusCode).toBe(200)
+    expect(filtered.json()).toMatchObject({ total: 0, items: [] })
+  })
+
+  it("возвращает последнюю попытку с процентами и isCompleted только при inProgress или onHold", async () => {
+    const { app } = getTestApplication()
+    const { collection, first, owner } = await createCollection()
+    const created = await app.inject({
+      method: "POST",
+      url: "/userItems",
+      headers: owner.headers,
+      payload: { itemId: first._id.toHexString(), status: "inProgress" },
+    })
+    expect(created.statusCode).toBe(201)
+    const id = created.json<{ id: string }>().id
+    const added = await app.inject({
+      method: "POST",
+      url: "/userItems/" + id + "/attempts",
+      headers: owner.headers,
+      payload: { progress: 65, unit: "percent", isCompleted: false },
+    })
+    expect(added.statusCode).toBe(201)
+    const attempts = added.json<{ attempts: Array<{ id: string }> }>().attempts
+    const base = "/collections/" + collection.id + "/items?mode=flat"
+    for (const status of [
+      "inProgress",
+      "onHold",
+      "completed",
+      "planned",
+      "blocked",
+    ]) {
+      expect(
+        (
+          await app.inject({
+            method: "PATCH",
+            url: "/userItems/" + id,
+            headers: owner.headers,
+            payload: { status },
+          })
+        ).statusCode,
+      ).toBe(200)
+      const response = await app.inject({
+        method: "GET",
+        url: base,
+        headers: owner.headers,
+      })
+      expect(response.statusCode).toBe(200)
+      const card = response.json<{
+        items: Array<{ userItem: { currentAttempt: unknown } }>
+      }>().items[0]
+      expect(card?.userItem).toMatchObject({ status })
+      if (status === "inProgress" || status === "onHold") {
+        expect(card?.userItem.currentAttempt).toEqual({
+          id: attempts.at(-1)?.id,
+          isCompleted: false,
+          progress: 65,
+          unit: "percent",
+          startedAt: null,
+        })
+      } else {
+        expect(card?.userItem.currentAttempt).toBeNull()
+      }
+      expect(card?.userItem).not.toHaveProperty("note")
+      expect(card?.userItem).not.toHaveProperty("attempts")
+    }
+  })
 })

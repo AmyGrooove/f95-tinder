@@ -14,6 +14,9 @@ class UserItemResponseDto {
   @ApiProperty({ enum: EUserItemStatus })
   status: EUserItemStatus
 
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  expiresAt: string | null
+
   @ApiProperty({ type: Number, nullable: true, minimum: 1, maximum: 10 })
   rating: number | null
 
