@@ -18,17 +18,28 @@
     "scenario": "Общие данные и настройки аккаунта",
     "qualification": "Состав ответов и точное различие nickname/username не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsProfile.png",
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png",
-      "screenshots/desktop/settingsEmailTemporary.png",
-      "screenshots/desktop/settingsPasswordTemporary.png",
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsEmailPermanent.png",
-      "screenshots/desktop/settingsPasswordPermanent.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png",
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png",
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ",
@@ -49,17 +60,28 @@
     "scenario": "Общие данные и настройки аккаунта",
     "qualification": "Состав ответов и точное различие nickname/username не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsProfile.png",
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png",
-      "screenshots/desktop/settingsEmailTemporary.png",
-      "screenshots/desktop/settingsPasswordTemporary.png",
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsEmailPermanent.png",
-      "screenshots/desktop/settingsPasswordPermanent.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png",
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png",
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ",
@@ -72,9 +94,12 @@
     "scenario": "Общие данные и настройки аккаунта",
     "qualification": "Состав ответов и точное различие nickname/username не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsProfile.png"
+      "screenshots/desktop/Настройки Профиль.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Профиль.png"
+    ]
   },
   {
     "category": "АККАУНТ",
@@ -88,10 +113,14 @@
     "scenario": "Общие данные и настройки аккаунта",
     "qualification": "Состав ответов и точное различие nickname/username не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ",
@@ -107,10 +136,16 @@
     "scenario": "Общие данные и настройки аккаунта",
     "qualification": "В новых desktop раздел подписан «Уведомления», содержит форму почты без категорий; подтверждение адреса и DTO старого API неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsEmailTemporary.png",
-      "screenshots/desktop/settingsEmailPermanent.png"
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Уведомления временный.png",
+      "screenshots/desktop/Настройки Уведомления постоянный.png",
+      "screenshots/mobile/Настройки Уведомления временный.png",
+      "screenshots/mobile/Настройки Уведомления постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ — ПАРОЛЬ",
@@ -126,9 +161,15 @@
     "scenario": "Изменение и сброс пароля",
     "qualification": "Два маршрута сброса не объясняют три визуальных шага.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsPasswordPermanent.png"
+      "screenshots/desktop/Настройки Пароль постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация-3.png",
+      "screenshots/modals/Авторизация-2.png",
+      "screenshots/modals/Авторизация-1.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ — ПАРОЛЬ",
@@ -144,9 +185,15 @@
     "scenario": "Изменение и сброс пароля",
     "qualification": "Два маршрута сброса не объясняют три визуальных шага.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsPasswordPermanent.png"
+      "screenshots/desktop/Настройки Пароль постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация-3.png",
+      "screenshots/modals/Авторизация-2.png",
+      "screenshots/modals/Авторизация-1.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ — ПАРОЛЬ",
@@ -162,10 +209,16 @@
     "scenario": "Изменение и сброс пароля",
     "qualification": "Два маршрута сброса не объясняют три визуальных шага.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsPasswordTemporary.png",
-      "screenshots/desktop/settingsPasswordPermanent.png"
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Пароль временный.png",
+      "screenshots/desktop/Настройки Пароль постоянный.png",
+      "screenshots/mobile/Настройки Пароль временный.png",
+      "screenshots/mobile/Настройки Пароль постоянный.png"
+    ]
   },
   {
     "category": "АККАУНТ — АВАТАР",
@@ -179,9 +232,13 @@
     "scenario": "Выбор и удаление аватара",
     "qualification": "Поля, транспорт файла, ограничения и точный триггер удаления неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsProfile.png"
+      "screenshots/desktop/Настройки Профиль.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/mobile/Настройки Профиль.png"
+    ]
   },
   {
     "category": "АККАУНТ — АВАТАР",
@@ -195,9 +252,13 @@
     "scenario": "Выбор и удаление аватара",
     "qualification": "Маршрут сохранён из Swagger; кнопка удаления аватара в новом desktop не показана. Транспорт, ограничения и триггер неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsProfile.png"
+      "screenshots/desktop/Настройки Профиль.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Профиль.png",
+      "screenshots/mobile/Настройки Профиль.png"
+    ]
   },
   {
     "category": "ГЛАВНАЯ",
@@ -211,9 +272,13 @@
     "scenario": "Главная: карусель и ряды",
     "qualification": "Граница между home, row и collections не установлена.",
     "desktopScreenshots": [
-      "screenshots/desktop/home.png"
+      "screenshots/desktop/Главная.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Главная.png",
+      "screenshots/mobile/Главная.png"
+    ]
   },
   {
     "category": "ГЛАВНАЯ",
@@ -227,9 +292,13 @@
     "scenario": "Главная: карусель и ряды",
     "qualification": "Граница между home, row и collections не установлена.",
     "desktopScreenshots": [
-      "screenshots/desktop/home.png"
+      "screenshots/desktop/Главная.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Главная.png",
+      "screenshots/mobile/Главная.png"
+    ]
   },
   {
     "category": "ГЛАВНАЯ",
@@ -243,9 +312,13 @@
     "scenario": "Главная: карусель и ряды",
     "qualification": "Граница между home, row и collections не установлена.",
     "desktopScreenshots": [
-      "screenshots/desktop/home.png"
+      "screenshots/desktop/Главная.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Главная.png",
+      "screenshots/mobile/Главная.png"
+    ]
   },
   {
     "category": "ГЛАВНАЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -259,9 +332,13 @@
     "scenario": "Блок «Продолжить просмотр»",
     "qualification": "Сопоставление по имени user/watch; тело ответа не предоставлено.",
     "desktopScreenshots": [
-      "screenshots/desktop/home.png"
+      "screenshots/desktop/Главная.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Главная.png",
+      "screenshots/mobile/Главная.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -275,9 +352,13 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png"
+      "screenshots/desktop/Кастомные коллекции.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/mobile/Коллекция Список.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -291,10 +372,14 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionsOverview.png",
-      "screenshots/desktop/collectionUserList.png"
+      "screenshots/desktop/Все коллекци.png",
+      "screenshots/desktop/Кастомные коллекции.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Все коллекци.png",
+      "screenshots/desktop/Кастомные коллекции.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -310,10 +395,16 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOwnList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png",
+      "screenshots/modals/Редактирование коллекции инфо.png",
+      "screenshots/modals/Создание коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -329,10 +420,16 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOwnList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png",
+      "screenshots/modals/Редактирование коллекции инфо.png",
+      "screenshots/modals/Создание коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -348,10 +445,16 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOwnList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png",
+      "screenshots/modals/Редактирование коллекции инфо.png",
+      "screenshots/modals/Создание коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -367,10 +470,16 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOwnList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png",
+      "screenshots/modals/Редактирование коллекции инфо.png",
+      "screenshots/modals/Создание коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -386,10 +495,16 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOwnList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Собственная коллекция.png",
+      "screenshots/modals/Редактирование коллекции инфо.png",
+      "screenshots/modals/Создание коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ — ПОЛЬЗОВАТЕЛЬ",
@@ -403,7 +518,11 @@
     "scenario": "Реакции и управление коллекцией",
     "qualification": "Права, DTO и связь общих и частных операций неизвестны.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Правка коллекции список.png",
+      "screenshots/modals/Правка коллекции инфо.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ",
@@ -418,10 +537,15 @@
     "scenario": "Карточка и содержимое коллекции",
     "qualification": "Meta и поля основной карточки не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOfficialList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Офф коллекции.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Офф коллекции.png",
+      "screenshots/mobile/Коллекция Список.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ",
@@ -436,10 +560,15 @@
     "scenario": "Карточка и содержимое коллекции",
     "qualification": "Meta и поля основной карточки не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png",
-      "screenshots/desktop/collectionOfficialList.png"
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Офф коллекции.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/desktop/Офф коллекции.png",
+      "screenshots/mobile/Коллекция Список.png"
+    ]
   },
   {
     "category": "КОЛЛЕКЦИЯ",
@@ -453,9 +582,13 @@
     "scenario": "Карточка и содержимое коллекции",
     "qualification": "Meta и поля основной карточки не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/collectionUserList.png"
+      "screenshots/desktop/Кастомные коллекции.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Кастомные коллекции.png",
+      "screenshots/mobile/Коллекция Список.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ",
@@ -472,13 +605,20 @@
     "scenario": "Чтение обсуждений и счётчиков",
     "qualification": "collectionType, смысл одиночного ID, ветки и пагинация не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ",
@@ -495,13 +635,20 @@
     "scenario": "Чтение обсуждений и счётчиков",
     "qualification": "collectionType, смысл одиночного ID, ветки и пагинация не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ",
@@ -518,13 +665,20 @@
     "scenario": "Чтение обсуждений и счётчиков",
     "qualification": "collectionType, смысл одиночного ID, ветки и пагинация не заданы.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
@@ -543,13 +697,22 @@
     "scenario": "Создание, ответ, изменение и реакции комментария",
     "qualification": "POST по одному ID предположительно отвечает на комментарий; это не подтверждённый DTO.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/miniMenu/CommentMenu.png",
+      "screenshots/miniMenu/CommentMenu-1.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
@@ -568,13 +731,22 @@
     "scenario": "Создание, ответ, изменение и реакции комментария",
     "qualification": "POST по одному ID предположительно отвечает на комментарий; это не подтверждённый DTO.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/miniMenu/CommentMenu.png",
+      "screenshots/miniMenu/CommentMenu-1.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
@@ -593,13 +765,22 @@
     "scenario": "Создание, ответ, изменение и реакции комментария",
     "qualification": "POST по одному ID предположительно отвечает на комментарий; это не подтверждённый DTO.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/miniMenu/CommentMenu.png",
+      "screenshots/miniMenu/CommentMenu-1.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
@@ -618,13 +799,22 @@
     "scenario": "Создание, ответ, изменение и реакции комментария",
     "qualification": "POST по одному ID предположительно отвечает на комментарий; это не подтверждённый DTO.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/miniMenu/CommentMenu.png",
+      "screenshots/miniMenu/CommentMenu-1.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "КОММЕНТАРИИ — ПОЛЬЗОВАТЕЛЬ",
@@ -643,13 +833,22 @@
     "scenario": "Создание, ответ, изменение и реакции комментария",
     "qualification": "POST по одному ID предположительно отвечает на комментарий; это не подтверждённый DTO.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeComments.png",
-      "screenshots/desktop/profileDiscussion.png",
-      "screenshots/desktop/collectionComments.png",
-      "screenshots/desktop/dubClubComments.png",
-      "screenshots/desktop/dubPersonComments.png"
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме комментарии.png",
+      "screenshots/miniMenu/CommentMenu.png",
+      "screenshots/miniMenu/CommentMenu-1.png",
+      "screenshots/desktop/Комментарии по пользователю.png",
+      "screenshots/desktop/Комментарии коллекции.png",
+      "screenshots/desktop/ДабКлаб комментарии.png",
+      "screenshots/desktop/ДабПерсона комментарии.png"
+    ]
   },
   {
     "category": "СЕССИИ",
@@ -664,10 +863,15 @@
     "scenario": "Менеджер сессий",
     "qualification": "ID удаляемой сессии в пути не указан; refresh — инфраструктурный запрос.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Менеджер сессий.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
+    ]
   },
   {
     "category": "СЕССИИ",
@@ -682,10 +886,15 @@
     "scenario": "Менеджер сессий",
     "qualification": "ID удаляемой сессии в пути не указан; refresh — инфраструктурный запрос.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Менеджер сессий.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
+    ]
   },
   {
     "category": "СЕССИИ",
@@ -700,10 +909,15 @@
     "scenario": "Менеджер сессий",
     "qualification": "ID удаляемой сессии в пути не указан; refresh — инфраструктурный запрос.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Менеджер сессий.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ",
@@ -717,7 +931,11 @@
     "scenario": "Вход по паролю и выход",
     "qualification": "Транспорт токенов и точные ответы старого API неизвестны.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация-4.png",
+      "screenshots/modals/Авторизация первоначальное окно.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ",
@@ -731,10 +949,14 @@
     "scenario": "Вход по паролю и выход",
     "qualification": "Транспорт токенов и точные ответы старого API неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png",
-      "screenshots/desktop/settingsAccountPermanent.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Настройки Аккаунт временный.png",
+      "screenshots/desktop/Настройки Аккаунт постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — YANDEX",
@@ -749,10 +971,15 @@
     "scenario": "OAuth Яндекс и отображение интеграции",
     "qualification": "Callback — возврат провайдера, отдельный экран не найден; привязка к текущему аккаунту не доказана.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — YANDEX",
@@ -767,10 +994,15 @@
     "scenario": "OAuth Яндекс и отображение интеграции",
     "qualification": "Callback — возврат провайдера, отдельный экран не найден; привязка к текущему аккаунту не доказана.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — GOOGLE",
@@ -785,10 +1017,15 @@
     "scenario": "OAuth Google и отображение интеграции",
     "qualification": "Callback — возврат провайдера; контракт привязки интеграции неизвестен.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — GOOGLE",
@@ -803,10 +1040,15 @@
     "scenario": "OAuth Google и отображение интеграции",
     "qualification": "Callback — возврат провайдера; контракт привязки интеграции неизвестен.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — VK",
@@ -821,10 +1063,15 @@
     "scenario": "OAuth VK и отображение интеграции",
     "qualification": "Callback — возврат провайдера; контракт привязки интеграции неизвестен.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "АВТОРИЗАЦИЯ — VK",
@@ -839,10 +1086,15 @@
     "scenario": "OAuth VK и отображение интеграции",
     "qualification": "Callback — возврат провайдера; контракт привязки интеграции неизвестен.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsIntegrationsTemporary.png",
-      "screenshots/desktop/settingsIntegrationsPermanent.png"
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация.png",
+      "screenshots/desktop/Настройки Интеграция временный.png",
+      "screenshots/desktop/Настройки Интеграция постоянный.png"
+    ]
   },
   {
     "category": "ВРЕМЕННЫЙ АККАУНТ",
@@ -857,9 +1109,14 @@
     "scenario": "Создание, вход и перевыпуск временного ключа",
     "qualification": "Это прежняя модель аккаунта; не переносится как действующий контракт Bisky.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация первоначальное окно.png",
+      "screenshots/modals/Что такое временный аккаунт.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png"
+    ]
   },
   {
     "category": "ВРЕМЕННЫЙ АККАУНТ",
@@ -874,9 +1131,14 @@
     "scenario": "Создание, вход и перевыпуск временного ключа",
     "qualification": "Это прежняя модель аккаунта; не переносится как действующий контракт Bisky.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация первоначальное окно.png",
+      "screenshots/modals/Что такое временный аккаунт.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png"
+    ]
   },
   {
     "category": "ВРЕМЕННЫЙ АККАУНТ",
@@ -891,9 +1153,14 @@
     "scenario": "Создание, вход и перевыпуск временного ключа",
     "qualification": "Это прежняя модель аккаунта; не переносится как действующий контракт Bisky.",
     "desktopScreenshots": [
-      "screenshots/desktop/settingsAccountTemporary.png"
+      "screenshots/desktop/Настройки Аккаунт временный.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Авторизация первоначальное окно.png",
+      "screenshots/modals/Что такое временный аккаунт.png",
+      "screenshots/desktop/Настройки Аккаунт временный.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -907,9 +1174,13 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileInfo.png"
+      "screenshots/desktop/Пользователь.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Пользователь.png",
+      "screenshots/mobile/Пользователь.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -923,9 +1194,13 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileInfo.png"
+      "screenshots/desktop/Пользователь.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Пользователь.png",
+      "screenshots/mobile/Пользователь.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -939,9 +1214,13 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileInfo.png"
+      "screenshots/desktop/Пользователь.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Пользователь.png",
+      "screenshots/mobile/Пользователь.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -955,10 +1234,14 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Правки — вероятное чтение; связь с предложениями не подтверждена. Статус «На рассмотрении» виден в отдельной вкладке.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileEdits.png",
-      "screenshots/desktop/profileProposals.png"
+      "screenshots/desktop/Правки пользователя.png",
+      "screenshots/desktop/Предложения пользователя.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Правки пользователя.png",
+      "screenshots/desktop/Предложения пользователя.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -972,9 +1255,13 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileHistory.png"
+      "screenshots/desktop/История пользователя.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/История пользователя.png",
+      "screenshots/mobile/История пользователя.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -989,10 +1276,15 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileAchievements.png",
-      "screenshots/desktop/profileAchievementsEarned.png"
+      "screenshots/desktop/Достижения пользователя.png",
+      "screenshots/desktop/Достижения пользователя отфильтрованные.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Достижения пользователя.png",
+      "screenshots/desktop/Достижения пользователя отфильтрованные.png",
+      "screenshots/mobile/Достижения пользователя.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -1006,9 +1298,13 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileFavorites.png"
+      "screenshots/desktop/Избранное пользователя.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Избранное пользователя.png",
+      "screenshots/mobile/Избранное пользователя.png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ",
@@ -1023,10 +1319,15 @@
     "scenario": "Публичный профиль и дополнительные разделы",
     "qualification": "Состав основного/дополнительного ответа и приватность неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileAnimeList.png",
-      "screenshots/desktop/profileAnimeListHover.png"
+      "screenshots/desktop/Список аниме.png",
+      "screenshots/desktop/Список аниме (hover).png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Список аниме.png",
+      "screenshots/mobile/Список аниме.png",
+      "screenshots/desktop/Список аниме (hover).png"
+    ]
   },
   {
     "category": "ПРОФИЛЬ — ПОЛЬЗОВАТЕЛЬ",
@@ -1040,9 +1341,13 @@
     "scenario": "Редактирование избранных в профиле",
     "qualification": "Не доказано тождество витрины favoriteAnimes и всего избранного.",
     "desktopScreenshots": [
-      "screenshots/desktop/profileFavorites.png"
+      "screenshots/desktop/Избранное пользователя.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Правка избранных.png",
+      "screenshots/desktop/Избранное пользователя.png"
+    ]
   },
   {
     "category": "КЛУБ — ПОЛЬЗОВАТЕЛЬ",
@@ -1057,7 +1362,12 @@
     "scenario": "Предложение правки клуба",
     "qualification": "Поля и процесс рассмотрения не заданы.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Правка список дабКлуба.png",
+      "screenshots/modals/Правка персон дабКлуба.png",
+      "screenshots/modals/Правка дабКлуба инфо.png"
+    ]
   },
   {
     "category": "КЛУБ",
@@ -1072,10 +1382,15 @@
     "scenario": "Клуб, список аниме и персоны",
     "qualification": "Поля основной карточки и meta не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubClubAnime.png",
-      "screenshots/desktop/dubClubPersons.png"
+      "screenshots/desktop/ДабКлаб аниме.png",
+      "screenshots/desktop/ДабКлаб персоны.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабКлаб аниме.png",
+      "screenshots/desktop/ДабКлаб персоны.png",
+      "screenshots/mobile/ДабКлаб Инфо.png"
+    ]
   },
   {
     "category": "КЛУБ",
@@ -1090,10 +1405,15 @@
     "scenario": "Клуб, список аниме и персоны",
     "qualification": "Поля основной карточки и meta не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubClubAnime.png",
-      "screenshots/desktop/dubClubPersons.png"
+      "screenshots/desktop/ДабКлаб аниме.png",
+      "screenshots/desktop/ДабКлаб персоны.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабКлаб аниме.png",
+      "screenshots/desktop/ДабКлаб персоны.png",
+      "screenshots/mobile/ДабКлаб Инфо.png"
+    ]
   },
   {
     "category": "КЛУБ",
@@ -1107,9 +1427,13 @@
     "scenario": "Клуб, список аниме и персоны",
     "qualification": "Поля основной карточки и meta не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubClubAnime.png"
+      "screenshots/desktop/ДабКлаб аниме.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабКлаб аниме.png",
+      "screenshots/mobile/ДабКлаб Аниме.png"
+    ]
   },
   {
     "category": "КЛУБ",
@@ -1123,9 +1447,13 @@
     "scenario": "Клуб, список аниме и персоны",
     "qualification": "Поля основной карточки и meta не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubClubPersons.png"
+      "screenshots/desktop/ДабКлаб персоны.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабКлаб персоны.png",
+      "screenshots/mobile/ДабКлаб Персоны.png"
+    ]
   },
   {
     "category": "ПЕРСОНЫ — ПОЛЬЗОВАТЕЛЬ",
@@ -1140,7 +1468,12 @@
     "scenario": "Предложение правки персоны",
     "qualification": "Поля и процесс рассмотрения не заданы.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Правка аниме дабПерсоны.png",
+      "screenshots/modals/Правка клубов дабПерсоны.png",
+      "screenshots/modals/Правка дабПерсона инфо.png"
+    ]
   },
   {
     "category": "ПЕРСОНЫ",
@@ -1155,10 +1488,15 @@
     "scenario": "Персона, аниме и клубы",
     "qualification": "Meta и основной ответ не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubPersonAnime.png",
-      "screenshots/desktop/dubPersonClubs.png"
+      "screenshots/desktop/ДабПерсона аниме.png",
+      "screenshots/desktop/ДабПерсона клубы.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабПерсона аниме.png",
+      "screenshots/desktop/ДабПерсона клубы.png",
+      "screenshots/mobile/ДабПерсоны Инфо.png"
+    ]
   },
   {
     "category": "ПЕРСОНЫ",
@@ -1173,10 +1511,15 @@
     "scenario": "Персона, аниме и клубы",
     "qualification": "Meta и основной ответ не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubPersonAnime.png",
-      "screenshots/desktop/dubPersonClubs.png"
+      "screenshots/desktop/ДабПерсона аниме.png",
+      "screenshots/desktop/ДабПерсона клубы.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабПерсона аниме.png",
+      "screenshots/desktop/ДабПерсона клубы.png",
+      "screenshots/mobile/ДабПерсоны Инфо.png"
+    ]
   },
   {
     "category": "ПЕРСОНЫ",
@@ -1190,9 +1533,13 @@
     "scenario": "Персона, аниме и клубы",
     "qualification": "Meta и основной ответ не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubPersonAnime.png"
+      "screenshots/desktop/ДабПерсона аниме.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабПерсона аниме.png",
+      "screenshots/mobile/ДабПерсоны Аниме.png"
+    ]
   },
   {
     "category": "ПЕРСОНЫ",
@@ -1206,9 +1553,13 @@
     "scenario": "Персона, аниме и клубы",
     "qualification": "Meta и основной ответ не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/dubPersonClubs.png"
+      "screenshots/desktop/ДабПерсона клубы.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/ДабПерсона клубы.png",
+      "screenshots/mobile/ДабПерсоны Клубы.png"
+    ]
   },
   {
     "category": "ПРИЛОЖЕНИЕ — ANIBATTLE",
@@ -1225,13 +1576,20 @@
     "scenario": "Кандидаты из пользовательских списков для баттла",
     "qualification": "Проверены пять desktop-состояний, включая отдельную ошибку с затемнённой кнопкой. Сохранение раундов, отмена и параметры не определены.",
     "desktopScreenshots": [
-      "screenshots/desktop/aniBattleSetup.png",
-      "screenshots/desktop/aniBattleSetupError.png",
-      "screenshots/desktop/aniBattleFirstRound.png",
-      "screenshots/desktop/aniBattleLaterRound.png",
-      "screenshots/desktop/aniBattleWinner.png"
+      "screenshots/desktop/АниБаттл настройки.png",
+      "screenshots/desktop/АниБаттл настройки ошибка.png",
+      "screenshots/desktop/АниБаттл начало.png",
+      "screenshots/desktop/АниБаттл следующие шаги.png",
+      "screenshots/desktop/АниБаттл победитель.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/АниБаттл настройки.png",
+      "screenshots/desktop/АниБаттл настройки ошибка.png",
+      "screenshots/desktop/АниБаттл начало.png",
+      "screenshots/desktop/АниБаттл следующие шаги.png",
+      "screenshots/desktop/АниБаттл победитель.png"
+    ]
   },
   {
     "category": "ПРИЛОЖЕНИЕ — ANIJUDGE",
@@ -1246,9 +1604,14 @@
     "scenario": "Список произведений для оценивания",
     "qualification": "Оценка и избранное, вероятно, сохраняются через общие реакции.",
     "desktopScreenshots": [
-      "screenshots/desktop/aniJudge.png"
+      "screenshots/desktop/АниСудья.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/АниСудья.png",
+      "screenshots/mobile/АниСудья.png",
+      "screenshots/modals/Ошибка АниСудья.png"
+    ]
   },
   {
     "category": "ПРИЛОЖЕНИЕ — ANIPICK",
@@ -1263,10 +1626,15 @@
     "scenario": "Кандидаты и пропуски АниПик",
     "qualification": "Срок пропуска, показ, смысл шага назад и отмена не определены.",
     "desktopScreenshots": [
-      "screenshots/desktop/aniPick.png",
-      "screenshots/desktop/aniPickBack.png"
+      "screenshots/desktop/АниПик.png",
+      "screenshots/desktop/АниПик шаг назад.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/АниПик.png",
+      "screenshots/desktop/АниПик шаг назад.png",
+      "screenshots/modals/Концвока АниПик.png"
+    ]
   },
   {
     "category": "ПРИЛОЖЕНИЕ — ANIPICK",
@@ -1281,10 +1649,15 @@
     "scenario": "Кандидаты и пропуски АниПик",
     "qualification": "Срок пропуска, показ, смысл шага назад и отмена не определены.",
     "desktopScreenshots": [
-      "screenshots/desktop/aniPick.png",
-      "screenshots/desktop/aniPickBack.png"
+      "screenshots/desktop/АниПик.png",
+      "screenshots/desktop/АниПик шаг назад.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/АниПик.png",
+      "screenshots/desktop/АниПик шаг назад.png",
+      "screenshots/modals/Концвока АниПик.png"
+    ]
   },
   {
     "category": "ПОИСК",
@@ -1299,10 +1672,15 @@
     "scenario": "Поиск и фильтрация",
     "qualification": "Не известны query, типы выдачи и пагинация.",
     "desktopScreenshots": [
-      "screenshots/desktop/searchInitial.png",
-      "screenshots/desktop/searchResults.png"
+      "screenshots/desktop/Поиск начальный.png",
+      "screenshots/desktop/Поиск с результатами.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Поиск начальный.png",
+      "screenshots/desktop/Поиск с результатами.png",
+      "screenshots/modals/FilterModal.png"
+    ]
   },
   {
     "category": "АНИМЕ",
@@ -1318,11 +1696,17 @@
     "scenario": "Карточка и краткие представления произведения",
     "qualification": "Распределение полей между base, mini, additional и основным ответом неизвестно.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/animeInfoOngoing.png",
-      "screenshots/desktop/animeInfoAnnounced.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png",
+      "screenshots/modals/InfoModal.png"
+    ]
   },
   {
     "category": "АНИМЕ",
@@ -1338,11 +1722,17 @@
     "scenario": "Карточка и краткие представления произведения",
     "qualification": "Распределение полей между base, mini, additional и основным ответом неизвестно.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/animeInfoOngoing.png",
-      "screenshots/desktop/animeInfoAnnounced.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png",
+      "screenshots/modals/InfoModal.png"
+    ]
   },
   {
     "category": "АНИМЕ",
@@ -1358,11 +1748,17 @@
     "scenario": "Карточка и краткие представления произведения",
     "qualification": "Распределение полей между base, mini, additional и основным ответом неизвестно.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/animeInfoOngoing.png",
-      "screenshots/desktop/animeInfoAnnounced.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png",
+      "screenshots/modals/InfoModal.png"
+    ]
   },
   {
     "category": "АНИМЕ",
@@ -1378,11 +1774,17 @@
     "scenario": "Карточка и краткие представления произведения",
     "qualification": "Распределение полей между base, mini, additional и основным ответом неизвестно.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/animeInfoOngoing.png",
-      "screenshots/desktop/animeInfoAnnounced.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png",
+      "screenshots/modals/InfoModal.png"
+    ]
   },
   {
     "category": "АНИМЕ",
@@ -1398,11 +1800,17 @@
     "scenario": "Карточка и краткие представления произведения",
     "qualification": "Распределение полей между base, mini, additional и основным ответом неизвестно.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/animeInfoOngoing.png",
-      "screenshots/desktop/animeInfoAnnounced.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Аниме инфо онгоинг.png",
+      "screenshots/desktop/Аниме инфо анонс.png",
+      "screenshots/modals/InfoModal.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПЛЕЕР",
@@ -1417,10 +1825,15 @@
     "scenario": "Список серий и варианты плееров эпизода",
     "qualification": "Параметры, выбор озвучки и ограничения выдачи не описаны.",
     "desktopScreenshots": [
-      "screenshots/desktop/animePlayer.png",
-      "screenshots/desktop/animePlayerEpisodePicker.png"
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/desktop/Аниме плеер выбор серии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/desktop/Аниме плеер выбор серии.png",
+      "screenshots/modals/SeriaSelector.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПЛЕЕР",
@@ -1435,10 +1848,15 @@
     "scenario": "Список серий и варианты плееров эпизода",
     "qualification": "Параметры, выбор озвучки и ограничения выдачи не описаны.",
     "desktopScreenshots": [
-      "screenshots/desktop/animePlayer.png",
-      "screenshots/desktop/animePlayerEpisodePicker.png"
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/desktop/Аниме плеер выбор серии.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/desktop/Аниме плеер выбор серии.png",
+      "screenshots/modals/SeriaSelector.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПЛЕЕР ПОЛЬЗОВАТЕЛЯ",
@@ -1452,9 +1870,13 @@
     "scenario": "Прогресс эпизодов пользователя",
     "qualification": "Единицы, частота записи и связь со статусом неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/animePlayer.png"
+      "screenshots/desktop/Аниме плеер.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/modals/Правка аниме в списке пользователя Серии.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПЛЕЕР ПОЛЬЗОВАТЕЛЯ",
@@ -1468,9 +1890,13 @@
     "scenario": "Прогресс эпизодов пользователя",
     "qualification": "Единицы, частота записи и связь со статусом неизвестны.",
     "desktopScreenshots": [
-      "screenshots/desktop/animePlayer.png"
+      "screenshots/desktop/Аниме плеер.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме плеер.png",
+      "screenshots/modals/Правка аниме в списке пользователя Серии.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1486,7 +1912,13 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/Правка аниме инфо.png",
+      "screenshots/modals/Правка аниме связанное.png",
+      "screenshots/modals/Правка аниме плеер.png",
+      "screenshots/modals/Правка аниме плеер-1.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1501,11 +1933,16 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/profileAnimeList.png",
-      "screenshots/desktop/aniPick.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Список аниме.png",
+      "screenshots/desktop/АниПик.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/Список аниме.png",
+      "screenshots/desktop/АниПик.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1518,9 +1955,12 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png"
+      "screenshots/desktop/Аниме инфо релиз.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1535,10 +1975,15 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png",
-      "screenshots/desktop/aniJudge.png"
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/desktop/АниСудья.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/modals/Правка аниме в списке пользователя Основное.png",
+      "screenshots/desktop/АниСудья.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1553,9 +1998,14 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/aniJudge.png"
+      "screenshots/desktop/АниСудья.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/StarModal.png",
+      "screenshots/modals/StarModal-1.png",
+      "screenshots/desktop/АниСудья.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1569,7 +2019,11 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ListStatusModal.png",
+      "screenshots/modals/ListStatusModal-1.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1585,9 +2039,15 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png"
+      "screenshots/desktop/Аниме инфо релиз.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/modals/Правка аниме в списке пользователя Основное.png",
+      "screenshots/modals/StarModal.png",
+      "screenshots/modals/ListStatusModal.png"
+    ]
   },
   {
     "category": "АНИМЕ — ПОЛЬЗОВАТЕЛЬ",
@@ -1603,9 +2063,15 @@
     "scenario": "Личные реакции и правки карточки",
     "qualification": "Перекрытие отдельных и общей операций, удаление и повторные просмотры требуют контракта.",
     "desktopScreenshots": [
-      "screenshots/desktop/animeInfoReleased.png"
+      "screenshots/desktop/Аниме инфо релиз.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Аниме инфо релиз.png",
+      "screenshots/modals/Правка аниме в списке пользователя Основное.png",
+      "screenshots/modals/StarModal.png",
+      "screenshots/modals/ListStatusModal.png"
+    ]
   },
   {
     "category": "ЗАБАНЕННЫЕ АНИМЕ",
@@ -1616,7 +2082,8 @@
     "scenario": "Самостоятельный экран не найден",
     "qualification": "Нельзя приравнивать к персональному «Не предлагать» или запрету просмотра.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": []
   },
   {
     "category": "ПАРСИНГ ДАННЫХ",
@@ -1627,7 +2094,8 @@
     "scenario": "Служебные операции без найденного макета",
     "qualification": "Экран админки, доступ, параметры запуска и статусы очереди не предоставлены.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": []
   },
   {
     "category": "ПАРСИНГ ДАННЫХ",
@@ -1638,7 +2106,8 @@
     "scenario": "Служебные операции без найденного макета",
     "qualification": "Экран админки, доступ, параметры запуска и статусы очереди не предоставлены.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": []
   },
   {
     "category": "ПАРСИНГ ДАННЫХ",
@@ -1649,7 +2118,8 @@
     "scenario": "Служебные операции без найденного макета",
     "qualification": "Экран админки, доступ, параметры запуска и статусы очереди не предоставлены.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": []
   },
   {
     "category": "ГЛАВНАЯ ЛЕНТА",
@@ -1662,9 +2132,12 @@
     "scenario": "Служебная генерация данных главной",
     "qualification": "Отдельный экран запуска не найден; это не доказанный запрос при открытии страницы.",
     "desktopScreenshots": [
-      "screenshots/desktop/home.png"
+      "screenshots/desktop/Главная.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Главная.png"
+    ]
   },
   {
     "category": "ЖАЛОБЫ",
@@ -1679,9 +2152,14 @@
     "scenario": "Создание обращения и просмотр его состояния",
     "qualification": "Видимость чужих обращений, фильтры и различие report/target не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/support.png"
+      "screenshots/desktop/Поддержка.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Поддержка.png",
+      "screenshots/modals/ReportModal.png",
+      "screenshots/modals/ReportModal-1.png"
+    ]
   },
   {
     "category": "ЖАЛОБЫ",
@@ -1696,9 +2174,14 @@
     "scenario": "Создание обращения и просмотр его состояния",
     "qualification": "Видимость чужих обращений, фильтры и различие report/target не раскрыты.",
     "desktopScreenshots": [
-      "screenshots/desktop/support.png"
+      "screenshots/desktop/Поддержка.png"
     ],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/desktop/Поддержка.png",
+      "screenshots/modals/ReportModal.png",
+      "screenshots/modals/ReportModal-1.png"
+    ]
   },
   {
     "category": "ЖАЛОБЫ",
@@ -1711,7 +2194,10 @@
     "scenario": "Создание обращения и просмотр его состояния",
     "qualification": "Видимость чужих обращений, фильтры и различие report/target не раскрыты.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ReportModal-1.png"
+    ]
   },
   {
     "category": "ПРЕДЛОЖЕНИЯ",
@@ -1724,7 +2210,10 @@
     "scenario": "Предложение факта, задания, достижения или другого",
     "qualification": "Маршрут чтения/рассмотрения не указан; это не выдача наград.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ProposalModal-1.png"
+    ]
   },
   {
     "category": "ПРЕДЛОЖЕНИЯ",
@@ -1737,7 +2226,10 @@
     "scenario": "Предложение факта, задания, достижения или другого",
     "qualification": "Маршрут чтения/рассмотрения не указан; это не выдача наград.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ProposalModal-2.png"
+    ]
   },
   {
     "category": "ПРЕДЛОЖЕНИЯ",
@@ -1750,7 +2242,10 @@
     "scenario": "Предложение факта, задания, достижения или другого",
     "qualification": "Маршрут чтения/рассмотрения не указан; это не выдача наград.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ProposalModal-3.png"
+    ]
   },
   {
     "category": "ПРЕДЛОЖЕНИЯ",
@@ -1763,6 +2258,9 @@
     "scenario": "Предложение факта, задания, достижения или другого",
     "qualification": "Маршрут чтения/рассмотрения не указан; это не выдача наград.",
     "desktopScreenshots": [],
-    "evidence": "Сопоставление источников; desktop PNG просмотрены, фактические HTTP-запросы не наблюдались. Mobile, Modals и MiniMenu — прежние сведения."
+    "evidence": "Сопоставление архивных источников; локальные PNG всех четырёх групп просмотрены 24 октября 2026 года, фактические HTTP-запросы не наблюдались. Связи не являются доказательством вызова API из конкретного окна.",
+    "screenshots": [
+      "screenshots/modals/ProposalModal-4.png"
+    ]
   }
 ]
