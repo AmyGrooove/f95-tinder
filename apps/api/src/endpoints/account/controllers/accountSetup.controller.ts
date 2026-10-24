@@ -18,7 +18,7 @@ import { SetupBodyDto } from "../dto/body/setup.body"
 import { ConfirmSetupBodyDto } from "../dto/body/confirmSetup.body"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountSetup)
-@Controller("account/setup")
+@Controller("account/credentials")
 class AccountSetupController {
   constructor(private readonly accountSetupService: AccountSetupService) {}
 

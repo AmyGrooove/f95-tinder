@@ -55,7 +55,6 @@ describe("AccountController", () => {
     const service = {
       updateDisplayName: jest.fn<AccountService["updateDisplayName"]>(),
       updateUsername: jest.fn<AccountService["updateUsername"]>(),
-      getAccount: jest.fn<AccountService["getAccount"]>(),
       whoami: jest.fn<AccountService["whoami"]>(),
     }
     const moduleRef = await Test.createTestingModule({
@@ -90,28 +89,6 @@ describe("AccountController", () => {
 
     expect(service.updateUsername).toHaveBeenCalledTimes(1)
     expect(service.updateUsername).toHaveBeenCalledWith("access-token", body)
-  })
-
-  it("возвращает данные аккаунта, полученные от сервиса", async () => {
-    const { controller, service } = await createController()
-    const account = {
-      id: "507f1f77bcf86cd799439011",
-      username: "username",
-      displayName: "Имя",
-      avatarUrl: null,
-      role: EUserRole.USER,
-      email: "user@example.test",
-      isPasswordSet: true,
-      isAccessCodeSet: false,
-      createdAt: "2026-10-20T00:00:00.000Z",
-      updatedAt: "2026-10-21T00:00:00.000Z",
-    }
-    service.getAccount.mockResolvedValue(account)
-
-    await expect(controller.getAccount("access-token")).resolves.toBe(account)
-
-    expect(service.getAccount).toHaveBeenCalledTimes(1)
-    expect(service.getAccount).toHaveBeenCalledWith("access-token")
   })
 
   it("возвращает пользователя и текущую сессию, полученные от сервиса", async () => {
@@ -157,7 +134,7 @@ describe("AccountController", () => {
     ).rejects.toBe(error)
   })
 
-  it.each(["getAccount", "whoami"] as const)(
+  it.each(["whoami"] as const)(
     "%s передаёт отсутствующий токен сервису и сохраняет ошибку авторизации",
     async (method) => {
       const { controller, service } = await createController()

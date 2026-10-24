@@ -12,7 +12,10 @@ class HealthController {
 
   @Get()
   @HealthCheck()
-  @ApiOperation({ summary: SWAGGER_DICTIONARY.health.getHealth.summary })
+  @ApiOperation({
+    summary: SWAGGER_DICTIONARY.health.getHealth.summary,
+    description: SWAGGER_DICTIONARY.health.getHealth.operationDescription,
+  })
   @ApiOkResponse({
     description: SWAGGER_DICTIONARY.health.getHealth.description,
   })
@@ -21,7 +24,10 @@ class HealthController {
   }
 
   @Get("live")
-  @ApiOperation({ summary: SWAGGER_DICTIONARY.health.getLiveness.summary })
+  @ApiOperation({
+    summary: SWAGGER_DICTIONARY.health.getLiveness.summary,
+    description: SWAGGER_DICTIONARY.health.getLiveness.operationDescription,
+  })
   @ApiOkResponse({
     description: SWAGGER_DICTIONARY.health.getLiveness.description,
   })

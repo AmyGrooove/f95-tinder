@@ -14,7 +14,7 @@ describe("AccountSetupController HTTP", () => {
     const key = `bisky-test:account:setup:{${user._id.toHexString()}}`
     const requested = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "  SETUP@EXAMPLE.COM  ", password, accessCode },
     })
@@ -38,7 +38,7 @@ describe("AccountSetupController HTTP", () => {
     const code = readConfirmationCode()
     const confirmed = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code },
     })
@@ -71,7 +71,7 @@ describe("AccountSetupController HTTP", () => {
     expect(oldCode.statusCode).toBe(401)
     const repeated = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code },
     })
@@ -83,7 +83,7 @@ describe("AccountSetupController HTTP", () => {
     const { user, headers, accessCode, password } = await createAccount()
     const requested = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     })
@@ -92,7 +92,7 @@ describe("AccountSetupController HTTP", () => {
     const wrongCode = code === "000000" ? "000001" : "000000"
     const rejected = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code: wrongCode },
     })
@@ -103,7 +103,7 @@ describe("AccountSetupController HTTP", () => {
     ).toMatchObject({ email: null, passwordHash: null })
     const confirmed = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code },
     })
@@ -115,7 +115,7 @@ describe("AccountSetupController HTTP", () => {
     const { user, headers, accessCode, password } = await createAccount()
     const requested = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     })
@@ -125,7 +125,7 @@ describe("AccountSetupController HTTP", () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const response = await app.inject({
         method: "PATCH",
-        url: "/account/setup",
+        url: "/account/credentials",
         headers,
         payload: { code: code === "000000" ? "000001" : "000000" },
       })
@@ -139,7 +139,7 @@ describe("AccountSetupController HTTP", () => {
     ).toBe(0)
     const response = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code },
     })
@@ -151,7 +151,7 @@ describe("AccountSetupController HTTP", () => {
     const { headers, accessCode, password } = await createAccount()
     const request = {
       method: "POST" as const,
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     }
@@ -169,7 +169,7 @@ describe("AccountSetupController HTTP", () => {
       const users = connection.collection<User>("User")
       const requested = await app.inject({
         method: "POST",
-        url: "/account/setup",
+        url: "/account/credentials",
         headers,
         payload: { email: "setup@example.com", password, accessCode },
       })
@@ -198,7 +198,7 @@ describe("AccountSetupController HTTP", () => {
       const before = await users.find({}).toArray()
       const response = await app.inject({
         method: "PATCH",
-        url: "/account/setup",
+        url: "/account/credentials",
         headers,
         payload: { code },
       })
@@ -219,7 +219,7 @@ describe("AccountSetupController HTTP", () => {
     const { user, headers, accessCode, password } = await createAccount()
     const requested = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     })
@@ -230,7 +230,7 @@ describe("AccountSetupController HTTP", () => {
     expect(await redis.exists(key)).toBe(0)
     const response = await app.inject({
       method: "PATCH",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { code },
     })
@@ -250,7 +250,7 @@ describe("AccountSetupController HTTP", () => {
       .mockRejectedValueOnce(new Error("Тестовый сбой почты"))
     const request = {
       method: "POST" as const,
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     }
@@ -270,7 +270,7 @@ describe("AccountSetupController HTTP", () => {
     const wrongCode = `${accessCode[0] === "a" ? "b" : "a"}${accessCode.slice(1)}`
     const response = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode: wrongCode },
     })
@@ -289,7 +289,7 @@ describe("AccountSetupController HTTP", () => {
     const { headers, accessCode, password } = await createAccount("password")
     const response = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: "setup@example.com", password, accessCode },
     })
@@ -304,7 +304,7 @@ describe("AccountSetupController HTTP", () => {
     const { headers, accessCode, password } = await createAccount()
     const response = await app.inject({
       method: "POST",
-      url: "/account/setup",
+      url: "/account/credentials",
       headers,
       payload: { email: existing.user.email, password, accessCode },
     })
@@ -314,11 +314,11 @@ describe("AccountSetupController HTTP", () => {
   })
 
   it.each(["POST", "PATCH"] as const)(
-    "возвращает 401 без cookies для %s /account/setup",
+    "возвращает 401 без cookies для %s /account/credentials",
     async (method) => {
       const response = await getTestApplication().app.inject({
         method,
-        url: "/account/setup",
+        url: "/account/credentials",
         headers: { origin: "http://localhost" },
         payload:
           method === "POST"
@@ -355,7 +355,7 @@ describe("AccountSetupController HTTP", () => {
       const { user, headers, accessCode, password } = await createAccount()
       const response = await app.inject({
         method: "POST",
-        url: "/account/setup",
+        url: "/account/credentials",
         headers,
         payload: {
           email: "setup@example.com",
@@ -396,7 +396,7 @@ describe("AccountSetupController HTTP", () => {
       const { headers } = await createAccount()
       const response = await app.inject({
         method: "PATCH",
-        url: "/account/setup",
+        url: "/account/credentials",
         headers,
         payload,
       })

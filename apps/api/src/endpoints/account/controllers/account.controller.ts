@@ -14,7 +14,6 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { DisplayNameBodyDto } from "../dto/body/displayName.body"
 import { UsernameBodyDto } from "../dto/body/username.body"
-import { AccountResponseDto } from "../dto/response/account.response"
 import { WhoamiResponseDto } from "../dto/response/whoami.response"
 import { AccountService } from "../services/account.service"
 
@@ -30,7 +29,7 @@ class AccountController {
   @ApiEndpoint({
     operationId: "AccountController_updateDisplayName",
     summary: SWAGGER_DICTIONARY.account.updateDisplayName.summary,
-    description: SWAGGER_DICTIONARY.common.authorizationRequired,
+    description: SWAGGER_DICTIONARY.account.updateDisplayName.description,
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.account.updateDisplayName.response,
@@ -85,37 +84,13 @@ class AccountController {
     return this.accountService.updateUsername(accessToken, body)
   }
 
-  @Get()
-  @Header("Cache-Control", "no-store")
-  @ApiCookieAuth("accessCookie")
-  @ApiEndpoint({
-    operationId: "AccountController_getAccount",
-    summary: SWAGGER_DICTIONARY.account.getAccount.summary,
-    description: SWAGGER_DICTIONARY.account.getAccount.description,
-    response: {
-      status: 200,
-      type: AccountResponseDto,
-      description: SWAGGER_DICTIONARY.account.getAccount.response,
-    },
-    errors: [
-      {
-        status: 401,
-        description: SWAGGER_DICTIONARY.common.unauthorized,
-      },
-      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
-    ],
-  })
-  getAccount(@Cookies("__Host-accessToken") accessToken: unknown) {
-    return this.accountService.getAccount(accessToken)
-  }
-
   @Get("whoami")
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
   @ApiEndpoint({
     operationId: "AccountController_whoami",
     summary: SWAGGER_DICTIONARY.account.whoami.summary,
-    description: SWAGGER_DICTIONARY.common.authorizationRequired,
+    description: SWAGGER_DICTIONARY.account.whoami.description,
     response: {
       status: 200,
       type: WhoamiResponseDto,

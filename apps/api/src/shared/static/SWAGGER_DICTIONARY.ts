@@ -3,10 +3,13 @@ const SWAGGER_DICTIONARY = {
     tag: "Работоспособность",
     getHealth: {
       summary: "Получить состояние работоспособности API",
+      operationDescription:
+        "Проверяет работоспособность API и его зависимостей",
       description: "Состояние работоспособности зависимостей",
     },
     getLiveness: {
       summary: "Проверить доступность API",
+      operationDescription: "Подтверждает, что API отвечает на запросы",
       description: "HTTP API отвечает на запросы",
     },
   },

@@ -69,7 +69,7 @@ class CollectionUserController {
   @ApiEndpoint({
     operationId: "CollectionUserController_updateFavorite",
     summary: SWAGGER_DICTIONARY.collection.updateFavorite,
-    description: SWAGGER_DICTIONARY.collection.reactionDescription,
+    description: SWAGGER_DICTIONARY.collection.favoriteDescription,
     response: {
       status: 200,
       type: UserCollectionResponseDto,
@@ -145,7 +145,7 @@ class CollectionUserController {
   @ApiEndpoint({
     operationId: "CollectionUserController_updateHidden",
     summary: SWAGGER_DICTIONARY.collection.updateHidden,
-    description: SWAGGER_DICTIONARY.collection.reactionDescription,
+    description: SWAGGER_DICTIONARY.collection.hiddenDescription,
     response: {
       status: 200,
       type: UserCollectionResponseDto,

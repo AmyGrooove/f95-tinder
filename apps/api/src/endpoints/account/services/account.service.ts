@@ -17,7 +17,6 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { WhoamiResponseDto } from "../dto/response/whoami.response"
-import type { AccountResponseDto } from "../dto/response/account.response"
 import type { UsernameBodyDto } from "../dto/body/username.body"
 import type { DisplayNameBodyDto } from "../dto/body/displayName.body"
 import type { PasswordBodyDto } from "../dto/body/password.body"
@@ -159,45 +158,6 @@ class AccountService {
       }
 
       throw error
-    }
-  }
-
-  async getAccount(accessToken: unknown): Promise<AccountResponseDto> {
-    const payload = await this.authService.verifyAccessToken(accessToken)
-
-    const [session, user] = await Promise.all([
-      this.authService.getSession(payload),
-      this.userRepository.read.findById(payload.sub, {
-        _id: 1,
-        username: 1,
-        displayName: 1,
-        avatarUrl: 1,
-        role: 1,
-        email: 1,
-        passwordHash: 1,
-        accessCodeHash: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      }),
-    ])
-
-    if (isNil(session) || isNil(user)) {
-      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
-    }
-
-    requestContext.set("userId", user._id.toHexString())
-
-    return {
-      id: user._id.toHexString(),
-      username: user.username,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      role: user.role,
-      email: user.email,
-      isPasswordSet: !isNil(user.passwordHash),
-      isAccessCodeSet: !isNil(user.accessCodeHash),
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
     }
   }
 

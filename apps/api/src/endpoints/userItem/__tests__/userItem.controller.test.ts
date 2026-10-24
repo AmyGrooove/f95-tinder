@@ -119,7 +119,6 @@ describe("UserItemController", () => {
 
   it.each([
     {
-      path: "",
       payload: {
         status: EUserItemStatus.COMPLETED,
         rating: 9,
@@ -127,27 +126,27 @@ describe("UserItemController", () => {
         note: "Пересмотреть",
       },
     },
-    { path: "", payload: { rating: null, note: null } },
-    { path: "", payload: { isFavorite: false } },
-    { path: "/status", payload: { status: EUserItemStatus.PLANNED } },
-    { path: "/status", payload: { status: EUserItemStatus.IN_PROGRESS } },
-    { path: "/status", payload: { status: EUserItemStatus.ON_HOLD } },
-    { path: "/status", payload: { status: EUserItemStatus.COMPLETED } },
-    { path: "/status", payload: { status: EUserItemStatus.DROPPED } },
-    { path: "/favorite", payload: { isFavorite: true } },
-    { path: "/favorite", payload: { isFavorite: false } },
-    { path: "/rating", payload: { rating: 1 } },
-    { path: "/rating", payload: { rating: 10 } },
-    { path: "/rating", payload: { rating: null } },
-    { path: "/note", payload: { note: "Заметка" } },
-    { path: "/note", payload: { note: "" } },
-    { path: "/note", payload: { note: null } },
+    { payload: { rating: null, note: null } },
+    { payload: { isFavorite: false } },
+    { payload: { status: EUserItemStatus.PLANNED } },
+    { payload: { status: EUserItemStatus.IN_PROGRESS } },
+    { payload: { status: EUserItemStatus.ON_HOLD } },
+    { payload: { status: EUserItemStatus.COMPLETED } },
+    { payload: { status: EUserItemStatus.DROPPED } },
+    { payload: { isFavorite: true } },
+    { payload: { isFavorite: false } },
+    { payload: { rating: 1 } },
+    { payload: { rating: 10 } },
+    { payload: { rating: null } },
+    { payload: { note: "Заметка" } },
+    { payload: { note: "" } },
+    { payload: { note: null } },
   ])(
-    "передаёт поля PATCH $path без подстановки пропущенных значений: $payload",
-    async ({ path, payload }) => {
+    "передаёт поля PATCH /userItems/:id без подстановки пропущенных значений: $payload",
+    async ({ payload }) => {
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${id}${path}`,
+        url: `/userItems/${id}`,
         headers,
         payload,
       })
@@ -271,52 +270,18 @@ describe("UserItemController", () => {
     { method: "PATCH", url: `/userItems/${id}`, payload: { itemId } },
     { method: "PATCH", url: `/userItems/${id}`, payload: { user: itemId } },
     { method: "PATCH", url: `/userItems/${id}`, payload: { attempts: [] } },
-    { method: "PATCH", url: `/userItems/${id}/status`, payload: {} },
     {
       method: "PATCH",
-      url: `/userItems/${id}/status`,
-      payload: { status: null },
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/status`,
+      url: `/userItems/${id}`,
       payload: { status: "unknown" },
     },
     {
       method: "PATCH",
-      url: `/userItems/${id}/status`,
-      payload: { status: "planned", rating: 9 },
-    },
-    { method: "PATCH", url: `/userItems/${id}/favorite`, payload: {} },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/favorite`,
-      payload: { isFavorite: null },
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/favorite`,
+      url: `/userItems/${id}`,
       payload: { isFavorite: "false" },
     },
-    { method: "PATCH", url: `/userItems/${id}/rating`, payload: {} },
-    { method: "PATCH", url: `/userItems/${id}/rating`, payload: { rating: 0 } },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/rating`,
-      payload: { rating: 11 },
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/rating`,
-      payload: { rating: 1.5 },
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/rating`,
-      payload: { rating: "9" },
-    },
-    { method: "PATCH", url: `/userItems/${id}/note`, payload: {} },
-    { method: "PATCH", url: `/userItems/${id}/note`, payload: { note: 123 } },
+    { method: "PATCH", url: `/userItems/${id}`, payload: { rating: 11 } },
+    { method: "PATCH", url: `/userItems/${id}`, payload: { rating: 1.5 } },
   ] as const)(
     "возвращает 400 до вызова сервиса для $method $url с телом $payload",
     async ({ method, url, payload }) => {
@@ -393,26 +358,6 @@ describe("UserItemController", () => {
     { method: "DELETE", url: "/userItems/invalid" },
     { method: "PATCH", url: "/userItems/invalid", payload: { rating: 9 } },
     {
-      method: "PATCH",
-      url: "/userItems/invalid/status",
-      payload: { status: "planned" },
-    },
-    {
-      method: "PATCH",
-      url: "/userItems/invalid/favorite",
-      payload: { isFavorite: true },
-    },
-    {
-      method: "PATCH",
-      url: "/userItems/invalid/rating",
-      payload: { rating: 9 },
-    },
-    {
-      method: "PATCH",
-      url: "/userItems/invalid/note",
-      payload: { note: null },
-    },
-    {
       method: "POST",
       url: "/userItems/invalid/attempts",
       payload: { status: "completed" },
@@ -454,30 +399,6 @@ describe("UserItemController", () => {
       serviceMethod: "update",
     },
     { method: "DELETE", url: `/userItems/${id}`, serviceMethod: "remove" },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/status`,
-      payload: { status: "planned" },
-      serviceMethod: "update",
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/favorite`,
-      payload: { isFavorite: true },
-      serviceMethod: "update",
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/rating`,
-      payload: { rating: 9 },
-      serviceMethod: "update",
-    },
-    {
-      method: "PATCH",
-      url: `/userItems/${id}/note`,
-      payload: { note: null },
-      serviceMethod: "update",
-    },
     {
       method: "POST",
       url: `/userItems/${id}/attempts`,
@@ -604,6 +525,29 @@ describe("UserItemController", () => {
       error: { message: "Попытка не найдена" },
     })
   })
+
+  it.each([
+    { path: "status", payload: { status: "planned" } },
+    { path: "favorite", payload: { isFavorite: true } },
+    { path: "rating", payload: { rating: 9 } },
+    { path: "note", payload: { note: "Заметка" } },
+  ])(
+    "не предоставляет удалённый PATCH /userItems/:id/$path",
+    async ({ path, payload }) => {
+      const response = await app.inject({
+        method: "PATCH",
+        url: `/userItems/${id}/${path}`,
+        headers,
+        payload,
+      })
+
+      expect(response.statusCode).toBe(404)
+
+      for (const mock of Object.values(service)) {
+        expect(mock).not.toHaveBeenCalled()
+      }
+    },
+  )
 
   it.each(["/userItems", `/userItems/${id}`])(
     "не предоставляет GET-маршрут $url",

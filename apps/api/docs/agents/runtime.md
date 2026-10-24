@@ -10,7 +10,7 @@ Swagger is mounted at `/docs`, with bearer scheme `authToken` and cookie schemes
 
 Global validation transforms input, whitelists DTO fields and rejects non-whitelisted fields. Multipart limits allow one file up to 25 MiB, 20 fields, 64 KiB per field and 21 parts. Image processing applies additional limits; see [storage](storage.md).
 
-[AppModule](../../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement all 20 routes in [the account/auth specification](../../../../docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../../src/endpoints/userItem/userItem.module.ts), exposing nine mutation routes under /userItems. There are no library GET routes.
+[AppModule](../../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement all 20 routes in [the account/auth specification](../../../../docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../../src/endpoints/userItem/userItem.module.ts), exposing five mutation routes under /userItems. There are no library GET routes.
 
 [SourceModule](../../src/entities/source/source.module.ts) provides reusable source services, but no movie collection handler, collection/status endpoint or importer currently invokes them. Film classification, ban enforcement, incremental/full collection, scheduling and prepared-package application still require an application scenario.
 

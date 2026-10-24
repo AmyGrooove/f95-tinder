@@ -17,10 +17,6 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { CreateUserItemBodyDto } from "../dto/body/createUserItem.body"
 import { UpdateUserItemBodyDto } from "../dto/body/updateUserItem.body"
-import { StatusBodyDto } from "../dto/body/status.body"
-import { FavoriteBodyDto } from "../dto/body/favorite.body"
-import { RatingBodyDto } from "../dto/body/rating.body"
-import { NoteBodyDto } from "../dto/body/note.body"
 import { CreateAttemptBodyDto } from "../dto/body/createAttempt.body"
 import { UpdateAttemptBodyDto } from "../dto/body/updateAttempt.body"
 import { UserItemResponseDto } from "../dto/response/userItem.response"
@@ -39,7 +35,7 @@ class UserItemController {
   @ApiEndpoint({
     operationId: "UserItemController_create",
     summary: SWAGGER_DICTIONARY.userItem.create,
-    description: SWAGGER_DICTIONARY.userItem.description,
+    description: SWAGGER_DICTIONARY.userItem.createDescription,
     response: {
       status: 201,
       type: UserItemResponseDto,
@@ -92,7 +88,7 @@ class UserItemController {
   @ApiEndpoint({
     operationId: "UserItemController_remove",
     summary: SWAGGER_DICTIONARY.userItem.remove,
-    description: SWAGGER_DICTIONARY.userItem.description,
+    description: SWAGGER_DICTIONARY.userItem.removeDescription,
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.removed,
@@ -107,114 +103,6 @@ class UserItemController {
     return this.userItemService.remove(accessToken, id)
   }
 
-  @Patch(":id/status")
-  @HttpCode(200)
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-  })
-  @ApiEndpoint({
-    operationId: "UserItemController_updateStatus",
-    summary: SWAGGER_DICTIONARY.userItem.updateStatus,
-    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
-    response: {
-      status: 200,
-      type: UserItemResponseDto,
-      description: SWAGGER_DICTIONARY.userItem.response,
-    },
-    errors: USER_ITEM_ERRORS,
-  })
-  @Header("Cache-Control", "no-store")
-  updateStatus(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: StatusBodyDto,
-  ) {
-    return this.userItemService.update(accessToken, { id, body })
-  }
-
-  @Patch(":id/favorite")
-  @HttpCode(200)
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-  })
-  @ApiEndpoint({
-    operationId: "UserItemController_updateFavorite",
-    summary: SWAGGER_DICTIONARY.userItem.updateFavorite,
-    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
-    response: {
-      status: 200,
-      type: UserItemResponseDto,
-      description: SWAGGER_DICTIONARY.userItem.response,
-    },
-    errors: USER_ITEM_ERRORS,
-  })
-  @Header("Cache-Control", "no-store")
-  updateFavorite(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: FavoriteBodyDto,
-  ) {
-    return this.userItemService.update(accessToken, { id, body })
-  }
-
-  @Patch(":id/rating")
-  @HttpCode(200)
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-  })
-  @ApiEndpoint({
-    operationId: "UserItemController_updateRating",
-    summary: SWAGGER_DICTIONARY.userItem.updateRating,
-    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
-    response: {
-      status: 200,
-      type: UserItemResponseDto,
-      description: SWAGGER_DICTIONARY.userItem.response,
-    },
-    errors: USER_ITEM_ERRORS,
-  })
-  @Header("Cache-Control", "no-store")
-  updateRating(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: RatingBodyDto,
-  ) {
-    return this.userItemService.update(accessToken, { id, body })
-  }
-
-  @Patch(":id/note")
-  @HttpCode(200)
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
-  })
-  @ApiEndpoint({
-    operationId: "UserItemController_updateNote",
-    summary: SWAGGER_DICTIONARY.userItem.updateNote,
-    description: SWAGGER_DICTIONARY.userItem.partialUpdate,
-    response: {
-      status: 200,
-      type: UserItemResponseDto,
-      description: SWAGGER_DICTIONARY.userItem.response,
-    },
-    errors: USER_ITEM_ERRORS,
-  })
-  @Header("Cache-Control", "no-store")
-  updateNote(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: NoteBodyDto,
-  ) {
-    return this.userItemService.update(accessToken, { id, body })
-  }
-
   @Post(":id/attempts")
   @HttpCode(201)
   @ApiParam({
@@ -225,7 +113,7 @@ class UserItemController {
   @ApiEndpoint({
     operationId: "UserItemController_createAttempt",
     summary: SWAGGER_DICTIONARY.userItem.createAttempt,
-    description: SWAGGER_DICTIONARY.userItem.attemptDescription,
+    description: SWAGGER_DICTIONARY.userItem.createAttemptDescription,
     response: {
       status: 201,
       type: UserItemResponseDto,
@@ -257,7 +145,7 @@ class UserItemController {
   @ApiEndpoint({
     operationId: "UserItemController_updateAttempt",
     summary: SWAGGER_DICTIONARY.userItem.updateAttempt,
-    description: SWAGGER_DICTIONARY.userItem.attemptDescription,
+    description: SWAGGER_DICTIONARY.userItem.updateAttemptDescription,
     response: {
       status: 200,
       type: UserItemResponseDto,

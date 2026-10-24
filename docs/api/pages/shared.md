@@ -4,19 +4,17 @@
 
 ## Реализовано
 
-Все девять операций [UserItemController](../../../apps/api/src/endpoints/userItem/controllers/userItem.controller.ts) вызывают [UserItemService](../../../apps/api/src/endpoints/userItem/services/userItem.service.ts):
+Все пять операций [UserItemController](../../../apps/api/src/endpoints/userItem/controllers/userItem.controller.ts) вызывают [UserItemService](../../../apps/api/src/endpoints/userItem/services/userItem.service.ts):
 
 | Маршрут | Покрываемое действие |
 | --- | --- |
 | `POST /userItems` | Создать запись по `{ itemId, status }` |
 | `PATCH /userItems/:id` | Сохранить переданные статус, оценку, избранное и заметку одной операцией |
 | `DELETE /userItems/:id` | Удалить запись вместе с попытками и личными полями |
-| `PATCH /userItems/:id/status` | Быстро изменить статус |
-| `PATCH /userItems/:id/rating` | Поставить целую оценку 1–10 или очистить через `null` |
-| `PATCH /userItems/:id/favorite` | Изменить избранное |
-| `PATCH /userItems/:id/note` | Изменить или очистить заметку |
 | `POST /userItems/:id/attempts` | Добавить попытку, в том числе повторный просмотр |
 | `PATCH /userItems/:id/attempts/:attemptId` | Изменить статус, прогресс и даты попытки |
+
+PATCH `/userItems/:id` принимает одно или несколько полей; пропущенные сохраняются. Оценка — целое число 1–10 или `null` для очистки; заметку также можно очистить через `null`.
 
 `:id` — ID UserItem. Создание и изменения возвращают личную запись с попытками; это не замена её чтению при новом открытии страницы. Прогресс измеряется в минутах. Доступ ограничен владельцем. Оценка, избранное и заметка требуют созданной записи; `POST` принимает статус явно. Переход в planned при активной попытке даёт 409. Подробности — в [контракте библиотеки](../librarySpec.md).
 

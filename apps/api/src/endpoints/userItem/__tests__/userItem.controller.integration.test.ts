@@ -286,8 +286,8 @@ describe("UserItemController HTTP", () => {
     { path: "note", payload: { note: null }, expected: { note: null } },
     { path: "note", payload: { note: "   " }, expected: { note: null } },
   ])(
-    "отдельный PATCH $path очищает значение без изменения остальных данных",
-    async ({ path, payload, expected }) => {
+    "PATCH /userItems/:id очищает $path без изменения остальных данных",
+    async ({ payload, expected }) => {
       const { app } = getTestApplication()
       const { entry, headers } = await createEntry()
       const prepared = await app.inject({
@@ -304,7 +304,7 @@ describe("UserItemController HTTP", () => {
       })
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/${path}`,
+        url: `/userItems/${entry.id}`,
         headers,
         payload,
       })
@@ -328,7 +328,7 @@ describe("UserItemController HTTP", () => {
     for (const isFavorite of [true, true]) {
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/favorite`,
+        url: `/userItems/${entry.id}`,
         headers,
         payload: { isFavorite },
       })
@@ -344,7 +344,7 @@ describe("UserItemController HTTP", () => {
     const { entry, headers } = await createEntry()
     const start = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}/status`,
+      url: `/userItems/${entry.id}`,
       headers,
       payload: { status: "inProgress" },
     })
@@ -377,7 +377,7 @@ describe("UserItemController HTTP", () => {
     ]) {
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/status`,
+        url: `/userItems/${entry.id}`,
         headers,
         payload: { status },
       })
@@ -429,7 +429,7 @@ describe("UserItemController HTTP", () => {
     const before = await readEntry(entry.id)
     const response = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}/status`,
+      url: `/userItems/${entry.id}`,
       headers,
       payload: { status: "inProgress" },
     })
@@ -753,13 +753,13 @@ describe("UserItemController HTTP", () => {
       }),
       app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/rating`,
+        url: `/userItems/${entry.id}`,
         headers,
         payload: { rating: 8 },
       }),
       app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/favorite`,
+        url: `/userItems/${entry.id}`,
         headers,
         payload: { isFavorite: true },
       }),
@@ -784,12 +784,11 @@ describe("UserItemController HTTP", () => {
   })
 
   it.each([
-    { method: "PATCH", path: "", payload: { rating: 9 } },
     { method: "DELETE", path: "" },
-    { method: "PATCH", path: "/status", payload: { status: "completed" } },
-    { method: "PATCH", path: "/favorite", payload: { isFavorite: true } },
-    { method: "PATCH", path: "/rating", payload: { rating: 9 } },
-    { method: "PATCH", path: "/note", payload: { note: "Заметка" } },
+    { method: "PATCH", path: "", payload: { status: "completed" } },
+    { method: "PATCH", path: "", payload: { isFavorite: true } },
+    { method: "PATCH", path: "", payload: { rating: 9 } },
+    { method: "PATCH", path: "", payload: { note: "Заметка" } },
     { method: "POST", path: "/attempts", payload: { status: "completed" } },
     { method: "PATCH", path: "/attempts/current", payload: { progress: 10 } },
   ] as const)(
@@ -845,7 +844,7 @@ describe("UserItemController HTTP", () => {
             : headers
       const response = await app.inject({
         method: "PATCH",
-        url: `/userItems/${entry.id}/rating`,
+        url: `/userItems/${entry.id}`,
         headers: requestHeaders,
         payload: { rating: 9 },
       })
@@ -861,7 +860,7 @@ describe("UserItemController HTTP", () => {
     const before = await readEntry(entry.id)
     const response = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}/rating`,
+      url: `/userItems/${entry.id}`,
       headers: { ...headers, origin: "https://untrusted.example" },
       payload: { rating: 9 },
     })
@@ -877,7 +876,7 @@ describe("UserItemController HTTP", () => {
     const missing = new Types.ObjectId().toHexString()
     const missingEntry = await app.inject({
       method: "PATCH",
-      url: `/userItems/${missing}/rating`,
+      url: `/userItems/${missing}`,
       headers,
       payload: { rating: 9 },
     })
@@ -901,7 +900,7 @@ describe("UserItemController HTTP", () => {
       .updateOne({ _id: item._id }, { $set: { deletedAt: new Date() } })
     const response = await app.inject({
       method: "PATCH",
-      url: `/userItems/${entry.id}/rating`,
+      url: `/userItems/${entry.id}`,
       headers,
       payload: { rating: 9 },
     })

@@ -7,31 +7,6 @@ import { getTestApplication } from "@test/setup/setupIntegration"
 import { createAccount } from "./functions/createAccount"
 
 describe("AccountController HTTP", () => {
-  it("возвращает профиль без хешей и запрещает кеширование", async () => {
-    const { app } = getTestApplication()
-    const { user, headers } = await createAccount()
-    const response = await app.inject({
-      method: "GET",
-      url: "/account",
-      headers,
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(response.headers["cache-control"]).toBe("no-store")
-    expect(response.json()).toEqual({
-      id: user._id.toHexString(),
-      username: user.username,
-      displayName: user.displayName,
-      avatarUrl: null,
-      role: user.role,
-      email: null,
-      isPasswordSet: false,
-      isAccessCodeSet: true,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    })
-  })
-
   it("возвращает пользователя и действующую сессию через whoami", async () => {
     const { app } = getTestApplication()
     const { user, session, headers } = await createAccount()
@@ -58,7 +33,7 @@ describe("AccountController HTTP", () => {
     })
   })
 
-  it.each(["/account", "/account/whoami"])(
+  it.each(["/account/whoami"])(
     "возвращает 401 без cookies для %s",
     async (url) => {
       const response = await getTestApplication().app.inject({
@@ -73,7 +48,7 @@ describe("AccountController HTTP", () => {
     },
   )
 
-  it.each(["/account", "/account/whoami"])(
+  it.each(["/account/whoami"])(
     "отклоняет поддельный токен для %s",
     async (url) => {
       const response = await getTestApplication().app.inject({
@@ -86,7 +61,7 @@ describe("AccountController HTTP", () => {
     },
   )
 
-  it.each(["/account", "/account/whoami"])(
+  it.each(["/account/whoami"])(
     "отклоняет истёкшую сессию для %s",
     async (url) => {
       const { app, connection } = getTestApplication()
