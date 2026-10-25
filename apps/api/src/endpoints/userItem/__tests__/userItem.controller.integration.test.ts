@@ -4,6 +4,11 @@ import type { FastifyInstance } from "fastify"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { EItemType } from "@entities/item/schemas/EItemType"
+import { EFeatureKey } from "@entities/feature/schemas/EFeatureKey"
+import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { FeatureRepository } from "@entities/feature/services/feature.repository"
+import { ItemFeatureRepository } from "@entities/itemFeature/services/itemFeature.repository"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import type { Item } from "@entities/item/schemas/item.schema"
 import type { User } from "@entities/user/schemas/user.schema"
@@ -103,20 +108,21 @@ describe("UserItemController HTTP", () => {
     })
   }
 
-  const createItem = async () => {
+  const createItem = async (type: EItemType = EItemType.MOVIE) => {
     return getTestApplication()
       .app.get(ItemRepository)
       .write.create({
-        type: EItemType.MOVIE,
+        type,
         title: { ru: "Тестовый фильм", en: null },
       })
   }
 
   const createEntry = async (
     status: EUserItemStatus = EUserItemStatus.PLANNED,
+    type: EItemType = EItemType.MOVIE,
   ) => {
     const account = await createAccount()
-    const item = await createItem()
+    const item = await createItem(type)
     const response = await getTestApplication().app.inject({
       method: "POST",
       url: "/userItems",
@@ -139,6 +145,390 @@ describe("UserItemController HTTP", () => {
 
     return record
   }
+
+  const createCompletionFeature = async (props: {
+    item: Types.ObjectId
+    key: EFeatureKey
+    valueType: EFeatureValueType
+    value?: string | boolean
+  }) => {
+    const { app } = getTestApplication()
+    const feature = await app.get(FeatureRepository).write.create({
+      key: props.key,
+      valueType: props.valueType,
+      name: { ru: props.key, en: null },
+    })
+
+    if (props.value !== undefined) {
+      await app.get(ItemFeatureRepository).write.create({
+        item: props.item,
+        feature: feature._id,
+        value: props.value,
+      })
+    }
+  }
+
+  it.each([
+    EItemType.SERIES,
+    EItemType.ANIMATED_SERIES,
+    EItemType.ANIME_SERIES,
+  ])(
+    "сохраняет и редактирует число серий сезона %s без вывода завершения",
+    async (type) => {
+      const { app, connection } = getTestApplication()
+      const { entry, item, headers } = await createEntry(
+        EUserItemStatus.IN_PROGRESS,
+        type,
+      )
+      await connection
+        .collection("Item")
+        .updateOne({ _id: item._id }, { $set: { deletedAt: new Date() } })
+      const url = `/userItems/${entry.id}/attempts`
+      const created = await app.inject({
+        method: "POST",
+        url,
+        headers,
+        payload: { unit: "episode", progress: 0 },
+      })
+      expect(created.statusCode).toBe(201)
+      const attempt = created.json<UserItemResponseDto>().attempts.at(-1)
+      expect(attempt).toMatchObject({
+        unit: "episode",
+        progress: 0,
+        isCompleted: false,
+      })
+      const updated = await app.inject({
+        method: "PATCH",
+        url: `${url}/${attempt?.id}`,
+        headers,
+        payload: { progress: 120 },
+      })
+      expect(updated.statusCode).toBe(200)
+      expect(updated.json<UserItemResponseDto>().status).toBe("inProgress")
+      expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
+        unit: "episode",
+        progress: 120,
+        isCompleted: false,
+      })
+      const changed = await app.inject({
+        method: "PATCH",
+        url: `${url}/${entry.attempts[0]?.id}`,
+        headers,
+        payload: { unit: "episode", progress: 5 },
+      })
+      expect(changed.statusCode).toBe(200)
+      expect((await readEntry(entry.id)).attempts[0]).toMatchObject({
+        unit: "episode",
+        progress: 5,
+      })
+    },
+  )
+
+  it.each([
+    EItemType.MOVIE,
+    EItemType.ANIMATED_MOVIE,
+    EItemType.ANIME_MOVIE,
+    EItemType.GAME,
+    "missing" as const,
+  ])("отклоняет серии для %s без частичного сохранения", async (type) => {
+    const { app, connection } = getTestApplication()
+    const { entry, item, headers } = await createEntry(
+      EUserItemStatus.IN_PROGRESS,
+      type === "missing" ? EItemType.SERIES : type,
+    )
+    if (type === "missing") {
+      await connection.collection("Item").deleteOne({ _id: item._id })
+    }
+    const before = await readEntry(entry.id)
+    for (const method of ["POST", "PATCH"] as const) {
+      const response = await app.inject({
+        method,
+        url:
+          `/userItems/${entry.id}/attempts` +
+          (method === "PATCH" ? `/${entry.attempts[0]?.id}` : ""),
+        headers,
+        payload: { unit: "episode", progress: 5 },
+      })
+      expect(response.statusCode).toBe(400)
+      expect(response.json()).toMatchObject({
+        error: { message: DICTIONARY.userItem.invalidEpisodeUnit },
+      })
+      expect(await readEntry(entry.id)).toEqual(before)
+    }
+  })
+
+  it.each([
+    {
+      type: EItemType.GAME,
+      key: EFeatureKey.HAS_DEFINED_END,
+      valueType: EFeatureValueType.BOOLEAN,
+      value: false,
+      message: DICTIONARY.userItem.gameHasNoDefinedEnd,
+    },
+    ...[
+      EItemType.SERIES,
+      EItemType.ANIMATED_SERIES,
+      EItemType.ANIME_SERIES,
+    ].flatMap((type) =>
+      ["announced", "ongoing"].map((value) => ({
+        type,
+        key: EFeatureKey.RELEASE_STATUS,
+        valueType: EFeatureValueType.STRING,
+        value,
+        message: DICTIONARY.userItem.seasonReleaseNotFinished,
+      })),
+    ),
+  ])(
+    "запрещает явное завершение $type при $value и сохраняет запись",
+    async ({ type, key, valueType, value, message }) => {
+      const { app, connection } = getTestApplication()
+      const { entry, item, headers } = await createEntry(
+        EUserItemStatus.IN_PROGRESS,
+        type,
+      )
+      await createCompletionFeature({ item: item._id, key, valueType, value })
+      const before = await readEntry(entry.id)
+      for (const request of [
+        {
+          method: "PATCH",
+          url: `/userItems/${entry.id}`,
+          payload: { status: "completed", note: "Не сохранить" },
+        },
+        {
+          method: "POST",
+          url: `/userItems/${entry.id}/attempts`,
+          payload: { isCompleted: true },
+        },
+        {
+          method: "PATCH",
+          url: `/userItems/${entry.id}/attempts/${entry.attempts[0]?.id}`,
+          payload: { isCompleted: true, progress: 10 },
+        },
+      ] as const) {
+        const response = await app.inject({ ...request, headers })
+        expect(response.statusCode).toBe(409)
+        expect(response.json()).toMatchObject({ error: { message } })
+        expect(await readEntry(entry.id)).toEqual(before)
+      }
+      await connection.collection("UserItem").updateOne(
+        { _id: new Types.ObjectId(entry.id) },
+        {
+          $set: {
+            status: "skipped",
+            attempts: [],
+            expiresAt: new Date(Date.now() - 1000),
+          },
+        },
+      )
+      const skipped = await readEntry(entry.id)
+      const rejected = await app.inject({
+        method: "POST",
+        url: "/userItems",
+        headers,
+        payload: { itemId: item._id.toHexString(), status: "completed" },
+      })
+      expect(rejected.statusCode).toBe(409)
+      expect(rejected.json()).toMatchObject({ error: { message } })
+      expect(await readEntry(entry.id)).toEqual(skipped)
+    },
+  )
+
+  it.each([
+    { method: "POST", payload: { unit: "percent" } },
+    { method: "POST", payload: { unit: "percent", progress: 0 } },
+    { method: "PATCH", payload: { unit: "percent" } },
+    { method: "PATCH", payload: { progress: 10 } },
+  ] as const)(
+    "запрещает $method процентный ввод $payload для игры без конца",
+    async ({ method, payload }) => {
+      const { app, connection } = getTestApplication()
+      const { entry, item, headers } = await createEntry(
+        EUserItemStatus.IN_PROGRESS,
+        EItemType.GAME,
+      )
+      await createCompletionFeature({
+        item: item._id,
+        key: EFeatureKey.HAS_DEFINED_END,
+        valueType: EFeatureValueType.BOOLEAN,
+        value: false,
+      })
+      await connection
+        .collection("UserItem")
+        .updateOne(
+          { _id: new Types.ObjectId(entry.id) },
+          { $set: { "attempts.0.unit": "percent", "attempts.0.progress": 20 } },
+        )
+      const before = await readEntry(entry.id)
+      const response = await app.inject({
+        method,
+        headers,
+        payload,
+        url:
+          `/userItems/${entry.id}/attempts` +
+          (method === "PATCH" ? `/${entry.attempts[0]?.id}` : ""),
+      })
+      expect(response.statusCode).toBe(409)
+      expect(response.json()).toMatchObject({
+        error: { message: DICTIONARY.userItem.gameHasNoDefinedEnd },
+      })
+      expect(await readEntry(entry.id)).toEqual(before)
+    },
+  )
+
+  it.each([
+    {
+      type: EItemType.GAME,
+      key: EFeatureKey.HAS_DEFINED_END,
+      valueType: EFeatureValueType.BOOLEAN,
+      value: true,
+    },
+    {
+      type: EItemType.GAME,
+      key: EFeatureKey.HAS_DEFINED_END,
+      valueType: EFeatureValueType.STRING,
+      value: "false",
+    },
+    {
+      type: EItemType.GAME,
+      key: EFeatureKey.HAS_DEFINED_END,
+      valueType: EFeatureValueType.BOOLEAN,
+      value: undefined,
+    },
+    ...["released", "cancelled", "unknown", undefined].map((value) => ({
+      type: EItemType.SERIES,
+      key: EFeatureKey.RELEASE_STATUS,
+      valueType: EFeatureValueType.STRING,
+      value,
+    })),
+    {
+      type: EItemType.SERIES,
+      key: EFeatureKey.RELEASE_STATUS,
+      valueType: EFeatureValueType.BOOLEAN,
+      value: false,
+    },
+  ])(
+    "разрешает ручное завершение $type при метаданных $valueType/$value",
+    async ({ type, ...feature }) => {
+      const { app } = getTestApplication()
+      const { headers } = await createAccount()
+      const item = await createItem(type)
+      await createCompletionFeature({ ...feature, item: item._id })
+      const created = await app.inject({
+        method: "POST",
+        url: "/userItems",
+        headers,
+        payload: { itemId: item._id.toHexString(), status: "completed" },
+      })
+      expect(created.statusCode).toBe(201)
+      const entry = created.json<UserItemResponseDto>()
+      const updated = await app.inject({
+        method: "PATCH",
+        url: `/userItems/${entry.id}`,
+        headers,
+        payload: { status: "completed" },
+      })
+      expect(updated.statusCode).toBe(200)
+      const attempt = await app.inject({
+        method: "POST",
+        url: `/userItems/${entry.id}/attempts`,
+        headers,
+        payload: { isCompleted: true, unit: "percent", progress: 100 },
+      })
+      expect(attempt.statusCode).toBe(201)
+      expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
+        isCompleted: true,
+        unit: "percent",
+        progress: 100,
+      })
+    },
+  )
+
+  it.each([EItemType.GAME, EItemType.SERIES])(
+    "разрешает завершение %s без определения характеристики",
+    async (type) => {
+      const { entry } = await createEntry(EUserItemStatus.COMPLETED, type)
+      expect(entry.attempts[0]?.isCompleted).toBe(true)
+    },
+  )
+
+  it.each([EItemType.GAME, EItemType.SERIES])(
+    "сохраняет историческое завершение %s при разрешённых правках",
+    async (type) => {
+      const { app } = getTestApplication()
+      const { entry, item, headers } = await createEntry(
+        EUserItemStatus.COMPLETED,
+        type,
+      )
+      const url = `/userItems/${entry.id}`
+      const attemptUrl = `${url}/attempts/${entry.attempts[0]?.id}`
+      const prepared = await app.inject({
+        method: "PATCH",
+        url: attemptUrl,
+        headers,
+        payload: { unit: "percent", progress: 100 },
+      })
+      expect(prepared.statusCode).toBe(200)
+      await createCompletionFeature({
+        item: item._id,
+        key:
+          type === EItemType.GAME
+            ? EFeatureKey.HAS_DEFINED_END
+            : EFeatureKey.RELEASE_STATUS,
+        valueType:
+          type === EItemType.GAME
+            ? EFeatureValueType.BOOLEAN
+            : EFeatureValueType.STRING,
+        value: type === EItemType.GAME ? false : "ongoing",
+      })
+      for (const payload of [
+        { rating: 8, note: "История", isFavorite: true },
+        { status: "onHold" },
+      ]) {
+        const response = await app.inject({
+          method: "PATCH",
+          url,
+          headers,
+          payload,
+        })
+        expect(response.statusCode).toBe(200)
+        expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject({
+          isCompleted: true,
+          unit: "percent",
+          progress: 100,
+        })
+      }
+      for (const payload of [
+        { completedAt: "2026-10-01T00:00:00.000Z" },
+        { progress: null },
+        { isCompleted: false },
+        { unit: "minute", progress: 120 },
+      ]) {
+        const response = await app.inject({
+          method: "PATCH",
+          url: attemptUrl,
+          headers,
+          payload,
+        })
+        expect(response.statusCode).toBe(200)
+        expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject(
+          payload,
+        )
+      }
+      const allowed = await app.inject({
+        method: "POST",
+        url: `${url}/attempts`,
+        headers,
+        payload:
+          type === EItemType.GAME
+            ? { progress: 120 }
+            : { unit: "percent", progress: 100 },
+      })
+      expect(allowed.statusCode).toBe(201)
+      expect((await readEntry(entry.id)).attempts.at(-1)?.isCompleted).toBe(
+        false,
+      )
+    },
+  )
 
   it("сохраняет запланированное произведение с обязательным статусом и значениями по умолчанию", async () => {
     const { entry, item, user } = await createEntry()

@@ -40,6 +40,8 @@ import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
+import { AppController } from "./controllers/app.controller"
+
 @Module({
   imports: [
     InfrastructureConfigModule,
@@ -78,6 +80,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     SessionModule,
     UserTasteProfileModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_FILTER,

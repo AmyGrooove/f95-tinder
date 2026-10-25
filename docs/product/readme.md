@@ -8,6 +8,7 @@
 | Объём первой версии и порядок дальнейших этапов    | [Границы MVP](mvpScope.md)         |
 | Страницы, их назначение и вопросы для спецификаций | [Карта страниц](pages/readme.md)         |
 | Идеи продукта за пределами текущего этапа          | [Полный замысел](productVision.md) |
+| Образ, характер и правила изображения Биски        | [Маскот приложения](mascot/readme.md)     |
 
 Основы разделены по темам: [данные](foundations/dataStructure.md), [наполнение каталога](foundations/catalogWorkflow.md), [рекомендации](foundations/recommendations.md), [библиотека](foundations/library.md), [расширяемость](foundations/extensibility.md).
 

@@ -25,6 +25,7 @@ import { HealthService } from "./services/health.service"
   ],
   controllers: [HealthController],
   providers: [HealthService],
+  exports: [HealthService],
 })
 class HealthModule {}
 

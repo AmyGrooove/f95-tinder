@@ -112,6 +112,17 @@ describe("UserItemController", () => {
     expect(
       document.components?.schemas?.UserItemSummaryResponseDto,
     ).not.toHaveProperty("properties.note")
+    for (const name of [
+      "CreateAttemptBodyDto",
+      "UpdateAttemptBodyDto",
+      "AttemptResponseDto",
+    ]) {
+      expect(document.components?.schemas?.[name]).toMatchObject({
+        properties: {
+          unit: { enum: [EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE] },
+        },
+      })
+    }
   })
 
   it("читает краткие записи методом QUERY с JSON-телом и запрещает кеширование", async () => {
@@ -317,6 +328,7 @@ describe("UserItemController", () => {
   it.each([
     {},
     { isCompleted: false, progress: 0 },
+    { progress: 5, unit: EUnit.EPISODE },
     {
       isCompleted: true,
       progress: 90,
@@ -354,6 +366,8 @@ describe("UserItemController", () => {
   it.each([
     { progress: 0 },
     { progress: 100, unit: EUnit.PERCENT },
+    { progress: 5, unit: EUnit.EPISODE },
+    { unit: EUnit.EPISODE },
     { isCompleted: false },
     { progress: null, startedAt: null, completedAt: null },
     { isCompleted: true, progress: 90, unit: EUnit.MINUTE },

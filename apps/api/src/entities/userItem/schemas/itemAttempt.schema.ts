@@ -31,7 +31,7 @@ class ItemAttempt {
   @Prop({
     type: String,
     required: true,
-    enum: [EUnit.MINUTE, EUnit.PERCENT],
+    enum: [EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE],
     default: EUnit.MINUTE,
   })
   unit: EUnit

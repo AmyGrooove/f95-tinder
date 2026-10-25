@@ -1,5 +1,7 @@
 enum EItemRelationRoleGroup {
-  MOVIE = "movie",
+  ALL = "all",
+  VIDEO = "video",
+  GAME = "game",
 }
 
 export { EItemRelationRoleGroup }

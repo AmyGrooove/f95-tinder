@@ -32,7 +32,7 @@
 | features | Массив `{id, key, name, valueType, unit, value}` по key возрастанию; name — RU/EN, unit может быть null |
 | relations | Массив `{item: {id, type, title, media}, role: {id, key, name}}` по ID связи возрастанию |
 
-`valueType` — string/number/boolean/date, значение date сериализуется в ISO 8601. Характеристики шапки выбираются клиентом по key: duration — число минут с unit=minute, ageRating — строка, releaseStatus — announced/released/cancelled, releaseDate — ожидаемая или фактическая дата. Они не дублируются отдельными полями ответа. Наличие соответствующих Feature/ItemFeature в рабочей БД не проверено; чтение не создаёт их и не подставляет выдуманные значения.
+`valueType` — string/number/boolean/date, значение date сериализуется в ISO 8601. Характеристики шапки выбираются клиентом по key: duration — число минут с unit=minute, ageRating — строка, releaseStatus — announced/released/cancelled, releaseDate — ожидаемая или фактическая дата. Для сезонов releaseStatus также допускает ongoing (выпуск продолжается), а released означает завершение выпуска конкретного сезона. Они не дублируются отдельными полями ответа. Наличие соответствующих Feature/ItemFeature в рабочей БД не проверено; чтение не создаёт их и не подставляет выдуманные значения.
 
 Связи загружаются с обеих сторон Relation. В ответ попадает противоположная сторона: роль связанного произведения относительно открытого. Для каждого языка name сначала берётся из roleNameOverride этой стороны, при null/отсутствии — из стандартного имени роли, затем null. Возвращаются все прямые связи без пагинации и рекурсии; отсутствующие и удалённые связанные Item пропускаются. Привязки к отсутствующим Tag, Feature или ItemRelationRole также не попадают в ответ.
 

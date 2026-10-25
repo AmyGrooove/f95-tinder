@@ -6,6 +6,7 @@ import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
 import { EFeatureGroup } from "@entities/feature/schemas/EFeatureGroup"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { EItemType } from "@entities/item/schemas/EItemType"
+import { EItemRelationRoleGroup } from "@entities/itemRelationRole/schemas/EItemRelationRoleGroup"
 import type { TCreateRelationSide } from "@entities/relation/schemas/relationSide.schema"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { EUnit } from "@entities/shared/schemas/EUnit"
@@ -96,7 +97,7 @@ describe("ItemController HTTP", () => {
       _id: new Types.ObjectId(),
       key: props.key,
       name: props.name,
-      group: "movie",
+      group: EItemRelationRoleGroup.VIDEO,
       description: { ru: "Описание роли", en: null },
     }
     await getTestApplication()

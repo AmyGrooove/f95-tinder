@@ -32,12 +32,12 @@ class CreateAttemptBodyDto {
   progress?: number | null
 
   @ApiPropertyOptional({
-    enum: [EUnit.MINUTE, EUnit.PERCENT],
+    enum: [EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE],
     default: EUnit.MINUTE,
   })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
-  @IsIn([EUnit.MINUTE, EUnit.PERCENT])
-  unit?: EUnit.MINUTE | EUnit.PERCENT
+  @IsIn([EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE])
+  unit?: EUnit.MINUTE | EUnit.PERCENT | EUnit.EPISODE
 
   @ApiPropertyOptional({ type: String, format: "date-time", nullable: true })
   @ValidateIf((_object: unknown, value: unknown) => !isNil(value))

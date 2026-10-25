@@ -4,6 +4,8 @@ Read for startup, configuration, health, HTTP policy or build changes. Return to
 
 ## HTTP entrypoint
 
+[AppController](../../src/app/controllers/app.controller.ts) exposes public `GET /` with an HTML status page and a link to `/docs`, and `GET /background` which proxies a random image from the fixed application background list. Both routes are excluded from Swagger and use `Cache-Control: no-store`. The page uses the exported HealthService to display dependency statuses, including failed readiness checks. The background route stores the last successful image index in the `biskyBackground` session cookie scoped to `/background` and excludes it from the next selection when the browser returns that cookie. Page and service markup live in `src/app/static`.
+
 [main.ts](../../src/main.ts) creates the Fastify Nest application and listens on `app.port` at `0.0.0.0`. Shared HTTP setup lives in [configureApplication](../../src/app/functions/configureApplication/index.ts), reused by the integration-test application: CSRF, multipart, Helmet, request context, CORS, URI versioning and validation. Proxy trust is limited to loopback, link-local and unique-local addresses. CSP is removed for `/docs` and its nested/query routes.
 
 Swagger uses OpenAPI 3.2.0 so QUERY operations remain in the generated schema. It is mounted at `/docs`, with bearer scheme `authToken` and cookie schemes `accessCookie` / `refreshCookie`. URI versioning is enabled without a default version; current health, account and auth controllers have no version metadata. There is no global route prefix.

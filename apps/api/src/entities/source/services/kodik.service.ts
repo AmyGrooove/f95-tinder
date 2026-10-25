@@ -17,6 +17,7 @@ import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
 import { KODIK_SETTINGS } from "../static/KODIK_SETTINGS"
+import { ESourceKey } from "../schemas/ESourceKey"
 import type {
   IKodikCommonParameters,
   IKodikListParameters,
@@ -35,7 +36,9 @@ class KodikService {
   ) {}
 
   async getSource() {
-    const source = await this.sourceRepository.read.findOne({ key: "kodik" })
+    const source = await this.sourceRepository.read.findOne({
+      key: ESourceKey.KODIK,
+    })
 
     if (isNil(source)) {
       throw new NotFoundException(DICTIONARY.kodik.sourceNotFound)

@@ -12,7 +12,7 @@ class AttemptResponseDto {
   @ApiProperty({ type: Number, nullable: true, minimum: 0 })
   progress: number | null
 
-  @ApiProperty({ enum: [EUnit.MINUTE, EUnit.PERCENT] })
+  @ApiProperty({ enum: [EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE] })
   unit: EUnit
 
   @ApiProperty({ type: String, format: "date-time", nullable: true })

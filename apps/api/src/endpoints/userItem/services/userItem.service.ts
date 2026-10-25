@@ -10,6 +10,11 @@ import type { HydratedDocument } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/auth.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
+import { EItemType } from "@entities/item/schemas/EItemType"
+import { FeatureRepository } from "@entities/feature/services/feature.repository"
+import { EFeatureKey } from "@entities/feature/schemas/EFeatureKey"
+import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { ItemFeatureRepository } from "@entities/itemFeature/services/itemFeature.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
@@ -30,6 +35,7 @@ import type { ICreateAttemptProps } from "../types/ICreateAttemptProps"
 import type { IUpdateAttemptProps } from "../types/IUpdateAttemptProps"
 import type { IUpdateUserItemProps } from "../types/IUpdateUserItemProps"
 import type { IMutateUserItemProps } from "../types/IMutateUserItemProps"
+import type { IValidateCompletionProps } from "../types/IValidateCompletionProps"
 import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
 import type { QueryUserItemsBodyDto } from "../dto/body/queryUserItems.body"
 import type { UserItemSummaryResponseDto } from "../dto/response/userItemSummary.response"
@@ -42,6 +48,8 @@ class UserItemService {
     private readonly itemRepository: ItemRepository,
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
+    private readonly featureRepository: FeatureRepository,
+    private readonly itemFeatureRepository: ItemFeatureRepository,
   ) {}
 
   async query(
@@ -115,6 +123,10 @@ class UserItemService {
       throw new NotFoundException(DICTIONARY.userItem.itemNotFound)
     }
 
+    if (body.status === EUserItemStatus.COMPLETED) {
+      await this.validateCompletion({ itemId, isCompletionRequested: true })
+    }
+
     await this.userItemRepository.write.deleteByFilter({
       user: userId,
       item: itemId,
@@ -156,8 +168,16 @@ class UserItemService {
 
     return this.mutate(accessToken, {
       id: props.id,
-      mutate: (userItem) => {
+      mutate: async (userItem, session) => {
         const { status, rating, isFavorite, note } = props.body
+
+        if (status === EUserItemStatus.COMPLETED) {
+          await this.validateCompletion({
+            itemId: userItem.item,
+            isCompletionRequested: true,
+            session,
+          })
+        }
 
         if (!isNil(status)) {
           this.changeStatus(userItem, status)
@@ -193,7 +213,7 @@ class UserItemService {
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
     return this.mutate(accessToken, {
       id: props.id,
-      mutate: (userItem) => {
+      mutate: async (userItem, session) => {
         const { body } = props
         if (!this.checkRequiresAttempt(userItem.status)) {
           throw new ConflictException(DICTIONARY.userItem.attemptNotAllowed)
@@ -208,6 +228,14 @@ class UserItemService {
           completedAt: this.parseDate(body.completedAt),
         }
 
+        if (attempt.isCompleted || attempt.unit === EUnit.PERCENT) {
+          await this.validateCompletion({
+            itemId: userItem.item,
+            isCompletionRequested: attempt.isCompleted,
+            session,
+          })
+        }
+
         userItem.attempts.push(attempt)
       },
     })
@@ -218,7 +246,7 @@ class UserItemService {
 
     return this.mutate(accessToken, {
       id: props.id,
-      mutate: (userItem) => {
+      mutate: async (userItem, session) => {
         const attempt = userItem.attempts.find((entry) =>
           entry.id.equals(props.attemptId),
         )
@@ -229,6 +257,18 @@ class UserItemService {
 
         const { isCompleted, progress, unit, startedAt, completedAt } =
           props.body
+
+        if (
+          isCompleted === true ||
+          unit === EUnit.PERCENT ||
+          (!isNil(progress) && (unit ?? attempt.unit) === EUnit.PERCENT)
+        ) {
+          await this.validateCompletion({
+            itemId: userItem.item,
+            isCompletionRequested: isCompleted === true,
+            session,
+          })
+        }
 
         if (!isUndefined(isCompleted)) {
           attempt.isCompleted = isCompleted
@@ -291,8 +331,28 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      props.mutate(userItem)
+      await props.mutate(userItem, session)
       this.validateUserItem(userItem)
+
+      if (userItem.attempts.some((attempt) => attempt.unit === EUnit.EPISODE)) {
+        const isSeason = await this.itemRepository.read.checkIsExists(
+          {
+            _id: userItem.item,
+            type: {
+              $in: [
+                EItemType.SERIES,
+                EItemType.ANIMATED_SERIES,
+                EItemType.ANIME_SERIES,
+              ],
+            },
+          },
+          { session },
+        )
+
+        if (!isSeason) {
+          throw new BadRequestException(DICTIONARY.userItem.invalidEpisodeUnit)
+        }
+      }
 
       const updated = await this.userItemRepository.write.updateByFilter(
         filter,
@@ -315,6 +375,63 @@ class UserItemService {
 
       return this.mapResponse(updated)
     })
+  }
+
+  private async validateCompletion(props: IValidateCompletionProps) {
+    const { itemId, isCompletionRequested, session } = props
+    const item = await this.itemRepository.read.findOne(
+      { _id: itemId },
+      { type: 1 },
+      { session },
+    )
+
+    if (isNil(item)) {
+      return
+    }
+
+    const isGame = item.type === EItemType.GAME
+    const isSeasonCompletion =
+      isCompletionRequested &&
+      (item.type === EItemType.SERIES ||
+        item.type === EItemType.ANIMATED_SERIES ||
+        item.type === EItemType.ANIME_SERIES)
+
+    if (!isGame && !isSeasonCompletion) {
+      return
+    }
+
+    const feature = await this.featureRepository.read.findOne(
+      {
+        key: isGame ? EFeatureKey.HAS_DEFINED_END : EFeatureKey.RELEASE_STATUS,
+        valueType: isGame
+          ? EFeatureValueType.BOOLEAN
+          : EFeatureValueType.STRING,
+      },
+      { _id: 1 },
+      { session },
+    )
+
+    if (isNil(feature)) {
+      return
+    }
+
+    const isCompletionUnavailable =
+      await this.itemFeatureRepository.read.checkIsExists(
+        {
+          item: itemId,
+          feature: feature._id,
+          value: isGame ? false : { $in: ["announced", "ongoing"] },
+        },
+        { session },
+      )
+
+    if (isCompletionUnavailable) {
+      throw new ConflictException(
+        isGame
+          ? DICTIONARY.userItem.gameHasNoDefinedEnd
+          : DICTIONARY.userItem.seasonReleaseNotFinished,
+      )
+    }
   }
 
   private changeStatus(userItem: UserItem, status: EUserItemStatus) {

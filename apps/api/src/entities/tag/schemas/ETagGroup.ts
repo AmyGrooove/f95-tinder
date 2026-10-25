@@ -7,6 +7,7 @@ enum ETagGroup {
   AUDIENCE = "audience",
   COUNTRY = "country",
   ORIGINAL_LANGUAGE = "originalLanguage",
+  PLATFORM = "platform",
 }
 
 export { ETagGroup }
