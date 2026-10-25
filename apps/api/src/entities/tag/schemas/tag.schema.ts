@@ -8,6 +8,7 @@ import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
 import { EmbeddingSchema } from "@entities/shared/schemas/embedding.schema"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "Tag" })
 class Tag extends MongoEntity {
@@ -33,11 +34,20 @@ class Tag extends MongoEntity {
 
   @Prop({ type: EmbeddingSchema, default: null })
   embedding: Embedding | null
+
+  @Prop({
+    type: Number,
+    required: true,
+    default: 1,
+    min: 0,
+    validate: isFiniteNumber,
+  })
+  weightModifier: number
 }
 
 type TCreateTag = TCreateEntity<
   Tag,
-  "group" | "description" | "aliases" | "embedding"
+  "group" | "description" | "aliases" | "embedding" | "weightModifier"
 >
 
 const TagSchema = SchemaFactory.createForClass(Tag)

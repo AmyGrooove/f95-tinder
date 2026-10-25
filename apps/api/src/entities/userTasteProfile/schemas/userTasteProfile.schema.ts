@@ -1,12 +1,23 @@
-import { checkIsArrayWithoutNil } from "@entities/shared/functions/checks/checkIsArrayWithoutNil"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
-import type { TCreateTasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { isArray } from "@shared/functions/checks/isArray"
+import { isDate } from "@shared/functions/checks/isDate"
+import { isNil } from "@shared/functions/checks/isNil"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
-import type { TasteItemTypeProfile } from "./tasteItemTypeProfile.schema"
-import { TasteItemTypeProfileSchema } from "./tasteItemTypeProfile.schema"
+import { removeEmptyTastePreferences } from "../functions/removeEmptyTastePreferences"
+import { MAX_TAG_PREFERENCES } from "../static/MAX_TAG_PREFERENCES"
+import type {
+  TasteTagPreference,
+  TCreateTasteTagPreference,
+} from "./tasteTagPreference.schema"
+import { TasteTagPreferenceSchema } from "./tasteTagPreference.schema"
+import type {
+  TasteFeaturePreference,
+  TCreateTasteFeaturePreference,
+} from "./tasteFeaturePreference.schema"
+import { TasteFeaturePreferenceSchema } from "./tasteFeaturePreference.schema"
 
 @Schema({ collection: "UserTasteProfile" })
 class UserTasteProfile extends MongoEntity {
@@ -15,17 +26,61 @@ class UserTasteProfile extends MongoEntity {
 
   @Prop({
     required: true,
-    type: [TasteItemTypeProfileSchema],
+    type: [TasteTagPreferenceSchema],
     default: [],
-    validate: checkIsArrayWithoutNil,
+    set: removeEmptyTastePreferences<TasteTagPreference>,
+    validate: (value: TasteTagPreference[]) =>
+      isArray(value) &&
+      value.every((entry) => !isNil(entry)) &&
+      value.length <= MAX_TAG_PREFERENCES &&
+      new Set(value.map((entry) => String(entry.tag))).size === value.length,
   })
-  profiles: TasteItemTypeProfile[]
+  tagPreferences: TasteTagPreference[]
+
+  @Prop({
+    required: true,
+    type: [TasteFeaturePreferenceSchema],
+    default: [],
+    set: removeEmptyTastePreferences<TasteFeaturePreference>,
+    validate: (value: TasteFeaturePreference[]) => {
+      if (!isArray(value) || value.some((entry) => isNil(entry))) {
+        return false
+      }
+
+      if (
+        value.some((entry) => {
+          return (
+            isNil(entry.value) === isNil(entry.range) ||
+            (!isNil(entry.range) && entry.range.from > entry.range.to)
+          )
+        })
+      ) {
+        return false
+      }
+
+      const keys = value.map((entry) => {
+        return JSON.stringify([
+          String(entry.feature),
+          isDate(entry.value) ? "date" : typeof entry.value,
+          entry.value,
+          entry.range?.from,
+          entry.range?.to,
+        ])
+      })
+
+      return new Set(keys).size === value.length
+    },
+  })
+  featurePreferences: TasteFeaturePreference[]
 }
 
 type TCreateUserTasteProfile = TCreateEntity<
   UserTasteProfile,
   never,
-  { profiles?: TCreateTasteItemTypeProfile[] }
+  {
+    tagPreferences?: TCreateTasteTagPreference[]
+    featurePreferences?: TCreateTasteFeaturePreference[]
+  }
 >
 
 const UserTasteProfileSchema = SchemaFactory.createForClass(UserTasteProfile)
@@ -35,10 +90,10 @@ UserTasteProfileSchema.index(
   { name: "userTasteProfileUnique", unique: true },
 )
 
-UserTasteProfileSchema.path("profiles").validate(
-  (value: TasteItemTypeProfile[]) =>
-    new Set(value.map((entry) => entry.type)).size === value.length,
-)
+UserTasteProfileSchema.pre("validate", function () {
+  this.tagPreferences = removeEmptyTastePreferences(this.tagPreferences)
+  this.featurePreferences = removeEmptyTastePreferences(this.featurePreferences)
+})
 
 export { UserTasteProfile, UserTasteProfileSchema }
 export type { TCreateUserTasteProfile }

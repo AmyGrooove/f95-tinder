@@ -7,6 +7,7 @@ import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
 import { EFeatureValueType } from "./EFeatureValueType"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "Feature" })
 class Feature extends MongoEntity {
@@ -31,9 +32,24 @@ class Feature extends MongoEntity {
 
   @Prop({ type: String, enum: Object.values(EUnit), default: null })
   unit: EUnit | null
+
+  @Prop({
+    type: Number,
+    required: true,
+    default: 1,
+    min: 0,
+    validate: isFiniteNumber,
+  })
+  weightModifier: number
+
+  @Prop({ type: Boolean, required: true, default: false })
+  isUsedForTaste: boolean
 }
 
-type TCreateFeature = TCreateEntity<Feature, "description" | "group" | "unit">
+type TCreateFeature = TCreateEntity<
+  Feature,
+  "description" | "group" | "unit" | "weightModifier" | "isUsedForTaste"
+>
 
 const FeatureSchema = SchemaFactory.createForClass(Feature)
 
