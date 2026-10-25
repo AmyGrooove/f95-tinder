@@ -28,7 +28,10 @@ import { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 
 describe("CollectionReadController", () => {
   const createController = async () => {
-    const service = { getById: jest.fn<CollectionService["getById"]>() }
+    const service = {
+      getById: jest.fn<CollectionService["getById"]>(),
+      query: jest.fn<CollectionService["query"]>(),
+    }
     const content = {
       getItems: jest.fn<CollectionContentService["getItems"]>(),
       getFilters: jest.fn<CollectionContentService["getFilters"]>(),
@@ -49,6 +52,169 @@ describe("CollectionReadController", () => {
       id: new Types.ObjectId(),
     }
   }
+
+  describe("QUERY /collections", () => {
+    let app: NestFastifyApplication
+    let context: Awaited<ReturnType<typeof createController>>
+
+    beforeAll(async () => {
+      context = await createController()
+      app = context.moduleRef.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+        { logger: false },
+      )
+      app.useGlobalPipes(
+        new ValidationPipe({
+          transform: true,
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }),
+      )
+      await app.init()
+      await app.getHttpAdapter().getInstance().ready()
+    })
+
+    beforeEach(() => {
+      jest.resetAllMocks()
+    })
+
+    afterAll(async () => app?.close())
+
+    it.each([
+      {},
+      { itemIds: [new Types.ObjectId().toHexString().toUpperCase()] },
+      { type: ECollectionType.CUSTOM },
+      { type: ECollectionType.FRANCHISE },
+      { type: ECollectionType.TAG },
+      { type: ECollectionType.FEATURE },
+      {
+        itemIds: Array.from({ length: 60 }, () =>
+          new Types.ObjectId().toHexString(),
+        ),
+        type: ECollectionType.FRANCHISE,
+        page: 2,
+        limit: 60,
+      },
+    ])("принимает публичное JSON-тело %j", async (payload) => {
+      const result = {
+        items: [],
+        page: 1,
+        limit: 20,
+        total: 0,
+        pages: 0,
+        isNextPage: false,
+        isPreviousPage: false,
+      }
+      context.service.query.mockResolvedValue(result)
+
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        headers: { cookie: "__Host-accessToken=invalid" },
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers["cache-control"]).toBe("no-store")
+      expect(response.headers["accept-query"]).toBe("application/json")
+      expect(response.json()).toEqual(result)
+      expect(context.service.query).toHaveBeenCalledTimes(1)
+      expect(context.service.query).toHaveBeenCalledWith(payload)
+    })
+
+    it.each([
+      undefined,
+      [],
+      { itemIds: null },
+      { itemIds: [] },
+      { itemIds: "507f1f77bcf86cd799439011" },
+      { itemIds: [null] },
+      { itemIds: [123] },
+      { itemIds: ["invalid"] },
+      { itemIds: ["507f1f77bcf86cd799439011", "507F1F77BCF86CD799439011"] },
+      {
+        itemIds: Array.from({ length: 61 }, () =>
+          new Types.ObjectId().toHexString(),
+        ),
+      },
+      { type: null },
+      { type: "unknown" },
+      { type: ["custom"] },
+      { type: 1 },
+      { page: null },
+      { page: 0 },
+      { page: -1 },
+      { page: 1.5 },
+      { page: "1" },
+      { page: true },
+      { page: Number.MAX_SAFE_INTEGER + 1 },
+      { limit: null },
+      { limit: 0 },
+      { limit: -1 },
+      { limit: 1.5 },
+      { limit: 61 },
+      { limit: 100 },
+      { limit: "20" },
+      { limit: true },
+      { query: "Подборка" },
+      { authorId: new Types.ObjectId().toHexString() },
+      { sort: "title" },
+      { unknown: true },
+    ])("отклоняет некорректное тело %j до вызова сервиса", async (payload) => {
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(400)
+      expect(context.service.query).not.toHaveBeenCalled()
+    })
+
+    it.each(["null", "[]", "[{}]", "true", "42", '"text"'])(
+      "отклоняет JSON-тело %s, не являющееся объектом",
+      async (payload) => {
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          headers: { "content-type": "application/json" },
+          payload,
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(400)
+        expect(context.service.query).not.toHaveBeenCalled()
+      },
+    )
+
+    it("описывает JSON-тело и страницу кратких карточек в OpenAPI 3.2", () => {
+      const document = SwaggerModule.createDocument(
+        app,
+        new DocumentBuilder().setOpenAPIVersion("3.2.0").build(),
+      )
+
+      expect(document.paths["/collections"]).toHaveProperty(
+        "query.requestBody.content.application/json.schema.$ref",
+        "#/components/schemas/QueryCollectionsBodyDto",
+      )
+      expect(document.paths["/collections"]).toHaveProperty(
+        "query.responses.200.content.application/json.schema.$ref",
+        "#/components/schemas/QueryCollectionsResponseDto",
+      )
+      expect(document.paths["/collections"]).not.toHaveProperty("get")
+      expect(
+        document.components?.schemas?.CollectionSummaryResponseDto,
+      ).toMatchObject({
+        required: ["id", "type", "authorId", "title", "media"],
+      })
+    })
+
+    it("сохраняет ошибку сервиса выдачи", async () => {
+      const error = new BadRequestException()
+      context.service.query.mockRejectedValue(error)
+
+      await expect(context.controller.query({})).rejects.toBe(error)
+    })
+  })
 
   describe("QUERY /collections/:id/items", () => {
     let app: NestFastifyApplication

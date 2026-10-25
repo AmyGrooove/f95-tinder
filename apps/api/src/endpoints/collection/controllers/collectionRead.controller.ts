@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   QueryMethod,
+  UseInterceptors,
 } from "@nestjs/common"
 import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
@@ -22,6 +23,9 @@ import { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
 import { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
+import { QueryCollectionsBodyDto } from "../dto/body/queryCollections.body"
+import { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
+import { CollectionQueryBodyInterceptor } from "../interceptors/collectionQueryBody.interceptor"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.collections)
 @Controller("collections")
@@ -30,6 +34,30 @@ class CollectionReadController {
     private readonly collectionService: CollectionService,
     private readonly collectionContentService: CollectionContentService,
   ) {}
+
+  @QueryMethod()
+  @UseInterceptors(CollectionQueryBodyInterceptor)
+  @HttpCode(200)
+  @Header("Cache-Control", "no-store")
+  @Header("Accept-Query", "application/json")
+  @ApiEndpoint({
+    operationId: "CollectionReadController_query",
+    summary: SWAGGER_DICTIONARY.collection.query,
+    description: SWAGGER_DICTIONARY.collection.queryDescription,
+    response: {
+      status: 200,
+      type: QueryCollectionsResponseDto,
+      description: SWAGGER_DICTIONARY.collection.queryResponse,
+    },
+    errors: [
+      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
+    ],
+  })
+  query(@Body() body: QueryCollectionsBodyDto) {
+    return this.collectionService.query(body)
+  }
 
   @Get(":id")
   @HttpCode(200)

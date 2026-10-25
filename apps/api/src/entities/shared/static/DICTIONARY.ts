@@ -14,6 +14,7 @@ const DICTIONARY = {
     invalidDates: "Дата завершения не может предшествовать дате начала",
   },
   collection: {
+    queryBodyRequired: "Тело запроса подборок должно быть JSON-объектом",
     invalidPagination: "Слишком большое смещение страницы",
     invalidRatingRange: "Минимальная оценка не может превышать максимальную",
     unavailableMode: "Режим grouped недоступен для этой подборки",

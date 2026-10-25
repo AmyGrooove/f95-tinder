@@ -1,12 +1,522 @@
 import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { Session } from "@entities/session/schemas/session.schema"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import { createCollection } from "./functions/createCollection"
+import type { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
 
 describe("CollectionReadController HTTP", () => {
+  describe("QUERY /collections", () => {
+    const createQueryFixture = async () => {
+      const { connection } = getTestApplication()
+      const firstItemId = new Types.ObjectId()
+      const secondItemId = new Types.ObjectId()
+      const authorId = new Types.ObjectId()
+      const createdAt = new Date("2026-10-25T10:00:00.000Z")
+      const definitions = [
+        { type: ECollectionType.CUSTOM, author: authorId },
+        { type: ECollectionType.CUSTOM, author: null },
+        { type: ECollectionType.FRANCHISE, author: null },
+        { type: ECollectionType.FRANCHISE, author: authorId },
+        { type: ECollectionType.TAG, author: null },
+        { type: ECollectionType.FEATURE, author: null },
+        {
+          type: ECollectionType.CUSTOM,
+          author: authorId,
+          deletedAt: createdAt,
+        },
+      ]
+      const collections = definitions.map((definition, index) => ({
+        _id: new Types.ObjectId(),
+        version: 0,
+        title: { ru: `Подборка ${index}`, en: null },
+        description: { ru: "Полное описание", en: null },
+        media: [
+          { src: "/poster.jpg", language: null, type: EMediaType.POSTER },
+        ],
+        blocks: [{ id: new Types.ObjectId(), type: "group" }],
+        deletedAt: null,
+        createdAt,
+        updatedAt: createdAt,
+        ...definition,
+      }))
+      const [first, second, franchise, userFranchise, tag, feature, deleted] =
+        collections
+      await connection.collection("Collection").insertMany(collections)
+      await connection.collection("CollectionItem").insertMany(
+        [
+          { collection: first, itemIds: [firstItemId] },
+          { collection: second, itemIds: [secondItemId] },
+          { collection: franchise, itemIds: [firstItemId, secondItemId] },
+          { collection: userFranchise, itemIds: [firstItemId] },
+          { collection: deleted, itemIds: [firstItemId] },
+        ].flatMap(({ collection, itemIds }) =>
+          itemIds.map((item, position) => ({
+            collectionId: collection._id,
+            item,
+            groupId: collection.blocks[0].id,
+            position,
+            note: null,
+          })),
+        ),
+      )
+
+      return {
+        firstItemId,
+        secondItemId,
+        authorId,
+        first,
+        second,
+        franchise,
+        userFranchise,
+        tag,
+        feature,
+        deleted,
+      }
+    }
+
+    it("возвращает пустую страницу без фильтров при отсутствии коллекций", async () => {
+      const { app } = getTestApplication()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: {},
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toEqual({
+        items: [],
+        page: 1,
+        limit: 20,
+        total: 0,
+        pages: 0,
+        isNextPage: false,
+        isPreviousPage: false,
+      })
+    })
+
+    it("возвращает гостю краткие карточки с пагинацией по умолчанию и не проверяет cookie", async () => {
+      const { app } = getTestApplication()
+      const { first } = await createQueryFixture()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        headers: { cookie: "__Host-accessToken=invalid" },
+        payload: {},
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers["cache-control"]).toBe("no-store")
+      expect(response.headers["accept-query"]).toBe("application/json")
+      const result = response.json<QueryCollectionsResponseDto>()
+      expect(result).toMatchObject({
+        page: 1,
+        limit: 20,
+        total: 6,
+        pages: 1,
+        isNextPage: false,
+        isPreviousPage: false,
+      })
+      expect(result.items).toHaveLength(6)
+      expect(
+        result.items.find((item) => item.id === first._id.toHexString()),
+      ).toEqual({
+        id: first._id.toHexString(),
+        type: "custom",
+        authorId: first.author?.toHexString(),
+        title: { ru: "Подборка 0", en: null },
+        media: [{ src: "/poster.jpg", language: null, type: "poster" }],
+      })
+      for (const item of result.items) {
+        expect(Object.keys(item).sort()).toEqual([
+          "authorId",
+          "id",
+          "media",
+          "title",
+          "type",
+        ])
+      }
+    })
+
+    it("находит коллекции с любым указанным Item без дублей и исключает удалённые до пагинации", async () => {
+      const { app } = getTestApplication()
+      const { firstItemId, secondItemId, first, second, franchise } =
+        await createQueryFixture()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: {
+          itemIds: [
+            firstItemId.toHexString().toUpperCase(),
+            secondItemId.toHexString(),
+          ],
+          type: "custom",
+          limit: 1,
+        },
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toMatchObject({
+        total: 2,
+        pages: 2,
+        isNextPage: true,
+        items: [{ id: second._id.toHexString() }],
+      })
+
+      const all = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: {
+          itemIds: [firstItemId.toHexString(), secondItemId.toHexString()],
+        },
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(all.statusCode).toBe(200)
+      const ids = all
+        .json<QueryCollectionsResponseDto>()
+        .items.map((item) => item.id)
+      expect(ids).toContain(first._id.toHexString())
+      expect(ids).toContain(second._id.toHexString())
+      expect(
+        ids.filter((id) => id === franchise._id.toHexString()),
+      ).toHaveLength(1)
+      expect(ids).toHaveLength(4)
+      expect(all.json()).toMatchObject({ total: 4 })
+    })
+
+    it("ограничивает выдачу франшизами сайта и сохраняет фильтр по составу", async () => {
+      const { app, connection } = getTestApplication()
+      const { firstItemId, franchise, userFranchise } =
+        await createQueryFixture()
+      await connection.collection("Collection").insertOne({
+        ...franchise,
+        _id: new Types.ObjectId(),
+        title: { ru: "Без этого Item", en: null },
+      })
+
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { type: "franchise", itemIds: [firstItemId.toHexString()] },
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toMatchObject({
+        total: 1,
+        items: [{ id: franchise._id.toHexString(), authorId: null }],
+      })
+      expect(response.body).not.toContain(userFranchise._id.toHexString())
+    })
+
+    it.each(["tag", "feature"])(
+      "фильтрует по типу %s без обязательного itemIds",
+      async (type) => {
+        const { app } = getTestApplication()
+        const fixture = await createQueryFixture()
+        const expected = type === "tag" ? fixture.tag : fixture.feature
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          payload: { type },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(200)
+        expect(response.json()).toMatchObject({
+          total: 1,
+          items: [{ id: expected._id.toHexString(), type }],
+        })
+      },
+    )
+
+    it("сортирует по дате создания и ID при равных датах, сохраняя total на следующих страницах", async () => {
+      const { app, connection } = getTestApplication()
+      const { first, second } = await createQueryFixture()
+      await connection
+        .collection("Collection")
+        .updateOne(
+          { _id: first._id },
+          { $set: { createdAt: new Date("2026-10-26T00:00:00.000Z") } },
+        )
+
+      for (const [page, id] of [
+        [1, first._id],
+        [2, second._id],
+      ] as const) {
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          payload: { type: "custom", page, limit: 1 },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(200)
+        expect(response.json()).toMatchObject({
+          page,
+          limit: 1,
+          total: 2,
+          pages: 2,
+          isNextPage: page === 1,
+          isPreviousPage: page === 2,
+          items: [{ id: id.toHexString() }],
+        })
+      }
+    })
+
+    it("возвращает пустую страницу за пределами результатов с сохранением total", async () => {
+      const { app } = getTestApplication()
+      await createQueryFixture()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { type: "custom", page: 3, limit: 1 },
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toEqual({
+        items: [],
+        page: 3,
+        limit: 1,
+        total: 2,
+        pages: 2,
+        isNextPage: false,
+        isPreviousPage: true,
+      })
+    })
+
+    it("возвращает пустой результат для неизвестного Item без 404", async () => {
+      const { app } = getTestApplication()
+      await createQueryFixture()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { itemIds: [new Types.ObjectId().toHexString()] },
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toEqual({
+        items: [],
+        page: 1,
+        limit: 20,
+        total: 0,
+        pages: 0,
+        isNextPage: false,
+        isPreviousPage: false,
+      })
+    })
+
+    it("проверяет сохранённое членство без требования существующего неудалённого Item", async () => {
+      const { app, connection } = getTestApplication()
+      const { firstItemId, first } = await createQueryFixture()
+      await connection
+        .collection("Item")
+        .insertOne({ _id: firstItemId, type: "movie", deletedAt: new Date() })
+      const payload = { type: "custom", itemIds: [firstItemId.toHexString()] }
+
+      for (const isDeleted of [false, true]) {
+        if (isDeleted) {
+          await connection.collection("Item").deleteOne({ _id: firstItemId })
+        }
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          payload,
+        } as unknown as Parameters<typeof app.inject>[0])
+        expect(response.statusCode).toBe(200)
+        expect(response.json()).toMatchObject({
+          total: 1,
+          items: [{ id: first._id.toHexString() }],
+        })
+      }
+    })
+
+    it("возвращает все 60 карточек и принимает 60 уникальных Item ID без усечения", async () => {
+      const { app, connection } = getTestApplication()
+      const { first, firstItemId } = await createQueryFixture()
+      await connection.collection("Collection").insertMany(
+        Array.from({ length: 58 }, () => ({
+          ...first,
+          _id: new Types.ObjectId(),
+        })),
+      )
+      const itemIds = [
+        ...Array.from({ length: 59 }, () => new Types.ObjectId().toHexString()),
+        firstItemId.toHexString(),
+      ]
+      const all = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { type: "custom", limit: 60 },
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(all.statusCode).toBe(200)
+      expect(all.json()).toMatchObject({
+        limit: 60,
+        total: 60,
+        pages: 1,
+        isNextPage: false,
+      })
+      expect(all.json<QueryCollectionsResponseDto>().items).toHaveLength(60)
+
+      const defaultPage = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { type: "custom" },
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(defaultPage.statusCode).toBe(200)
+      expect(defaultPage.json()).toMatchObject({
+        page: 1,
+        limit: 20,
+        total: 60,
+        pages: 3,
+        isNextPage: true,
+      })
+      expect(
+        defaultPage.json<QueryCollectionsResponseDto>().items,
+      ).toHaveLength(20)
+
+      const filtered = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { itemIds, type: "custom" },
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(filtered.statusCode).toBe(200)
+      expect(filtered.json()).toMatchObject({
+        total: 1,
+        items: [{ id: first._id.toHexString() }],
+      })
+    })
+
+    it.each([
+      { limit: 61 },
+      { limit: 100 },
+      { page: Number.MAX_SAFE_INTEGER, limit: 60 },
+      { itemIds: ["507f1f77bcf86cd799439011", "507F1F77BCF86CD799439011"] },
+      {
+        itemIds: Array.from({ length: 61 }, () =>
+          new Types.ObjectId().toHexString(),
+        ),
+      },
+      { query: "Подборка" },
+    ])("возвращает 400 для недопустимого запроса %j", async (payload) => {
+      const { app } = getTestApplication()
+      const response = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(400)
+      expect(response.json()).toHaveProperty("error.code", "BAD_REQUEST")
+    })
+
+    it.each(["null", "[]", "[{}]", "true", "42", '"text"'])(
+      "возвращает 400 для JSON-тела %s вместо объекта",
+      async (payload) => {
+        const { app } = getTestApplication()
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          headers: { "content-type": "application/json" },
+          payload,
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(400)
+        expect(response.json()).toHaveProperty("error.code", "BAD_REQUEST")
+      },
+    )
+
+    it("не применяет личное скрытие, не раскрывает личные поля и не изменяет данные", async () => {
+      const { app, connection } = getTestApplication()
+      const { owner, collection, first } = await createCollection()
+      await connection.collection("UserCollection").insertOne({
+        collectionId: new Types.ObjectId(collection.id),
+        user: owner.user._id,
+        isHidden: true,
+        isFavorite: true,
+        rating: 9,
+      })
+      await connection.collection("UserItem").insertOne({
+        user: owner.user._id,
+        item: first._id,
+        status: "blocked",
+        note: "Приватная заметка",
+        attempts: [],
+      })
+      const names = [
+        "Collection",
+        "CollectionItem",
+        "UserCollection",
+        "UserItem",
+      ]
+      const before = await Promise.all(
+        names.map(async (name) =>
+          connection.collection(name).find().sort({ _id: 1 }).toArray(),
+        ),
+      )
+      const payload = { itemIds: [first._id.toHexString()] }
+
+      const guest = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload,
+      } as unknown as Parameters<typeof app.inject>[0])
+      const authenticated = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload,
+        headers: owner.headers,
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(guest.statusCode).toBe(200)
+      expect(authenticated.statusCode).toBe(200)
+      expect(authenticated.json()).toEqual(guest.json())
+      expect(guest.json()).toMatchObject({
+        total: 1,
+        items: [{ id: collection.id }],
+      })
+      expect(guest.body).not.toContain("Приватная заметка")
+      expect(
+        Object.keys(guest.json<QueryCollectionsResponseDto>().items[0]).sort(),
+      ).toEqual(["authorId", "id", "media", "title", "type"])
+      const after = await Promise.all(
+        names.map(async (name) =>
+          connection.collection(name).find().sort({ _id: 1 }).toArray(),
+        ),
+      )
+      expect(after).toEqual(before)
+    })
+
+    it("разрешает CORS для QUERY и сохраняет проверку origin для публичного чтения", async () => {
+      const { app } = getTestApplication()
+      const preflight = await app.inject({
+        method: "OPTIONS",
+        url: "/collections",
+        headers: {
+          origin: "http://localhost",
+          "access-control-request-method": "QUERY",
+          "access-control-request-headers": "content-type",
+        },
+      })
+      expect(preflight.statusCode).toBe(204)
+      expect(preflight.headers["access-control-allow-methods"]).toContain(
+        "QUERY",
+      )
+
+      for (const [origin, status] of [
+        ["http://localhost", 200],
+        ["https://untrusted.example", 403],
+      ] as const) {
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          headers: { origin, "sec-fetch-site": "cross-site" },
+          payload: {},
+        } as unknown as Parameters<typeof app.inject>[0])
+        expect(response.statusCode).toBe(status)
+      }
+    })
+  })
+
   it("принимает максимальный размер страницы 60 без изменения total", async () => {
     const { app } = getTestApplication()
     const { collection } = await createCollection()

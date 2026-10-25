@@ -21,6 +21,8 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
+import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
+import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
 
 import type { CollectionResponseDto } from "../dto/response/collection.response"
 import type { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
@@ -28,6 +30,8 @@ import type { CreateBlockBodyDto } from "../dto/body/createBlock.body"
 import type { UpdateCollectionBodyDto } from "../dto/body/updateCollection.body"
 import type { IUpdateCollectionRequestProps } from "../types/IUpdateCollectionRequestProps"
 import { CollectionAuthService } from "./collectionAuth.service"
+import type { QueryCollectionsBodyDto } from "../dto/body/queryCollections.body"
+import type { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
 
 @Injectable()
 class CollectionService {
@@ -38,6 +42,37 @@ class CollectionService {
     private readonly collectionAuthService: CollectionAuthService,
     private readonly transactionService: MongoTransactionService,
   ) {}
+
+  async query(
+    body: QueryCollectionsBodyDto,
+  ): Promise<QueryCollectionsResponseDto> {
+    const { page, limit } = normalizePagination(body, 20)
+
+    if (!Number.isSafeInteger((page - 1) * limit)) {
+      throw new BadRequestException(DICTIONARY.collection.invalidPagination)
+    }
+
+    const result = await this.collectionRepository.querySummaries({
+      page,
+      limit,
+      itemIds: body.itemIds?.map((id) => new Types.ObjectId(id)),
+      type: body.type,
+    })
+
+    const items = result.items.map((collection) => ({
+      id: collection._id.toHexString(),
+      type: collection.type,
+      authorId: collection.author?.toHexString() ?? null,
+      title: { ru: collection.title.ru, en: collection.title.en },
+      media: collection.media.map((media) => ({
+        src: media.src,
+        language: media.language,
+        type: media.type,
+      })),
+    }))
+
+    return createPaginatedResult(items, result.total, page, limit)
+  }
 
   async create(accessToken: unknown, body: CreateCollectionBodyDto) {
     const userId = await this.collectionAuthService.authenticate(accessToken)

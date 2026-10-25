@@ -1,6 +1,14 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model, QueryOptions, Types } from "mongoose"
+import type {
+  HydratedDocument,
+  Model,
+  PipelineStage,
+  QueryOptions,
+  Types,
+} from "mongoose"
+
+import { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.schema"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -11,6 +19,9 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 import { Collection } from "../schemas/collection.schema"
 import type { TCreateCollection } from "../schemas/collection.schema"
 import type { IUpdateCollectionProps } from "../types/IUpdateCollectionProps"
+import type { IQueryCollectionsProps } from "../types/IQueryCollectionsProps"
+import type { ICollectionSummariesPage } from "../types/ICollectionSummariesPage"
+import { ECollectionType } from "../schemas/ECollectionType"
 
 @Injectable()
 class CollectionRepository {
@@ -55,6 +66,62 @@ class CollectionRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<Collection>
     >(model)
+  }
+
+  async querySummaries(
+    props: IQueryCollectionsProps,
+  ): Promise<ICollectionSummariesPage> {
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          deletedAt: null,
+          ...(props.type === undefined ? {} : { type: props.type }),
+          ...(props.type === ECollectionType.FRANCHISE ? { author: null } : {}),
+        },
+      },
+    ]
+
+    if (props.itemIds !== undefined) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: CollectionItem.name,
+            let: { collectionId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  item: { $in: props.itemIds },
+                  $expr: { $eq: ["$collectionId", "$$collectionId"] },
+                },
+              },
+              { $limit: 1 },
+              { $project: { _id: 1 } },
+            ],
+            as: "matchingItems",
+          },
+        },
+        { $match: { "matchingItems.0": { $exists: true } } },
+      )
+    }
+
+    pipeline.push({
+      $facet: {
+        items: [
+          { $sort: { createdAt: -1, _id: -1 } },
+          { $skip: (props.page - 1) * props.limit },
+          { $limit: props.limit },
+          { $project: { _id: 1, type: 1, author: 1, title: 1, media: 1 } },
+        ],
+        count: [{ $count: "total" }],
+      },
+    })
+
+    const [result] = await this.aggregation.aggregate<{
+      items: ICollectionSummariesPage["items"]
+      count: { total: number }[]
+    }>(pipeline)
+
+    return { items: result?.items ?? [], total: result?.count[0]?.total ?? 0 }
   }
 
   checkIsNotDeleted(id: Types.ObjectId) {
