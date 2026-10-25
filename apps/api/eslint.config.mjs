@@ -4,7 +4,7 @@ import { createTypeScriptImportResolver } from "eslint-import-resolver-typescrip
 import importX from "eslint-plugin-import-x"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
-import { amy } from "../../eslint/amy.mjs"
+import { amy } from "./eslint/amy.mjs"
 
 const LAYERS = ["app", "endpoints", "entities", "infrastructure", "shared"]
 

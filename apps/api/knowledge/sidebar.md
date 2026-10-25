@@ -21,6 +21,7 @@
 Исследования и источники
 
 - [Рекомендательная система](/research/recommendationSystem.md)
+- [Кросс-рекомендации](/research/crossTypeRecommendations.md)
 - [Источник Kodik](/sources/kodik/readme.md)
 - [Поля Kodik](/sources/kodik/fields.md)
 - [Сопоставление данных](/sources/kodik/mapping.md)
