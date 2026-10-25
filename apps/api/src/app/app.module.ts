@@ -5,6 +5,7 @@ import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
+import { ItemEndpointModule } from "@endpoints/item/item.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -53,6 +54,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
     AccountModule,
     UserItemEndpointModule,
     CollectionEndpointModule,
+    ItemEndpointModule,
     ItemModule,
     CollectionModule,
     CollectionItemModule,

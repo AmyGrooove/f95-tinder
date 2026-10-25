@@ -1,4 +1,7 @@
 const DICTIONARY = {
+  item: {
+    notFound: "Произведение не найдено или удалено",
+  },
   userItem: {
     invalidDate: "Некорректная дата",
     notFound: "Личная запись произведения не найдена",

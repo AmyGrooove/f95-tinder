@@ -11,6 +11,7 @@ import { AccountModule } from "@endpoints/account/account.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
+import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
@@ -68,6 +69,7 @@ const createTestApplication = async () => {
         AccountModule,
         UserItemEndpointModule,
         CollectionEndpointModule,
+        ItemEndpointModule,
         LoggerModule,
         ThrottlingModule,
       ],
