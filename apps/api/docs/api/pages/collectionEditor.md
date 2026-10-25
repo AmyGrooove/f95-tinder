@@ -4,13 +4,13 @@
 
 ## Реализовано
 
-| Маршрут | Покрытие |
-| --- | --- |
-| `POST /collections` | Создание своей публичной коллекции с названием, описанием, типом, media, блоками и включениями Item |
-| `PATCH /collections/:id` | Атомарные изменения метаданных, блоков, включений, заметок, групп и порядка; обязательная version |
-| `GET /collections/:id` | Загрузка метаданных, version и полной структуры блоков |
-| `QUERY /collections/:id/items` | Постраничная загрузка состава с groupId, position и note включений |
-| `DELETE /collections/:id` | Мягкое удаление своей коллекции |
+| Маршрут                        | Покрытие                                                                                            |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `POST /collections`            | Создание своей публичной коллекции с названием, описанием, типом, media, блоками и включениями Item |
+| `PATCH /collections/:id`       | Атомарные изменения метаданных, блоков, включений, заметок, групп и порядка; обязательная version   |
+| `GET /collections/:id`         | Загрузка метаданных, version и полной структуры блоков                                              |
+| `QUERY /collections/:id/items` | Постраничная загрузка состава с groupId, position и note включений                                  |
+| `DELETE /collections/:id`      | Мягкое удаление своей коллекции                                                                     |
 
 Код: [CollectionController](../../../src/endpoints/collection/controllers/collection.controller.ts), [CollectionService](../../../src/endpoints/collection/services/collection.service.ts) и [CollectionContentService](../../../src/endpoints/collection/services/collectionContent.service.ts).
 

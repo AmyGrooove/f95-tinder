@@ -7,6 +7,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 import { AppModule } from "./app/app.module"
 import { configureApplication } from "./app/functions/configureApplication"
 import { configureSwagger } from "./app/functions/configureSwagger"
+import { configureKnowledge } from "./app/functions/configureKnowledge"
 
 const bootstrap = async () => {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -21,6 +22,7 @@ const bootstrap = async () => {
 
   await configureApplication(app)
   configureSwagger(app)
+  configureKnowledge(app)
 
   app.enableShutdownHooks()
 

@@ -112,6 +112,7 @@ const HOME_PAGE_HTML = `<!doctype html>
               <nav class="links" aria-label="Ссылки API">
                 <a class="link" href="https://bisky.one/">Основной сайт</a>
                 <a class="link" href="/docs">Swagger</a>
+                  <a class="link" href="/knowledge/">База знаний</a>
               </nav>
             </header>
             <img class="background" src="/background?request={{backgroundRequest}}" alt="">

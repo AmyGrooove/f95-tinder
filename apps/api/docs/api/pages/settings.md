@@ -6,27 +6,27 @@
 
 Все 19 account/auth-маршрутов доступны через подключённые модули. Они покрывают настройки и общие формы входа, регистрации и восстановления:
 
-| Маршрут | Действие |
-| --- | --- |
-| `GET /account/whoami` | Текущий пользователь и краткие данные текущей сессии |
-| `PATCH /account/displayName` | Отображаемое имя |
-| `PATCH /account/username` | Логин |
-| `POST /account/credentials` | Запрос первоначальной установки email и пароля |
-| `PATCH /account/credentials` | Подтверждение установки email и пароля кодом письма |
-| `POST /account/email` | Запрос смены email |
-| `PATCH /account/email` | Подтверждение смены email |
-| `PATCH /account/password` | Смена пароля с текущим паролем |
-| `PATCH /auth/login/code` | Перевыпуск секретного кода |
-| `GET /auth/session` | Список активных сессий, userAgent, даты, isCurrent |
-| `DELETE /auth/session/others` | Завершение остальных сессий |
-| `DELETE /auth/session/:sessionId` | Завершение выбранной сессии |
-| `PATCH /auth/session/refresh` | Обновление токенов текущей сессии |
-| `POST /auth/register` | Регистрация и выдача секретного кода |
-| `POST /auth/login/code` | Вход по секретному коду до настройки пароля |
-| `POST /auth/login` | Вход по логину и паролю |
-| `POST /auth/logout` | Выход из текущей сессии |
-| `POST /auth/password/reset` | Запрос восстановления по email |
-| `PATCH /auth/password/reset` | Подтверждение восстановления и новый пароль |
+| Маршрут                           | Действие                                             |
+| --------------------------------- | ---------------------------------------------------- |
+| `GET /account/whoami`             | Текущий пользователь и краткие данные текущей сессии |
+| `PATCH /account/displayName`      | Отображаемое имя                                     |
+| `PATCH /account/username`         | Логин                                                |
+| `POST /account/credentials`       | Запрос первоначальной установки email и пароля       |
+| `PATCH /account/credentials`      | Подтверждение установки email и пароля кодом письма  |
+| `POST /account/email`             | Запрос смены email                                   |
+| `PATCH /account/email`            | Подтверждение смены email                            |
+| `PATCH /account/password`         | Смена пароля с текущим паролем                       |
+| `PATCH /auth/login/code`          | Перевыпуск секретного кода                           |
+| `GET /auth/session`               | Список активных сессий, userAgent, даты, isCurrent   |
+| `DELETE /auth/session/others`     | Завершение остальных сессий                          |
+| `DELETE /auth/session/:sessionId` | Завершение выбранной сессии                          |
+| `PATCH /auth/session/refresh`     | Обновление токенов текущей сессии                    |
+| `POST /auth/register`             | Регистрация и выдача секретного кода                 |
+| `POST /auth/login/code`           | Вход по секретному коду до настройки пароля          |
+| `POST /auth/login`                | Вход по логину и паролю                              |
+| `POST /auth/logout`               | Выход из текущей сессии                              |
+| `POST /auth/password/reset`       | Запрос восстановления по email                       |
+| `PATCH /auth/password/reset`      | Подтверждение восстановления и новый пароль          |
 
 Точки проверки: [account controllers](../../../src/endpoints/account/controllers), [account services](../../../src/endpoints/account/services), [auth controllers](../../../src/endpoints/auth/controllers), [auth services](../../../src/endpoints/auth/services). Подробные правила подтверждений и завершения сессий — в [действующем контракте](../accountAndAuthSpec.md).
 

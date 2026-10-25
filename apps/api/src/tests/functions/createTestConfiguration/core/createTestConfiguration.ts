@@ -14,6 +14,10 @@ const createTestConfiguration = (mongoUri: string, redisUrl: string) => {
       port: 3000,
       corsOrigins: ["http://localhost"],
     },
+    knowledge: {
+      username: "",
+      password: "",
+    },
     database: { uri: mongoUri },
     redis: {
       url: redisUrl,

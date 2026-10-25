@@ -24,6 +24,10 @@ const createInfrastructureConfiguration = () => {
 
   return {
     app: createAppConfiguration(),
+    knowledge: {
+      username: process.env.KNOWLEDGE_USERNAME ?? "",
+      password: process.env.KNOWLEDGE_PASSWORD ?? "",
+    },
     database: {
       uri: mongoUrl.toString(),
     },

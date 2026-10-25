@@ -10,6 +10,8 @@ Read for startup, configuration, health, HTTP policy or build changes. Return to
 
 Swagger uses OpenAPI 3.2.0 so QUERY operations remain in the generated schema. It is mounted at `/docs`, with bearer scheme `authToken` and cookie schemes `accessCookie` / `refreshCookie`. URI versioning is enabled without a default version; current health, account and auth controllers have no version metadata. There is no global route prefix.
 
+[configureKnowledge](../src/app/functions/configureKnowledge/index.ts) mounts the Docsify knowledge base at `/knowledge/`. It serves the interface from `knowledge/`, project Markdown and images from `docs/` under `/knowledge/content/`, and the locally installed Docsify runtime and search plugin under `/knowledge/vendor/`. Every request under these static roots requires HTTP Basic authentication using `knowledge.username` and `knowledge.password` from InfrastructureConfigService. Missing or incorrect credentials return 401 with a browser authentication challenge; absent credentials in configuration or a username containing a colon disables access with 503. All responses use Cache-Control:no-store. Authentication is independent of Bisky accounts and roles and works on public hostnames; production must serve it over HTTPS. Agent instructions and production sources are outside the static roots. The browser converts source-code references into non-navigable labels and normalizes README links to the repository's lowercase filenames. The homepage, sidebar, styling and browser hooks live in `knowledge/`; search indexes pages linked in the sidebar in the browser. The Docker runtime copies `docs/` and `knowledge/` alongside the compiled application. No Markdown build step or external CDN is required.
+
 Global validation transforms input, whitelists DTO fields and rejects non-whitelisted fields. Multipart limits allow one file up to 25 MiB, 20 fields, 64 KiB per field and 21 parts. Image processing applies additional limits; see [storage](storage.md).
 
 [AppModule](../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement all 20 routes in [the account/auth specification](../docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../src/endpoints/userItem/userItem.module.ts), exposing seven mutation routes and QUERY /userItems for summaries by UserItem ID. It does not provide lookup by Item or full library reads.
@@ -34,18 +36,19 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 
 [createInfrastructureConfiguration](../src/infrastructure/config/functions/createInfrastructureConfiguration/core/createInfrastructureConfiguration.ts) and its nested helpers define the current environment contract:
 
-| Section | Variables                                                                                              |
-| ------- | ------------------------------------------------------------------------------------------------------ |
-| App     | `NODE_ENV`, `APP_NAME`, `APP_VERSION`, `APP_DESCRIPTION`, `PORT`, `CORS_ORIGINS`                       |
-| MongoDB | `MONGO_URL`                                                                                            |
-| Redis   | `REDIS_URL`                                                                                            |
-| JWT     | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                                                              |
-| Storage | `GARAGE_URL`, `GARAGE_REGION`, `GARAGE_ACCESS_KEY_ID`, `GARAGE_SECRET_ACCESS_KEY`, `GARAGE_PUBLIC_URL` |
-| Search  | `MEILISEARCH_URL`, `MEILISEARCH_ACCESS_SECRET`                                                         |
-| Mail    | `RESEND_ACCESS_SECRET`, `MAIL_DOMAIN`                                                                  |
-| Sources | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                               |
+| Section   | Variables                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| App       | `NODE_ENV`, `APP_NAME`, `APP_VERSION`, `APP_DESCRIPTION`, `PORT`, `CORS_ORIGINS`                       |
+| Knowledge | `KNOWLEDGE_USERNAME`, `KNOWLEDGE_PASSWORD`                                                             |
+| MongoDB   | `MONGO_URL`                                                                                            |
+| Redis     | `REDIS_URL`                                                                                            |
+| JWT       | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                                                              |
+| Storage   | `GARAGE_URL`, `GARAGE_REGION`, `GARAGE_ACCESS_KEY_ID`, `GARAGE_SECRET_ACCESS_KEY`, `GARAGE_PUBLIC_URL` |
+| Search    | `MEILISEARCH_URL`, `MEILISEARCH_ACCESS_SECRET`                                                         |
+| Mail      | `RESEND_ACCESS_SECRET`, `MAIL_DOMAIN`                                                                  |
+| Sources   | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                               |
 
-All listed variables except `NODE_ENV` are required by the configuration factory. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
+All listed variables except `NODE_ENV` and the knowledge credentials are required by the configuration factory. Knowledge credentials default to empty strings, which disable the knowledge base without preventing API startup. Set both values in the deployment environment; changing them requires an application restart. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
 
 `APP_NAME` also identifies the storage bucket, queue prefix, cache namespace and JWT issuer/audience prefix. Changing it affects several integrations, not only display metadata.
 

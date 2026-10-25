@@ -55,6 +55,14 @@ export default [
   ...typescriptEslint.configs.recommended,
   prettier,
   {
+    files: ["knowledge/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
+  },
+  {
     files: ["scripts/**/*.mjs"],
     languageOptions: {
       globals: {

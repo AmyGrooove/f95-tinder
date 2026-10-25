@@ -48,6 +48,7 @@ describe("createInfrastructureConfiguration", () => {
         port: 3000,
         corsOrigins: ["https://app.example.test"],
       },
+      knowledge: { username: "", password: "" },
       database: { uri: "mongodb://localhost/test" },
       redis: {
         url: "redis://localhost/0",
@@ -69,6 +70,16 @@ describe("createInfrastructureConfiguration", () => {
       search: { host: "http://localhost:7700/", apiKey: "test-search" },
       mail: { apiKey: "test-mail", domain: "mail.example.test" },
       sources: { kodikApiToken: "test-kodik" },
+    })
+  })
+
+  it("читает учётные данные базы знаний из окружения", () => {
+    process.env.KNOWLEDGE_USERNAME = "test-knowledge"
+    process.env.KNOWLEDGE_PASSWORD = "test-password"
+
+    expect(createInfrastructureConfiguration().knowledge).toStrictEqual({
+      username: "test-knowledge",
+      password: "test-password",
     })
   })
 

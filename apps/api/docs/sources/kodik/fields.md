@@ -6,84 +6,84 @@
 
 Уточнённые пути первоначального списка. Поля верхнего уровня и поля внутри `material_data` перечислены отдельно, даже если они описывают похожие сведения.
 
-| Поле | Назначение | Пример |
-| --- | --- | --- |
-| `id` | Идентификатор записи Kodik | `"movie-452654"` |
-| `type` | Тип материала | `"foreign-movie"` |
-| `title` | Название | `"Аватар"` |
-| `title_orig` | Оригинальное название | `"Avatar"` |
-| `year` | Год выпуска | `2009` |
-| `screenshots` | Кадры из видео | `["https://.../1.jpg"]` |
-| `material_data.title` | Название | `"Аватар"` |
-| `material_data.title_en` | Английское название по обозначению поля источника | `"Avatar"` |
-| `material_data.other_titles` | Альтернативные названия | `["Аватар", "Avatar"]` |
-| `material_data.year` | Год выпуска | `2009` |
-| `material_data.tagline` | Слоган | `"An entire world awaits"` |
-| `material_data.description` | Описание | `"История о планете Пандора..."` |
-| `material_data.poster_url` | Ссылка на постер | `"https://.../poster.jpg"` |
-| `material_data.screenshots` | Изображения и кадры | `["https://.../image.jpg"]` |
-| `material_data.duration` | Продолжительность в минутах | `162` |
-| `material_data.countries` | Страны | `["США", "Великобритания"]` |
-| `material_data.all_genres` | Все жанры | `["фантастика", "боевик"]` |
-| `material_data.genres` | Жанры | `["фантастика", "приключения"]` |
-| `material_data.premiere_ru` | Дата премьеры в России | `"2009-12-17"` |
-| `material_data.premiere_world` | Дата мировой премьеры | `"2009-12-10"` |
-| `material_data.rating_mpaa` | Возрастная классификация MPAA | `"PG-13"` |
-| `material_data.minimal_age` | Минимальный возраст | `12` |
+| Поле                           | Назначение                                        | Пример                           |
+| ------------------------------ | ------------------------------------------------- | -------------------------------- |
+| `id`                           | Идентификатор записи Kodik                        | `"movie-452654"`                 |
+| `type`                         | Тип материала                                     | `"foreign-movie"`                |
+| `title`                        | Название                                          | `"Аватар"`                       |
+| `title_orig`                   | Оригинальное название                             | `"Avatar"`                       |
+| `year`                         | Год выпуска                                       | `2009`                           |
+| `screenshots`                  | Кадры из видео                                    | `["https://.../1.jpg"]`          |
+| `material_data.title`          | Название                                          | `"Аватар"`                       |
+| `material_data.title_en`       | Английское название по обозначению поля источника | `"Avatar"`                       |
+| `material_data.other_titles`   | Альтернативные названия                           | `["Аватар", "Avatar"]`           |
+| `material_data.year`           | Год выпуска                                       | `2009`                           |
+| `material_data.tagline`        | Слоган                                            | `"An entire world awaits"`       |
+| `material_data.description`    | Описание                                          | `"История о планете Пандора..."` |
+| `material_data.poster_url`     | Ссылка на постер                                  | `"https://.../poster.jpg"`       |
+| `material_data.screenshots`    | Изображения и кадры                               | `["https://.../image.jpg"]`      |
+| `material_data.duration`       | Продолжительность в минутах                       | `162`                            |
+| `material_data.countries`      | Страны                                            | `["США", "Великобритания"]`      |
+| `material_data.all_genres`     | Все жанры                                         | `["фантастика", "боевик"]`       |
+| `material_data.genres`         | Жанры                                             | `["фантастика", "приключения"]`  |
+| `material_data.premiere_ru`    | Дата премьеры в России                            | `"2009-12-17"`                   |
+| `material_data.premiere_world` | Дата мировой премьеры                             | `"2009-12-10"`                   |
+| `material_data.rating_mpaa`    | Возрастная классификация MPAA                     | `"PG-13"`                        |
+| `material_data.minimal_age`    | Минимальный возраст                               | `12`                             |
 
 ## Дополнительные названия и внешние идентификаторы
 
-| Поле | Назначение | Пример |
-| --- | --- | --- |
-| `other_title` | Другое название на верхнем уровне | `"Avatar"` |
-| `kinopoisk_id` | Идентификатор Кинопоиска | `"251733"` |
-| `imdb_id` | Идентификатор IMDb | `"tt0499549"` |
-| `mdl_id` | Идентификатор MyDramaList | `"12345"` |
-| `shikimori_id` | Идентификатор Shikimori | `"16498"` |
-| `worldart_link` | Ссылка на World Art | `"https://world-art.ru/..."` |
+| Поле            | Назначение                        | Пример                       |
+| --------------- | --------------------------------- | ---------------------------- |
+| `other_title`   | Другое название на верхнем уровне | `"Avatar"`                   |
+| `kinopoisk_id`  | Идентификатор Кинопоиска          | `"251733"`                   |
+| `imdb_id`       | Идентификатор IMDb                | `"tt0499549"`                |
+| `mdl_id`        | Идентификатор MyDramaList         | `"12345"`                    |
+| `shikimori_id`  | Идентификатор Shikimori           | `"16498"`                    |
+| `worldart_link` | Ссылка на World Art               | `"https://world-art.ru/..."` |
 
 ## Данные записи Kodik и доступного видео
 
-| Поле | Назначение | Пример |
-| --- | --- | --- |
-| `link` | Ссылка на плеер | `"https://kodikplayer.com/..."` |
-| `quality` | Качество видео | `"WEB-DL 1080p"` |
-| `camrip` | Признак экранной записи | `false` |
-| `lgbt` | Наличие LGBT-сцен по отметке источника | `false` |
-| `translation.id` | Идентификатор перевода | `703` |
-| `translation.title` | Название перевода | `"Дубляж"` |
-| `translation.type` | Тип перевода | `"voice"` |
-| `blocked_countries` | Страны блокировки | `["RU"]` |
-| `created_at` | Дата добавления записи в Kodik | `"2017-12-03T09:12:49Z"` |
-| `updated_at` | Дата обновления записи в Kodik | `"2018-04-10T08:25:23Z"` |
+| Поле                | Назначение                             | Пример                          |
+| ------------------- | -------------------------------------- | ------------------------------- |
+| `link`              | Ссылка на плеер                        | `"https://kodikplayer.com/..."` |
+| `quality`           | Качество видео                         | `"WEB-DL 1080p"`                |
+| `camrip`            | Признак экранной записи                | `false`                         |
+| `lgbt`              | Наличие LGBT-сцен по отметке источника | `false`                         |
+| `translation.id`    | Идентификатор перевода                 | `703`                           |
+| `translation.title` | Название перевода                      | `"Дубляж"`                      |
+| `translation.type`  | Тип перевода                           | `"voice"`                       |
+| `blocked_countries` | Страны блокировки                      | `["RU"]`                        |
+| `created_at`        | Дата добавления записи в Kodik         | `"2017-12-03T09:12:49Z"`        |
+| `updated_at`        | Дата обновления записи в Kodik         | `"2018-04-10T08:25:23Z"`        |
 
 ## Дополнительные сведения об аниме и дорамах
 
 Наличие этих полей не расширяет текущий этап до поддержки сериалов, мультфильмов или аниме. Тип movie включает только фильмы, в том числе документальные. Сериалы, мини-сериалы и другие многосерийные произведения, включая документальные сериалы, а также анимационные произведения исключены. Поля аниме сохраняются здесь как описание найденных данных источника, а не как состав карточки movie. Примеры относятся к разным материалам и не образуют одну карточку фильма.
 
-| Поле | Назначение | Пример |
-| --- | --- | --- |
-| `material_data.anime_title` | Название аниме | `"Атака титанов"` |
-| `material_data.other_titles_en` | Английские названия | `["Attack on Titan"]` |
-| `material_data.other_titles_jp` | Японские названия | `["進撃の巨人"]` |
-| `material_data.anime_license_name` | Название лицензии в России | `"Атака титанов"` |
-| `material_data.anime_licensed_by` | Владельцы лицензий | `["Wakanim"]` |
-| `material_data.anime_kind` | Тип аниме | `"movie"` |
-| `material_data.mydramalist_tags` | Теги MyDramaList | `["Friendship", "Violence"]` |
-| `material_data.all_status` | Общий статус | `"released"` |
-| `material_data.anime_status` | Статус аниме | `"released"` |
-| `material_data.drama_status` | Статус дорамы | `"released"` |
-| `material_data.anime_description` | Описание аниме | `"История о противостоянии..."` |
-| `material_data.anime_poster_url` | Постер аниме | `"https://.../anime.jpg"` |
-| `material_data.drama_poster_url` | Постер дорамы | `"https://.../drama.jpg"` |
-| `material_data.anime_genres` | Жанры аниме | `["приключения", "экшен"]` |
-| `material_data.drama_genres` | Жанры дорамы | `["романтика", "драма"]` |
-| `material_data.anime_studios` | Аниме-студии | `["Studio Deen"]` |
-| `material_data.aired_at` | Дата начала показа | `"2018-04-16"` |
-| `material_data.released_at` | Дата окончания показа | `"2018-06-20"` |
-| `material_data.next_episode_at` | Время выхода следующей серии | `"2021-04-06T14:19:27Z"` |
-| `material_data.episodes_total` | Всего эпизодов | `24` |
-| `material_data.episodes_aired` | Вышло эпизодов | `12` |
+| Поле                               | Назначение                   | Пример                          |
+| ---------------------------------- | ---------------------------- | ------------------------------- |
+| `material_data.anime_title`        | Название аниме               | `"Атака титанов"`               |
+| `material_data.other_titles_en`    | Английские названия          | `["Attack on Titan"]`           |
+| `material_data.other_titles_jp`    | Японские названия            | `["進撃の巨人"]`                |
+| `material_data.anime_license_name` | Название лицензии в России   | `"Атака титанов"`               |
+| `material_data.anime_licensed_by`  | Владельцы лицензий           | `["Wakanim"]`                   |
+| `material_data.anime_kind`         | Тип аниме                    | `"movie"`                       |
+| `material_data.mydramalist_tags`   | Теги MyDramaList             | `["Friendship", "Violence"]`    |
+| `material_data.all_status`         | Общий статус                 | `"released"`                    |
+| `material_data.anime_status`       | Статус аниме                 | `"released"`                    |
+| `material_data.drama_status`       | Статус дорамы                | `"released"`                    |
+| `material_data.anime_description`  | Описание аниме               | `"История о противостоянии..."` |
+| `material_data.anime_poster_url`   | Постер аниме                 | `"https://.../anime.jpg"`       |
+| `material_data.drama_poster_url`   | Постер дорамы                | `"https://.../drama.jpg"`       |
+| `material_data.anime_genres`       | Жанры аниме                  | `["приключения", "экшен"]`      |
+| `material_data.drama_genres`       | Жанры дорамы                 | `["романтика", "драма"]`        |
+| `material_data.anime_studios`      | Аниме-студии                 | `["Studio Deen"]`               |
+| `material_data.aired_at`           | Дата начала показа           | `"2018-04-16"`                  |
+| `material_data.released_at`        | Дата окончания показа        | `"2018-06-20"`                  |
+| `material_data.next_episode_at`    | Время выхода следующей серии | `"2021-04-06T14:19:27Z"`        |
+| `material_data.episodes_total`     | Всего эпизодов               | `24`                            |
+| `material_data.episodes_aired`     | Вышло эпизодов               | `12`                            |
 
 ## Уточнения перед реализацией
 

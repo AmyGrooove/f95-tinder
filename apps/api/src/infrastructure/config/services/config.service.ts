@@ -18,6 +18,10 @@ class InfrastructureConfigService {
     return this.configuration.database
   }
 
+  get knowledge(): TInfrastructureConfiguration["knowledge"] {
+    return this.configuration.knowledge
+  }
+
   get redis(): TInfrastructureConfiguration["redis"] {
     return this.configuration.redis
   }

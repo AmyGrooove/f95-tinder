@@ -10,8 +10,8 @@ Connection options and plugin registration are shared with the integration-test 
 
 Existing repository classes take a model and optional default sort through [MongoCoreRepository](../src/infrastructure/database/services/mongoCore.repository.ts):
 
-| Existing object                                                                                         | Public operations                                                        |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Existing object                                                                                      | Public operations                                                        |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | [MongoReadRepository](../src/infrastructure/database/services/mongoRead.repository.ts)               | `findById`, `findOne`, `findMany`, `checkIsExists`                       |
 | [MongoWriteRepository](../src/infrastructure/database/services/mongoWrite.repository.ts)             | `create`, `updateById`, `updateByFilter`, `deleteById`, `deleteByFilter` |
 | [MongoPaginationRepository](../src/infrastructure/database/services/mongoPagination.repository.ts)   | `findManyPaginated`                                                      |
