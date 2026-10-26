@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { AggregateOptions, HydratedDocument, Model } from "mongoose"
+import { Tag } from "@entities/tag/schemas/tag.schema"
+import type { ICheckItemTagKeysProps } from "../types/ICheckItemTagKeysProps"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -53,6 +55,34 @@ class ItemTagRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<ItemTag>
     >(model)
+  }
+  async checkHasTagKeys(
+    props: ICheckItemTagKeysProps,
+    options?: Pick<AggregateOptions, "session">,
+  ) {
+    const records = await this.aggregation.aggregate<{ _id: unknown }>(
+      [
+        { $match: { item: props.itemId } },
+        {
+          $lookup: {
+            from: Tag.name,
+            localField: "tag",
+            foreignField: "_id",
+            pipeline: [
+              { $match: { group: props.group, key: { $in: props.keys } } },
+              { $project: { _id: 1 } },
+            ],
+            as: "matchedTag",
+          },
+        },
+        { $match: { "matchedTag.0": { $exists: true } } },
+        { $limit: 1 },
+        { $project: { _id: 1 } },
+      ],
+      options,
+    )
+
+    return records.length > 0
   }
 }
 

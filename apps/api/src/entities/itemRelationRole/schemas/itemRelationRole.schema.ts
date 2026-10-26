@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "ItemRelationRole" })
 class ItemRelationRole extends MongoEntity {
@@ -23,11 +24,20 @@ class ItemRelationRole extends MongoEntity {
 
   @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
   description: LanguageText
+
+  @Prop({
+    type: Number,
+    required: true,
+    default: 1,
+    min: 1,
+    validate: isFiniteNumber,
+  })
+  bonusMultiplier: number
 }
 
 type TCreateItemRelationRole = TCreateEntity<
   ItemRelationRole,
-  "description" | "group"
+  "description" | "group" | "bonusMultiplier"
 >
 
 const ItemRelationRoleSchema = SchemaFactory.createForClass(ItemRelationRole)

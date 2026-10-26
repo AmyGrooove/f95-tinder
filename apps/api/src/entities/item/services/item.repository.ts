@@ -67,6 +67,11 @@ class ItemRepository {
           description: 1,
           aliases: 1,
           media: 1,
+          releaseDate: 1,
+          ageRestriction: 1,
+          movie: 1,
+          series: 1,
+          game: 1,
         },
       },
       {
@@ -89,42 +94,6 @@ class ItemRepository {
             { $replaceWith: "$tag" },
           ],
           as: "tags",
-        },
-      },
-      {
-        $lookup: {
-          from: "ItemFeature",
-          localField: "_id",
-          foreignField: "item",
-          pipeline: [
-            {
-              $lookup: {
-                from: "Feature",
-                localField: "feature",
-                foreignField: "_id",
-                pipeline: [
-                  {
-                    $project: {
-                      _id: 1,
-                      key: 1,
-                      name: 1,
-                      valueType: 1,
-                      unit: 1,
-                    },
-                  },
-                ],
-                as: "feature",
-              },
-            },
-            { $unwind: "$feature" },
-            { $sort: { "feature.key": 1 } },
-            {
-              $replaceWith: {
-                $mergeObjects: ["$feature", { value: "$value" }],
-              },
-            },
-          ],
-          as: "features",
         },
       },
       {

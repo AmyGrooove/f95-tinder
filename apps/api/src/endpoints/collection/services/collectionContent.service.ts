@@ -1,3 +1,4 @@
+import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
 import {
   BadRequestException,
   Injectable,
@@ -9,11 +10,10 @@ import { isISO8601 } from "class-validator"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
-import type { TCollectionFeatureOptions } from "@entities/collectionItem/types/TCollectionFeatureOptions"
-import type { TCollectionFeatureFilter } from "@entities/collectionItem/types/TCollectionFeatureFilter"
+import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
+import type { TCollectionFieldOptions } from "@entities/collectionItem/types/TCollectionFieldOptions"
+import type { TCollectionFieldFilter } from "@entities/collectionItem/types/TCollectionFieldFilter"
 import type { ICollectionItemCard } from "@entities/collectionItem/types/ICollectionItemCard"
-import { FeatureRepository } from "@entities/feature/services/feature.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -26,7 +26,7 @@ import type { CollectionFiltersResponseDto } from "../dto/response/collectionFil
 import { ECollectionMode } from "../types/ECollectionMode"
 import { ECollectionSort } from "../types/ECollectionSort"
 import type { IGetCollectionItemsRequestProps } from "../types/IGetCollectionItemsRequestProps"
-import type { CollectionFeatureFilterQueryDto } from "../dto/query/collectionFeatureFilter.query"
+import type { CollectionFieldFilterQueryDto } from "../dto/query/collectionFieldFilter.query"
 import type { CollectionItemResponseDto } from "../dto/response/collectionItem.response"
 import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 import { createCollectionDisplayBlocks } from "../functions/createCollectionDisplayBlocks"
@@ -36,7 +36,6 @@ class CollectionContentService {
   constructor(
     private readonly collectionRepository: CollectionRepository,
     private readonly collectionItemRepository: CollectionItemRepository,
-    private readonly featureRepository: FeatureRepository,
   ) {}
 
   async getFilters(id: Types.ObjectId): Promise<CollectionFiltersResponseDto> {
@@ -59,7 +58,7 @@ class CollectionContentService {
         group: tag.group,
         name: { ru: tag.name.ru, en: tag.name.en },
       })),
-      features: options.features.map((feature) => this.mapFeature(feature)),
+      fields: options.fields.map((field) => this.mapField(field)),
       sorting: {
         availableModes: isGroupedModeAvailable
           ? [ECollectionMode.FLAT, ECollectionMode.GROUPED]
@@ -90,7 +89,7 @@ class CollectionContentService {
       id,
       query.groupId,
     )
-    const features = await this.prepareFeatureFilters(query.features)
+    const fields = this.prepareFieldFilters(query.fields)
     const groupCounts =
       await this.collectionItemRepository.countAvailableItemsByGroup({
         collectionId: id,
@@ -123,7 +122,7 @@ class CollectionContentService {
       excludeTags: (query.excludeTags ?? []).map(
         (id) => new Types.ObjectId(id),
       ),
-      features,
+      fields,
       query: query.query,
       ratingMin: query.ratingMin,
       ratingMax: query.ratingMax,
@@ -139,7 +138,7 @@ class CollectionContentService {
       query.query,
       query.tags,
       query.excludeTags,
-      query.features,
+      query.fields,
       query.ratingMin,
       query.ratingMax,
     ].some((value) => !isUndefined(value))
@@ -183,111 +182,69 @@ class CollectionContentService {
     return { collection, groupIds, groupId }
   }
 
-  private async prepareFeatureFilters(
-    filters: CollectionFeatureFilterQueryDto[] = [],
-  ): Promise<TCollectionFeatureFilter[]> {
-    if (filters.length === 0) {
-      return []
+  private prepareFieldFilters(
+    filters: CollectionFieldFilterQueryDto[] = [],
+  ): TCollectionFieldFilter[] {
+    if (
+      new Set(filters.map((filter) => filter.field)).size !== filters.length
+    ) {
+      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
     }
 
-    const ids = filters.map((filter) => new Types.ObjectId(filter.featureId))
-
-    if (new Set(ids.map((id) => id.toHexString())).size !== ids.length) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFeatureFilters)
-    }
-
-    const definitions =
-      await this.featureRepository.findFilterDefinitionsByIds(ids)
-    const byId = new Map(
-      definitions.map((definition) => [
-        definition._id.toHexString(),
-        definition,
-      ]),
-    )
-
-    return filters.map((filter): TCollectionFeatureFilter => {
-      const featureId = new Types.ObjectId(filter.featureId)
-      const definition = byId.get(featureId.toHexString())
-
-      if (isUndefined(definition)) {
-        throw new BadRequestException(
-          DICTIONARY.collection.invalidFeatureFilters,
-        )
-      }
-
-      if (definition.valueType === EFeatureValueType.BOOLEAN) {
-        if (
-          isUndefined(filter.values) ||
-          !isUndefined(filter.min) ||
-          !isUndefined(filter.max)
-        ) {
-          throw new BadRequestException(
-            DICTIONARY.collection.invalidFeatureFilters,
-          )
-        }
-
-        return {
-          featureId,
-          valueType: EFeatureValueType.BOOLEAN,
-          values: filter.values,
-        }
-      }
+    return filters.map((filter): TCollectionFieldFilter => {
+      const definition = ITEM_FIELD_DEFINITIONS[filter.field]
 
       if (
-        !isUndefined(filter.values) ||
+        isUndefined(definition) ||
         (isUndefined(filter.min) && isUndefined(filter.max))
       ) {
-        throw new BadRequestException(
-          DICTIONARY.collection.invalidFeatureFilters,
-        )
+        throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
       }
 
-      if (definition.valueType === EFeatureValueType.NUMBER) {
+      if (definition.valueType === EItemFieldValueType.NUMBER) {
         if (
           (!isUndefined(filter.min) && !isFiniteNumber(filter.min)) ||
           (!isUndefined(filter.max) && !isFiniteNumber(filter.max))
         ) {
           throw new BadRequestException(
-            DICTIONARY.collection.invalidFeatureFilters,
+            DICTIONARY.collection.invalidFieldFilters,
           )
         }
 
-        if (
-          !isUndefined(filter.min) &&
-          !isUndefined(filter.max) &&
-          filter.min > filter.max
-        ) {
+        const min = isFiniteNumber(filter.min) ? filter.min : undefined
+        const max = isFiniteNumber(filter.max) ? filter.max : undefined
+
+        if (!isUndefined(min) && !isUndefined(max) && min > max) {
           throw new BadRequestException(
-            DICTIONARY.collection.invalidFeatureFilters,
+            DICTIONARY.collection.invalidFieldFilters,
           )
         }
 
         return {
-          featureId,
-          valueType: EFeatureValueType.NUMBER,
-          min: filter.min,
-          max: filter.max,
+          field: filter.field,
+          valueType: EItemFieldValueType.NUMBER,
+          min,
+          max,
         }
       }
 
-      if (definition.valueType === EFeatureValueType.DATE) {
-        const min = this.parseFeatureDate(filter.min)
-        const max = this.parseFeatureDate(filter.max)
+      const min = this.parseFieldDate(filter.min)
+      const max = this.parseFieldDate(filter.max)
 
-        if (!isUndefined(min) && !isUndefined(max) && min > max) {
-          throw new BadRequestException(
-            DICTIONARY.collection.invalidFeatureFilters,
-          )
-        }
-
-        return { featureId, valueType: EFeatureValueType.DATE, min, max }
+      if (!isUndefined(min) && !isUndefined(max) && min > max) {
+        throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
       }
 
-      throw new BadRequestException(DICTIONARY.collection.invalidFeatureFilters)
+      return {
+        field: filter.field,
+        valueType: EItemFieldValueType.DATE,
+        min,
+        max,
+      }
     })
   }
 
-  private parseFeatureDate(value: unknown) {
+  private parseFieldDate(value: unknown) {
     if (isUndefined(value)) {
       return undefined
     }
@@ -300,13 +257,13 @@ class CollectionContentService {
         /(?:Z|[+-]\d{2}:\d{2})$/.test(value)
       )
     ) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFeatureFilters)
+      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
     }
 
     const date = new Date(value)
 
     if (!Number.isFinite(date.getTime())) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFeatureFilters)
+      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
     }
 
     return date
@@ -330,40 +287,30 @@ class CollectionContentService {
     }
   }
 
-  private mapFeature(
-    feature: TCollectionFeatureOptions,
-  ): CollectionFiltersResponseDto["features"][number] {
+  private mapField(
+    field: TCollectionFieldOptions,
+  ): CollectionFiltersResponseDto["fields"][number] {
+    const definition = ITEM_FIELD_DEFINITIONS[field.field]
     const metadata = {
-      id: feature._id.toHexString(),
-      key: feature.key,
-      group: feature.group,
-      name: { ru: feature.name.ru, en: feature.name.en },
-      unit: feature.unit,
+      field: field.field,
+      name: definition.name,
+      unit: definition.unit,
     }
 
-    switch (feature.valueType) {
-      case EFeatureValueType.NUMBER:
-        return {
-          ...metadata,
-          valueType: feature.valueType,
-          min: feature.min,
-          max: feature.max,
-        }
-      case EFeatureValueType.DATE:
-        return {
-          ...metadata,
-          valueType: feature.valueType,
-          min: feature.min.toISOString(),
-          max: feature.max.toISOString(),
-        }
-      case EFeatureValueType.BOOLEAN:
-        return {
-          ...metadata,
-          valueType: feature.valueType,
-          values: feature.values.sort(
-            (isFirst, isSecond) => Number(isFirst) - Number(isSecond),
-          ),
-        }
+    if (field.valueType === EItemFieldValueType.DATE) {
+      return {
+        ...metadata,
+        valueType: field.valueType,
+        min: field.min.toISOString(),
+        max: field.max.toISOString(),
+      }
+    }
+
+    return {
+      ...metadata,
+      valueType: field.valueType,
+      min: field.min,
+      max: field.max,
     }
   }
 }

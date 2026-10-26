@@ -4,10 +4,9 @@ import type { FastifyInstance } from "fastify"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { EFeatureKey } from "@entities/feature/schemas/EFeatureKey"
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
-import { FeatureRepository } from "@entities/feature/services/feature.repository"
-import { ItemFeatureRepository } from "@entities/itemFeature/services/itemFeature.repository"
+import { ETagKey } from "@entities/tag/schemas/ETagKey"
+import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import type { Item } from "@entities/item/schemas/item.schema"
@@ -146,24 +145,26 @@ describe("UserItemController HTTP", () => {
     return record
   }
 
-  const createCompletionFeature = async (props: {
+  const createCompletionTag = async (props: {
     item: Types.ObjectId
-    key: EFeatureKey
-    valueType: EFeatureValueType
-    value?: string | boolean
+    key: string
+    group: ETagGroup
+    isAssigned?: boolean
   }) => {
-    const { app } = getTestApplication()
-    const feature = await app.get(FeatureRepository).write.create({
+    const { app, connection } = getTestApplication()
+    const tag = {
+      _id: new Types.ObjectId(),
       key: props.key,
-      valueType: props.valueType,
+      group: props.group,
       name: { ru: props.key, en: null },
-    })
+    }
+    await connection.collection("Tag").insertOne(tag)
 
-    if (props.value !== undefined) {
-      await app.get(ItemFeatureRepository).write.create({
+    if (props.isAssigned !== false) {
+      await app.get(ItemTagRepository).write.create({
         item: props.item,
-        feature: feature._id,
-        value: props.value,
+        tag: tag._id,
+        relevanceScore: 1,
       })
     }
   }
@@ -260,9 +261,8 @@ describe("UserItemController HTTP", () => {
   it.each([
     {
       type: EItemType.GAME,
-      key: EFeatureKey.HAS_DEFINED_END,
-      valueType: EFeatureValueType.BOOLEAN,
-      value: false,
+      key: ETagKey.HAS_DEFINED_END_FALSE,
+      group: ETagGroup.HAS_DEFINED_END,
       message: DICTIONARY.userItem.gameHasNoDefinedEnd,
     },
     ...[
@@ -270,23 +270,24 @@ describe("UserItemController HTTP", () => {
       EItemType.ANIMATED_SERIES,
       EItemType.ANIME_SERIES,
     ].flatMap((type) =>
-      ["announced", "ongoing"].map((value) => ({
-        type,
-        key: EFeatureKey.RELEASE_STATUS,
-        valueType: EFeatureValueType.STRING,
-        value,
-        message: DICTIONARY.userItem.seasonReleaseNotFinished,
-      })),
+      [ETagKey.RELEASE_STATUS_ANNOUNCED, ETagKey.RELEASE_STATUS_ONGOING].map(
+        (key) => ({
+          type,
+          key,
+          group: ETagGroup.RELEASE_STATUS,
+          message: DICTIONARY.userItem.seasonReleaseNotFinished,
+        }),
+      ),
     ),
   ])(
-    "запрещает явное завершение $type при $value и сохраняет запись",
-    async ({ type, key, valueType, value, message }) => {
+    "запрещает явное завершение $type при теге $key и сохраняет запись",
+    async ({ type, key, group, message }) => {
       const { app, connection } = getTestApplication()
       const { entry, item, headers } = await createEntry(
         EUserItemStatus.IN_PROGRESS,
         type,
       )
-      await createCompletionFeature({ item: item._id, key, valueType, value })
+      await createCompletionTag({ item: item._id, key, group })
       const before = await readEntry(entry.id)
       for (const request of [
         {
@@ -346,11 +347,10 @@ describe("UserItemController HTTP", () => {
         EUserItemStatus.IN_PROGRESS,
         EItemType.GAME,
       )
-      await createCompletionFeature({
+      await createCompletionTag({
         item: item._id,
-        key: EFeatureKey.HAS_DEFINED_END,
-        valueType: EFeatureValueType.BOOLEAN,
-        value: false,
+        key: ETagKey.HAS_DEFINED_END_FALSE,
+        group: ETagGroup.HAS_DEFINED_END,
       })
       await connection
         .collection("UserItem")
@@ -378,41 +378,43 @@ describe("UserItemController HTTP", () => {
   it.each([
     {
       type: EItemType.GAME,
-      key: EFeatureKey.HAS_DEFINED_END,
-      valueType: EFeatureValueType.BOOLEAN,
-      value: true,
+      key: "hasDefinedEndTrue",
+      group: ETagGroup.HAS_DEFINED_END,
     },
     {
       type: EItemType.GAME,
-      key: EFeatureKey.HAS_DEFINED_END,
-      valueType: EFeatureValueType.STRING,
-      value: "false",
+      key: ETagKey.HAS_DEFINED_END_FALSE,
+      group: ETagGroup.KEYWORD,
     },
     {
       type: EItemType.GAME,
-      key: EFeatureKey.HAS_DEFINED_END,
-      valueType: EFeatureValueType.BOOLEAN,
-      value: undefined,
+      key: ETagKey.HAS_DEFINED_END_FALSE,
+      group: ETagGroup.HAS_DEFINED_END,
+      isAssigned: false,
     },
-    ...["released", "cancelled", "unknown", undefined].map((value) => ({
+    ...["releaseStatusReleased", "releaseStatusCancelled"].map((key) => ({
       type: EItemType.SERIES,
-      key: EFeatureKey.RELEASE_STATUS,
-      valueType: EFeatureValueType.STRING,
-      value,
+      key,
+      group: ETagGroup.RELEASE_STATUS,
     })),
     {
       type: EItemType.SERIES,
-      key: EFeatureKey.RELEASE_STATUS,
-      valueType: EFeatureValueType.BOOLEAN,
-      value: false,
+      key: ETagKey.RELEASE_STATUS_ONGOING,
+      group: ETagGroup.RELEASE_STATUS,
+      isAssigned: false,
+    },
+    {
+      type: EItemType.SERIES,
+      key: ETagKey.RELEASE_STATUS_ONGOING,
+      group: ETagGroup.KEYWORD,
     },
   ])(
-    "разрешает ручное завершение $type при метаданных $valueType/$value",
-    async ({ type, ...feature }) => {
+    "разрешает ручное завершение $type при теге $group/$key, назначение=$isAssigned",
+    async ({ type, ...tag }) => {
       const { app } = getTestApplication()
       const { headers } = await createAccount()
       const item = await createItem(type)
-      await createCompletionFeature({ ...feature, item: item._id })
+      await createCompletionTag({ ...tag, item: item._id })
       const created = await app.inject({
         method: "POST",
         url: "/userItems",
@@ -444,7 +446,7 @@ describe("UserItemController HTTP", () => {
   )
 
   it.each([EItemType.GAME, EItemType.SERIES])(
-    "разрешает завершение %s без определения характеристики",
+    "разрешает завершение %s без назначенных тегов завершения",
     async (type) => {
       const { entry } = await createEntry(EUserItemStatus.COMPLETED, type)
       expect(entry.attempts[0]?.isCompleted).toBe(true)
@@ -468,17 +470,16 @@ describe("UserItemController HTTP", () => {
         payload: { unit: "percent", progress: 100 },
       })
       expect(prepared.statusCode).toBe(200)
-      await createCompletionFeature({
+      await createCompletionTag({
         item: item._id,
         key:
           type === EItemType.GAME
-            ? EFeatureKey.HAS_DEFINED_END
-            : EFeatureKey.RELEASE_STATUS,
-        valueType:
+            ? ETagKey.HAS_DEFINED_END_FALSE
+            : ETagKey.RELEASE_STATUS_ONGOING,
+        group:
           type === EItemType.GAME
-            ? EFeatureValueType.BOOLEAN
-            : EFeatureValueType.STRING,
-        value: type === EItemType.GAME ? false : "ongoing",
+            ? ETagGroup.HAS_DEFINED_END
+            : ETagGroup.RELEASE_STATUS,
       })
       for (const payload of [
         { rating: 8, note: "История", isFavorite: true },

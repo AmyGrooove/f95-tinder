@@ -22,7 +22,7 @@ import { isString } from "@shared/functions/checks/isString"
 
 import { ECollectionMode } from "../../types/ECollectionMode"
 import { ECollectionSort } from "../../types/ECollectionSort"
-import { CollectionFeatureFilterQueryDto } from "../query/collectionFeatureFilter.query"
+import { CollectionFieldFilterQueryDto } from "../query/collectionFieldFilter.query"
 
 class CollectionItemsBodyDto {
   @ApiPropertyOptional({
@@ -58,16 +58,16 @@ class CollectionItemsBodyDto {
   excludeTags?: string[]
 
   @ApiPropertyOptional({
-    type: [CollectionFeatureFilterQueryDto],
-    description: SWAGGER_DICTIONARY.collection.featureFilters,
+    type: [CollectionFieldFilterQueryDto],
+    description: SWAGGER_DICTIONARY.collection.fieldFilters,
   })
   @IsOptional()
-  @Type(() => CollectionFeatureFilterQueryDto)
+  @Type(() => CollectionFieldFilterQueryDto)
   @IsArray()
   @ArrayNotEmpty()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
-  features?: CollectionFeatureFilterQueryDto[]
+  fields?: CollectionFieldFilterQueryDto[]
 
   @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
   @IsOptional()

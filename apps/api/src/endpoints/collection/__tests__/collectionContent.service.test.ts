@@ -6,7 +6,6 @@ import { Types } from "mongoose"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
-import { FeatureRepository } from "@entities/feature/services/feature.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 
 import { CollectionContentService } from "../services/collectionContent.service"
@@ -59,7 +58,6 @@ describe("CollectionContentService", () => {
         CollectionContentService,
         { provide: CollectionRepository, useValue: collection },
         { provide: CollectionItemRepository, useValue: items },
-        { provide: FeatureRepository, useValue: {} },
       ],
     }).compile()
 

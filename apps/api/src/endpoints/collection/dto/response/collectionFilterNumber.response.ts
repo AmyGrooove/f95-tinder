@@ -1,12 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger"
 
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 
-import { CollectionFilterFeatureResponseDto } from "./collectionFilterFeature.response"
+import { CollectionFilterFieldResponseDto } from "./collectionFilterField.response"
 
-class CollectionFilterNumberResponseDto extends CollectionFilterFeatureResponseDto {
-  @ApiProperty({ enum: [EFeatureValueType.NUMBER] })
-  valueType: EFeatureValueType.NUMBER
+class CollectionFilterNumberResponseDto extends CollectionFilterFieldResponseDto {
+  @ApiProperty({ enum: [EItemFieldValueType.NUMBER] })
+  valueType: EItemFieldValueType.NUMBER
 
   @ApiProperty({ type: Number })
   min: number

@@ -1,3 +1,4 @@
+import { checkIsTagKeyAllowed } from "../functions/checkIsTagKeyAllowed"
 import { checkIsNonEmptyStringArray } from "@entities/shared/functions/checks/checkIsNonEmptyStringArray"
 import { ETagGroup } from "./ETagGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
@@ -51,6 +52,12 @@ type TCreateTag = TCreateEntity<
 >
 
 const TagSchema = SchemaFactory.createForClass(Tag)
+
+TagSchema.pre("validate", function () {
+  if (!checkIsTagKeyAllowed({ key: this.key, group: this.group })) {
+    this.invalidate("key", "Tag key does not match its group rule")
+  }
+})
 
 TagSchema.index({ key: 1 }, { name: "tagKeyUnique", unique: true })
 

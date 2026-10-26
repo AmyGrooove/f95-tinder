@@ -17,9 +17,7 @@ import { ItemRelationRoleModule } from "@entities/itemRelationRole/itemRelationR
 import { TagModule } from "@entities/tag/tag.module"
 import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 import { TagRelationModule } from "@entities/tagRelation/tagRelation.module"
-import { FeatureModule } from "@entities/feature/feature.module"
 import { FactModule } from "@entities/fact/fact.module"
-import { ItemFeatureModule } from "@entities/itemFeature/itemFeature.module"
 import { SourceModule } from "@entities/source/source.module"
 import { SourceItemModule } from "@entities/sourceItem/sourceItem.module"
 import { ItemMetricModule } from "@entities/itemMetric/itemMetric.module"
@@ -67,9 +65,7 @@ import { AppController } from "./controllers/app.controller"
     TagModule,
     ItemTagModule,
     TagRelationModule,
-    FeatureModule,
     FactModule,
-    ItemFeatureModule,
     SourceModule,
     SourceItemModule,
     ItemMetricModule,

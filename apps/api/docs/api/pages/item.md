@@ -24,21 +24,25 @@
 
 | Поле               | Формат                                                                                                                                           |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| id, type           | Строковый ID Item и тип, сейчас movie                                                                                                            |
+| id, type           | Строковый ID Item и один из семи EItemType                                                                                                       |
 | title, description | `{ru, en}`, каждый перевод — строка или null                                                                                                     |
 | aliases            | Массив строк без разделения по языкам                                                                                                            |
 | media              | Массив `{src, language, type}`; language — строка или null, type — poster/screenshot/trailer                                                     |
 | tags               | Массив `{id, key, group, name}` прямых тегов; name — RU/EN, group может быть null; порядок по relevanceScore убыванию, затем ID тега возрастанию |
-| features           | Массив `{id, key, name, valueType, unit, value}` по key возрастанию; name — RU/EN, unit может быть null                                          |
+| releaseDate        | Точная дата первого выпуска в ISO 8601 или null                                                                                                  |
+| ageRestriction     | 0, 6, 12, 16, 18 или null                                                                                                                        |
+| movie              | {duration} или null; длительность в минутах                                                                                                      |
+| series             | {episodeCount,releasedEpisodeCount,episodeDuration,nextEpisodeAt} или null; дата в ISO 8601                                                      |
+| game               | {mainStoryDuration,fullCompletionDuration} или null; время в минутах                                                                             |
 | relations          | Массив `{item: {id, type, title, media}, role: {id, key, name}}` по ID связи возрастанию                                                         |
 
-`valueType` — string/number/boolean/date, значение date сериализуется в ISO 8601. Характеристики шапки выбираются клиентом по согласованным key: duration — число минут с unit=minute, minimalAge — возрастное ограничение из источника, releaseStatus — announced/released/cancelled, releaseDateWorld — ожидаемая или фактическая дата первого мирового выпуска. Для сезонов releaseStatus также допускает ongoing (выпуск продолжается), а released означает завершение выпуска конкретного сезона. Полный перечень находится в [справочнике ключей](../../product/foundations/catalogKeys.md#featurekey). Они не дублируются отдельными полями ответа. Наличие соответствующих Feature/ItemFeature в рабочей БД не проверено; чтение не создаёт их и не подставляет выдуманные значения.
+Характеристики возвращаются из полей Item; features в ответе больше нет. Внутри существующего блока неизвестные поля возвращаются как null. Категории, включая releaseStatus и hasDefinedEnd, возвращаются обычными тегами. Диапазонные теги не заменяют точные числовые поля; их наполнение и синхронизация с Item остаются отдельной задачей.
 
-Связи загружаются с обеих сторон Relation. В ответ попадает противоположная сторона: роль связанного произведения относительно открытого. Для каждого языка name сначала берётся из roleNameOverride этой стороны, при null/отсутствии — из стандартного имени роли, затем null. Возвращаются все прямые связи без пагинации и рекурсии; отсутствующие и удалённые связанные Item пропускаются. Привязки к отсутствующим Tag, Feature или ItemRelationRole также не попадают в ответ.
+Связи загружаются с обеих сторон Relation. В ответ попадает противоположная сторона: роль связанного произведения относительно открытого. Для каждого языка name сначала берётся из roleNameOverride этой стороны, при null/отсутствии — из стандартного имени роли, затем null. Возвращаются все прямые связи без пагинации и рекурсии; отсутствующие и удалённые связанные Item пропускаются. Привязки к отсутствующим Tag или ItemRelationRole также не попадают в ответ.
 
-Пустые массивы возвращаются как []; неизвестные характеристики отсутствуют, отсутствующие переводы остаются null. Порядок aliases и media сохраняется из Item. Фон выбирается клиентом из screenshot: отдельного backdrop-типа нет. Франшизы и другие коллекции читаются отдельным QUERY /collections с itemIds; внешние ссылки, статистика, личные сведения, служебные даты и поля хранения в ответ не входят.
+Пустые массивы возвращаются как []; неизвестные поля и неприменимые блоки возвращаются как null, отсутствующие переводы остаются null. Порядок aliases и media сохраняется из Item. Фон выбирается клиентом из screenshot: отдельного backdrop-типа нет. Франшизы и другие коллекции читаются отдельным QUERY /collections с itemIds; внешние ссылки, статистика, личные сведения, служебные даты и поля хранения в ответ не входят.
 
-[ItemRepository.findDetailsById](../../../src/entities/item/services/item.repository.ts) выполняет одну агрегацию с проекциями и соединениями ItemTag/Tag, ItemFeature/Feature и Relation/Item/ItemRelationRole. Чтение не пишет в БД и не обращается к UserItem, UserCollection, ItemMetric, Collection или источникам. DTO формируется явно в ItemService.
+[ItemRepository.findDetailsById](../../../src/entities/item/services/item.repository.ts) выполняет одну агрегацию с проекциями и соединениями ItemTag/Tag и Relation/Item/ItemRelationRole. Чтение не пишет в БД и не обращается к UserItem, UserCollection, ItemMetric, Collection или источникам. DTO формируется явно в ItemService.
 
 ## Осталось
 
@@ -53,6 +57,10 @@
 Статистические формулы, отдельное чтение личной записи по Item и переход к полному списку коллекций. Плеер и публичное чтение чужих подробных попыток в состав страницы не входят.
 
 ## Проверка результата
+
+26 октября 2026 года тесты Item обновлены под точные поля Item и единый Tag: семь типов произведений, nullable-блоки и их частичное заполнение, ISO-даты, все возрастные ограничения, прямые категориальные и диапазонные теги, отсутствие features и лишних вложенных полей. Все 38 unit-тестов ItemService и ItemController прошли. Также прошли TypeScript для production-кода и тестов Item, scoped ESLint, Prettier и diff-check. После обновления оставшихся тестов под Tag и fields и удаления теста удалённого Feature-helper полная проверка `npm run type-check` также проходит.
+
+Обновлённая HTTP-интеграционная suite остановилась в globalSetup: Docker runtime недоступен (`Could not find a working container runtime strategy`). Интеграционные проверки нового контракта ещё не выполнены. Результаты ниже относятся к прежнему контракту до удаления Feature.
 
 25 октября 2026 года прошли 32 unit-теста [ItemService](../../../src/endpoints/item/__tests__/item.service.test.ts) и [ItemController](../../../src/endpoints/item/__tests__/item.controller.test.ts), 42 [HTTP-интеграционных теста Item](../../../src/endpoints/item/__tests__/item.controller.integration.test.ts) и 3 проверки общего тестового стенда после подключения ItemEndpointModule. Интеграции используют одноразовые MongoDB 8.0.17 и Redis 8.2.3, действующие HTTP-настройки и реальные агрегации репозитория.
 

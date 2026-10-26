@@ -1,3 +1,5 @@
+import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
+import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type {
@@ -11,9 +13,6 @@ import type {
 import { Item } from "@entities/item/schemas/item.schema"
 import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
-import { ItemFeature } from "@entities/itemFeature/schemas/itemFeature.schema"
-import { Feature } from "@entities/feature/schemas/feature.schema"
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
 import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -139,12 +138,21 @@ class CollectionItemRepository {
             foreignField: "_id",
             pipeline: [
               { $match: { deletedAt: null } },
-              { $project: { _id: 1 } },
+              {
+                $project: {
+                  _id: 1,
+                  releaseDate: 1,
+                  ageRestriction: 1,
+                  movie: 1,
+                  series: 1,
+                  game: 1,
+                },
+              },
             ],
             as: "itemDocument",
           },
         },
-        { $match: { "itemDocument.0": { $exists: true } } },
+        { $unwind: "$itemDocument" },
         {
           $facet: {
             nonEmptyGroups: [{ $group: { _id: "$groupId" } }, { $limit: 2 }],
@@ -176,39 +184,20 @@ class CollectionItemRepository {
               { $replaceRoot: { newRoot: "$tag" } },
               { $sort: { key: 1, _id: 1 } },
             ],
-            features: [
+            fields: [
               ...scope,
               {
-                $lookup: {
-                  from: ItemFeature.name,
-                  localField: "item",
-                  foreignField: "item",
-                  pipeline: [{ $project: { feature: 1, value: 1 } }],
-                  as: "itemFeatures",
+                $project: {
+                  fields: Object.entries(ITEM_FIELD_DEFINITIONS).map(
+                    ([field, definition]) => ({
+                      field,
+                      valueType: definition.valueType,
+                      value: `$itemDocument.${field}`,
+                    }),
+                  ),
                 },
               },
-              { $unwind: "$itemFeatures" },
-              {
-                $lookup: {
-                  from: Feature.name,
-                  localField: "itemFeatures.feature",
-                  foreignField: "_id",
-                  pipeline: [
-                    {
-                      $project: {
-                        _id: 1,
-                        key: 1,
-                        group: 1,
-                        name: 1,
-                        valueType: 1,
-                        unit: 1,
-                      },
-                    },
-                  ],
-                  as: "feature",
-                },
-              },
-              { $unwind: "$feature" },
+              { $unwind: "$fields" },
               {
                 $match: {
                   $expr: {
@@ -217,32 +206,24 @@ class CollectionItemRepository {
                         $and: [
                           {
                             $eq: [
-                              "$feature.valueType",
-                              EFeatureValueType.NUMBER,
+                              "$fields.valueType",
+                              EItemFieldValueType.NUMBER,
                             ],
                           },
-                          { $isNumber: "$itemFeatures.value" },
-                          { $gte: ["$itemFeatures.value", -Number.MAX_VALUE] },
-                          { $lte: ["$itemFeatures.value", Number.MAX_VALUE] },
+                          { $isNumber: "$fields.value" },
+                          { $gte: ["$fields.value", -Number.MAX_VALUE] },
+                          { $lte: ["$fields.value", Number.MAX_VALUE] },
                         ],
                       },
                       {
                         $and: [
                           {
                             $eq: [
-                              "$feature.valueType",
-                              EFeatureValueType.BOOLEAN,
+                              "$fields.valueType",
+                              EItemFieldValueType.DATE,
                             ],
                           },
-                          { $eq: [{ $type: "$itemFeatures.value" }, "bool"] },
-                        ],
-                      },
-                      {
-                        $and: [
-                          {
-                            $eq: ["$feature.valueType", EFeatureValueType.DATE],
-                          },
-                          { $eq: [{ $type: "$itemFeatures.value" }, "date"] },
+                          { $eq: [{ $type: "$fields.value" }, "date"] },
                         ],
                       },
                     ],
@@ -251,31 +232,22 @@ class CollectionItemRepository {
               },
               {
                 $group: {
-                  _id: "$feature._id",
-                  key: { $first: "$feature.key" },
-                  group: { $first: "$feature.group" },
-                  name: { $first: "$feature.name" },
-                  valueType: { $first: "$feature.valueType" },
-                  unit: { $first: "$feature.unit" },
-                  min: { $min: "$itemFeatures.value" },
-                  max: { $max: "$itemFeatures.value" },
-                  values: {
-                    $addToSet: {
-                      $cond: [
-                        {
-                          $eq: [
-                            "$feature.valueType",
-                            EFeatureValueType.BOOLEAN,
-                          ],
-                        },
-                        "$itemFeatures.value",
-                        null,
-                      ],
-                    },
-                  },
+                  _id: "$fields.field",
+                  valueType: { $first: "$fields.valueType" },
+                  min: { $min: "$fields.value" },
+                  max: { $max: "$fields.value" },
                 },
               },
-              { $sort: { key: 1, _id: 1 } },
+              {
+                $project: {
+                  _id: 0,
+                  field: "$_id",
+                  valueType: 1,
+                  min: 1,
+                  max: 1,
+                },
+              },
+              { $sort: { field: 1 } },
             ],
           },
         },
@@ -283,13 +255,13 @@ class CollectionItemRepository {
           $project: {
             nonEmptyGroupIds: "$nonEmptyGroups._id",
             tags: 1,
-            features: 1,
+            fields: 1,
           },
         },
       ],
     )
 
-    return result ?? { nonEmptyGroupIds: [], tags: [], features: [] }
+    return result ?? { nonEmptyGroupIds: [], tags: [], fields: [] }
   }
 
   findByCollectionAndItems(

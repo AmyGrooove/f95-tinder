@@ -1,12 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger"
 
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 
-import { CollectionFilterFeatureResponseDto } from "./collectionFilterFeature.response"
+import { CollectionFilterFieldResponseDto } from "./collectionFilterField.response"
 
-class CollectionFilterDateResponseDto extends CollectionFilterFeatureResponseDto {
-  @ApiProperty({ enum: [EFeatureValueType.DATE] })
-  valueType: EFeatureValueType.DATE
+class CollectionFilterDateResponseDto extends CollectionFilterFieldResponseDto {
+  @ApiProperty({ enum: [EItemFieldValueType.DATE] })
+  valueType: EItemFieldValueType.DATE
 
   @ApiProperty({ type: String, format: "date-time" })
   min: string

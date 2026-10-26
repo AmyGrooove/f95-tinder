@@ -2,6 +2,8 @@ import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
+import { EItemField } from "@entities/item/schemas/EItemField"
+import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { Session } from "@entities/session/schemas/session.schema"
 import { getTestApplication } from "@test/setup/setupIntegration"
@@ -713,7 +715,7 @@ describe("CollectionReadController HTTP", () => {
     expect(filters.statusCode).toBe(200)
     expect(filters.json()).toEqual({
       tags: [],
-      features: [],
+      fields: [],
       sorting: { availableModes: ["flat"] },
     })
     expect(
@@ -877,7 +879,7 @@ describe("CollectionReadController HTTP", () => {
           name: { ru: "Б", en: "B" },
         },
       ],
-      features: [],
+      fields: [],
       sorting: { availableModes: ["flat", "grouped"] },
     })
     for (const query of [
@@ -910,63 +912,78 @@ describe("CollectionReadController HTTP", () => {
     }
   })
 
-  it("возвращает диапазоны характеристик и фильтрует по числу, дате и boolean", async () => {
+  it("возвращает диапазоны полей Item и фильтрует по числу, дате и тегу статуса", async () => {
     const { app, connection } = getTestApplication()
     const { collection, first, second } = await createCollection()
-    const numberId = new Types.ObjectId()
-    const dateId = new Types.ObjectId()
-    const booleanId = new Types.ObjectId()
-    const definitions = [
-      { _id: numberId, key: "duration", valueType: "number" },
-      { _id: dateId, key: "releaseDate", valueType: "date" },
-      { _id: booleanId, key: "isReleased", valueType: "boolean" },
-    ]
-    await connection.collection("Feature").insertMany(
-      definitions.map((definition) => ({
-        ...definition,
-        group: null,
-        unit: null,
-        name: { ru: definition.key, en: null },
-      })),
+    const statusTagId = new Types.ObjectId()
+    await connection.collection("Item").updateOne(
+      { _id: first._id },
+      {
+        $set: {
+          movie: { duration: 90 },
+          releaseDate: new Date("2020-01-01"),
+        },
+      },
     )
-    await connection.collection("ItemFeature").insertMany([
-      { item: first._id, feature: numberId, value: 90 },
-      { item: second._id, feature: numberId, value: 120 },
-      { item: first._id, feature: dateId, value: new Date("2020-01-01") },
-      { item: second._id, feature: dateId, value: new Date("2025-01-01") },
-      { item: first._id, feature: booleanId, value: false },
-      { item: second._id, feature: booleanId, value: true },
-    ])
+    await connection.collection("Item").updateOne(
+      { _id: second._id },
+      {
+        $set: {
+          movie: { duration: 120 },
+          releaseDate: new Date("2025-01-01"),
+        },
+      },
+    )
+    await connection.collection("Tag").insertOne({
+      _id: statusTagId,
+      key: ETagKey.RELEASE_STATUS_ONGOING,
+      group: "releaseStatus",
+      name: { ru: "Выходит", en: "Ongoing" },
+    })
+    await connection.collection("ItemTag").insertOne({
+      item: second._id,
+      tag: statusTagId,
+    })
     const response = await app.inject({
       method: "GET",
       url: `/collections/${collection.id}/filters`,
     })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
-      features: [
-        { id: numberId.toHexString(), valueType: "number", min: 90, max: 120 },
+      tags: [
+        { id: statusTagId.toHexString(), key: ETagKey.RELEASE_STATUS_ONGOING },
+      ],
+      fields: [
         {
-          id: booleanId.toHexString(),
-          valueType: "boolean",
-          values: [false, true],
+          field: EItemField.DURATION,
+          valueType: "number",
+          min: 90,
+          max: 120,
         },
         {
-          id: dateId.toHexString(),
+          field: EItemField.RELEASE_DATE,
           valueType: "date",
           min: "2020-01-01T00:00:00.000Z",
           max: "2025-01-01T00:00:00.000Z",
         },
       ],
     })
-    for (const filter of [
-      { featureId: numberId.toHexString(), min: 120, max: 120 },
-      { featureId: dateId.toHexString(), min: "2025-01-01" },
-      { featureId: booleanId.toHexString(), values: [true] },
+    for (const query of [
+      { fields: [{ field: EItemField.DURATION, min: 120, max: 120 }] },
+      { fields: [{ field: EItemField.RELEASE_DATE, min: "2025-01-01" }] },
+      { tags: [statusTagId.toHexString()] },
+      {
+        fields: [
+          { field: EItemField.DURATION, max: 120 },
+          { field: EItemField.RELEASE_DATE, min: "2025-01-01" },
+        ],
+        tags: [statusTagId.toHexString()],
+      },
     ]) {
       const items = await app.inject({
         method: "QUERY",
         url: `/collections/${collection.id}/items`,
-        payload: { mode: "flat", features: [filter] },
+        payload: { mode: "flat", ...query },
       } as unknown as Parameters<typeof app.inject>[0])
       expect(items.statusCode).toBe(200)
       expect(items.json()).toMatchObject({
@@ -975,14 +992,24 @@ describe("CollectionReadController HTTP", () => {
       })
     }
     for (const filters of [
-      [{ featureId: numberId.toHexString(), min: 120, max: 90 }],
-      [{ featureId: numberId.toHexString(), min: "90" }],
-      [{ featureId: booleanId.toHexString(), min: 1 }],
-      [{ featureId: dateId.toHexString(), min: "not-a-date" }],
-      [{ featureId: new Types.ObjectId().toHexString(), min: 1 }],
+      [{ field: EItemField.DURATION, min: 120, max: 90 }],
+      [{ field: EItemField.DURATION, min: "90" }],
+      [{ field: EItemField.DURATION, min: true }],
+      [{ field: EItemField.DURATION, min: null }],
+      [{ field: EItemField.DURATION }],
+      [{ field: EItemField.RELEASE_DATE, min: "not-a-date" }],
+      [{ field: EItemField.RELEASE_DATE, min: "2025-01-01T00:00:00" }],
       [
-        { featureId: numberId.toHexString(), min: 1 },
-        { featureId: numberId.toHexString(), min: 2 },
+        {
+          field: EItemField.RELEASE_DATE,
+          min: "2025-01-01",
+          max: "2020-01-01",
+        },
+      ],
+      [{ field: "unknown", min: 1 }],
+      [
+        { field: EItemField.DURATION, min: 1 },
+        { field: EItemField.DURATION, min: 2 },
       ],
     ]) {
       expect(
@@ -990,7 +1017,7 @@ describe("CollectionReadController HTTP", () => {
           await app.inject({
             method: "QUERY",
             url: `/collections/${collection.id}/items`,
-            payload: { features: filters },
+            payload: { fields: filters },
           } as unknown as Parameters<typeof app.inject>[0])
         ).statusCode,
       ).toBe(400)
@@ -1009,6 +1036,9 @@ describe("CollectionReadController HTTP", () => {
     { language: "fr" },
     { tags: "bad" },
     { excludeTags: "bad" },
+    { fields: "bad" },
+    { fields: [] },
+    { features: [] },
     { features: "bad" },
     { statuses: ["unknown"] },
     { isFavorite: 1 },

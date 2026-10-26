@@ -2,14 +2,12 @@ import { describe, expect, it } from "@jest/globals"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
-import { EFeatureGroup } from "@entities/feature/schemas/EFeatureGroup"
+import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { EItemRelationRoleGroup } from "@entities/itemRelationRole/schemas/EItemRelationRoleGroup"
 import type { TCreateRelationSide } from "@entities/relation/schemas/relationSide.schema"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
-import { EUnit } from "@entities/shared/schemas/EUnit"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
@@ -37,31 +35,6 @@ describe("ItemController HTTP", () => {
     return item
   }
 
-  const createFeature = async (props: {
-    item: Types.ObjectId
-    key: string
-    value: string | number | boolean | Date
-    valueType: EFeatureValueType
-    unit?: EUnit | null
-  }) => {
-    const { connection } = getTestApplication()
-    const feature = {
-      _id: new Types.ObjectId(),
-      key: props.key,
-      name: { ru: props.key, en: null },
-      valueType: props.valueType,
-      unit: props.unit ?? null,
-      group: EFeatureGroup.TECHNICAL,
-      description: { ru: "Описание характеристики", en: null },
-    }
-    await connection.collection("Feature").insertOne(feature)
-    await connection
-      .collection("ItemFeature")
-      .insertOne({ item: props.item, feature: feature._id, value: props.value })
-
-    return feature
-  }
-
   const createTag = async (props: {
     key: string
     id?: Types.ObjectId
@@ -77,7 +50,11 @@ describe("ItemController HTTP", () => {
       group: props.group ?? null,
       aliases: ["Альтернативный тег"],
       description: { ru: "Описание тега", en: null },
-      embedding: { model: "internal", vector: [1, 2, 3] },
+      embedding: {
+        updatedAt: new Date("2026-10-25T00:00:00.000Z"),
+        vector: [1, 2, 3],
+      },
+      weightModifier: 2,
     }
     await connection.collection("Tag").insertOne(tag)
 
@@ -144,7 +121,11 @@ describe("ItemController HTTP", () => {
       aliases: [],
       media: [],
       tags: [],
-      features: [],
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
       relations: [],
     })
   })
@@ -264,7 +245,11 @@ describe("ItemController HTTP", () => {
       aliases: [],
       media: [],
       tags: [],
-      features: [],
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
       relations: [],
     })
   })
@@ -346,177 +331,175 @@ describe("ItemController HTTP", () => {
     ])
   })
 
-  it("возвращает характеристики шапки по key, сериализуя дату в ISO 8601", async () => {
-    const { app } = getTestApplication()
-    const item = await createItem()
-    const other = await createItem()
-    const releaseStatus = await createFeature({
-      item: item._id,
-      key: "releaseStatus",
-      valueType: EFeatureValueType.STRING,
-      value: "released",
-    })
-    const releaseDate = await createFeature({
-      item: item._id,
-      key: "releaseDate",
-      valueType: EFeatureValueType.DATE,
-      value: new Date("2026-10-25T12:30:00+03:00"),
-    })
-    const duration = await createFeature({
-      item: item._id,
-      key: "duration",
-      valueType: EFeatureValueType.NUMBER,
-      value: 120,
-      unit: EUnit.MINUTE,
-    })
-    const ageRating = await createFeature({
-      item: item._id,
-      key: "ageRating",
-      valueType: EFeatureValueType.STRING,
-      value: "16+",
-    })
-    await createFeature({
-      item: other._id,
-      key: "other",
-      valueType: EFeatureValueType.NUMBER,
-      value: 999,
-    })
-
-    const response = await app.inject({
-      method: "GET",
-      url: `/items/${item._id}`,
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(response.json<ItemResponseDto>().features).toEqual([
-      {
-        id: ageRating._id.toHexString(),
-        key: "ageRating",
-        name: ageRating.name,
-        valueType: "string",
-        unit: null,
-        value: "16+",
-      },
-      {
-        id: duration._id.toHexString(),
-        key: "duration",
-        name: duration.name,
-        valueType: "number",
-        unit: "minute",
-        value: 120,
-      },
-      {
-        id: releaseDate._id.toHexString(),
-        key: "releaseDate",
-        name: releaseDate.name,
-        valueType: "date",
-        unit: null,
-        value: "2026-10-25T09:30:00.000Z",
-      },
-      {
-        id: releaseStatus._id.toHexString(),
-        key: "releaseStatus",
-        name: releaseStatus.name,
-        valueType: "string",
-        unit: null,
-        value: "released",
-      },
-    ])
-    for (const key of [
-      "ageRating",
-      "duration",
-      "releaseDate",
-      "releaseStatus",
-    ]) {
-      expect(response.json()).not.toHaveProperty(key)
-    }
-  })
-
-  it("возвращает null для отсутствующей единицы и переводов характеристики", async () => {
-    const { app, connection } = getTestApplication()
-    const item = await createItem()
-    const feature = await createFeature({
-      item: item._id,
-      key: "duration",
-      valueType: EFeatureValueType.NUMBER,
-      value: 120,
-    })
-    await connection.collection("Feature").updateOne(
-      { _id: feature._id },
-      {
-        $unset: { unit: "", "name.ru": "" },
-        $set: { "name.en": "Duration" },
-      },
-    )
-
-    const response = await app.inject({
-      method: "GET",
-      url: `/items/${item._id}`,
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(response.json<ItemResponseDto>().features).toEqual([
-      {
-        id: feature._id.toHexString(),
-        key: "duration",
-        name: { ru: null, en: "Duration" },
-        valueType: "number",
-        unit: null,
-        value: 120,
-      },
-    ])
-  })
-
   it.each([
-    { valueType: EFeatureValueType.NUMBER, value: 0 },
-    { valueType: EFeatureValueType.NUMBER, value: 1.5 },
-    { valueType: EFeatureValueType.BOOLEAN, value: false },
-    { valueType: EFeatureValueType.BOOLEAN, value: true },
-    { valueType: EFeatureValueType.STRING, value: "" },
-    { valueType: EFeatureValueType.STRING, value: "announced" },
-    { valueType: EFeatureValueType.STRING, value: "cancelled" },
+    {
+      type: EItemType.MOVIE,
+      movie: { duration: 120.5 },
+      series: null,
+      game: null,
+    },
+    {
+      type: EItemType.ANIMATED_MOVIE,
+      movie: { duration: 90 },
+      series: null,
+      game: null,
+    },
+    {
+      type: EItemType.ANIME_MOVIE,
+      movie: { duration: 100 },
+      series: null,
+      game: null,
+    },
+    ...[
+      EItemType.SERIES,
+      EItemType.ANIMATED_SERIES,
+      EItemType.ANIME_SERIES,
+    ].map((type) => ({
+      type,
+      movie: null,
+      series: {
+        episodeCount: 12,
+        releasedEpisodeCount: 0,
+        episodeDuration: 24.5,
+        nextEpisodeAt: new Date("2026-10-25T12:30:00+03:00"),
+      },
+      game: null,
+    })),
+    {
+      type: EItemType.GAME,
+      movie: null,
+      series: null,
+      game: { mainStoryDuration: 120.5, fullCompletionDuration: 300 },
+    },
   ])(
-    "сохраняет значение характеристики $valueType: $value",
-    async ({ valueType, value }) => {
+    "возвращает точные поля $type из Item и даты в ISO 8601",
+    async ({ type, movie, series, game }) => {
       const { app } = getTestApplication()
-      const item = await createItem()
-      const feature = await createFeature({
-        item: item._id,
-        key: "feature",
-        valueType,
-        value,
+      const item = await createItem({
+        type,
+        movie,
+        series,
+        game,
+        releaseDate: new Date("2026-10-25T12:30:00+03:00"),
+        ageRestriction: EAgeRestriction.ALL_AGES,
       })
+      await createItem({
+        releaseDate: new Date("2000-01-01"),
+        movie: { duration: 999 },
+      })
+
       const response = await app.inject({
         method: "GET",
         url: `/items/${item._id}`,
       })
 
       expect(response.statusCode).toBe(200)
-      expect(response.json<ItemResponseDto>().features).toEqual([
-        {
-          id: feature._id.toHexString(),
-          key: "feature",
-          name: feature.name,
-          valueType,
-          value,
-          unit: null,
-        },
-      ])
+      expect(response.json()).toMatchObject({
+        type,
+        releaseDate: "2026-10-25T09:30:00.000Z",
+        ageRestriction: 0,
+        movie,
+        series:
+          series === null
+            ? null
+            : { ...series, nextEpisodeAt: "2026-10-25T09:30:00.000Z" },
+        game,
+      })
+      expect(response.json()).not.toHaveProperty("features")
     },
   )
 
-  it("не выдумывает значения неизвестных характеристик и пропускает отсутствующий справочник", async () => {
-    const { app, connection } = getTestApplication()
-    const item = await createItem()
-    await connection.collection("Feature").insertOne({
-      key: "duration",
-      valueType: "number",
-      unit: "minute",
-      name: { ru: "Продолжительность", en: null },
+  it.each([
+    {
+      type: EItemType.MOVIE,
+      movie: {},
+      series: null,
+      game: null,
+      expected: { movie: { duration: null }, series: null, game: null },
+    },
+    {
+      type: EItemType.SERIES,
+      movie: null,
+      series: {},
+      game: null,
+      expected: {
+        movie: null,
+        series: {
+          episodeCount: null,
+          releasedEpisodeCount: null,
+          episodeDuration: null,
+          nextEpisodeAt: null,
+        },
+        game: null,
+      },
+    },
+    {
+      type: EItemType.GAME,
+      movie: null,
+      series: null,
+      game: {},
+      expected: {
+        movie: null,
+        series: null,
+        game: { mainStoryDuration: null, fullCompletionDuration: null },
+      },
+    },
+    {
+      type: EItemType.SERIES,
+      movie: null,
+      series: { releasedEpisodeCount: 0 },
+      game: null,
+      expected: {
+        movie: null,
+        series: {
+          episodeCount: null,
+          releasedEpisodeCount: 0,
+          episodeDuration: null,
+          nextEpisodeAt: null,
+        },
+        game: null,
+      },
+    },
+    {
+      type: EItemType.GAME,
+      movie: null,
+      series: null,
+      game: { fullCompletionDuration: 300 },
+      expected: {
+        movie: null,
+        series: null,
+        game: { mainStoryDuration: null, fullCompletionDuration: 300 },
+      },
+    },
+  ])(
+    "возвращает неизвестные поля блока $type как null: $expected",
+    async ({ type, movie, series, game, expected }) => {
+      const { app } = getTestApplication()
+      const item = await createItem({ type, movie, series, game })
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/items/${item._id}`,
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toMatchObject({
+        ...expected,
+        releaseDate: null,
+        ageRestriction: null,
+      })
+    },
+  )
+
+  it("возвращает явно сохранённые null без выдуманных характеристик", async () => {
+    const { app } = getTestApplication()
+    const item = await createItem({
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
     })
-    await connection
-      .collection("ItemFeature")
-      .insertOne({ item: item._id, feature: new Types.ObjectId(), value: 123 })
 
     const response = await app.inject({
       method: "GET",
@@ -524,7 +507,72 @@ describe("ItemController HTTP", () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(response.json<ItemResponseDto>().features).toEqual([])
+    expect(response.json()).toMatchObject({
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
+    })
+  })
+
+  it.each([0, 6, 12, 16, 18] as const)(
+    "возвращает числовое возрастное ограничение %s",
+    async (ageRestriction) => {
+      const { app } = getTestApplication()
+      const item = await createItem({ ageRestriction })
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/items/${item._id}`,
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.json<ItemResponseDto>().ageRestriction).toBe(
+        ageRestriction,
+      )
+    },
+  )
+
+  it("возвращает категории и диапазонные характеристики едиными прямыми тегами без вычисления полей Item", async () => {
+    const { app } = getTestApplication()
+    const item = await createItem({ type: EItemType.GAME })
+    const tags = []
+    for (const props of [
+      { key: "releaseStatusReleased", group: ETagGroup.RELEASE_STATUS },
+      { key: "hasDefinedEndFalse", group: ETagGroup.HAS_DEFINED_END },
+      { key: "releaseYear2026", group: ETagGroup.RELEASE_YEAR },
+      {
+        key: "mainStoryDuration120To300",
+        group: ETagGroup.MAIN_STORY_DURATION,
+      },
+      { key: "ageRestriction16", group: ETagGroup.AGE_RESTRICTION },
+      { key: "singlePlayer", group: ETagGroup.GAME_MODE },
+    ]) {
+      tags.push(await createTag({ ...props, item: item._id }))
+    }
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/items/${item._id}`,
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json<ItemResponseDto>().tags).toEqual(
+      tags
+        .sort((a, b) => a._id.toHexString().localeCompare(b._id.toHexString()))
+        .map((tag) => ({
+          id: tag._id.toHexString(),
+          key: tag.key,
+          group: tag.group,
+          name: tag.name,
+        })),
+    )
+    expect(response.json()).toMatchObject({
+      releaseDate: null,
+      ageRestriction: null,
+      game: null,
+    })
   })
 
   it.each(["first", "second"] as const)(
@@ -832,13 +880,12 @@ describe("ItemController HTTP", () => {
     const collectionId = new Types.ObjectId()
     const groupId = new Types.ObjectId()
     await createTag({ item: item._id, key: "drama" })
-    await createFeature({
-      item: item._id,
-      key: "duration",
-      valueType: EFeatureValueType.NUMBER,
-      value: 120,
-      unit: EUnit.MINUTE,
-    })
+    await connection
+      .collection("Item")
+      .updateOne(
+        { _id: item._id },
+        { $set: { movie: { duration: 120, secret: "internal" } } },
+      )
     const related = await createItem()
     const role = await createRole({
       key: "sequel",
@@ -878,7 +925,7 @@ describe("ItemController HTTP", () => {
     })
     await connection
       .collection("ItemMetric")
-      .insertOne({ item: item._id, ratingAverage: 8, ratingCount: 10 })
+      .insertOne({ item: item._id, ratingAverage: 8, ratingsCount: 10 })
     await connection.collection("Collection").insertOne({
       _id: collectionId,
       author: null,
@@ -900,14 +947,13 @@ describe("ItemController HTTP", () => {
     await connection.collection("SourceItem").insertOne({
       item: item._id,
       externalId: "external-secret",
-      url: "https://private-source.example/item",
+      source: new Types.ObjectId(),
+      externalUrl: "https://private-source.example/item",
     })
     const names = [
       "Item",
       "ItemTag",
       "Tag",
-      "Feature",
-      "ItemFeature",
       "Relation",
       "ItemRelationRole",
       "UserItem",
@@ -946,12 +992,16 @@ describe("ItemController HTTP", () => {
     expect(second.json()).toEqual(first.json())
     expect(authenticated.json()).toEqual(first.json())
     expect(Object.keys(first.json()).sort()).toEqual([
+      "ageRestriction",
       "aliases",
       "description",
-      "features",
+      "game",
       "id",
       "media",
+      "movie",
       "relations",
+      "releaseDate",
+      "series",
       "tags",
       "title",
       "type",
@@ -962,16 +1012,13 @@ describe("ItemController HTTP", () => {
       "key",
       "name",
     ])
-    expect(
-      Object.keys(first.json<ItemResponseDto>().features[0]).sort(),
-    ).toEqual(["id", "key", "name", "unit", "value", "valueType"])
+    expect(first.json<ItemResponseDto>().movie).toEqual({ duration: 120 })
     for (const secret of [
       "Приватная заметка",
       "private-source",
       "external-secret",
       "Франшиза",
       "Описание тега",
-      "Описание характеристики",
     ]) {
       expect(first.body).not.toContain(secret)
     }

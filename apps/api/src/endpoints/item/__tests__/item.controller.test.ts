@@ -48,7 +48,11 @@ describe("ItemController", () => {
       aliases: [],
       media: [],
       tags: [],
-      features: [],
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
       relations: [],
     }
     service.getById.mockResolvedValue(result)
@@ -158,7 +162,11 @@ describe("ItemController", () => {
       description: expect.any(Object),
       aliases: expect.any(Object),
       tags: expect.any(Object),
-      features: expect.any(Object),
+      releaseDate: expect.any(Object),
+      ageRestriction: expect.any(Object),
+      movie: expect.any(Object),
+      series: expect.any(Object),
+      game: expect.any(Object),
       relations: expect.any(Object),
     })
     expect(schemas).toHaveProperty("ItemSummaryResponseDto.properties", {
@@ -173,18 +181,40 @@ describe("ItemController", () => {
       group: expect.any(Object),
       name: expect.any(Object),
     })
-    expect(schemas).toHaveProperty("ItemFeatureResponseDto.properties", {
-      id: expect.any(Object),
-      key: expect.any(Object),
-      name: expect.any(Object),
-      valueType: expect.any(Object),
-      unit: expect.any(Object),
-      value: expect.any(Object),
+    expect(schemas).not.toHaveProperty("ItemFeatureResponseDto")
+    expect(schemas).toHaveProperty("ItemMovieResponseDto.properties", {
+      duration: { type: ["number", "null"] },
+    })
+    expect(schemas).toHaveProperty("ItemSeriesResponseDto.properties", {
+      episodeCount: { type: ["number", "null"] },
+      releasedEpisodeCount: { type: ["number", "null"] },
+      episodeDuration: { type: ["number", "null"] },
+      nextEpisodeAt: { type: ["string", "null"], format: "date-time" },
+    })
+    expect(schemas).toHaveProperty("ItemGameResponseDto.properties", {
+      mainStoryDuration: { type: ["number", "null"] },
+      fullCompletionDuration: { type: ["number", "null"] },
+    })
+    expect(schemas).toHaveProperty("ItemResponseDto.properties.releaseDate", {
+      type: ["string", "null"],
+      format: "date-time",
     })
     expect(schemas).toHaveProperty(
-      "ItemFeatureResponseDto.properties.value.oneOf",
-      [{ type: "string" }, { type: "number" }, { type: "boolean" }],
+      "ItemResponseDto.properties.ageRestriction",
+      {
+        type: ["number", "null"],
+        enum: [0, 6, 12, 16, 18, null],
+      },
     )
+    for (const [field, dto] of [
+      ["movie", "ItemMovieResponseDto"],
+      ["series", "ItemSeriesResponseDto"],
+      ["game", "ItemGameResponseDto"],
+    ]) {
+      expect(schemas).toHaveProperty(`ItemResponseDto.properties.${field}`, {
+        anyOf: [{ $ref: `#/components/schemas/${dto}` }, { type: "null" }],
+      })
+    }
     expect(schemas).toHaveProperty("ItemRelationResponseDto.properties", {
       item: expect.any(Object),
       role: expect.any(Object),

@@ -1,7 +1,7 @@
 import type { Types } from "mongoose"
 
 import type { ICollectionContentSelectionProps } from "./ICollectionContentSelectionProps"
-import type { TCollectionFeatureFilter } from "./TCollectionFeatureFilter"
+import type { TCollectionFieldFilter } from "./TCollectionFieldFilter"
 
 interface IReadCollectionItemsProps extends ICollectionContentSelectionProps {
   isGrouped: boolean
@@ -12,7 +12,7 @@ interface IReadCollectionItemsProps extends ICollectionContentSelectionProps {
   limit: number
   tags: Types.ObjectId[]
   excludeTags: Types.ObjectId[]
-  features: TCollectionFeatureFilter[]
+  fields: TCollectionFieldFilter[]
 
   query?: string
   ratingMin?: number

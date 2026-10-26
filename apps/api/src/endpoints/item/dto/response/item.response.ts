@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger"
 
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
+import { isNumber } from "@shared/functions/checks/isNumber"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageText.response"
 import { MediaResponseDto } from "@entities/shared/dto/response/media.response"
-import { EUnit } from "@entities/shared/schemas/EUnit"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 
@@ -36,27 +36,31 @@ class ItemTagResponseDto {
   name: LanguageTextResponseDto
 }
 
-class ItemFeatureResponseDto {
-  @ApiProperty({ type: String })
-  id: string
+class ItemMovieResponseDto {
+  @ApiProperty({ type: Number, nullable: true })
+  duration: number | null
+}
 
-  @ApiProperty({ type: String })
-  key: string
+class ItemSeriesResponseDto {
+  @ApiProperty({ type: Number, nullable: true })
+  episodeCount: number | null
 
-  @ApiProperty({ type: LanguageTextResponseDto })
-  name: LanguageTextResponseDto
+  @ApiProperty({ type: Number, nullable: true })
+  releasedEpisodeCount: number | null
 
-  @ApiProperty({ enum: EFeatureValueType })
-  valueType: EFeatureValueType
+  @ApiProperty({ type: Number, nullable: true })
+  episodeDuration: number | null
 
-  @ApiProperty({ enum: EUnit, nullable: true })
-  unit: EUnit | null
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  nextEpisodeAt: string | null
+}
 
-  @ApiProperty({
-    oneOf: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
-    description: SWAGGER_DICTIONARY.item.featureValue,
-  })
-  value: string | number | boolean
+class ItemGameResponseDto {
+  @ApiProperty({ type: Number, nullable: true })
+  mainStoryDuration: number | null
+
+  @ApiProperty({ type: Number, nullable: true })
+  fullCompletionDuration: number | null
 }
 
 class ItemRelationRoleResponseDto {
@@ -97,11 +101,24 @@ class ItemResponseDto extends ItemSummaryResponseDto {
   })
   tags: ItemTagResponseDto[]
 
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
+  releaseDate: string | null
+
   @ApiProperty({
-    type: [ItemFeatureResponseDto],
-    description: SWAGGER_DICTIONARY.item.featuresOrder,
+    type: Number,
+    enum: Object.values(EAgeRestriction).filter(isNumber),
+    nullable: true,
   })
-  features: ItemFeatureResponseDto[]
+  ageRestriction: EAgeRestriction | null
+
+  @ApiProperty({ type: ItemMovieResponseDto, nullable: true })
+  movie: ItemMovieResponseDto | null
+
+  @ApiProperty({ type: ItemSeriesResponseDto, nullable: true })
+  series: ItemSeriesResponseDto | null
+
+  @ApiProperty({ type: ItemGameResponseDto, nullable: true })
+  game: ItemGameResponseDto | null
 
   @ApiProperty({
     type: [ItemRelationResponseDto],

@@ -8,6 +8,18 @@ enum ETagGroup {
   COUNTRY = "country",
   ORIGINAL_LANGUAGE = "originalLanguage",
   PLATFORM = "platform",
+  DURATION = "duration",
+  EPISODE_DURATION = "episodeDuration",
+  EPISODE_COUNT = "episodeCount",
+  MAIN_STORY_DURATION = "mainStoryDuration",
+  FULL_COMPLETION_DURATION = "fullCompletionDuration",
+  RELEASE_STATUS = "releaseStatus",
+  HAS_DEFINED_END = "hasDefinedEnd",
+  AGE_RESTRICTION = "ageRestriction",
+  RELEASE_YEAR = "releaseYear",
+  GAME_MODE = "gameMode",
+  GAME_MECHANIC = "gameMechanic",
+  PERSPECTIVE = "perspective",
 }
 
 export { ETagGroup }

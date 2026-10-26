@@ -1,9 +1,8 @@
+import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 import { Module } from "@nestjs/common"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { ItemModule } from "@entities/item/item.module"
-import { FeatureModule } from "@entities/feature/feature.module"
-import { ItemFeatureModule } from "@entities/itemFeature/itemFeature.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserModule } from "@entities/user/user.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
@@ -15,8 +14,7 @@ import { UserItemService } from "./services/userItem.service"
   imports: [
     AuthModule,
     ItemModule,
-    FeatureModule,
-    ItemFeatureModule,
+    ItemTagModule,
     UserItemModule,
     UserModule,
     DatabaseModule,

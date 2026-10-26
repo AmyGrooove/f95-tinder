@@ -35,17 +35,25 @@ class ItemService {
         group: tag.group ?? null,
         name: this.mapLanguageText(tag.name),
       })),
-      features: item.features.map((feature) => ({
-        id: feature._id.toString(),
-        key: feature.key,
-        name: this.mapLanguageText(feature.name),
-        valueType: feature.valueType,
-        unit: feature.unit ?? null,
-        value:
-          feature.value instanceof Date
-            ? feature.value.toISOString()
-            : feature.value,
-      })),
+      releaseDate: item.releaseDate?.toISOString() ?? null,
+      ageRestriction: item.ageRestriction ?? null,
+      movie: isNil(item.movie)
+        ? null
+        : { duration: item.movie.duration ?? null },
+      series: isNil(item.series)
+        ? null
+        : {
+            episodeCount: item.series.episodeCount ?? null,
+            releasedEpisodeCount: item.series.releasedEpisodeCount ?? null,
+            episodeDuration: item.series.episodeDuration ?? null,
+            nextEpisodeAt: item.series.nextEpisodeAt?.toISOString() ?? null,
+          },
+      game: isNil(item.game)
+        ? null
+        : {
+            mainStoryDuration: item.game.mainStoryDuration ?? null,
+            fullCompletionDuration: item.game.fullCompletionDuration ?? null,
+          },
       relations: item.relations.map(
         ({ item: relatedItem, role, roleNameOverride }) => ({
           item: {

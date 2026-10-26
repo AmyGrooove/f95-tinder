@@ -2,7 +2,6 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
-import { isDate } from "@shared/functions/checks/isDate"
 import { isNil } from "@shared/functions/checks/isNil"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
@@ -13,11 +12,6 @@ import type {
   TCreateTasteTagPreference,
 } from "./tasteTagPreference.schema"
 import { TasteTagPreferenceSchema } from "./tasteTagPreference.schema"
-import type {
-  TasteFeaturePreference,
-  TCreateTasteFeaturePreference,
-} from "./tasteFeaturePreference.schema"
-import { TasteFeaturePreferenceSchema } from "./tasteFeaturePreference.schema"
 
 @Schema({ collection: "UserTasteProfile" })
 class UserTasteProfile extends MongoEntity {
@@ -36,42 +30,6 @@ class UserTasteProfile extends MongoEntity {
       new Set(value.map((entry) => String(entry.tag))).size === value.length,
   })
   tagPreferences: TasteTagPreference[]
-
-  @Prop({
-    required: true,
-    type: [TasteFeaturePreferenceSchema],
-    default: [],
-    set: removeEmptyTastePreferences<TasteFeaturePreference>,
-    validate: (value: TasteFeaturePreference[]) => {
-      if (!isArray(value) || value.some((entry) => isNil(entry))) {
-        return false
-      }
-
-      if (
-        value.some((entry) => {
-          return (
-            isNil(entry.value) === isNil(entry.range) ||
-            (!isNil(entry.range) && entry.range.from > entry.range.to)
-          )
-        })
-      ) {
-        return false
-      }
-
-      const keys = value.map((entry) => {
-        return JSON.stringify([
-          String(entry.feature),
-          isDate(entry.value) ? "date" : typeof entry.value,
-          entry.value,
-          entry.range?.from,
-          entry.range?.to,
-        ])
-      })
-
-      return new Set(keys).size === value.length
-    },
-  })
-  featurePreferences: TasteFeaturePreference[]
 }
 
 type TCreateUserTasteProfile = TCreateEntity<
@@ -79,7 +37,6 @@ type TCreateUserTasteProfile = TCreateEntity<
   never,
   {
     tagPreferences?: TCreateTasteTagPreference[]
-    featurePreferences?: TCreateTasteFeaturePreference[]
   }
 >
 
@@ -92,7 +49,6 @@ UserTasteProfileSchema.index(
 
 UserTasteProfileSchema.pre("validate", function () {
   this.tagPreferences = removeEmptyTastePreferences(this.tagPreferences)
-  this.featurePreferences = removeEmptyTastePreferences(this.featurePreferences)
 })
 
 export { UserTasteProfile, UserTasteProfileSchema }

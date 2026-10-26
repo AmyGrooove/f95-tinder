@@ -1,3 +1,6 @@
+import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import {
   BadRequestException,
   ConflictException,
@@ -11,10 +14,6 @@ import type { HydratedDocument } from "mongoose"
 import { AuthService } from "@endpoints/auth/services/auth.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { FeatureRepository } from "@entities/feature/services/feature.repository"
-import { EFeatureKey } from "@entities/feature/schemas/EFeatureKey"
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
-import { ItemFeatureRepository } from "@entities/itemFeature/services/itemFeature.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
@@ -48,8 +47,7 @@ class UserItemService {
     private readonly itemRepository: ItemRepository,
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
-    private readonly featureRepository: FeatureRepository,
-    private readonly itemFeatureRepository: ItemFeatureRepository,
+    private readonly itemTagRepository: ItemTagRepository,
   ) {}
 
   async query(
@@ -400,27 +398,17 @@ class UserItemService {
       return
     }
 
-    const feature = await this.featureRepository.read.findOne(
-      {
-        key: isGame ? EFeatureKey.HAS_DEFINED_END : EFeatureKey.RELEASE_STATUS,
-        valueType: isGame
-          ? EFeatureValueType.BOOLEAN
-          : EFeatureValueType.STRING,
-      },
-      { _id: 1 },
-      { session },
-    )
-
-    if (isNil(feature)) {
-      return
-    }
-
     const isCompletionUnavailable =
-      await this.itemFeatureRepository.read.checkIsExists(
+      await this.itemTagRepository.checkHasTagKeys(
         {
-          item: itemId,
-          feature: feature._id,
-          value: isGame ? false : { $in: ["announced", "ongoing"] },
+          itemId,
+          group: isGame ? ETagGroup.HAS_DEFINED_END : ETagGroup.RELEASE_STATUS,
+          keys: isGame
+            ? [ETagKey.HAS_DEFINED_END_FALSE]
+            : [
+                ETagKey.RELEASE_STATUS_ANNOUNCED,
+                ETagKey.RELEASE_STATUS_ONGOING,
+              ],
         },
         { session },
       )

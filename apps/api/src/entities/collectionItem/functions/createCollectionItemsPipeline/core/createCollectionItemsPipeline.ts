@@ -2,9 +2,8 @@ import type { PipelineStage } from "mongoose"
 
 import { Item } from "@entities/item/schemas/item.schema"
 import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
-import { ItemFeature } from "@entities/itemFeature/schemas/itemFeature.schema"
 import { ItemMetric } from "@entities/itemMetric/schemas/itemMetric.schema"
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { escapeRegex } from "@shared/functions/regex/escapeRegex"
 
@@ -29,7 +28,20 @@ const createCollectionItemsPipeline = (
         foreignField: "_id",
         pipeline: [
           { $match: { deletedAt: null } },
-          { $project: { _id: 1, type: 1, title: 1, aliases: 1, media: 1 } },
+          {
+            $project: {
+              _id: 1,
+              type: 1,
+              title: 1,
+              aliases: 1,
+              media: 1,
+              releaseDate: 1,
+              ageRestriction: 1,
+              movie: 1,
+              series: 1,
+              game: 1,
+            },
+          },
         ],
         as: "itemDocument",
       },
@@ -87,46 +99,29 @@ const createCollectionItemsPipeline = (
     )
   }
 
-  for (const feature of props.features) {
-    const value =
-      feature.valueType === EFeatureValueType.BOOLEAN
-        ? { $in: feature.values }
-        : {
-            ...(!isUndefined(feature.min) ? { $gte: feature.min } : {}),
-            ...(!isUndefined(feature.max) ? { $lte: feature.max } : {}),
-          }
-    const typeCheck =
-      feature.valueType === EFeatureValueType.NUMBER
+  for (const field of props.fields) {
+    const condition =
+      field.valueType === EItemFieldValueType.NUMBER
         ? {
-            $and: [
-              { $isNumber: "$value" },
-              { $gte: ["$value", -Number.MAX_VALUE] },
-              { $lte: ["$value", Number.MAX_VALUE] },
-            ],
+            $gte: field.min ?? -Number.MAX_VALUE,
+            $lte: field.max ?? Number.MAX_VALUE,
           }
         : {
-            $eq: [
-              { $type: "$value" },
-              feature.valueType === EFeatureValueType.DATE ? "date" : "bool",
-            ],
+            ...(!isUndefined(field.min) ? { $gte: field.min } : {}),
+            ...(!isUndefined(field.max) ? { $lte: field.max } : {}),
           }
 
-    pipeline.push(
-      {
-        $lookup: {
-          from: ItemFeature.name,
-          localField: "item",
-          foreignField: "item",
-          pipeline: [
-            { $match: { feature: feature.featureId, value, $expr: typeCheck } },
-            { $project: { _id: 1 } },
-            { $limit: 1 },
-          ],
-          as: "matchedFeature",
-        },
+    const fieldPath = `itemDocument.${field.field}`
+
+    pipeline.push({
+      $match: {
+        [fieldPath]: condition,
+        $expr:
+          field.valueType === EItemFieldValueType.NUMBER
+            ? { $isNumber: `$${fieldPath}` }
+            : { $eq: [{ $type: `$${fieldPath}` }, "date"] },
       },
-      { $match: { "matchedFeature.0": { $exists: true } } },
-    )
+    })
   }
 
   if (!isUndefined(props.ratingMin) || !isUndefined(props.ratingMax)) {

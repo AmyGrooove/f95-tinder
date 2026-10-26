@@ -11,12 +11,11 @@ import { Test } from "@nestjs/testing"
 import type { TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 
-import { EFeatureValueType } from "@entities/feature/schemas/EFeatureValueType"
+import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import type { IItemDetails } from "@entities/item/types/IItemDetails"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
-import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 
@@ -47,7 +46,11 @@ describe("ItemService", () => {
       aliases: [],
       media: [],
       tags: [],
-      features: [],
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
       relations: [],
     }
     repository.findDetailsById.mockResolvedValue(item)
@@ -64,7 +67,11 @@ describe("ItemService", () => {
       aliases: [],
       media: [],
       tags: [],
-      features: [],
+      releaseDate: null,
+      ageRestriction: null,
+      movie: null,
+      series: null,
+      game: null,
       relations: [],
     })
     expect(repository.findDetailsById).toHaveBeenCalledTimes(1)
@@ -80,6 +87,10 @@ describe("ItemService", () => {
       user: { note: "Приватная заметка" },
       statistics: { rating: 9 },
       externalLinks: ["https://source.example/item"],
+      features: ["internal"],
+      movie: { duration: 120, secret: "internal" },
+      series: { episodeCount: 12, secret: "internal" },
+      game: { mainStoryDuration: 60, secret: "internal" },
       media: [
         {
           src: "/poster.webp",
@@ -106,12 +117,16 @@ describe("ItemService", () => {
     const result = await service.getById(item._id)
 
     expect(Object.keys(result).sort()).toEqual([
+      "ageRestriction",
       "aliases",
       "description",
-      "features",
+      "game",
       "id",
       "media",
+      "movie",
       "relations",
+      "releaseDate",
+      "series",
       "tags",
       "title",
       "type",
@@ -146,76 +161,103 @@ describe("ItemService", () => {
   })
 
   it.each([
+    { type: EItemType.MOVIE, field: "movie", value: { duration: 120.5 } },
+    { type: EItemType.ANIMATED_MOVIE, field: "movie", value: { duration: 90 } },
+    { type: EItemType.ANIME_MOVIE, field: "movie", value: { duration: 100 } },
+    ...[
+      EItemType.SERIES,
+      EItemType.ANIMATED_SERIES,
+      EItemType.ANIME_SERIES,
+    ].map((type) => ({
+      type,
+      field: "series",
+      value: {
+        episodeCount: 12,
+        releasedEpisodeCount: 0,
+        episodeDuration: 24.5,
+        nextEpisodeAt: new Date("2026-10-25T12:30:00+03:00"),
+      },
+    })),
     {
-      valueType: EFeatureValueType.NUMBER,
-      value: 120,
-      unit: EUnit.MINUTE,
-      expected: 120,
+      type: EItemType.GAME,
+      field: "game",
+      value: { mainStoryDuration: 120.5, fullCompletionDuration: 300 },
     },
-    { valueType: EFeatureValueType.NUMBER, value: 0, unit: null, expected: 0 },
-    {
-      valueType: EFeatureValueType.NUMBER,
-      value: 1.5,
-      unit: null,
-      expected: 1.5,
-    },
-    {
-      valueType: EFeatureValueType.BOOLEAN,
-      value: false,
-      unit: null,
-      expected: false,
-    },
-    {
-      valueType: EFeatureValueType.BOOLEAN,
-      value: true,
-      unit: null,
-      expected: true,
-    },
-    {
-      valueType: EFeatureValueType.STRING,
-      value: "16+",
-      unit: null,
-      expected: "16+",
-    },
-    {
-      valueType: EFeatureValueType.STRING,
-      value: "",
-      unit: null,
-      expected: "",
-    },
-    {
-      valueType: EFeatureValueType.DATE,
-      value: new Date("2026-10-25T12:30:00+03:00"),
-      unit: null,
-      expected: "2026-10-25T09:30:00.000Z",
-    },
-  ])(
-    "сериализует характеристику $valueType со значением $expected без потери значения",
-    async ({ valueType, value, unit, expected }) => {
-      const featureId = new Types.ObjectId()
-      item.features = [
-        {
-          _id: featureId,
-          key: "feature",
-          name: { ru: null, en: "Feature" },
-          valueType,
-          unit,
-          value,
-        },
-      ]
+  ] as const)(
+    "возвращает точные характеристики $type и даты в ISO 8601",
+    async ({ type, field, value }) => {
+      Object.assign(item, {
+        type,
+        [field]: value,
+        releaseDate: new Date("2026-10-25T12:30:00+03:00"),
+        ageRestriction: EAgeRestriction.ALL_AGES,
+      })
+      const before = JSON.stringify(item)
 
       const result = await service.getById(item._id)
 
-      expect(result.features).toEqual([
-        {
-          id: featureId.toHexString(),
-          key: "feature",
-          name: { ru: null, en: "Feature" },
-          valueType,
-          unit,
-          value: expected,
-        },
-      ])
+      expect(result).toMatchObject({
+        type,
+        releaseDate: "2026-10-25T09:30:00.000Z",
+        ageRestriction: 0,
+      })
+      expect(result.movie).toEqual(field === "movie" ? value : null)
+      expect(result.series).toEqual(
+        field === "series"
+          ? { ...value, nextEpisodeAt: "2026-10-25T09:30:00.000Z" }
+          : null,
+      )
+      expect(result.game).toEqual(field === "game" ? value : null)
+      expect(JSON.stringify(item)).toBe(before)
+    },
+  )
+
+  it("возвращает null для неизвестных полей внутри существующих блоков", async () => {
+    item.movie = {}
+    item.series = {}
+    item.game = {}
+
+    const result = await service.getById(item._id)
+
+    expect(result.movie).toEqual({ duration: null })
+    expect(result.series).toEqual({
+      episodeCount: null,
+      releasedEpisodeCount: null,
+      episodeDuration: null,
+      nextEpisodeAt: null,
+    })
+    expect(result.game).toEqual({
+      mainStoryDuration: null,
+      fullCompletionDuration: null,
+    })
+  })
+
+  it("сохраняет известные значения частично заполненных блоков", async () => {
+    item.series = { releasedEpisodeCount: 0 }
+    item.game = { fullCompletionDuration: 300 }
+
+    const result = await service.getById(item._id)
+
+    expect(result.series).toEqual({
+      episodeCount: null,
+      releasedEpisodeCount: 0,
+      episodeDuration: null,
+      nextEpisodeAt: null,
+    })
+    expect(result.game).toEqual({
+      mainStoryDuration: null,
+      fullCompletionDuration: 300,
+    })
+  })
+
+  it.each([0, 6, 12, 16, 18] as const)(
+    "сохраняет возрастное ограничение %s",
+    async (ageRestriction) => {
+      item.ageRestriction = ageRestriction
+
+      expect((await service.getById(item._id)).ageRestriction).toBe(
+        ageRestriction,
+      )
     },
   )
 

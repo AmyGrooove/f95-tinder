@@ -3,7 +3,6 @@ import { Module } from "@nestjs/common"
 import { CollectionModule } from "@entities/collection/collection.module"
 import { CollectionItemModule } from "@entities/collectionItem/collectionItem.module"
 import { ItemModule } from "@entities/item/item.module"
-import { FeatureModule } from "@entities/feature/feature.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
@@ -22,7 +21,6 @@ import { CollectionAuthService } from "./services/collectionAuth.service"
     CollectionModule,
     CollectionItemModule,
     ItemModule,
-    FeatureModule,
     UserModule,
     UserCollectionModule,
     AuthModule,

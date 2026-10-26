@@ -18,6 +18,8 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
 
+import { EItemField } from "@entities/item/schemas/EItemField"
+
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 
 import { CollectionReadController } from "../controllers/collectionRead.controller"
@@ -250,9 +252,7 @@ describe("CollectionReadController", () => {
         query: " Alpha ",
         tags: [new Types.ObjectId().toHexString()],
         excludeTags: [new Types.ObjectId().toHexString()],
-        features: [
-          { featureId: new Types.ObjectId().toHexString(), values: [false] },
-        ],
+        fields: [{ field: EItemField.DURATION, min: 60, max: 120 }],
       }
       const result = {
         items: [],
@@ -309,9 +309,10 @@ describe("CollectionReadController", () => {
       { tags: [] },
       { tags: "507f1f77bcf86cd799439011" },
       { excludeTags: ["invalid"] },
-      { features: "[]" },
-      { features: [{ featureId: "invalid", values: [false] }] },
-      { features: [{ featureId: "507f1f77bcf86cd799439011", unknown: true }] },
+      { features: [] },
+      { fields: "[]" },
+      { fields: [{ field: "invalid", min: 60 }] },
+      { fields: [{ field: EItemField.DURATION, unknown: true }] },
       { page: 0 },
       { query: " " },
       { isFavorite: false },
@@ -395,7 +396,7 @@ describe("CollectionReadController", () => {
     const { controller, content, id } = await createController()
     const result = {
       tags: [],
-      features: [],
+      fields: [],
       sorting: { availableModes: [ECollectionMode.FLAT] },
     }
     content.getFilters.mockResolvedValue(result)
