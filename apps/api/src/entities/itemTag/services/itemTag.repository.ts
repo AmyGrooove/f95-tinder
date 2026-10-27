@@ -5,6 +5,8 @@ import { Tag } from "@entities/tag/schemas/tag.schema"
 import { Item } from "@entities/item/schemas/item.schema"
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { ICheckItemTagKeysProps } from "../types/ICheckItemTagKeysProps"
+import type { ITasteItemTag } from "../types/ITasteItemTag"
+import type { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -128,6 +130,56 @@ class ItemTagRepository {
       itemCount: result?.items[0]?.count ?? 0,
       tagCounts: result?.tags ?? [],
     }
+  }
+
+  async getTasteTags(
+    itemIds: readonly Types.ObjectId[],
+    groups: readonly ETagGroup[],
+  ) {
+    return await this.aggregation.aggregate<ITasteItemTag>([
+      {
+        $match: {
+          item: { $in: itemIds },
+          relevanceScore: { $gt: 0 },
+        },
+      },
+      {
+        $lookup: {
+          from: Item.name,
+          localField: "item",
+          foreignField: "_id",
+          pipeline: [
+            { $match: { deletedAt: null } },
+            { $project: { type: 1 } },
+          ],
+          as: "matchedItem",
+        },
+      },
+      { $unwind: "$matchedItem" },
+      {
+        $lookup: {
+          from: Tag.name,
+          localField: "tag",
+          foreignField: "_id",
+          pipeline: [
+            { $match: { group: { $in: groups } } },
+            { $project: { group: 1 } },
+          ],
+          as: "matchedTag",
+        },
+      },
+      { $unwind: "$matchedTag" },
+      {
+        $project: {
+          _id: 0,
+          item: 1,
+          tag: 1,
+          itemType: "$matchedItem.type",
+          group: "$matchedTag.group",
+          relevanceScore: 1,
+        },
+      },
+    ])
   }
 }
 

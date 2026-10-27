@@ -15,6 +15,7 @@ import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
+import { JobProcessorService } from "@infrastructure/jobs/services/jobProcessor.service"
 import { MailModule } from "@infrastructure/mail/mail.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
@@ -108,6 +109,7 @@ const createTestApplication = async () => {
 
     await configureApplication(app)
     await app.init()
+    await app.get(JobProcessorService).worker.pause()
     await app.getHttpAdapter().getInstance().ready()
 
     const mail = app.get(TestMailService)

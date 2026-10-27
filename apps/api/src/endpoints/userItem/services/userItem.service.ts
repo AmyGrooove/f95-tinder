@@ -15,6 +15,7 @@ import { AuthService } from "@endpoints/auth/services/auth.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { UserRepository } from "@entities/user/services/user.repository"
+import { UserTasteProfileRecalculationService } from "@entities/userTasteProfile/services/userTasteProfileRecalculation.service"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { ItemAttempt } from "@entities/userItem/schemas/itemAttempt.schema"
@@ -48,6 +49,7 @@ class UserItemService {
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
     private readonly itemTagRepository: ItemTagRepository,
+    private readonly tasteProfileRecalculationService: UserTasteProfileRecalculationService,
   ) {}
 
   async query(
@@ -146,6 +148,8 @@ class UserItemService {
           : [],
       })
 
+      await this.tasteProfileRecalculationService.enqueue(userId)
+
       return this.mapResponse(userItem)
     } catch (error) {
       if (
@@ -206,6 +210,8 @@ class UserItemService {
     if (isNil(userItem)) {
       throw new NotFoundException(DICTIONARY.userItem.notFound)
     }
+
+    await this.tasteProfileRecalculationService.enqueue(userId)
   }
 
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
@@ -310,7 +316,7 @@ class UserItemService {
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
     const userId = await this.authenticate(accessToken)
 
-    return this.transactionService.run(async (session) => {
+    const response = await this.transactionService.run(async (session) => {
       const filter = {
         _id: props.id,
         user: userId,
@@ -373,6 +379,10 @@ class UserItemService {
 
       return this.mapResponse(updated)
     })
+
+    await this.tasteProfileRecalculationService.enqueue(userId)
+
+    return response
   }
 
   private async validateCompletion(props: IValidateCompletionProps) {
