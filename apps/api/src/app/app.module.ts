@@ -6,6 +6,8 @@ import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { ItemEndpointModule } from "@endpoints/item/item.module"
+import { TagWeightModifiersModule } from "@endpoints/tagWeightModifiers/tagWeightModifiers.module"
+import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -39,8 +41,6 @@ import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
 import { AppController } from "./controllers/app.controller"
-import { TagWeightModifiersModule } from "./tagWeightModifiers/tagWeightModifiers.module"
-import { ItemRatingsModule } from "./itemRatings/itemRatings.module"
 
 @Module({
   imports: [
