@@ -8,6 +8,7 @@ import { CollectionEndpointModule } from "@endpoints/collection/collection.modul
 import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { TagWeightModifiersModule } from "@endpoints/tagWeightModifiers/tagWeightModifiers.module"
 import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
+import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -79,6 +80,7 @@ import { AppController } from "./controllers/app.controller"
     UserTasteProfileModule,
     TagWeightModifiersModule,
     ItemRatingsModule,
+    RecommendationsModule,
   ],
   controllers: [AppController],
   providers: [

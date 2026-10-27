@@ -11,6 +11,9 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 import { Item } from "../schemas/item.schema"
 import type { TCreateItem } from "../schemas/item.schema"
 import type { IItemDetails } from "../types/IItemDetails"
+import type { IReadRecommendationsProps } from "../types/IReadRecommendationsProps"
+import type { IRecommendedItem } from "../types/IRecommendedItem"
+import { createRecommendationPipeline } from "../functions/createRecommendationPipeline"
 
 @Injectable()
 class ItemRepository {
@@ -43,6 +46,18 @@ class ItemRepository {
     this.aggregation = new MongoAggregationRepository<HydratedDocument<Item>>(
       model,
     )
+  }
+
+  async readRecommendations(props: IReadRecommendationsProps) {
+    const [result] = await this.aggregation.aggregate<{
+      items: IRecommendedItem[]
+      count: { total: number }[]
+    }>(createRecommendationPipeline(props), { allowDiskUse: true })
+
+    return {
+      items: result?.items ?? [],
+      total: result?.count[0]?.total ?? 0,
+    }
   }
 
   findNotDeletedByIds(

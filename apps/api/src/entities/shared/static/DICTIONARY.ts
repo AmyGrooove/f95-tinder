@@ -6,6 +6,14 @@ const DICTIONARY = {
   item: {
     notFound: "Произведение не найдено или удалено",
   },
+  recommendations: {
+    invalidPagination: "Некорректная страница рекомендаций",
+    conflictingLibrary:
+      "Нельзя одновременно задавать include и only для библиотеки",
+    collectionRequired: "Для фильтра по группе требуется подборка",
+    invalidRatingRange: "Некорректный диапазон рейтинга",
+    invalidFieldRange: "Некорректное поле или диапазон фильтра",
+  },
   userItem: {
     invalidDate: "Некорректная дата",
     notFound: "Личная запись произведения не найдена",

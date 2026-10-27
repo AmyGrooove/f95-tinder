@@ -56,6 +56,15 @@ class UserItemRepository {
     >(model)
   }
 
+  async getRatingAverage() {
+    const [result] = await this.aggregation.aggregate<{ average: number }>([
+      { $match: { rating: { $ne: null } } },
+      { $group: { _id: null, average: { $avg: "$rating" } } },
+    ])
+
+    return result?.average ?? null
+  }
+
   async getRatingSummaries(itemIds: Types.ObjectId[]) {
     return await this.aggregation.aggregate<IItemRatingSummary>([
       { $match: { item: { $in: itemIds }, rating: { $ne: null } } },
