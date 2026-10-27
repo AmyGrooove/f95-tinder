@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -10,6 +10,7 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 
 import { UserItem } from "../schemas/userItem.schema"
 import type { TCreateUserItem } from "../schemas/userItem.schema"
+import type { IItemRatingSummary } from "../types/IItemRatingSummary"
 
 @Injectable()
 class UserItemRepository {
@@ -53,6 +54,19 @@ class UserItemRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<UserItem>
     >(model)
+  }
+
+  async getRatingSummaries(itemIds: Types.ObjectId[]) {
+    return await this.aggregation.aggregate<IItemRatingSummary>([
+      { $match: { item: { $in: itemIds }, rating: { $ne: null } } },
+      {
+        $group: {
+          _id: "$item",
+          ratingAverage: { $avg: "$rating" },
+          ratingsCount: { $sum: 1 },
+        },
+      },
+    ])
   }
 }
 

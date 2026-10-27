@@ -40,6 +40,7 @@ import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
 import { AppController } from "./controllers/app.controller"
 import { TagWeightModifiersModule } from "./tagWeightModifiers/tagWeightModifiers.module"
+import { ItemRatingsModule } from "./itemRatings/itemRatings.module"
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { TagWeightModifiersModule } from "./tagWeightModifiers/tagWeightModifier
     SessionModule,
     UserTasteProfileModule,
     TagWeightModifiersModule,
+    ItemRatingsModule,
   ],
   controllers: [AppController],
   providers: [
