@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { AggregateOptions, HydratedDocument, Model } from "mongoose"
+import type { AggregateOptions, HydratedDocument, Model, Types } from "mongoose"
 import { Tag } from "@entities/tag/schemas/tag.schema"
+import { Item } from "@entities/item/schemas/item.schema"
+import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { ICheckItemTagKeysProps } from "../types/ICheckItemTagKeysProps"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
@@ -83,6 +85,49 @@ class ItemTagRepository {
     )
 
     return records.length > 0
+  }
+
+  async getUsageCounts(
+    tagIds: readonly Types.ObjectId[],
+    itemTypes: readonly EItemType[],
+  ) {
+    const [result] = await this.aggregation.aggregate<{
+      items: { count: number }[]
+      tags: { _id: Types.ObjectId; count: number }[]
+    }>(
+      [
+        { $match: { tag: { $in: tagIds } } },
+        {
+          $lookup: {
+            from: Item.name,
+            localField: "item",
+            foreignField: "_id",
+            pipeline: [
+              { $match: { deletedAt: null, type: { $in: itemTypes } } },
+              { $project: { _id: 1 } },
+            ],
+            as: "matchedItem",
+          },
+        },
+        { $match: { "matchedItem.0": { $exists: true } } },
+        { $group: { _id: "$item", tags: { $addToSet: "$tag" } } },
+        {
+          $facet: {
+            items: [{ $count: "count" }],
+            tags: [
+              { $unwind: "$tags" },
+              { $group: { _id: "$tags", count: { $sum: 1 } } },
+            ],
+          },
+        },
+      ],
+      { allowDiskUse: true },
+    )
+
+    return {
+      itemCount: result?.items[0]?.count ?? 0,
+      tagCounts: result?.tags ?? [],
+    }
   }
 }
 

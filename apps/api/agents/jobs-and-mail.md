@@ -16,6 +16,12 @@ Handlers receive an ID, attempt, progress updater and `throwIfCancelled`. Progre
 
 `update` permits only matching queued jobs; `retry` permits failed jobs and resets attempt counters. `list` filters by definition name and supports states and an opaque cursor; it scans at most 500 queue entries per call. Its default limit is 50, permitted range 1–100. Inspect [job details](../src/infrastructure/jobs/types/IJobDetails.ts) before exposing these results through a future endpoint.
 
+## Tag weight modifiers
+
+[TagWeightModifiersModule](../src/app/tagWeightModifiers/tagWeightModifiers.module.ts), imported by AppModule, composes TagModule, ItemTagModule, JobsModule and SchedulerModule. [TagWeightModifiersSchedulerService](../src/app/tagWeightModifiers/services/tagWeightModifiersScheduler.service.ts) enqueues [RECALCULATE_TAG_WEIGHT_MODIFIERS_JOB](../src/app/tagWeightModifiers/static/RECALCULATE_TAG_WEIGHT_MODIFIERS_JOB.ts) (`tag.recalculateWeightModifiers`, version 1, null payload) daily at 03:00 Europe/Moscow. The job uses simple deduplication with its definition name and no TTL, suppressing repeated enqueues while pending, running or awaiting retry across application instances. Retry delays are 5,000, 30,000 and 120,000 ms. There is no startup catch-up if the scheduler was offline at the scheduled time, and no HTTP trigger.
+
+[RecalculateTagWeightModifiersJobHandler](../src/app/tagWeightModifiers/handlers/recalculateTagWeightModifiersJob.handler.ts) processes taste-enabled TAG_GROUP_RULES groups sequentially, checks cooperative cancellation before each group and before writes, and reports group progress. It reads group tag IDs, obtains catalogue usage through ItemTagRepository.getUsageCounts and updates only weightModifier on matching group Tags. Writes are idempotent, unordered bulk operations per group; a failed or cancelled run can leave some groups updated until a later successful recalculation. This does not recalculate UserTasteProfile. Counting semantics and the formula are described in [data access](data-access.md).
+
 ## Mail delivery
 
 Preserve the existing path: [MailService.send](../src/infrastructure/mail/services/mail.service.ts) → `JobService.add` → [SendMailJobHandler.handle](../src/infrastructure/mail/handlers/sendMailJob.handler.ts) → Resend. The service validates recipient, subject and text/HTML, serializes Buffer attachments to base64 and returns a queue ID with `status: "queued"`. It does not return a provider delivery ID.

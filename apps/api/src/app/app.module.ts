@@ -39,6 +39,7 @@ import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
 import { AppController } from "./controllers/app.controller"
+import { TagWeightModifiersModule } from "./tagWeightModifiers/tagWeightModifiers.module"
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { AppController } from "./controllers/app.controller"
     UserSourceAccountModule,
     SessionModule,
     UserTasteProfileModule,
+    TagWeightModifiersModule,
   ],
   controllers: [AppController],
   providers: [
