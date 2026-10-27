@@ -15,6 +15,7 @@ import { MongoWriteRepository } from "@infrastructure/database/services/mongoWri
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPagination.repository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { Collection } from "../schemas/collection.schema"
 import type { TCreateCollection } from "../schemas/collection.schema"
@@ -75,13 +76,13 @@ class CollectionRepository {
       {
         $match: {
           deletedAt: null,
-          ...(props.type === undefined ? {} : { type: props.type }),
+          ...(isUndefined(props.type) ? {} : { type: props.type }),
           ...(props.type === ECollectionType.FRANCHISE ? { author: null } : {}),
         },
       },
     ]
 
-    if (props.itemIds !== undefined) {
+    if (!isUndefined(props.itemIds)) {
       pipeline.push(
         {
           $lookup: {

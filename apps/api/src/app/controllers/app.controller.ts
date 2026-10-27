@@ -11,6 +11,7 @@ import {
   Res,
 } from "@nestjs/common"
 import { ApiExcludeEndpoint } from "@nestjs/swagger"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { getRandomBackground } from "../functions/getRandomBackground"
 import { BACKGROUNDS } from "../static/BACKGROUNDS"
@@ -35,10 +36,9 @@ class AppController {
     const previousIndex = cookie?.match(
       /(?:^|;\s*)biskyBackground=(\d+)(?:;|$)/,
     )?.[1]
-    const previousBackground =
-      previousIndex === undefined
-        ? undefined
-        : BACKGROUNDS[Number(previousIndex)]
+    const previousBackground = isUndefined(previousIndex)
+      ? undefined
+      : BACKGROUNDS[Number(previousIndex)]
     const background = getRandomBackground(previousBackground)
     const backgroundResponse = await fetch(background)
     const contentType = backgroundResponse.headers.get("content-type") ?? ""

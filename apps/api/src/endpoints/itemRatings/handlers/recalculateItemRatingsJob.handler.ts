@@ -7,6 +7,7 @@ import { UserItemRepository } from "@entities/userItem/services/userItem.reposit
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { RECALCULATE_ITEM_RATINGS_JOB } from "../static/RECALCULATE_ITEM_RATINGS_JOB"
 
@@ -27,7 +28,7 @@ class RecalculateItemRatingsJobHandler implements IJobHandler<null> {
       await context.throwIfCancelled()
 
       const items = await this.itemRepository.read.findMany(
-        lastId !== undefined ? { _id: { $gt: lastId } } : {},
+        !isUndefined(lastId) ? { _id: { $gt: lastId } } : {},
         { _id: 1 },
         { sort: { _id: 1 }, limit: 500 },
       )

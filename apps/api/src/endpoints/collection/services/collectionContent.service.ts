@@ -16,6 +16,7 @@ import type { TCollectionFieldFilter } from "@entities/collectionItem/types/TCol
 import type { ICollectionItemCard } from "@entities/collectionItem/types/ICollectionItemCard"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isDate } from "@shared/functions/checks/isDate"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isString } from "@shared/functions/checks/isString"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
@@ -262,7 +263,7 @@ class CollectionContentService {
 
     const date = new Date(value)
 
-    if (!Number.isFinite(date.getTime())) {
+    if (!isDate(date)) {
       throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
     }
 

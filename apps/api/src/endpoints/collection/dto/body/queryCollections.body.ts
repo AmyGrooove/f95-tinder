@@ -15,6 +15,7 @@ import {
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 class QueryCollectionsBodyDto {
   @ApiPropertyOptional({
@@ -24,7 +25,7 @@ class QueryCollectionsBodyDto {
     uniqueItems: true,
     description: SWAGGER_DICTIONARY.collection.filterItems,
   })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(60)
@@ -33,7 +34,7 @@ class QueryCollectionsBodyDto {
   itemIds?: string[]
 
   @ApiPropertyOptional({ enum: ECollectionType })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsEnum(ECollectionType)
   type?: ECollectionType
 
@@ -43,14 +44,14 @@ class QueryCollectionsBodyDto {
     maximum: Number.MAX_SAFE_INTEGER,
     default: 1,
   })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsInt()
   @Min(1)
   @Max(Number.MAX_SAFE_INTEGER)
   page?: number
 
   @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 60, default: 20 })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsInt()
   @Min(1)
   @Max(60)

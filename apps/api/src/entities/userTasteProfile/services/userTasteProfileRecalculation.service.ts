@@ -11,6 +11,7 @@ import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { RECALCULATE_USER_TASTE_PROFILE_JOB } from "../static/RECALCULATE_USER_TASTE_PROFILE_JOB"
 import type { ITasteTagAccumulator } from "../types/ITasteTagAccumulator"
@@ -80,7 +81,7 @@ class UserTasteProfileRecalculationService {
         TAG_GROUP_RULES[itemTag.group].itemTypes
       const contribution = contributionsByItem.get(String(itemTag.item))
 
-      if (contribution === undefined || !itemTypes.includes(itemTag.itemType)) {
+      if (isUndefined(contribution) || !itemTypes.includes(itemTag.itemType)) {
         continue
       }
 

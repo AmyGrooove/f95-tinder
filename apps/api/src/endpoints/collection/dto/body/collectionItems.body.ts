@@ -14,11 +14,13 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from "class-validator"
 
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { ECollectionMode } from "../../types/ECollectionMode"
 import { ECollectionSort } from "../../types/ECollectionSort"
@@ -61,7 +63,7 @@ class CollectionItemsBodyDto {
     type: [CollectionFieldFilterQueryDto],
     description: SWAGGER_DICTIONARY.collection.fieldFilters,
   })
-  @IsOptional()
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @Type(() => CollectionFieldFilterQueryDto)
   @IsArray()
   @ArrayNotEmpty()

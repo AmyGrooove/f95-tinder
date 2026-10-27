@@ -3,6 +3,7 @@ import { BadRequestException, Injectable } from "@nestjs/common"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
 import { CONFIRMATION_SCRIPT } from "../static/CONFIRMATION_SCRIPT"
@@ -53,8 +54,7 @@ class ConfirmationService {
 
   private checkIsConfirmation(value: unknown): value is IConfirmation {
     return (
-      typeof value === "object" &&
-      !isNil(value) &&
+      isObject(value) &&
       "userId" in value &&
       isString(value.userId) &&
       "codeHash" in value &&

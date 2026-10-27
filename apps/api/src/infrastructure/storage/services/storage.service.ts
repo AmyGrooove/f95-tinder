@@ -17,6 +17,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
 import { DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS } from "../static/DEFAULT_PRESIGNED_URL_EXPIRY_SECONDS"
@@ -320,7 +321,7 @@ class StorageService implements OnModuleInit {
       return error.name
     }
 
-    if (typeof error !== "object" || isNil(error)) {
+    if (!isObject(error)) {
       return undefined
     }
 
