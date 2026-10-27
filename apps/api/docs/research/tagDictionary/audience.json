@@ -1,0 +1,90 @@
+{
+  "group": "audience",
+  "tags": [
+    {
+      "key": "adultAudience",
+      "name": {
+        "ru": "Взрослая аудитория",
+        "en": "Adult audience"
+      },
+      "description": {
+        "ru": "Произведение явно адресовано взрослой аудитории; не означает автоматически возрастной допуск 18+ или наличие эротики",
+        "en": "A work explicitly targets adults without automatically implying an 18+ age rating or erotic content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "childrenAudience",
+      "name": {
+        "ru": "Детская аудитория",
+        "en": "Children’s audience"
+      },
+      "description": {
+        "ru": "Произведение явно рассчитано на детей как целевую аудиторию независимо от числового возрастного допуска",
+        "en": "A work explicitly targets children independently of a numerical age classification"
+      },
+      "aliases": ["Kids", "Детское"]
+    },
+    {
+      "key": "familyAudience",
+      "name": {
+        "ru": "Семейная аудитория",
+        "en": "Family audience"
+      },
+      "description": {
+        "ru": "Произведение рассчитано на совместную аудиторию детей и взрослых; возрастная шкала устанавливается отдельно",
+        "en": "A work is intended for a shared child-and-adult audience; age restrictions remain separate"
+      },
+      "aliases": ["Familie", "Family"]
+    },
+    {
+      "key": "joseiAudience",
+      "name": {
+        "ru": "Дзёсей-аудитория",
+        "en": "Josei audience"
+      },
+      "description": {
+        "ru": "Издательская демографическая категория для взрослых женщин, не 18+",
+        "en": "A publishing demographic directed at adult women, not an 18+ rating"
+      },
+      "aliases": ["Josei"]
+    },
+    {
+      "key": "seinenAudience",
+      "name": {
+        "ru": "Сэйнэн-аудитория",
+        "en": "Seinen audience"
+      },
+      "description": {
+        "ru": "Издательская демографическая категория для взрослых мужчин, не 18+",
+        "en": "A publishing demographic directed at adult men, not an 18+ rating"
+      },
+      "aliases": ["Seinen"]
+    },
+    {
+      "key": "shoujoAudience",
+      "name": {
+        "ru": "Сёдзё-аудитория",
+        "en": "Shoujo audience"
+      },
+      "description": {
+        "ru": "Издательская демографическая категория для девушек, не возрастное ограничение",
+        "en": "A publishing demographic directed at girls, not a content-age rating"
+      },
+      "aliases": ["Shoujo", "Shōjo"]
+    },
+    {
+      "key": "shounenAudience",
+      "name": {
+        "ru": "Сёнен-аудитория",
+        "en": "Shounen audience"
+      },
+      "description": {
+        "ru": "Издательская демографическая категория для юношей, не возрастное ограничение",
+        "en": "A publishing demographic directed at boys, not a content-age rating"
+      },
+      "aliases": ["Shounen", "Shōnen"]
+    }
+  ],
+  "tagRelations": []
+}

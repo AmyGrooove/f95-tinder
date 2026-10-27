@@ -12,6 +12,7 @@ This package is `@bisky/api`, a NestJS application using Fastify, TypeScript and
 
 ## Working boundaries
 
+- The project is in development. Schema and contract changes do not require data migrations, backfills or legacy-format compatibility by default. Do not propose or implement them as mandatory follow-up work unless the user explicitly requests preserving or transferring specific existing data. Historical migration notes elsewhere are conditional, not current requirements. This does not authorize database deletion or resets. See [development and migration policy](docs/readme.md#стадия-разработки-и-миграции).
 - Write API descriptions and similar short text values (Swagger summaries, parameter/property/response descriptions and dictionary messages) without a trailing period.
 - Adding a new HTTP endpoint requires the user's explicit agreement on the proposed operations and their contracts before implementation. First discuss the purpose, method/path, request/response data, access, errors and loading/pagination boundaries where relevant. Until agreement, limit endpoint work to read-only investigation and proposals: do not add production code, DTOs or module wiring, or document a proposed route as implemented. Agreement on individual data rules or a general request to work on a page does not approve endpoint creation. A direct implementation request naming an endpoint and its agreed contract is sufficient authorization; do not request the same approval again.
 - Preserve unrelated changes and existing contracts. Do not commit unless requested.

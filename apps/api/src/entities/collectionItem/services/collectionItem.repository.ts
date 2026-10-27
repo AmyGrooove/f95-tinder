@@ -1,3 +1,4 @@
+import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { Injectable } from "@nestjs/common"
@@ -142,7 +143,25 @@ class CollectionItemRepository {
                 $project: {
                   _id: 1,
                   releaseDate: 1,
-                  ageRestriction: 1,
+                  ageRestriction: {
+                    $convert: {
+                      input: {
+                        $cond: [
+                          {
+                            $eq: [
+                              "$ageRestriction",
+                              EAgeRestriction.AGE_18_PLUS_PLUS,
+                            ],
+                          },
+                          EAgeRestriction.AGE_18,
+                          "$ageRestriction",
+                        ],
+                      },
+                      to: "int",
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
                   movie: 1,
                   series: 1,
                   game: 1,

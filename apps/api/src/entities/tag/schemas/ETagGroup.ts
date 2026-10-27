@@ -13,6 +13,7 @@ enum ETagGroup {
   EPISODE_COUNT = "episodeCount",
   MAIN_STORY_DURATION = "mainStoryDuration",
   FULL_COMPLETION_DURATION = "fullCompletionDuration",
+  GAME_LENGTH = "gameLength",
   RELEASE_STATUS = "releaseStatus",
   HAS_DEFINED_END = "hasDefinedEnd",
   AGE_RESTRICTION = "ageRestriction",

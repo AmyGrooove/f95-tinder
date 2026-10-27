@@ -1,0 +1,282 @@
+{
+  "group": "platform",
+  "tags": [
+    {
+      "key": "platformAndroid",
+      "name": {
+        "ru": "Android",
+        "en": "Android"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Android; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Android; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformIOS",
+      "name": {
+        "ru": "iOS",
+        "en": "iOS"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для iOS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for iOS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformLinux",
+      "name": {
+        "ru": "Linux",
+        "en": "Linux"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Linux; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Linux; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformMacos",
+      "name": {
+        "ru": "macOS",
+        "en": "macOS"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для macOS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for macOS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformNewNintendo3DS",
+      "name": {
+        "ru": "New Nintendo 3DS",
+        "en": "New Nintendo 3DS"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для New Nintendo 3DS; не назначается автоматически по обратной совместимости",
+        "en": "Released base-game version for New Nintendo 3DS; not inferred from backward compatibility"
+      },
+      "aliases": ["New 3DS"]
+    },
+    {
+      "key": "platformNintendo3DS",
+      "name": {
+        "ru": "Nintendo 3DS",
+        "en": "Nintendo 3DS"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Nintendo 3DS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Nintendo 3DS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformNintendoDS",
+      "name": {
+        "ru": "Nintendo DS",
+        "en": "Nintendo DS"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Nintendo DS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Nintendo DS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformNintendoDSi",
+      "name": {
+        "ru": "Nintendo DSi",
+        "en": "Nintendo DSi"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Nintendo DSi; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Nintendo DSi; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformNintendoSwitch",
+      "name": {
+        "ru": "Nintendo Switch",
+        "en": "Nintendo Switch"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Nintendo Switch; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Nintendo Switch; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformNintendoSwitch2",
+      "name": {
+        "ru": "Nintendo Switch 2",
+        "en": "Nintendo Switch 2"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Nintendo Switch 2; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Nintendo Switch 2; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformPlayStation3",
+      "name": {
+        "ru": "PlayStation 3",
+        "en": "PlayStation 3"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для PlayStation 3; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for PlayStation 3; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformPlayStation4",
+      "name": {
+        "ru": "PlayStation 4",
+        "en": "PlayStation 4"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для PlayStation 4; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for PlayStation 4; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformPlayStation5",
+      "name": {
+        "ru": "PlayStation 5",
+        "en": "PlayStation 5"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для PlayStation 5; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for PlayStation 5; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformPlayStationPortable",
+      "name": {
+        "ru": "PlayStation Portable",
+        "en": "PlayStation Portable"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для PlayStation Portable; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for PlayStation Portable; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformPlayStationVita",
+      "name": {
+        "ru": "PlayStation Vita",
+        "en": "PlayStation Vita"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для PlayStation Vita; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for PlayStation Vita; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformVR",
+      "name": {
+        "ru": "VR",
+        "en": "VR"
+      },
+      "description": {
+        "ru": "У базовой игры есть выпущенная версия или режим для виртуальной реальности; общий признак без разделения гарнитур и поколений, не обещает совместимость с любой гарнитурой",
+        "en": "The base game has a released virtual-reality version or mode; an aggregate without headset or generation distinctions, not compatibility with every headset"
+      },
+      "aliases": ["Virtual Reality", "Виртуальная реальность"]
+    },
+    {
+      "key": "platformWebBrowser",
+      "name": {
+        "ru": "Браузер",
+        "en": "Web browser"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Web browser; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Web browser; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformWii",
+      "name": {
+        "ru": "Wii",
+        "en": "Wii"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Wii; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Wii; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformWiiU",
+      "name": {
+        "ru": "Wii U",
+        "en": "Wii U"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Wii U; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Wii U; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformWindows",
+      "name": {
+        "ru": "Windows",
+        "en": "Windows"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Windows; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Windows; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformXbox360",
+      "name": {
+        "ru": "Xbox 360",
+        "en": "Xbox 360"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Xbox 360; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Xbox 360; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformXboxOne",
+      "name": {
+        "ru": "Xbox One",
+        "en": "Xbox One"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Xbox One; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Xbox One; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    },
+    {
+      "key": "platformXboxSeries",
+      "name": {
+        "ru": "Xbox Series X|S",
+        "en": "Xbox Series X|S"
+      },
+      "description": {
+        "ru": "Выпущенная версия базовой игры для Xbox Series X|S; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
+        "en": "Released base-game version for Xbox Series X|S; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}

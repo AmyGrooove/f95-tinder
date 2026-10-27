@@ -397,7 +397,7 @@ describe("ItemController HTTP", () => {
       expect(response.json()).toMatchObject({
         type,
         releaseDate: "2026-10-25T09:30:00.000Z",
-        ageRestriction: 0,
+        ageRestriction: EAgeRestriction.ALL_AGES,
         movie,
         series:
           series === null
@@ -516,11 +516,11 @@ describe("ItemController HTTP", () => {
     })
   })
 
-  it.each([0, 6, 12, 16, 18] as const)(
-    "возвращает числовое возрастное ограничение %s",
+  it.each(Object.values(EAgeRestriction))(
+    "возвращает строковое возрастное ограничение %s",
     async (ageRestriction) => {
       const { app } = getTestApplication()
-      const item = await createItem({ ageRestriction })
+      const item = await createItem({ type: EItemType.GAME, ageRestriction })
 
       const response = await app.inject({
         method: "GET",

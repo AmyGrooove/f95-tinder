@@ -1,3 +1,4 @@
+import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { PipelineStage } from "mongoose"
 
 import { Item } from "@entities/item/schemas/item.schema"
@@ -36,7 +37,25 @@ const createCollectionItemsPipeline = (
               aliases: 1,
               media: 1,
               releaseDate: 1,
-              ageRestriction: 1,
+              ageRestriction: {
+                $convert: {
+                  input: {
+                    $cond: [
+                      {
+                        $eq: [
+                          "$ageRestriction",
+                          EAgeRestriction.AGE_18_PLUS_PLUS,
+                        ],
+                      },
+                      EAgeRestriction.AGE_18,
+                      "$ageRestriction",
+                    ],
+                  },
+                  to: "int",
+                  onError: null,
+                  onNull: null,
+                },
+              },
               movie: 1,
               series: 1,
               game: 1,

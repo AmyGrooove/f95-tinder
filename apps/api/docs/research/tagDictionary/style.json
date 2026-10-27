@@ -1,0 +1,714 @@
+{
+  "group": "style",
+  "tags": [
+    {
+      "key": "abstractVisualStyle",
+      "name": {
+        "ru": "Абстрактный визуальный стиль",
+        "en": "Abstract visual style"
+      },
+      "description": {
+        "ru": "Изображение опирается преимущественно на условные формы и связи вместо узнаваемой предметности",
+        "en": "Imagery relies primarily on nonrepresentational shapes and relationships"
+      },
+      "aliases": ["Abstract"]
+    },
+    {
+      "key": "animeVisualStyle",
+      "name": {
+        "ru": "Аниме-стилистика",
+        "en": "Anime visual style"
+      },
+      "description": {
+        "ru": "Визуальная подача использует узнаваемые условности аниме; признак сам по себе не определяет тип произведения или страну производства",
+        "en": "Visual presentation uses recognizable anime conventions; this alone does not determine work type or production country"
+      },
+      "aliases": ["Anime style", "Аниме-стиль"]
+    },
+    {
+      "key": "branchingNarrative",
+      "name": {
+        "ru": "Ветвящееся повествование",
+        "en": "Branching narrative"
+      },
+      "description": {
+        "ru": "Выбор или условия приводят к различным ветвям повествования",
+        "en": "Choices or conditions lead into different narrative branches"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cartoonVisualStyle",
+      "name": {
+        "ru": "Мультяшная графика",
+        "en": "Cartoon visual style"
+      },
+      "description": {
+        "ru": "Персонажи и формы используют преувеличения и условности мультяшного рисунка",
+        "en": "Characters and forms use exaggeration and cartoon conventions"
+      },
+      "aliases": ["Cartoony"]
+    },
+    {
+      "key": "chibiStyle",
+      "name": {
+        "ru": "Чиби-стиль",
+        "en": "Chibi style"
+      },
+      "description": {
+        "ru": "Персонажи изображены с намеренно уменьшенными телами и преувеличенно крупными головами",
+        "en": "Characters are depicted with deliberately small bodies and oversized heads"
+      },
+      "aliases": ["Chibi"]
+    },
+    {
+      "key": "chiptuneMusicStyle",
+      "name": {
+        "ru": "Чиптюн",
+        "en": "Chiptune"
+      },
+      "description": {
+        "ru": "Музыкальная подача использует тембры и ограничения ранних игровых звуковых микросхем; музыка существенно определяет подачу, а не только тему истории",
+        "en": "Music uses timbres and constraints associated with early game sound chips; music substantially shapes presentation rather than merely the story subject"
+      },
+      "aliases": ["8-bit Music"]
+    },
+    {
+      "key": "cinematicPresentation",
+      "name": {
+        "ru": "Кинематографическая подача",
+        "en": "Cinematic presentation"
+      },
+      "description": {
+        "ru": "Композиция кадров, монтаж и постановка систематически используют конвенции киноповествования",
+        "en": "Framing, editing and staging systematically use cinematic conventions"
+      },
+      "aliases": ["Cinematic"]
+    },
+    {
+      "key": "classicalMusicStyle",
+      "name": {
+        "ru": "Академическая музыка",
+        "en": "Classical music"
+      },
+      "description": {
+        "ru": "Академическая музыкальная традиция существенно определяет звучание или исполнение в произведении; музыка существенно определяет подачу, а не только тему истории",
+        "en": "The classical music tradition significantly shapes sound or performance; music substantially shapes presentation rather than merely the story subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "colorfulVisualStyle",
+      "name": {
+        "ru": "Красочная графика",
+        "en": "Colorful visual style"
+      },
+      "description": {
+        "ru": "Насыщенная и разнообразная цветовая палитра является устойчивым визуальным признаком",
+        "en": "A saturated varied color palette is a consistent visual characteristic"
+      },
+      "aliases": ["Colorful"]
+    },
+    {
+      "key": "comedicTone",
+      "name": {
+        "ru": "Комический тон",
+        "en": "Comedic tone"
+      },
+      "description": {
+        "ru": "Комические приёмы заметны в подаче даже без принадлежности к жанру комедии",
+        "en": "Comic devices are salient in presentation without necessarily defining a comedy genre"
+      },
+      "aliases": ["Funny"]
+    },
+    {
+      "key": "comicBookVisualStyle",
+      "name": {
+        "ru": "Комиксная стилистика",
+        "en": "Comic-book visual style"
+      },
+      "description": {
+        "ru": "Визуальная или повествовательная подача использует панели и иные конвенции комикса",
+        "en": "Visual or narrative presentation uses panels and other comic conventions"
+      },
+      "aliases": ["Comic Book"]
+    },
+    {
+      "key": "computerAnimation",
+      "name": {
+        "ru": "Компьютерная анимация",
+        "en": "Computer animation"
+      },
+      "description": {
+        "ru": "Анимация, созданная компьютерными средствами; может быть двух- или трёхмерной",
+        "en": "Computer-produced animation, which may be 2D or 3D"
+      },
+      "aliases": []
+    },
+    {
+      "key": "continuousNarrative",
+      "name": {
+        "ru": "Сквозное повествование",
+        "en": "Continuous narrative"
+      },
+      "description": {
+        "ru": "Основная сюжетная линия последовательно продолжается между эпизодами",
+        "en": "The principal narrative continues sequentially across episodes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cozyAtmosphere",
+      "name": {
+        "ru": "Уютная атмосфера",
+        "en": "Cozy atmosphere"
+      },
+      "description": {
+        "ru": "Подача устойчиво создаёт ощущение уюта и защищённости; не тождественна расслаблению или доброжелательному взаимодействию",
+        "en": "Presentation evokes comfort and safety, distinct from relaxation or benevolent interaction"
+      },
+      "aliases": ["Cozy"]
+    },
+    {
+      "key": "cuteStyle",
+      "name": {
+        "ru": "Милый стиль",
+        "en": "Cute style"
+      },
+      "description": {
+        "ru": "Образы и подача подчёркнуто вызывают ощущение умиления",
+        "en": "Imagery and presentation deliberately evoke tenderness"
+      },
+      "aliases": ["Cute"]
+    },
+    {
+      "key": "darkAtmosphere",
+      "name": {
+        "ru": "Мрачная атмосфера",
+        "en": "Dark atmosphere"
+      },
+      "description": {
+        "ru": "Подача устойчиво создаёт ощущение мрачности, угрозы или безысходности",
+        "en": "Presentation consistently creates a sense of darkness, threat or hopelessness"
+      },
+      "aliases": ["Dark"]
+    },
+    {
+      "key": "darkHumor",
+      "name": {
+        "ru": "Чёрный юмор",
+        "en": "Dark humor"
+      },
+      "description": {
+        "ru": "Мрачные темы используются как комический приём; не обязательно комедийный жанр",
+        "en": "Dark subjects used as a comic device, without necessarily making a comedy"
+      },
+      "aliases": ["Black humor", "Black humour", "Dark humour"]
+    },
+    {
+      "key": "dialogueHeavyNarrative",
+      "name": {
+        "ru": "Диалоговое повествование",
+        "en": "Dialogue-heavy narrative"
+      },
+      "description": {
+        "ru": "Значительная часть повествовательной информации и продвижения передаётся разговорами",
+        "en": "A substantial part of narrative information and progression is delivered through conversation"
+      },
+      "aliases": ["Dialogue Heavy"]
+    },
+    {
+      "key": "electronicMusicStyle",
+      "name": {
+        "ru": "Электронная музыка",
+        "en": "Electronic music"
+      },
+      "description": {
+        "ru": "Заметная часть музыкальной подачи создаётся средствами электронного синтеза и обработки; музыка существенно определяет подачу, а не только тему истории",
+        "en": "A salient part of the music uses electronic synthesis and processing; music substantially shapes presentation rather than merely the story subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "episodicNarrative",
+      "name": {
+        "ru": "Эпизодическое повествование",
+        "en": "Episodic narrative"
+      },
+      "description": {
+        "ru": "Отдельные эпизоды имеют преимущественно самостоятельные истории",
+        "en": "Individual episodes predominantly contain self-contained stories"
+      },
+      "aliases": ["Episodic"]
+    },
+    {
+      "key": "experimentalStyle",
+      "name": {
+        "ru": "Экспериментальный стиль",
+        "en": "Experimental style"
+      },
+      "description": {
+        "ru": "Произведение сознательно испытывает необычные способы художественной организации материала",
+        "en": "The work deliberately experiments with unusual artistic organization"
+      },
+      "aliases": ["Experimental"]
+    },
+    {
+      "key": "fastNarrativePacing",
+      "name": {
+        "ru": "Быстрый темп повествования",
+        "en": "Fast narrative pacing"
+      },
+      "description": {
+        "ru": "События и сюжетные изменения следуют с высокой плотностью и малым временем на паузы",
+        "en": "Events and plot changes occur densely with little time for pauses"
+      },
+      "aliases": ["Fast-Paced"]
+    },
+    {
+      "key": "foundFootage",
+      "name": {
+        "ru": "Найденная плёнка",
+        "en": "Found footage"
+      },
+      "description": {
+        "ru": "Подача материала как найденной записи, а не техника переиспользования архивного видео",
+        "en": "Presentation as a discovered recording, not the reuse of archival footage"
+      },
+      "aliases": []
+    },
+    {
+      "key": "gothicStyle",
+      "name": {
+        "ru": "Готический стиль",
+        "en": "Gothic style"
+      },
+      "description": {
+        "ru": "Образы упадка, мрачной архитектуры и таинственности формируют готическую эстетику",
+        "en": "Decay, dark architecture and mystery establish a Gothic aesthetic"
+      },
+      "aliases": ["Gothic"]
+    },
+    {
+      "key": "gunFu",
+      "name": {
+        "ru": "Ган-фу",
+        "en": "Gun fu"
+      },
+      "description": {
+        "ru": "Огнестрельные столкновения поставлены как акробатическая хореография ближнего боя",
+        "en": "Gunfights are choreographed as acrobatic close combat"
+      },
+      "aliases": []
+    },
+    {
+      "key": "handDrawnAnimation",
+      "name": {
+        "ru": "Рисованная анимация",
+        "en": "Hand-drawn animation"
+      },
+      "description": {
+        "ru": "Движение создаётся последовательностью рисунков; не любая двумерная графика",
+        "en": "Animation produced with sequential drawings, distinct from all 2D graphics"
+      },
+      "aliases": []
+    },
+    {
+      "key": "handDrawnVisualStyle",
+      "name": {
+        "ru": "Рисованная графика",
+        "en": "Hand-drawn visual style"
+      },
+      "description": {
+        "ru": "Изображение выглядит нарисованным вручную; не доказательство техники анимации",
+        "en": "A hand-drawn visual appearance, without asserting the animation technique"
+      },
+      "aliases": ["Hand-drawn"]
+    },
+    {
+      "key": "instrumentalMusicStyle",
+      "name": {
+        "ru": "Инструментальная музыка",
+        "en": "Instrumental music"
+      },
+      "description": {
+        "ru": "Заметная часть музыкальной подачи организована без ведущей вокальной партии; музыка существенно определяет подачу, а не только тему истории",
+        "en": "A salient part of the music is organized without a leading vocal part; music substantially shapes presentation rather than merely the story subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "jumpScare",
+      "name": {
+        "ru": "Скримеры",
+        "en": "Jump scares"
+      },
+      "description": {
+        "ru": "Резкая неожиданная смена изображения или звука вызывает испуг",
+        "en": "An abrupt unexpected visual or sound change elicits a startle"
+      },
+      "aliases": ["Jump Scare"]
+    },
+    {
+      "key": "loreRichWorld",
+      "name": {
+        "ru": "Подробно раскрытый мир",
+        "en": "Lore-rich world"
+      },
+      "description": {
+        "ru": "Произведение предоставляет много сведений об истории, устройстве и культурах своего мира; это не оценка качества",
+        "en": "The work provides extensive information about its world history, structure and cultures, without judging quality"
+      },
+      "aliases": ["Lore-Rich"]
+    },
+    {
+      "key": "melancholicAtmosphere",
+      "name": {
+        "ru": "Меланхоличная атмосфера",
+        "en": "Melancholic atmosphere"
+      },
+      "description": {
+        "ru": "Подача устойчиво поддерживает печаль, задумчивость или чувство утраты",
+        "en": "Presentation sustains sadness, reflection or a sense of loss"
+      },
+      "aliases": []
+    },
+    {
+      "key": "memeticHumor",
+      "name": {
+        "ru": "Мемный юмор",
+        "en": "Memetic humor"
+      },
+      "description": {
+        "ru": "Юмор строится на узнаваемых интернет-мемах и их переосмыслении",
+        "en": "Humor relies on recognizable internet memes and their reinterpretation"
+      },
+      "aliases": ["Memes"]
+    },
+    {
+      "key": "minimalistStyle",
+      "name": {
+        "ru": "Минимализм",
+        "en": "Minimalism"
+      },
+      "description": {
+        "ru": "Подача использует ограниченное число форм, деталей или выразительных средств",
+        "en": "Presentation uses a reduced number of forms, details or expressive devices"
+      },
+      "aliases": ["Minimalist"]
+    },
+    {
+      "key": "noirStyle",
+      "name": {
+        "ru": "Нуарный стиль",
+        "en": "Noir style"
+      },
+      "description": {
+        "ru": "Нуарная эстетика и настроение без привязки к историческому периоду",
+        "en": "Noir aesthetics and mood without restriction to a historical period"
+      },
+      "aliases": ["Noir"]
+    },
+    {
+      "key": "nonlinearNarrative",
+      "name": {
+        "ru": "Нелинейное повествование",
+        "en": "Nonlinear narrative"
+      },
+      "description": {
+        "ru": "События рассказываются не в хронологическом порядке; это не ветвление сюжета и не нелинейное прохождение",
+        "en": "Events are presented out of chronological order; this is distinct from story branching and nonlinear progression"
+      },
+      "aliases": []
+    },
+    {
+      "key": "nostalgicTone",
+      "name": {
+        "ru": "Ностальгический тон",
+        "en": "Nostalgic tone"
+      },
+      "description": {
+        "ru": "Подача обращается к переживанию утраты или воспоминаниям о прошлом",
+        "en": "Presentation invokes longing for or memories of the past"
+      },
+      "aliases": ["Nostalgia"]
+    },
+    {
+      "key": "parody",
+      "name": {
+        "ru": "Пародия",
+        "en": "Parody"
+      },
+      "description": {
+        "ru": "Произведение узнаваемо воспроизводит и переиначивает конвенции другого произведения или вида медиа",
+        "en": "A work recognizably imitates and reworks conventions of another work or medium"
+      },
+      "aliases": []
+    },
+    {
+      "key": "pixelGraphics",
+      "name": {
+        "ru": "Пиксельная графика",
+        "en": "Pixel graphics"
+      },
+      "description": {
+        "ru": "Визуальная подача сознательно использует заметную пиксельную структуру изображений",
+        "en": "Visual presentation deliberately uses visibly pixel-structured imagery"
+      },
+      "aliases": []
+    },
+    {
+      "key": "prerecordedVideoPresentation",
+      "name": {
+        "ru": "Подача через записанное видео",
+        "en": "Prerecorded-video presentation"
+      },
+      "description": {
+        "ru": "Заранее записанное видео существенно определяет подачу; участие живых актёров не утверждается",
+        "en": "Prerecorded video substantially shapes presentation; live actors are not asserted"
+      },
+      "aliases": ["FMV", "Full-motion video"]
+    },
+    {
+      "key": "psychedelicStyle",
+      "name": {
+        "ru": "Психоделический стиль",
+        "en": "Psychedelic style"
+      },
+      "description": {
+        "ru": "Подача использует изменённые состояния восприятия, текучие формы и необычные цветовые сочетания",
+        "en": "Presentation evokes altered perception through fluid forms and unusual colors"
+      },
+      "aliases": ["Psychedelic"]
+    },
+    {
+      "key": "reactiveNarration",
+      "name": {
+        "ru": "Реактивное повествование",
+        "en": "Reactive narration"
+      },
+      "description": {
+        "ru": "Подача рассказчика изменяется в ответ на действия игрока или состояние произведения",
+        "en": "Narrator presentation changes in response to player actions or work state"
+      },
+      "aliases": ["Dynamic Narration"]
+    },
+    {
+      "key": "realisticVisualStyle",
+      "name": {
+        "ru": "Реалистичная графика",
+        "en": "Realistic visual style"
+      },
+      "description": {
+        "ru": "Изображение стремится воспроизводить наблюдаемые материальные формы и освещение",
+        "en": "Imagery aims to reproduce observable material forms and lighting"
+      },
+      "aliases": ["Realistic"]
+    },
+    {
+      "key": "relaxingAtmosphere",
+      "name": {
+        "ru": "Расслабляющая атмосфера",
+        "en": "Relaxing atmosphere"
+      },
+      "description": {
+        "ru": "Ритм, звук и визуальная подача преимущественно снижают напряжение восприятия; домашний уют необязателен",
+        "en": "Pacing, sound and visuals reduce experiential tension, without requiring domestic comfort"
+      },
+      "aliases": ["Relaxing"]
+    },
+    {
+      "key": "retroStyle",
+      "name": {
+        "ru": "Ретро-стиль",
+        "en": "Retro style"
+      },
+      "description": {
+        "ru": "Подача сознательно воспроизводит эстетические особенности более ранних медиапериодов",
+        "en": "Presentation deliberately evokes the aesthetics of earlier media periods"
+      },
+      "aliases": ["Retro"]
+    },
+    {
+      "key": "rockMusicStyle",
+      "name": {
+        "ru": "Рок-музыка",
+        "en": "Rock music"
+      },
+      "description": {
+        "ru": "Заметная часть музыкальной подачи использует рок-инструментарий и рок-конвенции; музыка существенно определяет подачу, а не только тему истории",
+        "en": "A salient part of the musical presentation uses rock instrumentation and conventions; music substantially shapes presentation rather than merely the story subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "satire",
+      "name": {
+        "ru": "Сатира",
+        "en": "Satire"
+      },
+      "description": {
+        "ru": "Комическая или гротескная подача выявляет противоречия общественных явлений",
+        "en": "Comic or grotesque presentation exposes contradictions in social phenomena"
+      },
+      "aliases": []
+    },
+    {
+      "key": "slowNarrativePacing",
+      "name": {
+        "ru": "Медленный темп повествования",
+        "en": "Slow narrative pacing"
+      },
+      "description": {
+        "ru": "События раскрываются неспешно с длительным наблюдением и сравнительно редкими сюжетными изменениями",
+        "en": "Events unfold slowly with sustained observation and relatively infrequent plot changes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "stopMotion",
+      "name": {
+        "ru": "Покадровая анимация",
+        "en": "Stop-motion animation"
+      },
+      "description": {
+        "ru": "Движение создаётся покадровой съёмкой изменяемых физических объектов",
+        "en": "Movement is created by frame-by-frame photography of repositioned physical objects"
+      },
+      "aliases": ["Stop Motion Animation"]
+    },
+    {
+      "key": "storyFocusedPresentation",
+      "name": {
+        "ru": "Акцент на сюжете",
+        "en": "Story-focused presentation"
+      },
+      "description": {
+        "ru": "Значительная доля подачи посвящена развитию событий и персонажей; это не оценка качества сценария",
+        "en": "Presentation substantially develops events and characters; this is not a judgment of writing quality"
+      },
+      "aliases": ["Story Rich", "Акцент на истории"]
+    },
+    {
+      "key": "stylizedVisualStyle",
+      "name": {
+        "ru": "Стилизованная графика",
+        "en": "Stylized visual style"
+      },
+      "description": {
+        "ru": "Изображение намеренно отходит от натуралистических пропорций и материальной передачи",
+        "en": "Imagery deliberately departs from naturalistic proportions and material depiction"
+      },
+      "aliases": ["Stylized"]
+    },
+    {
+      "key": "surrealism",
+      "name": {
+        "ru": "Сюрреализм",
+        "en": "Surrealism"
+      },
+      "description": {
+        "ru": "Нарушение привычной логики и сочетание необычных образов создают художественный эффект",
+        "en": "Disrupted everyday logic and unusual imagery create an artistic effect"
+      },
+      "aliases": ["Surreal"]
+    },
+    {
+      "key": "tenseAtmosphere",
+      "name": {
+        "ru": "Напряжённая атмосфера",
+        "en": "Tense atmosphere"
+      },
+      "description": {
+        "ru": "Подача устойчиво поддерживает ожидание угрозы или неопределённого исхода",
+        "en": "Presentation sustains anticipation of threat or an uncertain outcome"
+      },
+      "aliases": []
+    },
+    {
+      "key": "textBasedPresentation",
+      "name": {
+        "ru": "Текстовая подача",
+        "en": "Text-based presentation"
+      },
+      "description": {
+        "ru": "Основной способ передачи событий и информации опирается на письменный текст",
+        "en": "Written text is the principal means of communicating events and information"
+      },
+      "aliases": ["Text-Based"]
+    },
+    {
+      "key": "threeDimensionalAnimation",
+      "name": {
+        "ru": "Трёхмерная анимация",
+        "en": "3D animation"
+      },
+      "description": {
+        "ru": "Анимация с трёхмерными моделями; не любая 3D-игра",
+        "en": "Animation using three-dimensional models; not every 3D game"
+      },
+      "aliases": ["3D-анимация"]
+    },
+    {
+      "key": "threeDimensionalGraphics",
+      "name": {
+        "ru": "Трёхмерная графика",
+        "en": "3D graphics"
+      },
+      "description": {
+        "ru": "Основное визуальное представление использует трёхмерные объекты и пространство; это не отдельное утверждение о технике анимации",
+        "en": "The main visual presentation uses three-dimensional objects and space, without separately asserting an animation technique"
+      },
+      "aliases": ["3D", "3D-графика"]
+    },
+    {
+      "key": "twoDimensionalAnimation",
+      "name": {
+        "ru": "Двумерная анимация",
+        "en": "2D animation"
+      },
+      "description": {
+        "ru": "Анимация с двумерным представлением движения; не любой тег 2D у игры",
+        "en": "Animation using a two-dimensional representation; not every 2D game"
+      },
+      "aliases": ["2D-анимация"]
+    },
+    {
+      "key": "twoDimensionalGraphics",
+      "name": {
+        "ru": "Двумерная графика",
+        "en": "2D graphics"
+      },
+      "description": {
+        "ru": "Основное визуальное представление построено в двух измерениях; это не утверждение о технике анимации",
+        "en": "The main visual presentation is two-dimensional, without asserting an animation technique"
+      },
+      "aliases": ["2D", "2D-графика"]
+    },
+    {
+      "key": "voxelGraphics",
+      "name": {
+        "ru": "Воксельная графика",
+        "en": "Voxel graphics"
+      },
+      "description": {
+        "ru": "Объёмная графика строится из дискретных пространственных ячеек-вокселей",
+        "en": "Volumetric imagery is built from discrete spatial voxel cells"
+      },
+      "aliases": ["Voxel"]
+    },
+    {
+      "key": "wholesomeTone",
+      "name": {
+        "ru": "Доброжелательный тон",
+        "en": "Wholesome tone"
+      },
+      "description": {
+        "ru": "Подача подчёркивает заботу, поддержку и доброжелательное взаимодействие",
+        "en": "Presentation emphasizes care, support and benevolent interaction"
+      },
+      "aliases": ["Wholesome"]
+    }
+  ],
+  "tagRelations": []
+}

@@ -1,0 +1,3150 @@
+{
+  "group": "keyword",
+  "tags": [
+    {
+      "key": "acting",
+      "name": {
+        "ru": "Актёрское мастерство",
+        "en": "Acting"
+      },
+      "description": {
+        "ru": "Актёрское исполнение ролей и жизнь исполнителей существенно представлены в содержании",
+        "en": "Acting and performers' lives are salient in content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "adultRelationships",
+      "name": {
+        "ru": "Отношения взрослых",
+        "en": "Adult relationships"
+      },
+      "description": {
+        "ru": "Романтические отношения между взрослыми персонажами существенно представлены в истории",
+        "en": "Romantic relationships between adult characters are salient"
+      },
+      "aliases": ["Adult Couples"]
+    },
+    {
+      "key": "africaSetting",
+      "name": {
+        "ru": "Действие в Африке",
+        "en": "African setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Африка»; это не страна производства",
+        "en": "A significant part of the story occurs in africa; this does not identify the production country"
+      },
+      "aliases": ["Africa"]
+    },
+    {
+      "key": "afterlife",
+      "name": {
+        "ru": "Загробный мир",
+        "en": "Afterlife"
+      },
+      "description": {
+        "ru": "Мир или существование после смерти являются существенной частью истории",
+        "en": "A world or existence after death forms a significant part of the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "ageGapRelationships",
+      "name": {
+        "ru": "Отношения с разницей в возрасте",
+        "en": "Age-gap relationships"
+      },
+      "description": {
+        "ru": "Отношения между людьми разных возрастных групп и связанные трудности существенно представлены в истории",
+        "en": "Relationships across different age groups and associated challenges are salient"
+      },
+      "aliases": ["Age Gap"]
+    },
+    {
+      "key": "ageTransformation",
+      "name": {
+        "ru": "Изменение возраста",
+        "en": "Age transformation"
+      },
+      "description": {
+        "ru": "Персонажи претерпевают физическое изменение возраста сверх обычного взросления",
+        "en": "Characters undergo physical age changes beyond ordinary aging"
+      },
+      "aliases": []
+    },
+    {
+      "key": "aging",
+      "name": {
+        "ru": "Старение",
+        "en": "Aging"
+      },
+      "description": {
+        "ru": "Поздние этапы жизни и последствия старения являются существенной темой",
+        "en": "Later life and consequences of aging form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "agricultureTheme",
+      "name": {
+        "ru": "Сельское хозяйство",
+        "en": "Agriculture theme"
+      },
+      "description": {
+        "ru": "Выращивание культур, сельское хозяйство и связанный образ жизни являются предметом истории",
+        "en": "Crop growing, farming and associated lifestyles form a story subject"
+      },
+      "aliases": ["Agriculture"]
+    },
+    {
+      "key": "alchemists",
+      "name": {
+        "ru": "Алхимики",
+        "en": "Alchemists"
+      },
+      "description": {
+        "ru": "Алхимики и практика преобразования веществ по алхимическим представлениям существенны для мира",
+        "en": "Alchemists and transformation practices based on alchemical ideas are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "alcohol",
+      "name": {
+        "ru": "Алкоголь",
+        "en": "Alcohol"
+      },
+      "description": {
+        "ru": "Алкогольные напитки, их производство или употребление являются предметом содержания",
+        "en": "Alcoholic beverages, production or consumption form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "alienInvasion",
+      "name": {
+        "ru": "Вторжение пришельцев",
+        "en": "Alien-invasion"
+      },
+      "description": {
+        "ru": "Приход инопланетных сил нарушает жизнь земного общества и создаёт основной конфликт",
+        "en": "The arrival of extraterrestrial forces disrupts Earth society and creates the main conflict"
+      },
+      "aliases": ["Alien Invasion"]
+    },
+    {
+      "key": "aliens",
+      "name": {
+        "ru": "Инопланетяне",
+        "en": "Aliens"
+      },
+      "description": {
+        "ru": "Разумные или иные существа внеземного происхождения заметно участвуют в истории",
+        "en": "Beings of extraterrestrial origin play a significant role"
+      },
+      "aliases": []
+    },
+    {
+      "key": "allBoysSchool",
+      "name": {
+        "ru": "Школа для мальчиков",
+        "en": "All-boys school"
+      },
+      "description": {
+        "ru": "Существенная часть событий происходит в школе с мужским составом учащихся",
+        "en": "A significant portion occurs in a school with male students"
+      },
+      "aliases": []
+    },
+    {
+      "key": "allGirlsSchool",
+      "name": {
+        "ru": "Школа для девочек",
+        "en": "All-girls school"
+      },
+      "description": {
+        "ru": "Существенная часть событий происходит в школе с женским составом учащихся",
+        "en": "A significant portion occurs in a school with female students"
+      },
+      "aliases": []
+    },
+    {
+      "key": "alternateHistory",
+      "name": {
+        "ru": "Альтернативная история",
+        "en": "Alternate history"
+      },
+      "description": {
+        "ru": "Ход известных исторических событий изменён через явно воображаемое ответвление",
+        "en": "Known historical events diverge through an explicitly imagined alternative"
+      },
+      "aliases": []
+    },
+    {
+      "key": "americanFootballTheme",
+      "name": {
+        "ru": "Американский футбол",
+        "en": "American football theme"
+      },
+      "description": {
+        "ru": "Американский футбол, его игроки или соревнования составляют существенную тему; отличается от футбола ассоциации",
+        "en": "American football, its players or competitions are a significant subject, distinct from association football"
+      },
+      "aliases": []
+    },
+    {
+      "key": "ancientRomeSetting",
+      "name": {
+        "ru": "Действие в Древнем Риме",
+        "en": "Ancient Rome setting"
+      },
+      "description": {
+        "ru": "Мир или действие существенно связаны с Древним Римом; не современная страна производства",
+        "en": "The world or story is significantly tied to Ancient Rome, not a modern production country"
+      },
+      "aliases": ["Rome"]
+    },
+    {
+      "key": "animals",
+      "name": {
+        "ru": "Животные",
+        "en": "Animals"
+      },
+      "description": {
+        "ru": "Животные существенно участвуют в мире истории как существа или персонажи",
+        "en": "Animals significantly participate as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "artificialIntelligence",
+      "name": {
+        "ru": "Искусственный интеллект",
+        "en": "Artificial intelligence"
+      },
+      "description": {
+        "ru": "Искусственно созданные системы с интеллектуальным поведением существенно участвуют в конфликте или мире",
+        "en": "Artificial systems exhibiting intelligent behavior are significant in the conflict or world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "assassins",
+      "name": {
+        "ru": "Наёмные убийцы",
+        "en": "Assassins"
+      },
+      "description": {
+        "ru": "Персонажи, профессионально выполняющие тайные убийства, существенно представлены в истории",
+        "en": "Characters professionally carrying out covert killings are salient in the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "baseballTheme",
+      "name": {
+        "ru": "Бейсбол",
+        "en": "Baseball theme"
+      },
+      "description": {
+        "ru": "Дисциплина «Бейсбол» и связанные с ней персонажи или соревнования составляют тему истории",
+        "en": "Baseball and associated characters or competitions form a story subject"
+      },
+      "aliases": ["Baseball"]
+    },
+    {
+      "key": "basedOnNovel",
+      "name": {
+        "ru": "По роману",
+        "en": "Based on a novel"
+      },
+      "description": {
+        "ru": "Произведение является адаптацией литературного романа; наличия книги или писателя в сюжете недостаточно",
+        "en": "The work adapts a literary novel; the presence of a book or writer is insufficient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "basketballTheme",
+      "name": {
+        "ru": "Баскетбол",
+        "en": "Basketball theme"
+      },
+      "description": {
+        "ru": "Дисциплина «Баскетбол» и связанные с ней персонажи или соревнования составляют тему истории",
+        "en": "Basketball and associated characters or competitions form a story subject"
+      },
+      "aliases": ["Basketball"]
+    },
+    {
+      "key": "biographicalNarrative",
+      "name": {
+        "ru": "Биографическая история",
+        "en": "Biographical narrative"
+      },
+      "description": {
+        "ru": "Жизненный путь реального человека составляет основу повествования",
+        "en": "The life of a real person forms the basis of the narrative"
+      },
+      "aliases": ["Biography"]
+    },
+    {
+      "key": "birds",
+      "name": {
+        "ru": "Птицы",
+        "en": "Birds"
+      },
+      "description": {
+        "ru": "Птицы заметно представлены как существа или персонажи",
+        "en": "Birds are salient as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "boxingTheme",
+      "name": {
+        "ru": "Бокс",
+        "en": "Boxing theme"
+      },
+      "description": {
+        "ru": "Дисциплина «Бокс» и связанные с ней персонажи или соревнования составляют тему истории",
+        "en": "Boxing and associated characters or competitions form a story subject"
+      },
+      "aliases": ["Boxing"]
+    },
+    {
+      "key": "bumblingDetective",
+      "name": {
+        "ru": "Неумелый сыщик",
+        "en": "Bumbling detective"
+      },
+      "description": {
+        "ru": "Расследующий персонаж систематически ошибается, создавая комические осложнения",
+        "en": "An investigating character repeatedly makes mistakes that create comic complications"
+      },
+      "aliases": []
+    },
+    {
+      "key": "business",
+      "name": {
+        "ru": "Бизнес",
+        "en": "Business"
+      },
+      "description": {
+        "ru": "Предпринимательство и деятельность компаний составляют содержательную тему",
+        "en": "Entrepreneurship and company activity form a narrative subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "capitalism",
+      "name": {
+        "ru": "Капитализм",
+        "en": "Capitalism"
+      },
+      "description": {
+        "ru": "Рыночные отношения и частное накопление капитала составляют заметную тему",
+        "en": "Market relations and private capital accumulation form a salient subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "capybaras",
+      "name": {
+        "ru": "Капибары",
+        "en": "Capybaras"
+      },
+      "description": {
+        "ru": "Капибары заметно представлены в мире произведения",
+        "en": "Capybaras are salient in the work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "caterpillars",
+      "name": {
+        "ru": "Гусеницы",
+        "en": "Caterpillars"
+      },
+      "description": {
+        "ru": "Существа категории «Гусеницы» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the caterpillars category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "catholicSchoolSetting",
+      "name": {
+        "ru": "Действие в католической школе",
+        "en": "Catholic-school setting"
+      },
+      "description": {
+        "ru": "Значимые события происходят в школе с католической институциональной традицией",
+        "en": "Significant events occur in a school with a Catholic institutional tradition"
+      },
+      "aliases": ["Catholic School"]
+    },
+    {
+      "key": "cats",
+      "name": {
+        "ru": "Кошки",
+        "en": "Cats"
+      },
+      "description": {
+        "ru": "Кошки существенно участвуют в мире истории как существа или персонажи",
+        "en": "Cats significantly participate as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "centaurs",
+      "name": {
+        "ru": "Кентавры",
+        "en": "Centaurs"
+      },
+      "description": {
+        "ru": "Мифологические существа с человеческой и конской частью тела существенны для мира",
+        "en": "Mythological beings combining human and horse bodies are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cheatAbilities",
+      "name": {
+        "ru": "Способности в обход правил мира",
+        "en": "Cheat abilities"
+      },
+      "description": {
+        "ru": "Персонаж получает фантастический способ обходить установленные правила мира; не программный чит игрока",
+        "en": "A character acquires a fantastic means to bypass world rules, distinct from player cheat software"
+      },
+      "aliases": ["Cheats"]
+    },
+    {
+      "key": "cheerleading",
+      "name": {
+        "ru": "Чирлидинг",
+        "en": "Cheerleading"
+      },
+      "description": {
+        "ru": "Практика групп поддержки и жизнь их участников существенны для истории",
+        "en": "Cheerleading practice and participants' lives are significant"
+      },
+      "aliases": ["Cheerleaders"]
+    },
+    {
+      "key": "chickens",
+      "name": {
+        "ru": "Куры",
+        "en": "Chickens"
+      },
+      "description": {
+        "ru": "Существа категории «Куры» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the chickens category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "childcare",
+      "name": {
+        "ru": "Забота о детях",
+        "en": "Childcare"
+      },
+      "description": {
+        "ru": "Уход за детьми и ответственность за их благополучие составляют тему истории",
+        "en": "Caring for children and responsibility for their welfare form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "childhoodFriends",
+      "name": {
+        "ru": "Друзья детства",
+        "en": "Childhood friends"
+      },
+      "description": {
+        "ru": "Персонажей связывает дружба, возникшая в детстве и существенная для истории",
+        "en": "Characters share a childhood friendship significant to the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "childhoodPromise",
+      "name": {
+        "ru": "Детское обещание",
+        "en": "Childhood promise"
+      },
+      "description": {
+        "ru": "Данное в детстве обещание существенно влияет на последующие отношения или события",
+        "en": "A childhood promise significantly affects later relationships or events"
+      },
+      "aliases": []
+    },
+    {
+      "key": "childProtagonists",
+      "name": {
+        "ru": "Дети в главных ролях",
+        "en": "Child protagonists"
+      },
+      "description": {
+        "ru": "Дети выступают центральными действующими персонажами истории",
+        "en": "Children are central acting protagonists"
+      },
+      "aliases": []
+    },
+    {
+      "key": "christianity",
+      "name": {
+        "ru": "Христианство",
+        "en": "Christianity"
+      },
+      "description": {
+        "ru": "Христианские верования, практики или институты являются существенным предметом содержания",
+        "en": "Christian beliefs, practices or institutions are a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "christmas",
+      "name": {
+        "ru": "Рождество",
+        "en": "Christmas"
+      },
+      "description": {
+        "ru": "Рождественские события и традиции существенно организуют содержание",
+        "en": "Christmas events and traditions significantly organize content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cicadas",
+      "name": {
+        "ru": "Цикады",
+        "en": "Cicadas"
+      },
+      "description": {
+        "ru": "Существа категории «Цикады» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the cicadas category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "circus",
+      "name": {
+        "ru": "Цирк",
+        "en": "Circus"
+      },
+      "description": {
+        "ru": "Цирковые представления и жизнь циркового сообщества являются предметом истории",
+        "en": "Circus performances and circus-community life form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cockroaches",
+      "name": {
+        "ru": "Тараканы",
+        "en": "Cockroaches"
+      },
+      "description": {
+        "ru": "Существа категории «Тараканы» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the cockroaches category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cocktails",
+      "name": {
+        "ru": "Коктейли",
+        "en": "Cocktails"
+      },
+      "description": {
+        "ru": "Приготовление и культура смешанных напитков являются заметным предметом содержания",
+        "en": "Preparing and consuming mixed drinks is a salient subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "codependency",
+      "name": {
+        "ru": "Созависимость",
+        "en": "Codependency"
+      },
+      "description": {
+        "ru": "Отношения с чрезмерной взаимной зависимостью и нарушением личных границ существенно исследуются",
+        "en": "Relationships involving excessive dependency and impaired boundaries are explored"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cohabitation",
+      "name": {
+        "ru": "Совместное проживание",
+        "en": "Cohabitation"
+      },
+      "description": {
+        "ru": "Жизнь персонажей в общем жилище существенно организует отношения и события",
+        "en": "Characters sharing a home significantly organizes relationships and events"
+      },
+      "aliases": []
+    },
+    {
+      "key": "coldWar",
+      "name": {
+        "ru": "Холодная война",
+        "en": "Cold War"
+      },
+      "description": {
+        "ru": "Противостояние холодной войны существенно определяет историческую среду истории",
+        "en": "Cold War confrontation significantly shapes the historical environment"
+      },
+      "aliases": []
+    },
+    {
+      "key": "collegeLife",
+      "name": {
+        "ru": "Студенческая жизнь",
+        "en": "College life"
+      },
+      "description": {
+        "ru": "Учёба и повседневная жизнь в высшем учебном заведении составляют тему",
+        "en": "Study and everyday life in higher education form a subject"
+      },
+      "aliases": ["College"]
+    },
+    {
+      "key": "combiningMecha",
+      "name": {
+        "ru": "Объединяющиеся меха",
+        "en": "Combining mecha"
+      },
+      "description": {
+        "ru": "Несколько машин объединяются в более крупную боевую машину как значимый элемент мира",
+        "en": "Multiple machines combine into a larger combat machine as a significant world element"
+      },
+      "aliases": []
+    },
+    {
+      "key": "comingOfAge",
+      "name": {
+        "ru": "Взросление",
+        "en": "Coming of age"
+      },
+      "description": {
+        "ru": "Переход к взрослению и формированию самостоятельной личности составляет тему истории",
+        "en": "The transition toward maturity and personal independence is a narrative subject"
+      },
+      "aliases": ["Coming-of-Age"]
+    },
+    {
+      "key": "companyLeadership",
+      "name": {
+        "ru": "Руководители компаний",
+        "en": "Company leadership"
+      },
+      "description": {
+        "ru": "Управление компанией её высшим руководителем существенно для событий и отношений",
+        "en": "A company's executive leadership is significant to events and relationships"
+      },
+      "aliases": ["CEOs"]
+    },
+    {
+      "key": "concubines",
+      "name": {
+        "ru": "Наложницы",
+        "en": "Concubines"
+      },
+      "description": {
+        "ru": "Социальная роль наложниц и связанные отношения существенны для истории",
+        "en": "Concubinage as a social role and associated relationships are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "conspiracy",
+      "name": {
+        "ru": "Заговор",
+        "en": "Conspiracy"
+      },
+      "description": {
+        "ru": "Тайное согласованное действие группы по достижению скрытой цели организует конфликт",
+        "en": "A group's covert coordinated pursuit of a hidden goal organizes conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "contemporarySetting",
+      "name": {
+        "ru": "Современный сеттинг",
+        "en": "Contemporary setting"
+      },
+      "description": {
+        "ru": "Мир произведения организован вокруг современного общества и технологий без точного года выпуска",
+        "en": "The work uses a contemporary social and technological setting without implying a release year"
+      },
+      "aliases": ["Modern"]
+    },
+    {
+      "key": "convenienceStoreSetting",
+      "name": {
+        "ru": "Действие в магазине у дома",
+        "en": "Convenience-store setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Магазин повседневных товаров»; это не страна производства",
+        "en": "A significant part of the story occurs in convenience store; this does not identify the production country"
+      },
+      "aliases": ["Convenience Store"]
+    },
+    {
+      "key": "cookingTheme",
+      "name": {
+        "ru": "Кулинария",
+        "en": "Cooking theme"
+      },
+      "description": {
+        "ru": "Приготовление пищи и кулинарная культура составляют существенную тему произведения",
+        "en": "Food preparation and culinary culture form a significant subject"
+      },
+      "aliases": ["Gourmet", "Гурман", "Cooking & Food", "Cooking"]
+    },
+    {
+      "key": "crimeTheme",
+      "name": {
+        "ru": "Преступность",
+        "en": "Crime theme"
+      },
+      "description": {
+        "ru": "Преступления, их участники или общественные последствия являются существенным предметом произведения",
+        "en": "Crimes, their participants or social consequences are substantial subjects"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cyberpunk",
+      "name": {
+        "ru": "Киберпанк",
+        "en": "Cyberpunk"
+      },
+      "description": {
+        "ru": "Высокие технологии и конфликт человека с социальными системами",
+        "en": "High technology and conflict between individuals and social systems"
+      },
+      "aliases": []
+    },
+    {
+      "key": "demons",
+      "name": {
+        "ru": "Демоны",
+        "en": "Demons"
+      },
+      "description": {
+        "ru": "Демонические существа или силы существенно представлены в мире истории",
+        "en": "Demonic beings or forces are salient in the story world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "detectiveCharacter",
+      "name": {
+        "ru": "Персонаж-детектив",
+        "en": "Detective character"
+      },
+      "description": {
+        "ru": "Следователь или сыщик как значимый герой; не синоним любого mystery",
+        "en": "A detective as a significant character, distinct from the mystery genre"
+      },
+      "aliases": ["Detective"]
+    },
+    {
+      "key": "dinosaurs",
+      "name": {
+        "ru": "Динозавры",
+        "en": "Dinosaurs"
+      },
+      "description": {
+        "ru": "Динозавры существенно представлены в мире истории",
+        "en": "Dinosaurs are salient in the story world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "dogs",
+      "name": {
+        "ru": "Собаки",
+        "en": "Dogs"
+      },
+      "description": {
+        "ru": "Собаки существенно участвуют в мире истории как существа или персонажи",
+        "en": "Dogs significantly participate as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "dragons",
+      "name": {
+        "ru": "Драконы",
+        "en": "Dragons"
+      },
+      "description": {
+        "ru": "Драконы заметно представлены как существа или персонажи мира",
+        "en": "Dragons are salient as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "drugCrime",
+      "name": {
+        "ru": "Наркопреступность",
+        "en": "Drug crime"
+      },
+      "description": {
+        "ru": "Производство, оборот или незаконное распространение наркотиков организуют криминальный конфликт",
+        "en": "Drug production, trafficking or illegal distribution organizes criminal conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "dwarves",
+      "name": {
+        "ru": "Гномы",
+        "en": "Dwarves"
+      },
+      "description": {
+        "ru": "Гномы фэнтезийных традиций существенно представлены в мире",
+        "en": "Dwarves from fantasy traditions are salient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "dystopia",
+      "name": {
+        "ru": "Антиутопия",
+        "en": "Dystopia"
+      },
+      "description": {
+        "ru": "Общественное устройство представлено как систематически подавляющее или разрушительное для человека",
+        "en": "Social organization is portrayed as systematically oppressive or destructive"
+      },
+      "aliases": ["Dystopian"]
+    },
+    {
+      "key": "ecchiFanservice",
+      "name": {
+        "ru": "Этти-фансервис",
+        "en": "Ecchi fanservice"
+      },
+      "description": {
+        "ru": "Сексуализированная подача и фансервис служат заметным приёмом возбуждающего содержания; это не автоматическое тождество порнографии и не возрастной рейтинг",
+        "en": "Sexualized presentation and fanservice are salient titillating devices; neither pornography nor an age rating is inferred"
+      },
+      "aliases": ["Ecchi", "Этти"]
+    },
+    {
+      "key": "economics",
+      "name": {
+        "ru": "Экономика",
+        "en": "Economics"
+      },
+      "description": {
+        "ru": "Производство, обмен и распределение благ являются предметом содержания; это не конкретная система управления ресурсами",
+        "en": "Production, exchange and distribution are subjects rather than a specific resource-management mechanic"
+      },
+      "aliases": ["Economy"]
+    },
+    {
+      "key": "eighteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 18-м веке",
+        "en": "18th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 18 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 18; this is story time, not the release year"
+      },
+      "aliases": ["18th Century"]
+    },
+    {
+      "key": "eighthCenturySetting",
+      "name": {
+        "ru": "Действие в 8-м веке",
+        "en": "8th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 8 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 8; this is story time, not the release year"
+      },
+      "aliases": ["8th Century"]
+    },
+    {
+      "key": "eleventhCenturySetting",
+      "name": {
+        "ru": "Действие в 11-м веке",
+        "en": "11th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 11 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 11; this is story time, not the release year"
+      },
+      "aliases": ["11th Century"]
+    },
+    {
+      "key": "elves",
+      "name": {
+        "ru": "Эльфы",
+        "en": "Elves"
+      },
+      "description": {
+        "ru": "Эльфы фэнтезийных традиций существенно представлены в мире",
+        "en": "Elves from fantasy traditions are salient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "eroticContent",
+      "name": {
+        "ru": "Эротика",
+        "en": "Erotic content"
+      },
+      "description": {
+        "ru": "Сексуальное влечение и чувственная подача составляют заметную часть содержания; откровенное изображение сексуальных действий не обязательно",
+        "en": "Sexual attraction and sensual presentation are prominent without requiring explicit sexual acts"
+      },
+      "aliases": []
+    },
+    {
+      "key": "espionage",
+      "name": {
+        "ru": "Шпионаж",
+        "en": "Espionage"
+      },
+      "description": {
+        "ru": "Тайное получение информации и деятельность разведчиков существенно определяют историю",
+        "en": "Covert information gathering and intelligence agents significantly shape the story"
+      },
+      "aliases": ["Spy"]
+    },
+    {
+      "key": "extremeSports",
+      "name": {
+        "ru": "Экстремальные виды спорта",
+        "en": "Extreme-sports"
+      },
+      "description": {
+        "ru": "Рискованные спортивные дисциплины существенно определяют содержание",
+        "en": "High-risk sports disciplines significantly shape the content"
+      },
+      "aliases": ["Extreme Sport"]
+    },
+    {
+      "key": "fairyTaleMotifs",
+      "name": {
+        "ru": "Сказочные мотивы",
+        "en": "Fairy-tale motifs"
+      },
+      "description": {
+        "ru": "Сказочные сюжеты, персонажи и условности составляют значимую основу истории",
+        "en": "Fairy-tale plots, characters and conventions significantly underpin the story"
+      },
+      "aliases": ["Fairy Tale"]
+    },
+    {
+      "key": "faithAndSpirituality",
+      "name": {
+        "ru": "Вера и духовность",
+        "en": "Faith and spirituality"
+      },
+      "description": {
+        "ru": "Вера, духовный опыт или поиск духовного смысла являются существенным предметом; принадлежность религии не обязательна",
+        "en": "Faith, spiritual experience or a search for spiritual meaning are substantial subjects; religious affiliation is not required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "familyRelationships",
+      "name": {
+        "ru": "Семейные отношения",
+        "en": "Family relationships"
+      },
+      "description": {
+        "ru": "Родственные связи и отношения внутри семьи составляют существенную тему",
+        "en": "Family bonds and intrafamily relationships form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "femaleProtagonist",
+      "name": {
+        "ru": "Главная героиня",
+        "en": "Female protagonist"
+      },
+      "description": {
+        "ru": "Центральный действующий персонаж истории является женщиной или девушкой",
+        "en": "The central acting protagonist is a woman or girl"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fifteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 15-м веке",
+        "en": "15th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 15 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 15; this is story time, not the release year"
+      },
+      "aliases": ["15th Century"]
+    },
+    {
+      "key": "firstCenturySetting",
+      "name": {
+        "ru": "Действие в 1-м веке",
+        "en": "1st-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 1 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 1; this is story time, not the release year"
+      },
+      "aliases": ["1st Century"]
+    },
+    {
+      "key": "foodTheme",
+      "name": {
+        "ru": "Еда",
+        "en": "Food theme"
+      },
+      "description": {
+        "ru": "Еда, питание и пищевая культура являются существенным предметом; приготовление пищи не обязательно",
+        "en": "Food, eating and food culture are substantial subjects; cooking is not required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "footballTheme",
+      "name": {
+        "ru": "Футбол",
+        "en": "Association football theme"
+      },
+      "description": {
+        "ru": "Дисциплина «Футбол» и связанные с ней персонажи или соревнования составляют тему истории",
+        "en": "Association football and associated characters or competitions form a story subject"
+      },
+      "aliases": ["Soccer"]
+    },
+    {
+      "key": "fourteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 14-м веке",
+        "en": "14th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 14 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 14; this is story time, not the release year"
+      },
+      "aliases": ["14th Century"]
+    },
+    {
+      "key": "fourthCenturySetting",
+      "name": {
+        "ru": "Действие в 4-м веке",
+        "en": "4th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 4 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 4; this is story time, not the release year"
+      },
+      "aliases": ["4th Century"]
+    },
+    {
+      "key": "foxes",
+      "name": {
+        "ru": "Лисы",
+        "en": "Foxes"
+      },
+      "description": {
+        "ru": "Лисы заметно представлены как существа или персонажи",
+        "en": "Foxes are salient as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "friendship",
+      "name": {
+        "ru": "Дружба",
+        "en": "Friendship"
+      },
+      "description": {
+        "ru": "Дружеские отношения и их развитие составляют существенную тему",
+        "en": "Friendship and its development form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "futuristicSetting",
+      "name": {
+        "ru": "Будущее",
+        "en": "Futuristic setting"
+      },
+      "description": {
+        "ru": "История использует воображаемое общество или технологии будущего",
+        "en": "The story uses an imagined future society or future technology"
+      },
+      "aliases": ["Futuristic"]
+    },
+    {
+      "key": "graphicGore",
+      "name": {
+        "ru": "Натуралистическая жестокость",
+        "en": "Graphic gore"
+      },
+      "description": {
+        "ru": "Подробно изображаются тяжёлые телесные повреждения или расчленение",
+        "en": "Severe bodily injury or dismemberment is depicted graphically"
+      },
+      "aliases": ["Gore"]
+    },
+    {
+      "key": "hardBoiledDetective",
+      "name": {
+        "ru": "Крутой детектив",
+        "en": "Hard-boiled detective"
+      },
+      "description": {
+        "ru": "Циничный профессиональный сыщик действует в коррумпированной и опасной социальной среде",
+        "en": "A cynical professional investigator operates in a corrupt and dangerous social environment"
+      },
+      "aliases": []
+    },
+    {
+      "key": "harem",
+      "name": {
+        "ru": "Гарем",
+        "en": "Harem"
+      },
+      "description": {
+        "ru": "Несколько персонажей образуют романтическую группу интереса вокруг одного центрального персонажа",
+        "en": "Multiple characters form a romantic interest group around one central character"
+      },
+      "aliases": []
+    },
+    {
+      "key": "heist",
+      "name": {
+        "ru": "Ограбление",
+        "en": "Heist"
+      },
+      "description": {
+        "ru": "Планируемое похищение ценностей или ограбление организует значимую сюжетную цель",
+        "en": "A planned theft or robbery organizes a significant narrative goal"
+      },
+      "aliases": []
+    },
+    {
+      "key": "hentai",
+      "name": {
+        "ru": "Хентай",
+        "en": "Hentai"
+      },
+      "description": {
+        "ru": "Откровенное порнографическое содержание в аниме-традиции, включая визуально родственную игровую подачу; не просто этти-фансервис",
+        "en": "Explicit pornographic content in the anime tradition, including related game presentation; distinct from non-explicit ecchi fanservice"
+      },
+      "aliases": []
+    },
+    {
+      "key": "historicalEvents",
+      "name": {
+        "ru": "Реальные исторические события",
+        "en": "Real historical events"
+      },
+      "description": {
+        "ru": "Реальные события прошлого составляют существенный предмет произведения; одного исторического антуража недостаточно",
+        "en": "Actual past events form a significant subject; a historical setting alone is insufficient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "historicalSetting",
+      "name": {
+        "ru": "Исторический сеттинг",
+        "en": "Historical setting"
+      },
+      "description": {
+        "ru": "Мир истории относится к узнаваемой исторической эпохе без вывода о достоверности событий",
+        "en": "The story world belongs to a recognizable historical era without asserting factual accuracy"
+      },
+      "aliases": ["Historical", "Исторический", "History"]
+    },
+    {
+      "key": "hokkaidoSetting",
+      "name": {
+        "ru": "Действие на Хоккайдо",
+        "en": "Hokkaido setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Хоккайдо»; это не страна производства",
+        "en": "A significant part of the story occurs in hokkaido; this does not identify the production country"
+      },
+      "aliases": ["Hokkaido"]
+    },
+    {
+      "key": "holidays",
+      "name": {
+        "ru": "Праздники",
+        "en": "Holiday"
+      },
+      "description": {
+        "ru": "Праздничные события и связанные с ними практики существенно организуют содержание",
+        "en": "Holiday events and associated practices significantly organize the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "homeImprovement",
+      "name": {
+        "ru": "Обустройство дома",
+        "en": "Home-improvement theme"
+      },
+      "description": {
+        "ru": "Ремонт и переустройство жилого пространства составляют предмет содержания",
+        "en": "Renovating and changing living spaces form the subject"
+      },
+      "aliases": ["Home Improvement"]
+    },
+    {
+      "key": "horseRacingTheme",
+      "name": {
+        "ru": "Конные скачки",
+        "en": "Horse racing"
+      },
+      "description": {
+        "ru": "Соревнования скаковых лошадей и связанные персонажи существенны для истории",
+        "en": "Horse races and associated characters are significant to the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "horses",
+      "name": {
+        "ru": "Лошади",
+        "en": "Horses"
+      },
+      "description": {
+        "ru": "Лошади являются заметными существами в мире произведения",
+        "en": "Horses are salient creatures in the work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "hospitalSetting",
+      "name": {
+        "ru": "Действие в больнице",
+        "en": "Hospital setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Больница»; это не страна производства",
+        "en": "A significant part of the story occurs in hospital; this does not identify the production country"
+      },
+      "aliases": ["Hospital"]
+    },
+    {
+      "key": "hostClub",
+      "name": {
+        "ru": "Хост-клубы",
+        "en": "Host-club"
+      },
+      "description": {
+        "ru": "Персонажи работают в заведениях, где мужчины-персонал оказывают гостям платное внимательное общение; не биологические организмы-хозяева",
+        "en": "Characters work in venues where male hosts provide paying guests with attentive social company; unrelated to biological hosts"
+      },
+      "aliases": ["Hosts"]
+    },
+    {
+      "key": "hotelSetting",
+      "name": {
+        "ru": "Действие в гостиницах",
+        "en": "Hotel setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Гостиницы»; это не страна производства",
+        "en": "A significant part of the story occurs in hotels and inns; this does not identify the production country"
+      },
+      "aliases": ["Hotels and Inns"]
+    },
+    {
+      "key": "humanExperimentation",
+      "name": {
+        "ru": "Эксперименты над людьми",
+        "en": "Human experimentation"
+      },
+      "description": {
+        "ru": "Использование людей как объектов экспериментального вмешательства существенно для конфликта",
+        "en": "Using people as subjects of experimental intervention is significant to conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "humanLivestock",
+      "name": {
+        "ru": "Люди как ресурс",
+        "en": "Humans as livestock"
+      },
+      "description": {
+        "ru": "Людей содержат как подконтрольный ресурс для пищи, органов или иной практической эксплуатации",
+        "en": "Humans are kept as a controlled resource for food, organs or other practical exploitation"
+      },
+      "aliases": ["Human Livestock"]
+    },
+    {
+      "key": "humanPets",
+      "name": {
+        "ru": "Люди как питомцы",
+        "en": "Humans as pets"
+      },
+      "description": {
+        "ru": "Люди представлены в роли домашних питомцев или собственности других существ; сексуальный контекст не выводится автоматически",
+        "en": "Humans are treated as pets or property of other beings without automatically inferring sexual context"
+      },
+      "aliases": ["Human Pets"]
+    },
+    {
+      "key": "icelandSetting",
+      "name": {
+        "ru": "Действие в Исландии",
+        "en": "Icelandic setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Исландия»; это не страна производства",
+        "en": "A significant part of the story occurs in iceland; this does not identify the production country"
+      },
+      "aliases": ["Iceland"]
+    },
+    {
+      "key": "iceSkatingTheme",
+      "name": {
+        "ru": "Катание на льду",
+        "en": "Ice skating"
+      },
+      "description": {
+        "ru": "Катание на льду и связанные с ним персонажи или состязания существенны для истории",
+        "en": "Ice skating and associated characters or competitions are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "illness",
+      "name": {
+        "ru": "Болезнь",
+        "en": "Illness"
+      },
+      "description": {
+        "ru": "Заболевание и его влияние на жизнь персонажей составляют существенную тему",
+        "en": "Illness and its effect on characters' lives form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "impersonation",
+      "name": {
+        "ru": "Чужая личность",
+        "en": "Impersonation"
+      },
+      "description": {
+        "ru": "Персонаж намеренно выдаёт себя за другого человека, существенно влияя на события",
+        "en": "A character deliberately passes as someone else and significantly affects events"
+      },
+      "aliases": []
+    },
+    {
+      "key": "indiaSetting",
+      "name": {
+        "ru": "Действие в Индии",
+        "en": "Indian setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Индия»; это не страна производства",
+        "en": "A significant part of the story occurs in india; this does not identify the production country"
+      },
+      "aliases": ["India"]
+    },
+    {
+      "key": "infidelity",
+      "name": {
+        "ru": "Неверность",
+        "en": "Infidelity"
+      },
+      "description": {
+        "ru": "Нарушение романтической верности существенно организует отношения и конфликт",
+        "en": "Breach of romantic fidelity significantly organizes relationships and conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "inheritance",
+      "name": {
+        "ru": "Наследство",
+        "en": "Inheritance"
+      },
+      "description": {
+        "ru": "Передача имущества или статуса по наследству существенно влияет на конфликт",
+        "en": "Inheritance of property or status significantly affects conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "insects",
+      "name": {
+        "ru": "Насекомые",
+        "en": "Insects"
+      },
+      "description": {
+        "ru": "Существа категории «Насекомые» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the insects category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "interspeciesRelationship",
+      "name": {
+        "ru": "Межвидовые отношения",
+        "en": "Interspecies relationship"
+      },
+      "description": {
+        "ru": "Романтические или семейные отношения связывают представителей разных разумных видов",
+        "en": "Romantic or family relationships connect members of different intelligent species"
+      },
+      "aliases": []
+    },
+    {
+      "key": "isekai",
+      "name": {
+        "ru": "Исэкай",
+        "en": "Isekai"
+      },
+      "description": {
+        "ru": "Перенос героя в иной мир, не любое фэнтези",
+        "en": "A protagonist transported into another world, not all fantasy"
+      },
+      "aliases": []
+    },
+    {
+      "key": "islandSetting",
+      "name": {
+        "ru": "Действие на острове",
+        "en": "Island setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Остров»; это не страна производства",
+        "en": "A significant part of the story occurs in island; this does not identify the production country"
+      },
+      "aliases": ["Island"]
+    },
+    {
+      "key": "isolatedSociety",
+      "name": {
+        "ru": "Изолированное общество",
+        "en": "Isolated society"
+      },
+      "description": {
+        "ru": "Замкнутое сообщество существенно отделено от окружающего мира",
+        "en": "An enclosed community is significantly separated from the outside world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "italySetting",
+      "name": {
+        "ru": "Действие в Италии",
+        "en": "Italian setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Италия»; это не страна производства",
+        "en": "A significant part of the story occurs in italy; this does not identify the production country"
+      },
+      "aliases": ["Italy"]
+    },
+    {
+      "key": "japaneseMythology",
+      "name": {
+        "ru": "Японская мифология",
+        "en": "Japanese mythology"
+      },
+      "description": {
+        "ru": "Японские мифологические представления и существа существенно определяют содержание",
+        "en": "Japanese mythological beliefs and beings significantly shape content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "javaSparrows",
+      "name": {
+        "ru": "Яванские рисовки",
+        "en": "Java sparrows"
+      },
+      "description": {
+        "ru": "Существа категории «Яванские рисовки» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the java sparrows category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "jellyfish",
+      "name": {
+        "ru": "Медузы",
+        "en": "Jellyfish"
+      },
+      "description": {
+        "ru": "Существа категории «Медузы» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the jellyfish category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "journalism",
+      "name": {
+        "ru": "Журналистика",
+        "en": "Journalism"
+      },
+      "description": {
+        "ru": "Сбор и публикация общественно значимой информации составляют предмет истории",
+        "en": "Gathering and publishing information of public interest form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "judoTheme",
+      "name": {
+        "ru": "Дзюдо",
+        "en": "Judo"
+      },
+      "description": {
+        "ru": "Борьба дзюдо, её практика или соревнования существенны для истории",
+        "en": "Judo practice or competitions are significant to the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "jungleSetting",
+      "name": {
+        "ru": "Действие в джунглях",
+        "en": "Jungle setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Джунгли»; это не страна производства",
+        "en": "A significant part of the story occurs in jungle; this does not identify the production country"
+      },
+      "aliases": ["Jungle"]
+    },
+    {
+      "key": "kaiju",
+      "name": {
+        "ru": "Кайдзю",
+        "en": "Kaiju"
+      },
+      "description": {
+        "ru": "Гигантские чудовища существенно определяют события или устройство мира",
+        "en": "Giant monsters significantly shape events or the fictional world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "lgbtqTheme",
+      "name": {
+        "ru": "ЛГБТК-тематика",
+        "en": "LGBTQ theme"
+      },
+      "description": {
+        "ru": "Опыт и отношения сексуальных или гендерных меньшинств существенно представлены в содержании",
+        "en": "Experiences and relationships of sexual or gender minorities are salient"
+      },
+      "aliases": ["LGBTQ+"]
+    },
+    {
+      "key": "loneliness",
+      "name": {
+        "ru": "Одиночество",
+        "en": "Loneliness"
+      },
+      "description": {
+        "ru": "Переживание одиночества или социальной изоляции составляет существенную тему",
+        "en": "Loneliness or social isolation forms a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "magic",
+      "name": {
+        "ru": "Магия",
+        "en": "Magic"
+      },
+      "description": {
+        "ru": "Сверхъестественные практики и силы действуют как значимый элемент мира",
+        "en": "Supernatural practices and powers operate as a significant world element"
+      },
+      "aliases": []
+    },
+    {
+      "key": "marsSetting",
+      "name": {
+        "ru": "Действие на Марсе",
+        "en": "Mars setting"
+      },
+      "description": {
+        "ru": "Марс является существенным местом действия; не страна производства",
+        "en": "Mars is a significant story location, not a production country"
+      },
+      "aliases": ["Mars"]
+    },
+    {
+      "key": "martialArts",
+      "name": {
+        "ru": "Боевые искусства",
+        "en": "Martial arts"
+      },
+      "description": {
+        "ru": "Боевые дисциплины и их практика составляют значимый элемент мира или истории",
+        "en": "Combat disciplines and their practice form a significant story or world element"
+      },
+      "aliases": []
+    },
+    {
+      "key": "mecha",
+      "name": {
+        "ru": "Меха",
+        "en": "Mecha"
+      },
+      "description": {
+        "ru": "Пилотируемые или боевые гигантские машины как заметный элемент мира",
+        "en": "Piloted or combat giant machines as a salient fictional element"
+      },
+      "aliases": ["Mechs"]
+    },
+    {
+      "key": "medievalSetting",
+      "name": {
+        "ru": "Средневековье",
+        "en": "Medieval setting"
+      },
+      "description": {
+        "ru": "История использует общественные и материальные конвенции средневековой эпохи",
+        "en": "The story uses social and material conventions of the medieval era"
+      },
+      "aliases": ["Medieval"]
+    },
+    {
+      "key": "military",
+      "name": {
+        "ru": "Военное дело",
+        "en": "Military"
+      },
+      "description": {
+        "ru": "Военная служба, организация вооружённых сил и их повседневная деятельность являются предметом истории",
+        "en": "Military service, armed-forces organization and daily activity form a subject"
+      },
+      "aliases": ["Военное"]
+    },
+    {
+      "key": "moralDilemmas",
+      "name": {
+        "ru": "Моральные дилеммы",
+        "en": "Moral dilemmas"
+      },
+      "description": {
+        "ru": "Персонажи сталкиваются с выбором между конфликтующими этическими основаниями",
+        "en": "Characters face choices between conflicting ethical considerations"
+      },
+      "aliases": []
+    },
+    {
+      "key": "motorsport",
+      "name": {
+        "ru": "Автоспорт",
+        "en": "Motorsport"
+      },
+      "description": {
+        "ru": "Соревнования на моторных транспортных средствах составляют предмет содержания",
+        "en": "Competition using motor vehicles forms the subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "musicTheme",
+      "name": {
+        "ru": "Музыка",
+        "en": "Music theme"
+      },
+      "description": {
+        "ru": "Музыка, её создание или исполнение составляют существенную тему произведения",
+        "en": "Music, its creation or performance is a significant subject"
+      },
+      "aliases": ["Music", "Musik"]
+    },
+    {
+      "key": "mythology",
+      "name": {
+        "ru": "Мифология",
+        "en": "Mythology"
+      },
+      "description": {
+        "ru": "Мифологические персонажи, сюжеты и представления существенно определяют содержание",
+        "en": "Mythological figures, narratives and beliefs substantially shape content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "nature",
+      "name": {
+        "ru": "Природа",
+        "en": "Nature"
+      },
+      "description": {
+        "ru": "Природные среды и процессы существенно представлены как предмет содержания",
+        "en": "Natural environments and processes are significant subjects"
+      },
+      "aliases": []
+    },
+    {
+      "key": "navalWarfareTheme",
+      "name": {
+        "ru": "Военно-морская тематика",
+        "en": "Naval theme"
+      },
+      "description": {
+        "ru": "Военные корабли и действия флота составляют существенную тему",
+        "en": "Warships and fleet operations are a salient subject"
+      },
+      "aliases": ["Naval"]
+    },
+    {
+      "key": "nineteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 19-м веке",
+        "en": "19th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 19 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 19; this is story time, not the release year"
+      },
+      "aliases": ["19th Century"]
+    },
+    {
+      "key": "ninja",
+      "name": {
+        "ru": "Ниндзя",
+        "en": "Ninja"
+      },
+      "description": {
+        "ru": "Ниндзя и традиция скрытного воинского мастерства существенно представлены в мире",
+        "en": "Ninja and traditions of covert martial skill are salient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "ninthCenturySetting",
+      "name": {
+        "ru": "Действие в 9-м веке",
+        "en": "9th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 9 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 9; this is story time, not the release year"
+      },
+      "aliases": ["9th Century"]
+    },
+    {
+      "key": "nudity",
+      "name": {
+        "ru": "Обнажённость",
+        "en": "Nudity"
+      },
+      "description": {
+        "ru": "В произведении заметно представлено обнажённое человеческое тело без обязательного сексуального контекста",
+        "en": "Unclothed human bodies are saliently depicted without necessarily implying a sexual context"
+      },
+      "aliases": []
+    },
+    {
+      "key": "onePersonArmy",
+      "name": {
+        "ru": "Герой против армии",
+        "en": "One-person army"
+      },
+      "description": {
+        "ru": "Одиночный персонаж противостоит многочисленной организованной вооружённой силе",
+        "en": "A lone character confronts a large organized armed force"
+      },
+      "aliases": ["One-Person-Army"]
+    },
+    {
+      "key": "organizedCrime",
+      "name": {
+        "ru": "Организованная преступность",
+        "en": "Organized crime"
+      },
+      "description": {
+        "ru": "Устойчивая преступная организация и её деятельность определяют значимую часть конфликта",
+        "en": "An enduring criminal organization and its activity shape significant conflict"
+      },
+      "aliases": ["Gangster"]
+    },
+    {
+      "key": "philosophy",
+      "name": {
+        "ru": "Философия",
+        "en": "Philosophy"
+      },
+      "description": {
+        "ru": "Мировоззренческие вопросы бытия, знания или ценностей явно исследуются в содержании",
+        "en": "Questions of existence, knowledge or values are explicitly explored"
+      },
+      "aliases": ["Philosophical"]
+    },
+    {
+      "key": "pirates",
+      "name": {
+        "ru": "Пираты",
+        "en": "Pirates"
+      },
+      "description": {
+        "ru": "Морские разбойники и пиратская среда существенно определяют мир истории",
+        "en": "Sea raiders and pirate environments significantly shape the world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "playerVersusEnvironmentTheme",
+      "name": {
+        "ru": "PvE внутри сюжета",
+        "en": "Player versus environment in the story"
+      },
+      "description": {
+        "ru": "Персонажи участвуют в игре и противостоят её управляемым системой угрозам; это характеристика содержания, а не режим самого Item",
+        "en": "Characters play against system-controlled challenges within the story; this does not establish the Item game mode"
+      },
+      "aliases": []
+    },
+    {
+      "key": "playerVersusPlayerTheme",
+      "name": {
+        "ru": "PvP внутри сюжета",
+        "en": "Player versus player in the story"
+      },
+      "description": {
+        "ru": "Персонажи участвуют в игре и противостоят другим игрокам внутри истории; это не режим самого Item",
+        "en": "Characters compete against other players within the story; this does not establish the Item game mode"
+      },
+      "aliases": []
+    },
+    {
+      "key": "police",
+      "name": {
+        "ru": "Полиция",
+        "en": "Police"
+      },
+      "description": {
+        "ru": "Правоохранительные службы и их представители являются значимыми участниками истории",
+        "en": "Law-enforcement services and their members are significant participants"
+      },
+      "aliases": []
+    },
+    {
+      "key": "politicsTheme",
+      "name": {
+        "ru": "Политика",
+        "en": "Politics theme"
+      },
+      "description": {
+        "ru": "Политические институты, решения и борьба за власть являются существенным предметом произведения",
+        "en": "Political institutions, decisions and struggles for power are substantial subjects"
+      },
+      "aliases": []
+    },
+    {
+      "key": "popIdols",
+      "name": {
+        "ru": "Айдолы",
+        "en": "Pop idols"
+      },
+      "description": {
+        "ru": "Жизнь и выступления поп-исполнителей айдол-индустрии составляют предмет содержания",
+        "en": "The lives and performances of pop-idol entertainers form a subject"
+      },
+      "aliases": ["Idols"]
+    },
+    {
+      "key": "pornographicContent",
+      "name": {
+        "ru": "Порнографическое содержание",
+        "en": "Pornographic content"
+      },
+      "description": {
+        "ru": "Откровенное изображение сексуальных действий является существенной частью содержания; не ограничено аниме или хентаем",
+        "en": "Explicit depiction of sexual acts is a substantial part of the content, regardless of medium"
+      },
+      "aliases": []
+    },
+    {
+      "key": "postApocalypticSetting",
+      "name": {
+        "ru": "Постапокалипсис",
+        "en": "Post-apocalyptic setting"
+      },
+      "description": {
+        "ru": "История разворачивается после разрушительного события, изменившего устройство общества",
+        "en": "The story unfolds after a devastating event transforms social order"
+      },
+      "aliases": []
+    },
+    {
+      "key": "poverty",
+      "name": {
+        "ru": "Бедность",
+        "en": "Poverty"
+      },
+      "description": {
+        "ru": "Материальная нужда и её общественные или личные последствия являются существенной темой",
+        "en": "Material deprivation and its social or personal consequences form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "poweredSuits",
+      "name": {
+        "ru": "Силовая броня",
+        "en": "Powered suits"
+      },
+      "description": {
+        "ru": "Носимые механизированные костюмы усиливают возможности персонажей",
+        "en": "Wearable mechanized suits augment characters' capabilities"
+      },
+      "aliases": ["Power Suits"]
+    },
+    {
+      "key": "pregnancy",
+      "name": {
+        "ru": "Беременность",
+        "en": "Pregnancy"
+      },
+      "description": {
+        "ru": "Беременность и связанные жизненные изменения являются существенной темой",
+        "en": "Pregnancy and associated life changes form a significant subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "prehistoricSetting",
+      "name": {
+        "ru": "Доисторический сеттинг",
+        "en": "Prehistoric setting"
+      },
+      "description": {
+        "ru": "Мир произведения относится к доисторической эпохе; это не год выпуска",
+        "en": "The work's world belongs to prehistory, not its release year"
+      },
+      "aliases": ["Prehistoric"]
+    },
+    {
+      "key": "prison",
+      "name": {
+        "ru": "Тюрьма",
+        "en": "Prison"
+      },
+      "description": {
+        "ru": "Заключение и жизнь в местах лишения свободы существенны для истории",
+        "en": "Incarceration and life in confinement are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "prophecy",
+      "name": {
+        "ru": "Пророчество",
+        "en": "Prophecy"
+      },
+      "description": {
+        "ru": "Предсказание будущего существенно влияет на мотивации и ход событий",
+        "en": "A prediction of the future significantly affects motivation and events"
+      },
+      "aliases": []
+    },
+    {
+      "key": "proxyBattles",
+      "name": {
+        "ru": "Сражения через подконтрольных существ",
+        "en": "Proxy battles"
+      },
+      "description": {
+        "ru": "Персонажи направляют других существ или машины сражаться вместо них; это не автоматически игровой режим",
+        "en": "Characters control other beings or machines to fight on their behalf, without implying a game mode"
+      },
+      "aliases": []
+    },
+    {
+      "key": "psychicPowers",
+      "name": {
+        "ru": "Психические сверхспособности",
+        "en": "Psychic powers"
+      },
+      "description": {
+        "ru": "Экстрасенсорные или мысленно управляемые способности существенно представлены в мире",
+        "en": "Extrasensory or mentally controlled powers are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "quest",
+      "name": {
+        "ru": "Сюжетный поиск",
+        "en": "Quest"
+      },
+      "description": {
+        "ru": "Длительный поиск предмета, места или достижения организует сюжетную цель",
+        "en": "A sustained search for an object, place or achievement organizes the narrative goal"
+      },
+      "aliases": []
+    },
+    {
+      "key": "rabbits",
+      "name": {
+        "ru": "Кролики",
+        "en": "Rabbits"
+      },
+      "description": {
+        "ru": "Существа категории «Кролики» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the rabbits category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "raccoons",
+      "name": {
+        "ru": "Еноты",
+        "en": "Raccoons"
+      },
+      "description": {
+        "ru": "Существа категории «Еноты» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the raccoons category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "racingTheme",
+      "name": {
+        "ru": "Гонки",
+        "en": "Racing theme"
+      },
+      "description": {
+        "ru": "Состязание в скорости организует события истории; управление гоночной игрой не подразумевается",
+        "en": "A speed competition organizes story events without implying racing-game control"
+      },
+      "aliases": ["Racing"]
+    },
+    {
+      "key": "rakugo",
+      "name": {
+        "ru": "Ракуго",
+        "en": "Rakugo"
+      },
+      "description": {
+        "ru": "Японское сценическое рассказывание ракуго существенно представлено в содержании",
+        "en": "Japanese rakugo stage storytelling is significant in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "realEstate",
+      "name": {
+        "ru": "Недвижимость",
+        "en": "Real-estate"
+      },
+      "description": {
+        "ru": "Владение, продажа или использование недвижимости являются предметом содержания",
+        "en": "Property ownership, sale or use form a subject"
+      },
+      "aliases": ["Real Estate"]
+    },
+    {
+      "key": "realRobotTheme",
+      "name": {
+        "ru": "Реалистичные боевые меха",
+        "en": "Real-robot theme"
+      },
+      "description": {
+        "ru": "Боевые меха поданы как ограниченная техническая и военная система, а не исключительная магическая сила",
+        "en": "Combat mecha are treated as constrained technical military systems rather than unique magical powers"
+      },
+      "aliases": ["Real Robot"]
+    },
+    {
+      "key": "rebellion",
+      "name": {
+        "ru": "Восстание",
+        "en": "Rebellion"
+      },
+      "description": {
+        "ru": "Организованное сопротивление установленной власти существенно определяет конфликт",
+        "en": "Organized resistance to established authority significantly defines conflict"
+      },
+      "aliases": ["Rebellions"]
+    },
+    {
+      "key": "recipes",
+      "name": {
+        "ru": "Кулинарные рецепты",
+        "en": "Recipe"
+      },
+      "description": {
+        "ru": "Приготовление пищи показано через воспроизводимые последовательности и состав ингредиентов",
+        "en": "Food preparation is shown through reproducible sequences and ingredient lists"
+      },
+      "aliases": ["Recipes"]
+    },
+    {
+      "key": "redPandas",
+      "name": {
+        "ru": "Красные панды",
+        "en": "Red pandas"
+      },
+      "description": {
+        "ru": "Существа категории «Красные панды» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the red pandas category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "reincarnation",
+      "name": {
+        "ru": "Реинкарнация",
+        "en": "Reincarnation"
+      },
+      "description": {
+        "ru": "Повторное рождение личности после смерти существенно определяет устройство истории",
+        "en": "Rebirth of a person after death significantly shapes the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "religion",
+      "name": {
+        "ru": "Религия",
+        "en": "Religion"
+      },
+      "description": {
+        "ru": "Вера, религиозные практики или институты рассматриваются как тема произведения",
+        "en": "Belief, religious practice or institutions are explored as a subject"
+      },
+      "aliases": ["Faith"]
+    },
+    {
+      "key": "remarriage",
+      "name": {
+        "ru": "Повторный брак",
+        "en": "Remarriage"
+      },
+      "description": {
+        "ru": "Вступление в новый брак и связанные семейные отношения существенны для истории",
+        "en": "Entering another marriage and associated family relationships are significant"
+      },
+      "aliases": []
+    },
+    {
+      "key": "reptiles",
+      "name": {
+        "ru": "Рептилии",
+        "en": "Reptiles"
+      },
+      "description": {
+        "ru": "Существа категории «Рептилии» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the reptiles category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "restaurantSetting",
+      "name": {
+        "ru": "Действие в ресторанах",
+        "en": "Restaurant setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Рестораны»; это не страна производства",
+        "en": "A significant part of the story occurs in restaurants; this does not identify the production country"
+      },
+      "aliases": ["Restaurants"]
+    },
+    {
+      "key": "revenge",
+      "name": {
+        "ru": "Месть",
+        "en": "Revenge"
+      },
+      "description": {
+        "ru": "Стремление отплатить за причинённый вред определяет мотивацию или конфликт",
+        "en": "Retaliation for a perceived wrong drives motivation or conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "reverseHarem",
+      "name": {
+        "ru": "Обратный гарем",
+        "en": "Reverse harem"
+      },
+      "description": {
+        "ru": "Несколько мужских романтических интересов группируются вокруг центральной героини",
+        "en": "Multiple male romantic interests cluster around a central female protagonist"
+      },
+      "aliases": []
+    },
+    {
+      "key": "reverseIsekai",
+      "name": {
+        "ru": "Обратный исэкай",
+        "en": "Reverse isekai"
+      },
+      "description": {
+        "ru": "Персонаж из иного мира оказывается в обычном современном человеческом мире",
+        "en": "A character from another world arrives in an ordinary contemporary human world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "rivalries",
+      "name": {
+        "ru": "Соперничество",
+        "en": "Rivalries"
+      },
+      "description": {
+        "ru": "Продолжительное состязание между персонажами существенно развивает отношения и конфликт",
+        "en": "Sustained competition between characters significantly develops relationships and conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "roadTrip",
+      "name": {
+        "ru": "Дорожное путешествие",
+        "en": "Road-trip theme"
+      },
+      "description": {
+        "ru": "Последовательное путешествие по дороге организует встречи и события истории",
+        "en": "A continuing road journey organizes encounters and events"
+      },
+      "aliases": ["Road Trip"]
+    },
+    {
+      "key": "robots",
+      "name": {
+        "ru": "Роботы",
+        "en": "Robots"
+      },
+      "description": {
+        "ru": "Искусственные материальные автоматы заметно участвуют в мире истории",
+        "en": "Artificial physical automata are salient in the story world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "samurai",
+      "name": {
+        "ru": "Самураи",
+        "en": "Samurai"
+      },
+      "description": {
+        "ru": "Самурайская воинская традиция и её представители существенно представлены в мире",
+        "en": "The samurai warrior tradition and its practitioners are salient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "schoolLife",
+      "name": {
+        "ru": "Школьная жизнь",
+        "en": "School life"
+      },
+      "description": {
+        "ru": "Учёба и повседневные отношения школьного сообщества существенно организуют события",
+        "en": "Schooling and everyday school-community relationships significantly organize events"
+      },
+      "aliases": ["School", "Школа"]
+    },
+    {
+      "key": "science",
+      "name": {
+        "ru": "Наука",
+        "en": "Science"
+      },
+      "description": {
+        "ru": "Научное исследование, знания или деятельность учёных являются предметом содержания",
+        "en": "Scientific inquiry, knowledge or scientists' activity form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "scienceAndTechnology",
+      "name": {
+        "ru": "Наука и технологии",
+        "en": "Science and technology"
+      },
+      "description": {
+        "ru": "Существенный предмет — наука, технологии или их взаимосвязь; составная рубрика не доказывает обе отдельные темы",
+        "en": "A substantial focus on science, technology or their relationship; the combined category does not prove both individual subjects"
+      },
+      "aliases": []
+    },
+    {
+      "key": "secondCenturySetting",
+      "name": {
+        "ru": "Действие в 2-м веке",
+        "en": "2nd-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 2 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 2; this is story time, not the release year"
+      },
+      "aliases": ["2nd Century"]
+    },
+    {
+      "key": "serialKillers",
+      "name": {
+        "ru": "Серийные убийцы",
+        "en": "Serial killers"
+      },
+      "description": {
+        "ru": "Последовательные убийства одним преступником существенно организуют историю",
+        "en": "Repeated killings by one perpetrator significantly organize the story"
+      },
+      "aliases": ["Serial Killer"]
+    },
+    {
+      "key": "seventeenthCenturySetting",
+      "name": {
+        "ru": "Действие в 17-м веке",
+        "en": "17th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 17 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 17; this is story time, not the release year"
+      },
+      "aliases": ["17th Century"]
+    },
+    {
+      "key": "seventhCenturySetting",
+      "name": {
+        "ru": "Действие в 7-м веке",
+        "en": "7th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 7 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 7; this is story time, not the release year"
+      },
+      "aliases": ["7th Century"]
+    },
+    {
+      "key": "sexualContent",
+      "name": {
+        "ru": "Сексуальное содержание",
+        "en": "Sexual content"
+      },
+      "description": {
+        "ru": "Изображение сексуального поведения составляет заметную часть содержания; это не числовой возрастной рейтинг",
+        "en": "Depictions of sexual behavior are a salient part of content; this is not a numeric age rating"
+      },
+      "aliases": []
+    },
+    {
+      "key": "silentProtagonist",
+      "name": {
+        "ru": "Молчаливый герой",
+        "en": "Silent protagonist"
+      },
+      "description": {
+        "ru": "Центральный персонаж по художественному устройству преимущественно не имеет собственных реплик",
+        "en": "The protagonist is predominantly without spoken lines by design"
+      },
+      "aliases": []
+    },
+    {
+      "key": "sixteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 16-м веке",
+        "en": "16th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 16 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 16; this is story time, not the release year"
+      },
+      "aliases": ["16th Century"]
+    },
+    {
+      "key": "sixthCenturySetting",
+      "name": {
+        "ru": "Действие в 6-м веке",
+        "en": "6th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 6 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 6; this is story time, not the release year"
+      },
+      "aliases": ["6th Century"]
+    },
+    {
+      "key": "snowSetting",
+      "name": {
+        "ru": "Снежный сеттинг",
+        "en": "Snowy setting"
+      },
+      "description": {
+        "ru": "Снег и заснеженные пространства являются существенной частью окружения",
+        "en": "Snow and snow-covered spaces form a significant part of the environment"
+      },
+      "aliases": ["Snow"]
+    },
+    {
+      "key": "space",
+      "name": {
+        "ru": "Космос",
+        "en": "Space"
+      },
+      "description": {
+        "ru": "Космическое пространство и внеземная среда существенно определяют мир истории",
+        "en": "Outer space and extraterrestrial environments significantly shape the story world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "spaceships",
+      "name": {
+        "ru": "Космические корабли",
+        "en": "Spaceships"
+      },
+      "description": {
+        "ru": "Космические аппараты и путешествия на них существенно представлены в содержании",
+        "en": "Spacecraft and travel aboard them are salient in content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "sportsTheme",
+      "name": {
+        "ru": "Спорт",
+        "en": "Sports theme"
+      },
+      "description": {
+        "ru": "История о спорте, не жанр спортивного симулятора",
+        "en": "Sport as a narrative subject, not a sports-game simulation genre"
+      },
+      "aliases": ["Sport", "Sports"]
+    },
+    {
+      "key": "steampunk",
+      "name": {
+        "ru": "Стимпанк",
+        "en": "Steampunk"
+      },
+      "description": {
+        "ru": "Мир использует воображаемые технологии и эстетику паровой индустриальной эпохи",
+        "en": "A world uses imagined technology and aesthetics of the steam-powered industrial era"
+      },
+      "aliases": []
+    },
+    {
+      "key": "superheroes",
+      "name": {
+        "ru": "Супергерои",
+        "en": "Superheroes"
+      },
+      "description": {
+        "ru": "Герои с необычными возможностями или ролью защитников общества организуют историю",
+        "en": "Heroes with exceptional abilities or societal protector roles organize the story"
+      },
+      "aliases": ["Superhero"]
+    },
+    {
+      "key": "supernatural",
+      "name": {
+        "ru": "Сверхъестественное",
+        "en": "Supernatural"
+      },
+      "description": {
+        "ru": "События или силы выходят за пределы принятых естественных законов мира",
+        "en": "Events or powers go beyond the world's accepted natural laws"
+      },
+      "aliases": []
+    },
+    {
+      "key": "superpowers",
+      "name": {
+        "ru": "Сверхспособности",
+        "en": "Superpowers"
+      },
+      "description": {
+        "ru": "Персонажи обладают исключительными способностями за пределами обычных человеческих возможностей",
+        "en": "Characters possess exceptional abilities beyond ordinary human capabilities"
+      },
+      "aliases": ["Super Power", "Супер сила"]
+    },
+    {
+      "key": "survivalTheme",
+      "name": {
+        "ru": "Выживание",
+        "en": "Survival theme"
+      },
+      "description": {
+        "ru": "История о сохранении жизни в опасных условиях; не требование управлять игровыми ресурсами",
+        "en": "A narrative about staying alive under threat, distinct from survival mechanics"
+      },
+      "aliases": ["Survival"]
+    },
+    {
+      "key": "swordAndSandalTheme",
+      "name": {
+        "ru": "Античное героическое приключение",
+        "en": "Sword-and-sandal theme"
+      },
+      "description": {
+        "ru": "Героические приключения разворачиваются в условно античном средиземноморском мире",
+        "en": "Heroic adventures take place in a stylized ancient Mediterranean world"
+      },
+      "aliases": ["Sword & Sandal"]
+    },
+    {
+      "key": "tanks",
+      "name": {
+        "ru": "Танки",
+        "en": "Tanks"
+      },
+      "description": {
+        "ru": "Бронированные боевые машины существенно представлены в мире произведения",
+        "en": "Armored combat vehicles are salient in the work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "tenthCenturySetting",
+      "name": {
+        "ru": "Действие в 10-м веке",
+        "en": "10th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 10 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 10; this is story time, not the release year"
+      },
+      "aliases": ["10th Century"]
+    },
+    {
+      "key": "thirdCenturySetting",
+      "name": {
+        "ru": "Действие в 3-м веке",
+        "en": "3rd-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 3 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 3; this is story time, not the release year"
+      },
+      "aliases": ["3rd Century"]
+    },
+    {
+      "key": "thirteenthCenturySetting",
+      "name": {
+        "ru": "Действие в 13-м веке",
+        "en": "13th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 13 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 13; this is story time, not the release year"
+      },
+      "aliases": ["13th Century"]
+    },
+    {
+      "key": "timeTravel",
+      "name": {
+        "ru": "Путешествия во времени",
+        "en": "Time travel"
+      },
+      "description": {
+        "ru": "Персонажи или значимые объекты перемещаются между разными моментами времени",
+        "en": "Characters or significant objects move between different points in time"
+      },
+      "aliases": []
+    },
+    {
+      "key": "trains",
+      "name": {
+        "ru": "Поезда",
+        "en": "Trains"
+      },
+      "description": {
+        "ru": "Поезда и железнодорожная среда существенно представлены в мире произведения",
+        "en": "Trains and railway environments are salient in the work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "transferStudents",
+      "name": {
+        "ru": "Перевод в другую школу",
+        "en": "Transfer students"
+      },
+      "description": {
+        "ru": "Переход учащегося в новое учебное сообщество существенно организует события",
+        "en": "A student's move into a new school community significantly organizes events"
+      },
+      "aliases": []
+    },
+    {
+      "key": "transformingMecha",
+      "name": {
+        "ru": "Трансформирующиеся меха",
+        "en": "Transforming mecha"
+      },
+      "description": {
+        "ru": "Боевые машины существенно меняют собственную физическую конфигурацию",
+        "en": "Combat machines materially change their physical configuration"
+      },
+      "aliases": []
+    },
+    {
+      "key": "transhumanism",
+      "name": {
+        "ru": "Трансгуманизм",
+        "en": "Transhumanism"
+      },
+      "description": {
+        "ru": "Преобразование человека технологиями и связанные вопросы идентичности являются существенной темой",
+        "en": "Technological transformation of humanity and identity questions are significant subjects"
+      },
+      "aliases": []
+    },
+    {
+      "key": "transportation",
+      "name": {
+        "ru": "Транспорт",
+        "en": "Transportation"
+      },
+      "description": {
+        "ru": "Перевозки и транспортные системы составляют предмет произведения",
+        "en": "Transport and transportation systems form a subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "transportedIntoNovel",
+      "name": {
+        "ru": "Попадание в роман",
+        "en": "Transported into a novel"
+      },
+      "description": {
+        "ru": "Персонаж оказывается внутри мира литературного произведения",
+        "en": "A character enters the world of a literary work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "trappedInVideoGame",
+      "name": {
+        "ru": "Заточение в видеоигре",
+        "en": "Trapped in a video game"
+      },
+      "description": {
+        "ru": "Персонажи не могут свободно покинуть мир или систему видеоигры",
+        "en": "Characters cannot freely leave a video-game world or system"
+      },
+      "aliases": []
+    },
+    {
+      "key": "travel",
+      "name": {
+        "ru": "Путешествия",
+        "en": "Travel"
+      },
+      "description": {
+        "ru": "Знакомство с новыми местами и культурами является предметом повествования",
+        "en": "Encountering new places and cultures is a narrative subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "treasureHunting",
+      "name": {
+        "ru": "Поиск сокровищ",
+        "en": "Treasure hunting"
+      },
+      "description": {
+        "ru": "Поиск скрытых ценностей составляет существенную цель персонажей",
+        "en": "Searching for hidden valuables forms a significant character goal"
+      },
+      "aliases": ["Treasure Hunters"]
+    },
+    {
+      "key": "trueCrime",
+      "name": {
+        "ru": "Реальные преступления",
+        "en": "True crime"
+      },
+      "description": {
+        "ru": "Реальные преступления и их расследование являются предметом произведения",
+        "en": "Real crimes and their investigation are the subject"
+      },
+      "aliases": []
+    },
+    {
+      "key": "tsundere",
+      "name": {
+        "ru": "Цундэрэ",
+        "en": "Tsundere"
+      },
+      "description": {
+        "ru": "Персонаж сочетает внешнюю холодность или враждебность с проявлениями скрытой привязанности",
+        "en": "A character combines outward coldness or hostility with expressions of hidden affection"
+      },
+      "aliases": []
+    },
+    {
+      "key": "turtles",
+      "name": {
+        "ru": "Черепахи",
+        "en": "Turtles"
+      },
+      "description": {
+        "ru": "Существа категории «Черепахи» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the turtles category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "tutoring",
+      "name": {
+        "ru": "Репетиторство",
+        "en": "Tutoring"
+      },
+      "description": {
+        "ru": "Обучение с индивидуальным наставником существенно организует отношения и события",
+        "en": "Learning with a personal tutor significantly organizes relationships and events"
+      },
+      "aliases": ["Tutors"]
+    },
+    {
+      "key": "twelfthCenturySetting",
+      "name": {
+        "ru": "Действие в 12-м веке",
+        "en": "12th-century setting"
+      },
+      "description": {
+        "ru": "События произведения происходят преимущественно в 12 веке; это время действия, а не год выпуска",
+        "en": "The story takes place predominantly in century 12; this is story time, not the release year"
+      },
+      "aliases": ["12th Century"]
+    },
+    {
+      "key": "undergroundSetting",
+      "name": {
+        "ru": "Подземный сеттинг",
+        "en": "Underground setting"
+      },
+      "description": {
+        "ru": "Значимая часть действия происходит под поверхностью земли",
+        "en": "A significant portion of the action takes place below ground"
+      },
+      "aliases": ["Underground"]
+    },
+    {
+      "key": "underwaterSetting",
+      "name": {
+        "ru": "Подводный мир",
+        "en": "Underwater setting"
+      },
+      "description": {
+        "ru": "Существенная часть событий происходит под водой",
+        "en": "A significant portion of events occurs underwater"
+      },
+      "aliases": ["Underwater"]
+    },
+    {
+      "key": "unicorns",
+      "name": {
+        "ru": "Единороги",
+        "en": "Unicorns"
+      },
+      "description": {
+        "ru": "Существа категории «Единороги» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the unicorns category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "unrequitedLove",
+      "name": {
+        "ru": "Неразделённая любовь",
+        "en": "Unrequited love"
+      },
+      "description": {
+        "ru": "Романтическое чувство не получает взаимного ответа и существенно определяет конфликт",
+        "en": "Unreciprocated romantic feeling significantly defines conflict"
+      },
+      "aliases": []
+    },
+    {
+      "key": "urbanLegends",
+      "name": {
+        "ru": "Городские легенды",
+        "en": "Urban legends"
+      },
+      "description": {
+        "ru": "Современные фольклорные рассказы и слухи существенно определяют события",
+        "en": "Contemporary folklore stories and rumors significantly shape events"
+      },
+      "aliases": ["Urban Legend"]
+    },
+    {
+      "key": "valentinesDay",
+      "name": {
+        "ru": "День святого Валентина",
+        "en": "Valentine's Day"
+      },
+      "description": {
+        "ru": "События и обычаи Дня святого Валентина существенно организуют отношения или сюжет",
+        "en": "Valentine's Day events and customs significantly organize relationships or plot"
+      },
+      "aliases": []
+    },
+    {
+      "key": "vampires",
+      "name": {
+        "ru": "Вампиры",
+        "en": "Vampires"
+      },
+      "description": {
+        "ru": "Существа вампирской традиции существенно представлены как персонажи или угрозы",
+        "en": "Creatures from vampire traditions are salient as characters or threats"
+      },
+      "aliases": ["Vampire"]
+    },
+    {
+      "key": "veterinaryMedicine",
+      "name": {
+        "ru": "Ветеринария",
+        "en": "Veterinary medicine"
+      },
+      "description": {
+        "ru": "Медицинская помощь животным и работа ветеринаров составляют предмет содержания",
+        "en": "Medical care for animals and veterinarians' work form a subject"
+      },
+      "aliases": ["Veterinarians"]
+    },
+    {
+      "key": "videoGameIndustry",
+      "name": {
+        "ru": "Индустрия видеоигр",
+        "en": "Video-game industry"
+      },
+      "description": {
+        "ru": "Создание и выпуск видеоигр рассматриваются как предмет истории",
+        "en": "Creating and publishing video games is a story subject"
+      },
+      "aliases": ["Video Game Industry"]
+    },
+    {
+      "key": "vietnamSetting",
+      "name": {
+        "ru": "Действие во Вьетнаме",
+        "en": "Vietnamese setting"
+      },
+      "description": {
+        "ru": "Значимая часть событий происходит в среде «Вьетнам»; это не страна производства",
+        "en": "A significant part of the story occurs in vietnam; this does not identify the production country"
+      },
+      "aliases": ["Vietnam"]
+    },
+    {
+      "key": "vigilantism",
+      "name": {
+        "ru": "Самосуд",
+        "en": "Vigilantism"
+      },
+      "description": {
+        "ru": "Персонажи самостоятельно осуществляют наказание или защиту вне официальной правоохранительной системы",
+        "en": "Characters enact punishment or protection outside official law enforcement"
+      },
+      "aliases": []
+    },
+    {
+      "key": "vikings",
+      "name": {
+        "ru": "Викинги",
+        "en": "Vikings"
+      },
+      "description": {
+        "ru": "Скандинавские воины и общества эпохи викингов существенно представлены в истории",
+        "en": "Norse warriors and Viking-age societies are salient in the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "villainess",
+      "name": {
+        "ru": "Злодейка",
+        "en": "Villainess"
+      },
+      "description": {
+        "ru": "Значимая женская роль подана как злодейская; центральная роль не выводится автоматически",
+        "en": "A significant female role is presented as villainous without inferring protagonist status"
+      },
+      "aliases": []
+    },
+    {
+      "key": "villainProtagonist",
+      "name": {
+        "ru": "Злодей в главной роли",
+        "en": "Villain protagonist"
+      },
+      "description": {
+        "ru": "Центральный действующий персонаж занимает роль злодея внутри моральной структуры истории",
+        "en": "The central protagonist occupies a villainous role in the story's moral structure"
+      },
+      "aliases": []
+    },
+    {
+      "key": "violence",
+      "name": {
+        "ru": "Насилие",
+        "en": "Violence"
+      },
+      "description": {
+        "ru": "Физическое насилие заметно представлено в содержании без вывода о его интенсивности или возрастном рейтинге",
+        "en": "Physical violence is salient in content without inferring intensity or an age rating"
+      },
+      "aliases": ["Violent"]
+    },
+    {
+      "key": "virtualRealityTheme",
+      "name": {
+        "ru": "Виртуальная реальность",
+        "en": "Virtual reality theme"
+      },
+      "description": {
+        "ru": "События или опыт персонажей существенно связаны с искусственно созданной виртуальной средой; это не требование VR-оборудования для самого произведения",
+        "en": "Characters experience an artificial virtual environment as a significant story element, without implying VR hardware support"
+      },
+      "aliases": []
+    },
+    {
+      "key": "virtualStreamers",
+      "name": {
+        "ru": "Виртуальные стримеры",
+        "en": "Virtual streamers"
+      },
+      "description": {
+        "ru": "Онлайн-исполнители с виртуальными аватарами являются предметом истории; не любое использование VR",
+        "en": "Online performers using virtual avatars are a story subject, distinct from all VR use"
+      },
+      "aliases": ["VTubers"]
+    },
+    {
+      "key": "voiceActing",
+      "name": {
+        "ru": "Озвучивание",
+        "en": "Voice-acting"
+      },
+      "description": {
+        "ru": "Работа голосовых исполнителей является существенным предметом содержания",
+        "en": "Voice performers' work is a significant subject"
+      },
+      "aliases": ["Voice Acting"]
+    },
+    {
+      "key": "volleyballTheme",
+      "name": {
+        "ru": "Волейбол",
+        "en": "Volleyball theme"
+      },
+      "description": {
+        "ru": "Дисциплина «Волейбол» и связанные с ней персонажи или соревнования составляют тему истории",
+        "en": "Volleyball and associated characters or competitions form a story subject"
+      },
+      "aliases": ["Volleyball"]
+    },
+    {
+      "key": "war",
+      "name": {
+        "ru": "Война",
+        "en": "War"
+      },
+      "description": {
+        "ru": "Вооружённый конфликт между организованными общественными силами существенно определяет содержание",
+        "en": "Armed conflict between organized social forces significantly shapes content"
+      },
+      "aliases": ["Kriegsfilm", "Warfare"]
+    },
+    {
+      "key": "waterPoloTheme",
+      "name": {
+        "ru": "Водное поло",
+        "en": "Water polo"
+      },
+      "description": {
+        "ru": "Водное поло, его практика или соревнования существенны для истории",
+        "en": "Water-polo practice or competitions are significant to the story"
+      },
+      "aliases": []
+    },
+    {
+      "key": "waterSports",
+      "name": {
+        "ru": "Водные виды спорта",
+        "en": "Water-sports"
+      },
+      "description": {
+        "ru": "Спортивные дисциплины на воде или в воде составляют предмет содержания",
+        "en": "Sports on or in water form the subject"
+      },
+      "aliases": ["Water Sport"]
+    },
+    {
+      "key": "weakToStrongProgression",
+      "name": {
+        "ru": "От слабости к силе",
+        "en": "Weak-to-strong progression"
+      },
+      "description": {
+        "ru": "Рост возможностей изначально слабого персонажа составляет устойчивую сюжетную дугу",
+        "en": "An initially weak character's increasing capabilities form a sustained narrative arc"
+      },
+      "aliases": ["Weak to Strong"]
+    },
+    {
+      "key": "werewolves",
+      "name": {
+        "ru": "Оборотни",
+        "en": "Werewolves"
+      },
+      "description": {
+        "ru": "Существа, превращающиеся между человеческим и звериным обликом по традиции оборотней, существенно представлены в мире",
+        "en": "Human-animal shapeshifters from werewolf traditions are salient"
+      },
+      "aliases": []
+    },
+    {
+      "key": "whales",
+      "name": {
+        "ru": "Киты",
+        "en": "Whales"
+      },
+      "description": {
+        "ru": "Существа категории «Киты» существенно представлены в содержании; не биологическая характеристика пользователя",
+        "en": "Creatures in the whales category are salient in the content"
+      },
+      "aliases": []
+    },
+    {
+      "key": "witches",
+      "name": {
+        "ru": "Ведьмы",
+        "en": "Witches"
+      },
+      "description": {
+        "ru": "Ведьмы и практика колдовства существенно представлены в мире истории",
+        "en": "Witches and witchcraft are significant in the story world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "wolves",
+      "name": {
+        "ru": "Волки",
+        "en": "Wolves"
+      },
+      "description": {
+        "ru": "Волки заметно представлены как существа или персонажи",
+        "en": "Wolves are salient as creatures or characters"
+      },
+      "aliases": []
+    },
+    {
+      "key": "workLife",
+      "name": {
+        "ru": "Профессиональная жизнь",
+        "en": "Work life"
+      },
+      "description": {
+        "ru": "Профессиональная деятельность и отношения на работе существенно организуют повседневную историю",
+        "en": "Professional activity and workplace relationships significantly organize everyday stories"
+      },
+      "aliases": ["Работа"]
+    },
+    {
+      "key": "worldWarOne",
+      "name": {
+        "ru": "Первая мировая война",
+        "en": "World War I"
+      },
+      "description": {
+        "ru": "Первая мировая война составляет существенный исторический контекст событий",
+        "en": "World War I forms a significant historical context"
+      },
+      "aliases": []
+    },
+    {
+      "key": "worldWarTwo",
+      "name": {
+        "ru": "Вторая мировая война",
+        "en": "World War II"
+      },
+      "description": {
+        "ru": "Вторая мировая война составляет существенный исторический контекст событий",
+        "en": "World War II forms a significant historical context"
+      },
+      "aliases": []
+    },
+    {
+      "key": "wuxia",
+      "name": {
+        "ru": "Уся",
+        "en": "Wuxia"
+      },
+      "description": {
+        "ru": "История использует китайскую традицию странствующих мастеров боевых искусств, чести и рыцарского долга",
+        "en": "The story uses the Chinese tradition of wandering martial heroes, honor and chivalric duty"
+      },
+      "aliases": []
+    },
+    {
+      "key": "xianxia",
+      "name": {
+        "ru": "Сянься",
+        "en": "Xianxia"
+      },
+      "description": {
+        "ru": "Фэнтезийная история строится вокруг китайской традиции духовного совершенствования и достижения бессмертия",
+        "en": "Fantasy organized around Chinese traditions of spiritual cultivation and pursuit of immortality"
+      },
+      "aliases": []
+    },
+    {
+      "key": "zombies",
+      "name": {
+        "ru": "Зомби",
+        "en": "Zombies"
+      },
+      "description": {
+        "ru": "Ожившие мертвецы или существа, поданные как зомби, существенно представлены в мире",
+        "en": "Reanimated dead or beings presented as zombies are salient in the world"
+      },
+      "aliases": []
+    },
+    {
+      "key": "zoo",
+      "name": {
+        "ru": "Зоопарк",
+        "en": "Zoo"
+      },
+      "description": {
+        "ru": "Содержание существенно связано с зоопарками и содержанием животных в них",
+        "en": "The content is significantly concerned with zoos and animals kept there"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}

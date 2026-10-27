@@ -2,7 +2,6 @@ import { ETagKey } from "../schemas/ETagKey"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import { EUnit } from "@entities/shared/schemas/EUnit"
-import { isNumber } from "@shared/functions/checks/isNumber"
 import { ETagGroup } from "../schemas/ETagGroup"
 import type { TTagGroupRule } from "../types/TTagGroupRule"
 
@@ -202,6 +201,16 @@ const TAG_GROUP_RULES = {
       { key: "fullCompletionDuration9000Plus", from: 9000, to: null },
     ],
   },
+  [ETagGroup.GAME_LENGTH]: {
+    kind: "dictionary",
+    itemTypes: [EItemType.GAME],
+    cardinality: "one",
+    isUsedForTaste: false,
+    isApprovalRequired: true,
+    values: ["shortGame", "longGame"],
+    description:
+      "Оценка длины игры как короткой или длинной по данным источника, без фиксированных порогов времени прохождения",
+  },
   [ETagGroup.RELEASE_STATUS]: {
     kind: "enum",
     itemTypes: Object.values(EItemType),
@@ -235,15 +244,16 @@ const TAG_GROUP_RULES = {
     cardinality: "one",
     isUsedForTaste: false,
     isApprovalRequired: true,
-    values: Object.values(EAgeRestriction)
-      .filter(isNumber)
-      .map((value) => ({
-        key: `ageRestriction${value}`,
-        value,
-      })),
+    values: Object.values(EAgeRestriction).map((value) => ({
+      key:
+        value === EAgeRestriction.AGE_18_PLUS_PLUS
+          ? "ageRestriction18PlusPlus"
+          : `ageRestriction${value}`,
+      value,
+    })),
     sourceField: "ageRestriction",
     description:
-      "Нормализованное возрастное ограничение; преобразование ESRB и PEGI требует отдельно согласованной таблицы соответствий",
+      "Нормализованное возрастное ограничение; 18++ только для порнографических игр, не по одному внешнему рейтингу; преобразование ESRB и PEGI требует отдельно согласованной таблицы соответствий",
   },
   [ETagGroup.RELEASE_YEAR]: {
     kind: "integer",
@@ -255,8 +265,14 @@ const TAG_GROUP_RULES = {
     max: 9999,
     sourceField: "releaseDate",
     isYearWithoutDateAllowed: true,
+    ranges: [
+      { key: "releaseYear1To1930", from: 1, to: 1930 },
+      { key: "releaseYear1930To1950", from: 1930, to: 1950 },
+      { key: "releaseYear1950To1980", from: 1950, to: 1980 },
+      { key: "releaseYear1980To1990", from: 1980, to: 1990 },
+    ],
     description:
-      "Год первого выпуска, включая будущие годы; известная точная дата имеет приоритет над тегом с отдельно указанным годом",
+      "Год первого выпуска, включая будущие годы; диапазоны до 1990 года включают нижнюю и исключают верхнюю границу; известная точная дата имеет приоритет над тегом с отдельно указанным годом",
   },
   [ETagGroup.GAME_MODE]: {
     kind: "dictionary",
@@ -268,8 +284,12 @@ const TAG_GROUP_RULES = {
       "singlePlayer",
       "cooperativeMultiplayer",
       "competitiveMultiplayer",
+      "multiplayer",
+      "playerVsEnvironment",
+      "splitScreen",
     ],
-    description: "Режимы игры без разделения на локальную и сетевую игру",
+    description:
+      "Режимы игры; сотрудничество, соперничество, игра против окружения и разделение экрана описываются отдельно",
   },
   [ETagGroup.GAME_MECHANIC]: {
     kind: "dictionary",

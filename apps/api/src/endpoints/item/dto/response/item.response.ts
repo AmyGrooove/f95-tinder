@@ -1,7 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger"
 
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
-import { isNumber } from "@shared/functions/checks/isNumber"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageText.response"
 import { MediaResponseDto } from "@entities/shared/dto/response/media.response"
@@ -105,8 +104,8 @@ class ItemResponseDto extends ItemSummaryResponseDto {
   releaseDate: string | null
 
   @ApiProperty({
-    type: Number,
-    enum: Object.values(EAgeRestriction).filter(isNumber),
+    type: String,
+    enum: Object.values(EAgeRestriction),
     nullable: true,
   })
   ageRestriction: EAgeRestriction | null

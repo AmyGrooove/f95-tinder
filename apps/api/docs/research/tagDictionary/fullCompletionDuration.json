@@ -1,0 +1,90 @@
+{
+  "group": "fullCompletionDuration",
+  "tags": [
+    {
+      "key": "fullCompletionDuration0To300",
+      "name": {
+        "ru": "Полное прохождение: менее 5 часов",
+        "en": "Full completion: under 5 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: менее 5 часов; длительность положительная; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: under 5 hours; duration must be positive; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration300To600",
+      "name": {
+        "ru": "Полное прохождение: от 5 до менее 10 часов",
+        "en": "Full completion: 5 to under 10 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 5 до менее 10 часов; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 5 to under 10 hours; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration600To1200",
+      "name": {
+        "ru": "Полное прохождение: от 10 до менее 20 часов",
+        "en": "Full completion: 10 to under 20 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 10 до менее 20 часов; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 10 to under 20 hours; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration1200To2400",
+      "name": {
+        "ru": "Полное прохождение: от 20 до менее 40 часов",
+        "en": "Full completion: 20 to under 40 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 20 до менее 40 часов; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 20 to under 40 hours; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration2400To4800",
+      "name": {
+        "ru": "Полное прохождение: от 40 до менее 80 часов",
+        "en": "Full completion: 40 to under 80 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 40 до менее 80 часов; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 40 to under 80 hours; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration4800To9000",
+      "name": {
+        "ru": "Полное прохождение: от 80 до менее 150 часов",
+        "en": "Full completion: 80 to under 150 hours"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 80 до менее 150 часов; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 80 to under 150 hours; a defined ending is required"
+      },
+      "aliases": []
+    },
+    {
+      "key": "fullCompletionDuration9000Plus",
+      "name": {
+        "ru": "Полное прохождение: 150 часов и более",
+        "en": "Full completion: 150 hours or more"
+      },
+      "description": {
+        "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: 150 часов и более; требуется предусмотренное конечное прохождение",
+        "en": "Estimated base-game full completion time including optional content, excluding DLC: 150 hours or more; a defined ending is required"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}

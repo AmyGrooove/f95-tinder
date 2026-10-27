@@ -17,7 +17,6 @@ import { ItemSeriesSchema } from "./itemSeries.schema"
 import type { ItemGame } from "./itemGame.schema"
 import { ItemGameSchema } from "./itemGame.schema"
 import { isNil } from "@shared/functions/checks/isNil"
-import { isNumber } from "@shared/functions/checks/isNumber"
 
 @Schema({ collection: "Item" })
 class Item extends MongoEntity {
@@ -49,8 +48,8 @@ class Item extends MongoEntity {
   releaseDate: Date | null
 
   @Prop({
-    type: Number,
-    enum: Object.values(EAgeRestriction).filter(isNumber),
+    type: String,
+    enum: Object.values(EAgeRestriction),
     default: null,
   })
   ageRestriction: EAgeRestriction | null
@@ -84,6 +83,13 @@ type TCreateItem = TCreateEntity<
 const ItemSchema = SchemaFactory.createForClass(Item)
 
 ItemSchema.pre("validate", function () {
+  if (
+    this.ageRestriction === EAgeRestriction.AGE_18_PLUS_PLUS &&
+    this.type !== EItemType.GAME
+  ) {
+    this.invalidate("ageRestriction", "18++ requires a game Item type")
+  }
+
   if (
     !isNil(this.movie) &&
     this.type !== EItemType.MOVIE &&

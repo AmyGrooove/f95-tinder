@@ -202,8 +202,8 @@ describe("ItemController", () => {
     expect(schemas).toHaveProperty(
       "ItemResponseDto.properties.ageRestriction",
       {
-        type: ["number", "null"],
-        enum: [0, 6, 12, 16, 18, null],
+        type: ["string", "null"],
+        enum: ["0", "6", "12", "16", "18", "18++", null],
       },
     )
     for (const [field, dto] of [

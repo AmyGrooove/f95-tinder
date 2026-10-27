@@ -1,0 +1,90 @@
+{
+  "group": "duration",
+  "tags": [
+    {
+      "key": "duration0To30",
+      "name": {
+        "ru": "Длительность фильма: менее 30 минут",
+        "en": "Film duration: under 30 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: менее 30 минут; длительность положительная",
+        "en": "Duration of a feature or short film: under 30 minutes; duration must be positive"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration30To60",
+      "name": {
+        "ru": "Длительность фильма: от 30 до менее 60 минут",
+        "en": "Film duration: 30 to under 60 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: от 30 до менее 60 минут",
+        "en": "Duration of a feature or short film: 30 to under 60 minutes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration60To90",
+      "name": {
+        "ru": "Длительность фильма: от 60 до менее 90 минут",
+        "en": "Film duration: 60 to under 90 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: от 60 до менее 90 минут",
+        "en": "Duration of a feature or short film: 60 to under 90 minutes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration90To120",
+      "name": {
+        "ru": "Длительность фильма: от 90 до менее 120 минут",
+        "en": "Film duration: 90 to under 120 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: от 90 до менее 120 минут",
+        "en": "Duration of a feature or short film: 90 to under 120 minutes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration120To150",
+      "name": {
+        "ru": "Длительность фильма: от 120 до менее 150 минут",
+        "en": "Film duration: 120 to under 150 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: от 120 до менее 150 минут",
+        "en": "Duration of a feature or short film: 120 to under 150 minutes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration150To180",
+      "name": {
+        "ru": "Длительность фильма: от 150 до менее 180 минут",
+        "en": "Film duration: 150 to under 180 minutes"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: от 150 до менее 180 минут",
+        "en": "Duration of a feature or short film: 150 to under 180 minutes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "duration180Plus",
+      "name": {
+        "ru": "Длительность фильма: 180 минут и более",
+        "en": "Film duration: 180 minutes or more"
+      },
+      "description": {
+        "ru": "Длительность полнометражного или короткометражного фильма: 180 минут и более",
+        "en": "Duration of a feature or short film: 180 minutes or more"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}

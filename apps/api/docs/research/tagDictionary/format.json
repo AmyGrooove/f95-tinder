@@ -1,0 +1,434 @@
+{
+  "group": "format",
+  "tags": [
+    {
+      "key": "anthology",
+      "name": {
+        "ru": "Антология",
+        "en": "Anthology"
+      },
+      "description": {
+        "ru": "Произведение объединяет самостоятельные истории по общей рамке или принципу",
+        "en": "The work collects independent stories under a shared frame or organizing principle"
+      },
+      "aliases": []
+    },
+    {
+      "key": "beautyCompetition",
+      "name": {
+        "ru": "Конкурс красоты",
+        "en": "Beauty competition"
+      },
+      "description": {
+        "ru": "Программа организована вокруг состязания участников по установленным эстетическим критериям",
+        "en": "A program organized around contestants judged by prescribed aesthetic criteria"
+      },
+      "aliases": []
+    },
+    {
+      "key": "businessRealityShow",
+      "name": {
+        "ru": "Реалити-шоу о бизнесе",
+        "en": "Business reality show"
+      },
+      "description": {
+        "ru": "Реальные предпринимательские ситуации или деловые состязания организуют программу",
+        "en": "Real business situations or entrepreneurial competitions organize the program"
+      },
+      "aliases": ["Business Reality TV"]
+    },
+    {
+      "key": "concert",
+      "name": {
+        "ru": "Концерт",
+        "en": "Concert"
+      },
+      "description": {
+        "ru": "Запись или представление музыкального исполнения перед аудиторией",
+        "en": "Recording or presentation of musical performance for an audience"
+      },
+      "aliases": []
+    },
+    {
+      "key": "cookingCompetition",
+      "name": {
+        "ru": "Кулинарный конкурс",
+        "en": "Cooking competition"
+      },
+      "description": {
+        "ru": "Участники соревнуются в приготовлении пищи по правилам программы",
+        "en": "Contestants compete in preparing food under program rules"
+      },
+      "aliases": []
+    },
+    {
+      "key": "crimeRealityShow",
+      "name": {
+        "ru": "Криминальное реалити-шоу",
+        "en": "Crime reality show"
+      },
+      "description": {
+        "ru": "Программа наблюдает за реальными криминальными ситуациями или работой правоохранителей",
+        "en": "A program observes real criminal situations or law-enforcement work"
+      },
+      "aliases": ["Crime Reality TV"]
+    },
+    {
+      "key": "datingRealityShow",
+      "name": {
+        "ru": "Реалити-шоу о знакомствах",
+        "en": "Dating reality show"
+      },
+      "description": {
+        "ru": "Знакомства и романтический выбор реальных участников организуют программу",
+        "en": "Dating and romantic selection among real participants organize the program"
+      },
+      "aliases": ["Dating Reality TV"]
+    },
+    {
+      "key": "docudrama",
+      "name": {
+        "ru": "Докудрама",
+        "en": "Docudrama"
+      },
+      "description": {
+        "ru": "Реальные события реконструируются драматическими средствами с опорой на факты",
+        "en": "Real events are reconstructed dramatically with a factual basis"
+      },
+      "aliases": []
+    },
+    {
+      "key": "documentary",
+      "name": {
+        "ru": "Документальное произведение",
+        "en": "Documentary"
+      },
+      "description": {
+        "ru": "Документальная форма представления действительных событий; не синоним non-fiction любого вида",
+        "en": "Documentary presentation of real subjects, distinct from all non-fiction"
+      },
+      "aliases": ["Dokumentarfilm"]
+    },
+    {
+      "key": "docusoapRealityShow",
+      "name": {
+        "ru": "Реалити-шоу о повседневной жизни",
+        "en": "Docusoap reality show"
+      },
+      "description": {
+        "ru": "Повседневная жизнь повторяющихся реальных участников организована в продолжающееся реалити-повествование",
+        "en": "Everyday lives of recurring real participants form an ongoing reality narrative"
+      },
+      "aliases": ["Docusoap Reality TV"]
+    },
+    {
+      "key": "educationalWork",
+      "name": {
+        "ru": "Обучающее произведение",
+        "en": "Educational work"
+      },
+      "description": {
+        "ru": "Передача знаний или навыков является явной задачей произведения; это не возрастная группа",
+        "en": "Teaching knowledge or skills is an explicit purpose rather than an age group"
+      },
+      "aliases": ["Education", "Educational"]
+    },
+    {
+      "key": "gameShow",
+      "name": {
+        "ru": "Телеигра",
+        "en": "Game show"
+      },
+      "description": {
+        "ru": "Участники программы соревнуются по установленным игровым правилам",
+        "en": "Program participants compete under defined game rules"
+      },
+      "aliases": []
+    },
+    {
+      "key": "hiddenCameraShow",
+      "name": {
+        "ru": "Шоу со скрытой камерой",
+        "en": "Hidden-camera show"
+      },
+      "description": {
+        "ru": "Содержание организовано вокруг записи реакций участников, не осведомлённых о съёмке в момент события",
+        "en": "Content centers on recording reactions of participants unaware of filming at the time"
+      },
+      "aliases": ["Hidden Camera"]
+    },
+    {
+      "key": "madeForTvMovie",
+      "name": {
+        "ru": "Телефильм",
+        "en": "Made-for-TV movie"
+      },
+      "description": {
+        "ru": "Фильм изначально предназначен для телевизионного показа, а не регулярного сезона сериала",
+        "en": "A film initially intended for television presentation rather than a regular series season"
+      },
+      "aliases": ["TV-Film"]
+    },
+    {
+      "key": "makeoverShow",
+      "name": {
+        "ru": "Шоу преображения",
+        "en": "Makeover show"
+      },
+      "description": {
+        "ru": "Изменение внешности участников под руководством специалистов организует программу",
+        "en": "Participants' appearance transformations under expert guidance organize the program"
+      },
+      "aliases": ["Beauty Makeover"]
+    },
+    {
+      "key": "minigameCollection",
+      "name": {
+        "ru": "Сборник мини-игр",
+        "en": "Minigame collection"
+      },
+      "description": {
+        "ru": "Игра целиком организована как сборник мини-игр; отдельная встроенная мини-игра не устанавливает формат",
+        "en": "A game organized as a collection of minigames; an embedded minigame alone does not establish this format"
+      },
+      "aliases": []
+    },
+    {
+      "key": "mockumentary",
+      "name": {
+        "ru": "Псевдодокументальное произведение",
+        "en": "Mockumentary"
+      },
+      "description": {
+        "ru": "Вымышленная история подаётся средствами документального наблюдения",
+        "en": "Fiction is presented through documentary conventions"
+      },
+      "aliases": []
+    },
+    {
+      "key": "musicVideo",
+      "name": {
+        "ru": "Музыкальный клип",
+        "en": "Music video"
+      },
+      "description": {
+        "ru": "Самостоятельное видеопроизведение, созданное как сопровождение музыкальной записи; чистые рекламные и промоматериалы исключены",
+        "en": "A standalone video work accompanying a musical recording, excluding purely advertising and promotional material"
+      },
+      "aliases": ["MUSIC"]
+    },
+    {
+      "key": "newsProgram",
+      "name": {
+        "ru": "Новостная программа",
+        "en": "News program"
+      },
+      "description": {
+        "ru": "Сообщение и обсуждение актуальных событий организуют программу",
+        "en": "Reporting and discussing current events organizes the program"
+      },
+      "aliases": ["News"]
+    },
+    {
+      "key": "originalNetAnimation",
+      "name": {
+        "ru": "ONA",
+        "en": "Original net animation"
+      },
+      "description": {
+        "ru": "Аниме, изначально выпущенное в интернете",
+        "en": "Anime initially released online"
+      },
+      "aliases": []
+    },
+    {
+      "key": "originalVideoAnimation",
+      "name": {
+        "ru": "OVA",
+        "en": "Original video animation"
+      },
+      "description": {
+        "ru": "Аниме, изначально выпущенное непосредственно на видеоносителе",
+        "en": "Anime initially released directly to video"
+      },
+      "aliases": []
+    },
+    {
+      "key": "paranormalRealityShow",
+      "name": {
+        "ru": "Паранормальное реалити-шоу",
+        "en": "Paranormal reality show"
+      },
+      "description": {
+        "ru": "Участники исследуют заявленные паранормальные явления в формате реалити без утверждения их достоверности",
+        "en": "Participants investigate claimed paranormal events in a reality format without asserting their truth"
+      },
+      "aliases": ["Paranormal Reality TV"]
+    },
+    {
+      "key": "quizShow",
+      "name": {
+        "ru": "Телевикторина",
+        "en": "Quiz show"
+      },
+      "description": {
+        "ru": "Участники телепрограммы соревнуются в ответах на вопросы",
+        "en": "Program contestants compete by answering questions"
+      },
+      "aliases": []
+    },
+    {
+      "key": "realityShow",
+      "name": {
+        "ru": "Реалити-шоу",
+        "en": "Reality show"
+      },
+      "description": {
+        "ru": "Программа организована вокруг наблюдения за участниками, выступающими преимущественно от собственного лица",
+        "en": "A program organized around observing participants largely appearing as themselves"
+      },
+      "aliases": ["Reality", "Reality-TV", "Reality TV"]
+    },
+    {
+      "key": "shortFilm",
+      "name": {
+        "ru": "Короткометражный фильм",
+        "en": "Short film"
+      },
+      "description": {
+        "ru": "Самостоятельный фильм короткометражного формата; категория не назначается только по числу минут",
+        "en": "A standalone short-form film; runtime alone does not establish this category"
+      },
+      "aliases": []
+    },
+    {
+      "key": "sketchComedy",
+      "name": {
+        "ru": "Скетч-шоу",
+        "en": "Sketch comedy"
+      },
+      "description": {
+        "ru": "Произведение состоит из коротких относительно самостоятельных комических сцен",
+        "en": "A work composed of short relatively independent comic scenes"
+      },
+      "aliases": []
+    },
+    {
+      "key": "special",
+      "name": {
+        "ru": "Спецвыпуск",
+        "en": "Special"
+      },
+      "description": {
+        "ru": "Самостоятельный дополнительный выпуск вне обычной основной последовательности видеопроизведения",
+        "en": "A standalone additional installment outside the regular main sequence of a video work"
+      },
+      "aliases": []
+    },
+    {
+      "key": "standUp",
+      "name": {
+        "ru": "Стендап",
+        "en": "Stand-up"
+      },
+      "description": {
+        "ru": "Исполнитель обращается к аудитории с комическим монологом",
+        "en": "A performer addresses an audience through comic monologue"
+      },
+      "aliases": []
+    },
+    {
+      "key": "survivalCompetition",
+      "name": {
+        "ru": "Соревнование на выживание",
+        "en": "Survival competition"
+      },
+      "description": {
+        "ru": "Реальные участники состязаются в заданиях выживания, а не игровые персонажи в survival-системе",
+        "en": "Real participants compete in survival tasks, distinct from a survival-game system"
+      },
+      "aliases": []
+    },
+    {
+      "key": "talentCompetition",
+      "name": {
+        "ru": "Конкурс талантов",
+        "en": "Talent competition"
+      },
+      "description": {
+        "ru": "Участники демонстрируют исполнительские способности в организованном конкурсе",
+        "en": "Participants demonstrate performance skills in an organized contest"
+      },
+      "aliases": []
+    },
+    {
+      "key": "talkShow",
+      "name": {
+        "ru": "Ток-шоу",
+        "en": "Talk show"
+      },
+      "description": {
+        "ru": "Разговор с гостями или панельная дискуссия организуют программу",
+        "en": "Guest conversation or panel discussion organizes the program"
+      },
+      "aliases": ["Talk", "Talk-Show"]
+    }
+  ],
+  "tagRelations": [
+    {
+      "first": "beautyCompetition",
+      "second": "gameShow",
+      "type": "parent"
+    },
+    {
+      "first": "businessRealityShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "cookingCompetition",
+      "second": "gameShow",
+      "type": "parent"
+    },
+    {
+      "first": "crimeRealityShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "datingRealityShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "docusoapRealityShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "makeoverShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "paranormalRealityShow",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "quizShow",
+      "second": "gameShow",
+      "type": "parent"
+    },
+    {
+      "first": "survivalCompetition",
+      "second": "realityShow",
+      "type": "parent"
+    },
+    {
+      "first": "talentCompetition",
+      "second": "gameShow",
+      "type": "parent"
+    }
+  ]
+}

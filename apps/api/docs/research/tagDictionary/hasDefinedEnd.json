@@ -1,0 +1,30 @@
+{
+  "group": "hasDefinedEnd",
+  "tags": [
+    {
+      "key": "hasDefinedEndFalse",
+      "name": {
+        "ru": "Нет конечного прохождения",
+        "en": "No defined end"
+      },
+      "description": {
+        "ru": "Подтверждено, что в базовой игре без DLC не предусмотрено конечное прохождение; недостаток данных или обещанный, но ещё недоступный финал не означают это значение",
+        "en": "The base game without DLC is confirmed to have no intended completion endpoint; insufficient information or a promised but unavailable ending does not establish this value"
+      },
+      "aliases": []
+    },
+    {
+      "key": "hasDefinedEndTrue",
+      "name": {
+        "ru": "Есть конечное прохождение",
+        "en": "Has a defined end"
+      },
+      "description": {
+        "ru": "В базовой игре без DLC есть полноценная кампания с предусмотренной конечной точкой прохождения, даже если после финала можно продолжать играть или доступны бесконечные режимы; завершения отдельного матча, раунда или сезона недостаточно",
+        "en": "The base game without DLC has a complete campaign with an intended completion endpoint, even if play can continue afterwards or endless modes are available; finishing a match, round or season alone does not qualify"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}

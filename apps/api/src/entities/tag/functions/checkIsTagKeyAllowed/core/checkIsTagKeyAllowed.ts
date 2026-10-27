@@ -27,6 +27,10 @@ const checkIsTagKeyAllowed = ({ key, group }: ICheckIsTagKeyAllowedProps) => {
     case "range":
       return rule.ranges.some((range) => range.key === key)
     case "integer": {
+      if (rule.ranges?.some((range) => range.key === key) === true) {
+        return true
+      }
+
       if (!key.startsWith(group)) {
         return false
       }

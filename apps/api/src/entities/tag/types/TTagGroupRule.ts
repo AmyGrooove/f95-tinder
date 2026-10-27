@@ -37,6 +37,8 @@ type TTagGroupRule = ITagGroupRuleBase &
         max: number
         sourceField: "releaseDate"
         isYearWithoutDateAllowed: true
+
+        ranges?: readonly ITagGroupRange[]
       }
     | {
         kind: "range"

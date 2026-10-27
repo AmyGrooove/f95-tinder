@@ -199,7 +199,7 @@ describe("ItemService", () => {
       expect(result).toMatchObject({
         type,
         releaseDate: "2026-10-25T09:30:00.000Z",
-        ageRestriction: 0,
+        ageRestriction: EAgeRestriction.ALL_AGES,
       })
       expect(result.movie).toEqual(field === "movie" ? value : null)
       expect(result.series).toEqual(
@@ -250,9 +250,10 @@ describe("ItemService", () => {
     })
   })
 
-  it.each([0, 6, 12, 16, 18] as const)(
+  it.each(Object.values(EAgeRestriction))(
     "сохраняет возрастное ограничение %s",
     async (ageRestriction) => {
+      item.type = EItemType.GAME
       item.ageRestriction = ageRestriction
 
       expect((await service.getById(item._id)).ageRestriction).toBe(

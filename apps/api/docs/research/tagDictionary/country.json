@@ -1,0 +1,2390 @@
+{
+  "group": "country",
+  "tags": [
+    {
+      "key": "countryAfghanistan",
+      "name": {
+        "ru": "Афганистан",
+        "en": "Afghanistan"
+      },
+      "description": {
+        "ru": "Страна производства — Афганистан; не место действия или съёмок",
+        "en": "Production country: Afghanistan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAlbania",
+      "name": {
+        "ru": "Албания",
+        "en": "Albania"
+      },
+      "description": {
+        "ru": "Страна производства — Албания; не место действия или съёмок",
+        "en": "Production country: Albania; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAlgeria",
+      "name": {
+        "ru": "Алжир",
+        "en": "Algeria"
+      },
+      "description": {
+        "ru": "Страна производства — Алжир; не место действия или съёмок",
+        "en": "Production country: Algeria; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAndorra",
+      "name": {
+        "ru": "Андорра",
+        "en": "Andorra"
+      },
+      "description": {
+        "ru": "Страна производства — Андорра; не место действия или съёмок",
+        "en": "Production country: Andorra; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAngola",
+      "name": {
+        "ru": "Ангола",
+        "en": "Angola"
+      },
+      "description": {
+        "ru": "Страна производства — Ангола; не место действия или съёмок",
+        "en": "Production country: Angola; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAntiguaAndBarbuda",
+      "name": {
+        "ru": "Антигуа и Барбуда",
+        "en": "Antigua and Barbuda"
+      },
+      "description": {
+        "ru": "Страна производства — Антигуа и Барбуда; не место действия или съёмок",
+        "en": "Production country: Antigua and Barbuda; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryArgentina",
+      "name": {
+        "ru": "Аргентина",
+        "en": "Argentina"
+      },
+      "description": {
+        "ru": "Страна производства — Аргентина; не место действия или съёмок",
+        "en": "Production country: Argentina; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryArmenia",
+      "name": {
+        "ru": "Армения",
+        "en": "Armenia"
+      },
+      "description": {
+        "ru": "Страна производства — Армения; не место действия или съёмок",
+        "en": "Production country: Armenia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAustralia",
+      "name": {
+        "ru": "Австралия",
+        "en": "Australia"
+      },
+      "description": {
+        "ru": "Страна производства — Австралия; не место действия или съёмок",
+        "en": "Production country: Australia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAustria",
+      "name": {
+        "ru": "Австрия",
+        "en": "Austria"
+      },
+      "description": {
+        "ru": "Страна производства — Австрия; не место действия или съёмок",
+        "en": "Production country: Austria; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryAzerbaijan",
+      "name": {
+        "ru": "Азербайджан",
+        "en": "Azerbaijan"
+      },
+      "description": {
+        "ru": "Страна производства — Азербайджан; не место действия или съёмок",
+        "en": "Production country: Azerbaijan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBahamas",
+      "name": {
+        "ru": "Багамы",
+        "en": "Bahamas"
+      },
+      "description": {
+        "ru": "Страна производства — Багамы; не место действия или съёмок",
+        "en": "Production country: Bahamas; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBahrain",
+      "name": {
+        "ru": "Бахрейн",
+        "en": "Bahrain"
+      },
+      "description": {
+        "ru": "Страна производства — Бахрейн; не место действия или съёмок",
+        "en": "Production country: Bahrain; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBangladesh",
+      "name": {
+        "ru": "Бангладеш",
+        "en": "Bangladesh"
+      },
+      "description": {
+        "ru": "Страна производства — Бангладеш; не место действия или съёмок",
+        "en": "Production country: Bangladesh; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBarbados",
+      "name": {
+        "ru": "Барбадос",
+        "en": "Barbados"
+      },
+      "description": {
+        "ru": "Страна производства — Барбадос; не место действия или съёмок",
+        "en": "Production country: Barbados; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBelarus",
+      "name": {
+        "ru": "Беларусь",
+        "en": "Belarus"
+      },
+      "description": {
+        "ru": "Страна производства — Беларусь; не место действия или съёмок",
+        "en": "Production country: Belarus; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBelgium",
+      "name": {
+        "ru": "Бельгия",
+        "en": "Belgium"
+      },
+      "description": {
+        "ru": "Страна производства — Бельгия; не место действия или съёмок",
+        "en": "Production country: Belgium; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBelize",
+      "name": {
+        "ru": "Белиз",
+        "en": "Belize"
+      },
+      "description": {
+        "ru": "Страна производства — Белиз; не место действия или съёмок",
+        "en": "Production country: Belize; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBenin",
+      "name": {
+        "ru": "Бенин",
+        "en": "Benin"
+      },
+      "description": {
+        "ru": "Страна производства — Бенин; не место действия или съёмок",
+        "en": "Production country: Benin; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBhutan",
+      "name": {
+        "ru": "Бутан",
+        "en": "Bhutan"
+      },
+      "description": {
+        "ru": "Страна производства — Бутан; не место действия или съёмок",
+        "en": "Production country: Bhutan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBolivia",
+      "name": {
+        "ru": "Боливия",
+        "en": "Bolivia"
+      },
+      "description": {
+        "ru": "Страна производства — Боливия; не место действия или съёмок",
+        "en": "Production country: Bolivia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBosniaAndHerzegovina",
+      "name": {
+        "ru": "Босния и Герцеговина",
+        "en": "Bosnia and Herzegovina"
+      },
+      "description": {
+        "ru": "Страна производства — Босния и Герцеговина; не место действия или съёмок",
+        "en": "Production country: Bosnia and Herzegovina; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBotswana",
+      "name": {
+        "ru": "Ботсвана",
+        "en": "Botswana"
+      },
+      "description": {
+        "ru": "Страна производства — Ботсвана; не место действия или съёмок",
+        "en": "Production country: Botswana; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBrazil",
+      "name": {
+        "ru": "Бразилия",
+        "en": "Brazil"
+      },
+      "description": {
+        "ru": "Страна производства — Бразилия; не место действия или съёмок",
+        "en": "Production country: Brazil; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBrunei",
+      "name": {
+        "ru": "Бруней",
+        "en": "Brunei"
+      },
+      "description": {
+        "ru": "Страна производства — Бруней; не место действия или съёмок",
+        "en": "Production country: Brunei; distinct from the story setting or filming location"
+      },
+      "aliases": ["Brunei Darussalam"]
+    },
+    {
+      "key": "countryBulgaria",
+      "name": {
+        "ru": "Болгария",
+        "en": "Bulgaria"
+      },
+      "description": {
+        "ru": "Страна производства — Болгария; не место действия или съёмок",
+        "en": "Production country: Bulgaria; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBurkinaFaso",
+      "name": {
+        "ru": "Буркина-Фасо",
+        "en": "Burkina Faso"
+      },
+      "description": {
+        "ru": "Страна производства — Буркина-Фасо; не место действия или съёмок",
+        "en": "Production country: Burkina Faso; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryBurundi",
+      "name": {
+        "ru": "Бурунди",
+        "en": "Burundi"
+      },
+      "description": {
+        "ru": "Страна производства — Бурунди; не место действия или съёмок",
+        "en": "Production country: Burundi; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCaboVerde",
+      "name": {
+        "ru": "Кабо-Верде",
+        "en": "Cabo Verde"
+      },
+      "description": {
+        "ru": "Страна производства — Кабо-Верде; не место действия или съёмок",
+        "en": "Production country: Cabo Verde; distinct from the story setting or filming location"
+      },
+      "aliases": ["Cape Verde"]
+    },
+    {
+      "key": "countryCambodia",
+      "name": {
+        "ru": "Камбоджа",
+        "en": "Cambodia"
+      },
+      "description": {
+        "ru": "Страна производства — Камбоджа; не место действия или съёмок",
+        "en": "Production country: Cambodia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCameroon",
+      "name": {
+        "ru": "Камерун",
+        "en": "Cameroon"
+      },
+      "description": {
+        "ru": "Страна производства — Камерун; не место действия или съёмок",
+        "en": "Production country: Cameroon; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCanada",
+      "name": {
+        "ru": "Канада",
+        "en": "Canada"
+      },
+      "description": {
+        "ru": "Страна производства — Канада; не место действия или съёмок",
+        "en": "Production country: Canada; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCentralAfricanRepublic",
+      "name": {
+        "ru": "Центрально-Африканская Республика",
+        "en": "Central African Republic"
+      },
+      "description": {
+        "ru": "Страна производства — Центрально-Африканская Республика; не место действия или съёмок",
+        "en": "Production country: Central African Republic; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryChad",
+      "name": {
+        "ru": "Чад",
+        "en": "Chad"
+      },
+      "description": {
+        "ru": "Страна производства — Чад; не место действия или съёмок",
+        "en": "Production country: Chad; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryChile",
+      "name": {
+        "ru": "Чили",
+        "en": "Chile"
+      },
+      "description": {
+        "ru": "Страна производства — Чили; не место действия или съёмок",
+        "en": "Production country: Chile; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryChina",
+      "name": {
+        "ru": "Китай",
+        "en": "China"
+      },
+      "description": {
+        "ru": "Страна производства — Китай; не место действия или съёмок",
+        "en": "Production country: China; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryColombia",
+      "name": {
+        "ru": "Колумбия",
+        "en": "Colombia"
+      },
+      "description": {
+        "ru": "Страна производства — Колумбия; не место действия или съёмок",
+        "en": "Production country: Colombia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryComoros",
+      "name": {
+        "ru": "Коморы",
+        "en": "Comoros"
+      },
+      "description": {
+        "ru": "Страна производства — Коморы; не место действия или съёмок",
+        "en": "Production country: Comoros; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCostaRica",
+      "name": {
+        "ru": "Коста-Рика",
+        "en": "Costa Rica"
+      },
+      "description": {
+        "ru": "Страна производства — Коста-Рика; не место действия или съёмок",
+        "en": "Production country: Costa Rica; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCoteDIvoire",
+      "name": {
+        "ru": "Кот-д’Ивуар",
+        "en": "Côte d’Ivoire"
+      },
+      "description": {
+        "ru": "Страна производства — Кот-д’Ивуар; не место действия или съёмок",
+        "en": "Production country: Côte d’Ivoire; distinct from the story setting or filming location"
+      },
+      "aliases": ["Cote D'Ivoire"]
+    },
+    {
+      "key": "countryCroatia",
+      "name": {
+        "ru": "Хорватия",
+        "en": "Croatia"
+      },
+      "description": {
+        "ru": "Страна производства — Хорватия; не место действия или съёмок",
+        "en": "Production country: Croatia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCuba",
+      "name": {
+        "ru": "Куба",
+        "en": "Cuba"
+      },
+      "description": {
+        "ru": "Страна производства — Куба; не место действия или съёмок",
+        "en": "Production country: Cuba; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCyprus",
+      "name": {
+        "ru": "Кипр",
+        "en": "Cyprus"
+      },
+      "description": {
+        "ru": "Страна производства — Кипр; не место действия или съёмок",
+        "en": "Production country: Cyprus; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryCzechia",
+      "name": {
+        "ru": "Чехия",
+        "en": "Czechia"
+      },
+      "description": {
+        "ru": "Страна производства — Чехия; не место действия или съёмок",
+        "en": "Production country: Czechia; distinct from the story setting or filming location"
+      },
+      "aliases": ["Чешская Республика", "Czech Republic"]
+    },
+    {
+      "key": "countryCzechoslovakia",
+      "name": {
+        "ru": "Чехословакия",
+        "en": "Czechoslovakia"
+      },
+      "description": {
+        "ru": "Страна производства — Чехословакия; не место действия или съёмок",
+        "en": "Production country: Czechoslovakia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryDemocraticRepublicOfTheCongo",
+      "name": {
+        "ru": "Демократическая Республика Конго",
+        "en": "Democratic Republic of the Congo"
+      },
+      "description": {
+        "ru": "Страна производства — Демократическая Республика Конго; не место действия или съёмок",
+        "en": "Production country: Democratic Republic of the Congo; distinct from the story setting or filming location"
+      },
+      "aliases": ["Заир", "Zaire", "ДР Конго"]
+    },
+    {
+      "key": "countryDenmark",
+      "name": {
+        "ru": "Дания",
+        "en": "Denmark"
+      },
+      "description": {
+        "ru": "Страна производства — Дания; не место действия или съёмок",
+        "en": "Production country: Denmark; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryDjibouti",
+      "name": {
+        "ru": "Джибути",
+        "en": "Djibouti"
+      },
+      "description": {
+        "ru": "Страна производства — Джибути; не место действия или съёмок",
+        "en": "Production country: Djibouti; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryDominica",
+      "name": {
+        "ru": "Доминика",
+        "en": "Dominica"
+      },
+      "description": {
+        "ru": "Страна производства — Доминика; не место действия или съёмок",
+        "en": "Production country: Dominica; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryDominicanRepublic",
+      "name": {
+        "ru": "Доминиканская Республика",
+        "en": "Dominican Republic"
+      },
+      "description": {
+        "ru": "Страна производства — Доминиканская Республика; не место действия или съёмок",
+        "en": "Production country: Dominican Republic; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEastGermany",
+      "name": {
+        "ru": "ГДР",
+        "en": "East Germany"
+      },
+      "description": {
+        "ru": "Страна производства — ГДР; не место действия или съёмок",
+        "en": "Production country: East Germany; distinct from the story setting or filming location"
+      },
+      "aliases": [
+        "Германская Демократическая Республика",
+        "German Democratic Republic",
+        "DDR"
+      ]
+    },
+    {
+      "key": "countryEcuador",
+      "name": {
+        "ru": "Эквадор",
+        "en": "Ecuador"
+      },
+      "description": {
+        "ru": "Страна производства — Эквадор; не место действия или съёмок",
+        "en": "Production country: Ecuador; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEgypt",
+      "name": {
+        "ru": "Египет",
+        "en": "Egypt"
+      },
+      "description": {
+        "ru": "Страна производства — Египет; не место действия или съёмок",
+        "en": "Production country: Egypt; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryElSalvador",
+      "name": {
+        "ru": "Сальвадор",
+        "en": "El Salvador"
+      },
+      "description": {
+        "ru": "Страна производства — Сальвадор; не место действия или съёмок",
+        "en": "Production country: El Salvador; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEquatorialGuinea",
+      "name": {
+        "ru": "Экваториальная Гвинея",
+        "en": "Equatorial Guinea"
+      },
+      "description": {
+        "ru": "Страна производства — Экваториальная Гвинея; не место действия или съёмок",
+        "en": "Production country: Equatorial Guinea; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEritrea",
+      "name": {
+        "ru": "Эритрея",
+        "en": "Eritrea"
+      },
+      "description": {
+        "ru": "Страна производства — Эритрея; не место действия или съёмок",
+        "en": "Production country: Eritrea; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEstonia",
+      "name": {
+        "ru": "Эстония",
+        "en": "Estonia"
+      },
+      "description": {
+        "ru": "Страна производства — Эстония; не место действия или съёмок",
+        "en": "Production country: Estonia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryEswatini",
+      "name": {
+        "ru": "Эсватини",
+        "en": "Eswatini"
+      },
+      "description": {
+        "ru": "Страна производства — Эсватини; не место действия или съёмок",
+        "en": "Production country: Eswatini; distinct from the story setting or filming location"
+      },
+      "aliases": ["Свазиленд", "Swaziland"]
+    },
+    {
+      "key": "countryEthiopia",
+      "name": {
+        "ru": "Эфиопия",
+        "en": "Ethiopia"
+      },
+      "description": {
+        "ru": "Страна производства — Эфиопия; не место действия или съёмок",
+        "en": "Production country: Ethiopia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryFiji",
+      "name": {
+        "ru": "Фиджи",
+        "en": "Fiji"
+      },
+      "description": {
+        "ru": "Страна производства — Фиджи; не место действия или съёмок",
+        "en": "Production country: Fiji; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryFinland",
+      "name": {
+        "ru": "Финляндия",
+        "en": "Finland"
+      },
+      "description": {
+        "ru": "Страна производства — Финляндия; не место действия или съёмок",
+        "en": "Production country: Finland; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryFrance",
+      "name": {
+        "ru": "Франция",
+        "en": "France"
+      },
+      "description": {
+        "ru": "Страна производства — Франция; не место действия или съёмок",
+        "en": "Production country: France; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGabon",
+      "name": {
+        "ru": "Габон",
+        "en": "Gabon"
+      },
+      "description": {
+        "ru": "Страна производства — Габон; не место действия или съёмок",
+        "en": "Production country: Gabon; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGambia",
+      "name": {
+        "ru": "Гамбия",
+        "en": "Gambia"
+      },
+      "description": {
+        "ru": "Страна производства — Гамбия; не место действия или съёмок",
+        "en": "Production country: Gambia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGeorgia",
+      "name": {
+        "ru": "Грузия",
+        "en": "Georgia"
+      },
+      "description": {
+        "ru": "Страна производства — Грузия; не место действия или съёмок",
+        "en": "Production country: Georgia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGermany",
+      "name": {
+        "ru": "Германия",
+        "en": "Germany"
+      },
+      "description": {
+        "ru": "Страна производства — Германия; не место действия или съёмок",
+        "en": "Production country: Germany; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGhana",
+      "name": {
+        "ru": "Гана",
+        "en": "Ghana"
+      },
+      "description": {
+        "ru": "Страна производства — Гана; не место действия или съёмок",
+        "en": "Production country: Ghana; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGreece",
+      "name": {
+        "ru": "Греция",
+        "en": "Greece"
+      },
+      "description": {
+        "ru": "Страна производства — Греция; не место действия или съёмок",
+        "en": "Production country: Greece; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGrenada",
+      "name": {
+        "ru": "Гренада",
+        "en": "Grenada"
+      },
+      "description": {
+        "ru": "Страна производства — Гренада; не место действия или съёмок",
+        "en": "Production country: Grenada; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGuatemala",
+      "name": {
+        "ru": "Гватемала",
+        "en": "Guatemala"
+      },
+      "description": {
+        "ru": "Страна производства — Гватемала; не место действия или съёмок",
+        "en": "Production country: Guatemala; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGuinea",
+      "name": {
+        "ru": "Гвинея",
+        "en": "Guinea"
+      },
+      "description": {
+        "ru": "Страна производства — Гвинея; не место действия или съёмок",
+        "en": "Production country: Guinea; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGuineaBissau",
+      "name": {
+        "ru": "Гвинея-Бисау",
+        "en": "Guinea-Bissau"
+      },
+      "description": {
+        "ru": "Страна производства — Гвинея-Бисау; не место действия или съёмок",
+        "en": "Production country: Guinea-Bissau; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryGuyana",
+      "name": {
+        "ru": "Гайана",
+        "en": "Guyana"
+      },
+      "description": {
+        "ru": "Страна производства — Гайана; не место действия или съёмок",
+        "en": "Production country: Guyana; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryHaiti",
+      "name": {
+        "ru": "Гаити",
+        "en": "Haiti"
+      },
+      "description": {
+        "ru": "Страна производства — Гаити; не место действия или съёмок",
+        "en": "Production country: Haiti; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryHonduras",
+      "name": {
+        "ru": "Гондурас",
+        "en": "Honduras"
+      },
+      "description": {
+        "ru": "Страна производства — Гондурас; не место действия или съёмок",
+        "en": "Production country: Honduras; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryHungary",
+      "name": {
+        "ru": "Венгрия",
+        "en": "Hungary"
+      },
+      "description": {
+        "ru": "Страна производства — Венгрия; не место действия или съёмок",
+        "en": "Production country: Hungary; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIceland",
+      "name": {
+        "ru": "Исландия",
+        "en": "Iceland"
+      },
+      "description": {
+        "ru": "Страна производства — Исландия; не место действия или съёмок",
+        "en": "Production country: Iceland; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIndia",
+      "name": {
+        "ru": "Индия",
+        "en": "India"
+      },
+      "description": {
+        "ru": "Страна производства — Индия; не место действия или съёмок",
+        "en": "Production country: India; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIndonesia",
+      "name": {
+        "ru": "Индонезия",
+        "en": "Indonesia"
+      },
+      "description": {
+        "ru": "Страна производства — Индонезия; не место действия или съёмок",
+        "en": "Production country: Indonesia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIran",
+      "name": {
+        "ru": "Иран",
+        "en": "Iran"
+      },
+      "description": {
+        "ru": "Страна производства — Иран; не место действия или съёмок",
+        "en": "Production country: Iran; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIraq",
+      "name": {
+        "ru": "Ирак",
+        "en": "Iraq"
+      },
+      "description": {
+        "ru": "Страна производства — Ирак; не место действия или съёмок",
+        "en": "Production country: Iraq; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIreland",
+      "name": {
+        "ru": "Ирландия",
+        "en": "Ireland"
+      },
+      "description": {
+        "ru": "Страна производства — Ирландия; не место действия или съёмок",
+        "en": "Production country: Ireland; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryIsrael",
+      "name": {
+        "ru": "Израиль",
+        "en": "Israel"
+      },
+      "description": {
+        "ru": "Страна производства — Израиль; не место действия или съёмок",
+        "en": "Production country: Israel; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryItaly",
+      "name": {
+        "ru": "Италия",
+        "en": "Italy"
+      },
+      "description": {
+        "ru": "Страна производства — Италия; не место действия или съёмок",
+        "en": "Production country: Italy; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryJamaica",
+      "name": {
+        "ru": "Ямайка",
+        "en": "Jamaica"
+      },
+      "description": {
+        "ru": "Страна производства — Ямайка; не место действия или съёмок",
+        "en": "Production country: Jamaica; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryJapan",
+      "name": {
+        "ru": "Япония",
+        "en": "Japan"
+      },
+      "description": {
+        "ru": "Страна производства — Япония; не место действия или съёмок",
+        "en": "Production country: Japan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryJordan",
+      "name": {
+        "ru": "Иордания",
+        "en": "Jordan"
+      },
+      "description": {
+        "ru": "Страна производства — Иордания; не место действия или съёмок",
+        "en": "Production country: Jordan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryKazakhstan",
+      "name": {
+        "ru": "Казахстан",
+        "en": "Kazakhstan"
+      },
+      "description": {
+        "ru": "Страна производства — Казахстан; не место действия или съёмок",
+        "en": "Production country: Kazakhstan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryKenya",
+      "name": {
+        "ru": "Кения",
+        "en": "Kenya"
+      },
+      "description": {
+        "ru": "Страна производства — Кения; не место действия или съёмок",
+        "en": "Production country: Kenya; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryKiribati",
+      "name": {
+        "ru": "Кирибати",
+        "en": "Kiribati"
+      },
+      "description": {
+        "ru": "Страна производства — Кирибати; не место действия или съёмок",
+        "en": "Production country: Kiribati; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryKuwait",
+      "name": {
+        "ru": "Кувейт",
+        "en": "Kuwait"
+      },
+      "description": {
+        "ru": "Страна производства — Кувейт; не место действия или съёмок",
+        "en": "Production country: Kuwait; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryKyrgyzstan",
+      "name": {
+        "ru": "Киргизия",
+        "en": "Kyrgyzstan"
+      },
+      "description": {
+        "ru": "Страна производства — Киргизия; не место действия или съёмок",
+        "en": "Production country: Kyrgyzstan; distinct from the story setting or filming location"
+      },
+      "aliases": ["Kyrgyz Republic"]
+    },
+    {
+      "key": "countryLaos",
+      "name": {
+        "ru": "Лаос",
+        "en": "Laos"
+      },
+      "description": {
+        "ru": "Страна производства — Лаос; не место действия или съёмок",
+        "en": "Production country: Laos; distinct from the story setting or filming location"
+      },
+      "aliases": ["Lao People's Democratic Republic"]
+    },
+    {
+      "key": "countryLatvia",
+      "name": {
+        "ru": "Латвия",
+        "en": "Latvia"
+      },
+      "description": {
+        "ru": "Страна производства — Латвия; не место действия или съёмок",
+        "en": "Production country: Latvia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLebanon",
+      "name": {
+        "ru": "Ливан",
+        "en": "Lebanon"
+      },
+      "description": {
+        "ru": "Страна производства — Ливан; не место действия или съёмок",
+        "en": "Production country: Lebanon; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLesotho",
+      "name": {
+        "ru": "Лесото",
+        "en": "Lesotho"
+      },
+      "description": {
+        "ru": "Страна производства — Лесото; не место действия или съёмок",
+        "en": "Production country: Lesotho; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLiberia",
+      "name": {
+        "ru": "Либерия",
+        "en": "Liberia"
+      },
+      "description": {
+        "ru": "Страна производства — Либерия; не место действия или съёмок",
+        "en": "Production country: Liberia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLibya",
+      "name": {
+        "ru": "Ливия",
+        "en": "Libya"
+      },
+      "description": {
+        "ru": "Страна производства — Ливия; не место действия или съёмок",
+        "en": "Production country: Libya; distinct from the story setting or filming location"
+      },
+      "aliases": ["Libyan Arab Jamahiriya"]
+    },
+    {
+      "key": "countryLiechtenstein",
+      "name": {
+        "ru": "Лихтенштейн",
+        "en": "Liechtenstein"
+      },
+      "description": {
+        "ru": "Страна производства — Лихтенштейн; не место действия или съёмок",
+        "en": "Production country: Liechtenstein; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLithuania",
+      "name": {
+        "ru": "Литва",
+        "en": "Lithuania"
+      },
+      "description": {
+        "ru": "Страна производства — Литва; не место действия или съёмок",
+        "en": "Production country: Lithuania; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryLuxembourg",
+      "name": {
+        "ru": "Люксембург",
+        "en": "Luxembourg"
+      },
+      "description": {
+        "ru": "Страна производства — Люксембург; не место действия или съёмок",
+        "en": "Production country: Luxembourg; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMadagascar",
+      "name": {
+        "ru": "Мадагаскар",
+        "en": "Madagascar"
+      },
+      "description": {
+        "ru": "Страна производства — Мадагаскар; не место действия или съёмок",
+        "en": "Production country: Madagascar; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMalawi",
+      "name": {
+        "ru": "Малави",
+        "en": "Malawi"
+      },
+      "description": {
+        "ru": "Страна производства — Малави; не место действия или съёмок",
+        "en": "Production country: Malawi; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMalaysia",
+      "name": {
+        "ru": "Малайзия",
+        "en": "Malaysia"
+      },
+      "description": {
+        "ru": "Страна производства — Малайзия; не место действия или съёмок",
+        "en": "Production country: Malaysia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMaldives",
+      "name": {
+        "ru": "Мальдивы",
+        "en": "Maldives"
+      },
+      "description": {
+        "ru": "Страна производства — Мальдивы; не место действия или съёмок",
+        "en": "Production country: Maldives; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMali",
+      "name": {
+        "ru": "Мали",
+        "en": "Mali"
+      },
+      "description": {
+        "ru": "Страна производства — Мали; не место действия или съёмок",
+        "en": "Production country: Mali; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMalta",
+      "name": {
+        "ru": "Мальта",
+        "en": "Malta"
+      },
+      "description": {
+        "ru": "Страна производства — Мальта; не место действия или съёмок",
+        "en": "Production country: Malta; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMarshallIslands",
+      "name": {
+        "ru": "Маршалловы Острова",
+        "en": "Marshall Islands"
+      },
+      "description": {
+        "ru": "Страна производства — Маршалловы Острова; не место действия или съёмок",
+        "en": "Production country: Marshall Islands; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMauritania",
+      "name": {
+        "ru": "Мавритания",
+        "en": "Mauritania"
+      },
+      "description": {
+        "ru": "Страна производства — Мавритания; не место действия или съёмок",
+        "en": "Production country: Mauritania; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMauritius",
+      "name": {
+        "ru": "Маврикий",
+        "en": "Mauritius"
+      },
+      "description": {
+        "ru": "Страна производства — Маврикий; не место действия или съёмок",
+        "en": "Production country: Mauritius; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMexico",
+      "name": {
+        "ru": "Мексика",
+        "en": "Mexico"
+      },
+      "description": {
+        "ru": "Страна производства — Мексика; не место действия или съёмок",
+        "en": "Production country: Mexico; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMoldova",
+      "name": {
+        "ru": "Молдова",
+        "en": "Moldova"
+      },
+      "description": {
+        "ru": "Страна производства — Молдова; не место действия или съёмок",
+        "en": "Production country: Moldova; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMonaco",
+      "name": {
+        "ru": "Монако",
+        "en": "Monaco"
+      },
+      "description": {
+        "ru": "Страна производства — Монако; не место действия или съёмок",
+        "en": "Production country: Monaco; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMongolia",
+      "name": {
+        "ru": "Монголия",
+        "en": "Mongolia"
+      },
+      "description": {
+        "ru": "Страна производства — Монголия; не место действия или съёмок",
+        "en": "Production country: Mongolia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMontenegro",
+      "name": {
+        "ru": "Черногория",
+        "en": "Montenegro"
+      },
+      "description": {
+        "ru": "Страна производства — Черногория; не место действия или съёмок",
+        "en": "Production country: Montenegro; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMorocco",
+      "name": {
+        "ru": "Марокко",
+        "en": "Morocco"
+      },
+      "description": {
+        "ru": "Страна производства — Марокко; не место действия или съёмок",
+        "en": "Production country: Morocco; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMozambique",
+      "name": {
+        "ru": "Мозамбик",
+        "en": "Mozambique"
+      },
+      "description": {
+        "ru": "Страна производства — Мозамбик; не место действия или съёмок",
+        "en": "Production country: Mozambique; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryMyanmar",
+      "name": {
+        "ru": "Мьянма",
+        "en": "Myanmar"
+      },
+      "description": {
+        "ru": "Страна производства — Мьянма; не место действия или съёмок",
+        "en": "Production country: Myanmar; distinct from the story setting or filming location"
+      },
+      "aliases": ["Бирма", "Burma"]
+    },
+    {
+      "key": "countryNamibia",
+      "name": {
+        "ru": "Намибия",
+        "en": "Namibia"
+      },
+      "description": {
+        "ru": "Страна производства — Намибия; не место действия или съёмок",
+        "en": "Production country: Namibia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNauru",
+      "name": {
+        "ru": "Науру",
+        "en": "Nauru"
+      },
+      "description": {
+        "ru": "Страна производства — Науру; не место действия или съёмок",
+        "en": "Production country: Nauru; distinct from the story setting or filming location"
+      },
+      "aliases": ["Наоэро", "Naoero"]
+    },
+    {
+      "key": "countryNepal",
+      "name": {
+        "ru": "Непал",
+        "en": "Nepal"
+      },
+      "description": {
+        "ru": "Страна производства — Непал; не место действия или съёмок",
+        "en": "Production country: Nepal; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNetherlands",
+      "name": {
+        "ru": "Нидерланды",
+        "en": "Netherlands"
+      },
+      "description": {
+        "ru": "Страна производства — Нидерланды; не место действия или съёмок",
+        "en": "Production country: Netherlands; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNewZealand",
+      "name": {
+        "ru": "Новая Зеландия",
+        "en": "New Zealand"
+      },
+      "description": {
+        "ru": "Страна производства — Новая Зеландия; не место действия или съёмок",
+        "en": "Production country: New Zealand; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNicaragua",
+      "name": {
+        "ru": "Никарагуа",
+        "en": "Nicaragua"
+      },
+      "description": {
+        "ru": "Страна производства — Никарагуа; не место действия или съёмок",
+        "en": "Production country: Nicaragua; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNiger",
+      "name": {
+        "ru": "Нигер",
+        "en": "Niger"
+      },
+      "description": {
+        "ru": "Страна производства — Нигер; не место действия или съёмок",
+        "en": "Production country: Niger; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNigeria",
+      "name": {
+        "ru": "Нигерия",
+        "en": "Nigeria"
+      },
+      "description": {
+        "ru": "Страна производства — Нигерия; не место действия или съёмок",
+        "en": "Production country: Nigeria; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNorthKorea",
+      "name": {
+        "ru": "КНДР",
+        "en": "North Korea"
+      },
+      "description": {
+        "ru": "Страна производства — КНДР; не место действия или съёмок",
+        "en": "Production country: North Korea; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryNorthMacedonia",
+      "name": {
+        "ru": "Северная Македония",
+        "en": "North Macedonia"
+      },
+      "description": {
+        "ru": "Страна производства — Северная Македония; не место действия или съёмок",
+        "en": "Production country: North Macedonia; distinct from the story setting or filming location"
+      },
+      "aliases": [
+        "Македония",
+        "Macedonia",
+        "The former Yugoslav Republic of Macedonia"
+      ]
+    },
+    {
+      "key": "countryNorway",
+      "name": {
+        "ru": "Норвегия",
+        "en": "Norway"
+      },
+      "description": {
+        "ru": "Страна производства — Норвегия; не место действия или съёмок",
+        "en": "Production country: Norway; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryOman",
+      "name": {
+        "ru": "Оман",
+        "en": "Oman"
+      },
+      "description": {
+        "ru": "Страна производства — Оман; не место действия или съёмок",
+        "en": "Production country: Oman; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPakistan",
+      "name": {
+        "ru": "Пакистан",
+        "en": "Pakistan"
+      },
+      "description": {
+        "ru": "Страна производства — Пакистан; не место действия или съёмок",
+        "en": "Production country: Pakistan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPalestine",
+      "name": {
+        "ru": "Палестина",
+        "en": "Palestine"
+      },
+      "description": {
+        "ru": "Страна производства — Палестина; не место действия или съёмок",
+        "en": "Production country: Palestine; distinct from the story setting or filming location"
+      },
+      "aliases": ["Palestinian Territory"]
+    },
+    {
+      "key": "countryPanama",
+      "name": {
+        "ru": "Панама",
+        "en": "Panama"
+      },
+      "description": {
+        "ru": "Страна производства — Панама; не место действия или съёмок",
+        "en": "Production country: Panama; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPapuaNewGuinea",
+      "name": {
+        "ru": "Папуа — Новая Гвинея",
+        "en": "Papua New Guinea"
+      },
+      "description": {
+        "ru": "Страна производства — Папуа — Новая Гвинея; не место действия или съёмок",
+        "en": "Production country: Papua New Guinea; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryParaguay",
+      "name": {
+        "ru": "Парагвай",
+        "en": "Paraguay"
+      },
+      "description": {
+        "ru": "Страна производства — Парагвай; не место действия или съёмок",
+        "en": "Production country: Paraguay; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPeru",
+      "name": {
+        "ru": "Перу",
+        "en": "Peru"
+      },
+      "description": {
+        "ru": "Страна производства — Перу; не место действия или съёмок",
+        "en": "Production country: Peru; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPhilippines",
+      "name": {
+        "ru": "Филиппины",
+        "en": "Philippines"
+      },
+      "description": {
+        "ru": "Страна производства — Филиппины; не место действия или съёмок",
+        "en": "Production country: Philippines; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPoland",
+      "name": {
+        "ru": "Польша",
+        "en": "Poland"
+      },
+      "description": {
+        "ru": "Страна производства — Польша; не место действия или съёмок",
+        "en": "Production country: Poland; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryPortugal",
+      "name": {
+        "ru": "Португалия",
+        "en": "Portugal"
+      },
+      "description": {
+        "ru": "Страна производства — Португалия; не место действия или съёмок",
+        "en": "Production country: Portugal; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryQatar",
+      "name": {
+        "ru": "Катар",
+        "en": "Qatar"
+      },
+      "description": {
+        "ru": "Страна производства — Катар; не место действия или съёмок",
+        "en": "Production country: Qatar; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryRepublicOfTheCongo",
+      "name": {
+        "ru": "Республика Конго",
+        "en": "Republic of the Congo"
+      },
+      "description": {
+        "ru": "Страна производства — Республика Конго; не место действия или съёмок",
+        "en": "Production country: Republic of the Congo; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryRomania",
+      "name": {
+        "ru": "Румыния",
+        "en": "Romania"
+      },
+      "description": {
+        "ru": "Страна производства — Румыния; не место действия или съёмок",
+        "en": "Production country: Romania; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryRussia",
+      "name": {
+        "ru": "Россия",
+        "en": "Russia"
+      },
+      "description": {
+        "ru": "Страна производства — Россия; не место действия или съёмок",
+        "en": "Production country: Russia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryRwanda",
+      "name": {
+        "ru": "Руанда",
+        "en": "Rwanda"
+      },
+      "description": {
+        "ru": "Страна производства — Руанда; не место действия или съёмок",
+        "en": "Production country: Rwanda; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySaintKittsAndNevis",
+      "name": {
+        "ru": "Сент-Китс и Невис",
+        "en": "St. Kitts and Nevis"
+      },
+      "description": {
+        "ru": "Страна производства — Сент-Китс и Невис; не место действия или съёмок",
+        "en": "Production country: St. Kitts and Nevis; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySaintLucia",
+      "name": {
+        "ru": "Сент-Люсия",
+        "en": "St. Lucia"
+      },
+      "description": {
+        "ru": "Страна производства — Сент-Люсия; не место действия или съёмок",
+        "en": "Production country: St. Lucia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySaintVincentAndTheGrenadines",
+      "name": {
+        "ru": "Сент-Винсент и Гренадины",
+        "en": "St. Vincent and Grenadines"
+      },
+      "description": {
+        "ru": "Страна производства — Сент-Винсент и Гренадины; не место действия или съёмок",
+        "en": "Production country: St. Vincent and Grenadines; distinct from the story setting or filming location"
+      },
+      "aliases": ["St. Vincent and the Grenadines"]
+    },
+    {
+      "key": "countrySamoa",
+      "name": {
+        "ru": "Самоа",
+        "en": "Samoa"
+      },
+      "description": {
+        "ru": "Страна производства — Самоа; не место действия или съёмок",
+        "en": "Production country: Samoa; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySanMarino",
+      "name": {
+        "ru": "Сан-Марино",
+        "en": "San Marino"
+      },
+      "description": {
+        "ru": "Страна производства — Сан-Марино; не место действия или съёмок",
+        "en": "Production country: San Marino; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySaoTomeAndPrincipe",
+      "name": {
+        "ru": "Сан-Томе и Принсипи",
+        "en": "São Tomé and Príncipe"
+      },
+      "description": {
+        "ru": "Страна производства — Сан-Томе и Принсипи; не место действия или съёмок",
+        "en": "Production country: São Tomé and Príncipe; distinct from the story setting or filming location"
+      },
+      "aliases": ["Sao Tome and Principe"]
+    },
+    {
+      "key": "countrySaudiArabia",
+      "name": {
+        "ru": "Саудовская Аравия",
+        "en": "Saudi Arabia"
+      },
+      "description": {
+        "ru": "Страна производства — Саудовская Аравия; не место действия или съёмок",
+        "en": "Production country: Saudi Arabia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySenegal",
+      "name": {
+        "ru": "Сенегал",
+        "en": "Senegal"
+      },
+      "description": {
+        "ru": "Страна производства — Сенегал; не место действия или съёмок",
+        "en": "Production country: Senegal; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySerbia",
+      "name": {
+        "ru": "Сербия",
+        "en": "Serbia"
+      },
+      "description": {
+        "ru": "Страна производства — Сербия; не место действия или съёмок",
+        "en": "Production country: Serbia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySerbiaAndMontenegro",
+      "name": {
+        "ru": "Сербия и Черногория",
+        "en": "Serbia and Montenegro"
+      },
+      "description": {
+        "ru": "Страна производства — Сербия и Черногория; не место действия или съёмок",
+        "en": "Production country: Serbia and Montenegro; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySeychelles",
+      "name": {
+        "ru": "Сейшельские Острова",
+        "en": "Seychelles"
+      },
+      "description": {
+        "ru": "Страна производства — Сейшельские Острова; не место действия или съёмок",
+        "en": "Production country: Seychelles; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySierraLeone",
+      "name": {
+        "ru": "Сьерра-Леоне",
+        "en": "Sierra Leone"
+      },
+      "description": {
+        "ru": "Страна производства — Сьерра-Леоне; не место действия или съёмок",
+        "en": "Production country: Sierra Leone; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySingapore",
+      "name": {
+        "ru": "Сингапур",
+        "en": "Singapore"
+      },
+      "description": {
+        "ru": "Страна производства — Сингапур; не место действия или съёмок",
+        "en": "Production country: Singapore; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySlovakia",
+      "name": {
+        "ru": "Словакия",
+        "en": "Slovakia"
+      },
+      "description": {
+        "ru": "Страна производства — Словакия; не место действия или съёмок",
+        "en": "Production country: Slovakia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySlovenia",
+      "name": {
+        "ru": "Словения",
+        "en": "Slovenia"
+      },
+      "description": {
+        "ru": "Страна производства — Словения; не место действия или съёмок",
+        "en": "Production country: Slovenia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySolomonIslands",
+      "name": {
+        "ru": "Соломоновы Острова",
+        "en": "Solomon Islands"
+      },
+      "description": {
+        "ru": "Страна производства — Соломоновы Острова; не место действия или съёмок",
+        "en": "Production country: Solomon Islands; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySomalia",
+      "name": {
+        "ru": "Сомали",
+        "en": "Somalia"
+      },
+      "description": {
+        "ru": "Страна производства — Сомали; не место действия или съёмок",
+        "en": "Production country: Somalia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySouthAfrica",
+      "name": {
+        "ru": "Южно-Африканская Республика",
+        "en": "South Africa"
+      },
+      "description": {
+        "ru": "Страна производства — Южно-Африканская Республика; не место действия или съёмок",
+        "en": "Production country: South Africa; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySouthKorea",
+      "name": {
+        "ru": "Южная Корея",
+        "en": "South Korea"
+      },
+      "description": {
+        "ru": "Страна производства — Южная Корея; не место действия или съёмок",
+        "en": "Production country: South Korea; distinct from the story setting or filming location"
+      },
+      "aliases": ["Республика Корея"]
+    },
+    {
+      "key": "countrySouthSudan",
+      "name": {
+        "ru": "Южный Судан",
+        "en": "South Sudan"
+      },
+      "description": {
+        "ru": "Страна производства — Южный Судан; не место действия или съёмок",
+        "en": "Production country: South Sudan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySovietUnion",
+      "name": {
+        "ru": "СССР",
+        "en": "Soviet Union"
+      },
+      "description": {
+        "ru": "Страна производства — СССР; не место действия или съёмок",
+        "en": "Production country: Soviet Union; distinct from the story setting or filming location"
+      },
+      "aliases": [
+        "Советский Союз",
+        "Союз Советских Социалистических Республик",
+        "USSR"
+      ]
+    },
+    {
+      "key": "countrySpain",
+      "name": {
+        "ru": "Испания",
+        "en": "Spain"
+      },
+      "description": {
+        "ru": "Страна производства — Испания; не место действия или съёмок",
+        "en": "Production country: Spain; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySriLanka",
+      "name": {
+        "ru": "Шри-Ланка",
+        "en": "Sri Lanka"
+      },
+      "description": {
+        "ru": "Страна производства — Шри-Ланка; не место действия или съёмок",
+        "en": "Production country: Sri Lanka; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySudan",
+      "name": {
+        "ru": "Судан",
+        "en": "Sudan"
+      },
+      "description": {
+        "ru": "Страна производства — Судан; не место действия или съёмок",
+        "en": "Production country: Sudan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySuriname",
+      "name": {
+        "ru": "Суринам",
+        "en": "Suriname"
+      },
+      "description": {
+        "ru": "Страна производства — Суринам; не место действия или съёмок",
+        "en": "Production country: Suriname; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySweden",
+      "name": {
+        "ru": "Швеция",
+        "en": "Sweden"
+      },
+      "description": {
+        "ru": "Страна производства — Швеция; не место действия или съёмок",
+        "en": "Production country: Sweden; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySwitzerland",
+      "name": {
+        "ru": "Швейцария",
+        "en": "Switzerland"
+      },
+      "description": {
+        "ru": "Страна производства — Швейцария; не место действия или съёмок",
+        "en": "Production country: Switzerland; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countrySyria",
+      "name": {
+        "ru": "Сирия",
+        "en": "Syria"
+      },
+      "description": {
+        "ru": "Страна производства — Сирия; не место действия или съёмок",
+        "en": "Production country: Syria; distinct from the story setting or filming location"
+      },
+      "aliases": ["Syrian Arab Republic"]
+    },
+    {
+      "key": "countryTajikistan",
+      "name": {
+        "ru": "Таджикистан",
+        "en": "Tajikistan"
+      },
+      "description": {
+        "ru": "Страна производства — Таджикистан; не место действия или съёмок",
+        "en": "Production country: Tajikistan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTanzania",
+      "name": {
+        "ru": "Танзания",
+        "en": "Tanzania"
+      },
+      "description": {
+        "ru": "Страна производства — Танзания; не место действия или съёмок",
+        "en": "Production country: Tanzania; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryThailand",
+      "name": {
+        "ru": "Таиланд",
+        "en": "Thailand"
+      },
+      "description": {
+        "ru": "Страна производства — Таиланд; не место действия или съёмок",
+        "en": "Production country: Thailand; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTimorLeste",
+      "name": {
+        "ru": "Тимор-Лешти",
+        "en": "Timor-Leste"
+      },
+      "description": {
+        "ru": "Страна производства — Тимор-Лешти; не место действия или съёмок",
+        "en": "Production country: Timor-Leste; distinct from the story setting or filming location"
+      },
+      "aliases": ["Восточный Тимор", "East Timor"]
+    },
+    {
+      "key": "countryTogo",
+      "name": {
+        "ru": "Того",
+        "en": "Togo"
+      },
+      "description": {
+        "ru": "Страна производства — Того; не место действия или съёмок",
+        "en": "Production country: Togo; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTonga",
+      "name": {
+        "ru": "Тонга",
+        "en": "Tonga"
+      },
+      "description": {
+        "ru": "Страна производства — Тонга; не место действия или съёмок",
+        "en": "Production country: Tonga; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTrinidadAndTobago",
+      "name": {
+        "ru": "Тринидад и Тобаго",
+        "en": "Trinidad and Tobago"
+      },
+      "description": {
+        "ru": "Страна производства — Тринидад и Тобаго; не место действия или съёмок",
+        "en": "Production country: Trinidad and Tobago; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTunisia",
+      "name": {
+        "ru": "Тунис",
+        "en": "Tunisia"
+      },
+      "description": {
+        "ru": "Страна производства — Тунис; не место действия или съёмок",
+        "en": "Production country: Tunisia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryTurkey",
+      "name": {
+        "ru": "Турция",
+        "en": "Turkey"
+      },
+      "description": {
+        "ru": "Страна производства — Турция; не место действия или съёмок",
+        "en": "Production country: Turkey; distinct from the story setting or filming location"
+      },
+      "aliases": ["Türkiye"]
+    },
+    {
+      "key": "countryTurkmenistan",
+      "name": {
+        "ru": "Туркменистан",
+        "en": "Turkmenistan"
+      },
+      "description": {
+        "ru": "Страна производства — Туркменистан; не место действия или съёмок",
+        "en": "Production country: Turkmenistan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryUganda",
+      "name": {
+        "ru": "Уганда",
+        "en": "Uganda"
+      },
+      "description": {
+        "ru": "Страна производства — Уганда; не место действия или съёмок",
+        "en": "Production country: Uganda; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryUkraine",
+      "name": {
+        "ru": "Украина",
+        "en": "Ukraine"
+      },
+      "description": {
+        "ru": "Страна производства — Украина; не место действия или съёмок",
+        "en": "Production country: Ukraine; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryUnitedArabEmirates",
+      "name": {
+        "ru": "ОАЭ",
+        "en": "United Arab Emirates"
+      },
+      "description": {
+        "ru": "Страна производства — ОАЭ; не место действия или съёмок",
+        "en": "Production country: United Arab Emirates; distinct from the story setting or filming location"
+      },
+      "aliases": ["Объединённые Арабские Эмираты"]
+    },
+    {
+      "key": "countryUnitedKingdom",
+      "name": {
+        "ru": "Великобритания",
+        "en": "United Kingdom"
+      },
+      "description": {
+        "ru": "Страна производства — Великобритания; не место действия или съёмок",
+        "en": "Production country: United Kingdom; distinct from the story setting or filming location"
+      },
+      "aliases": [
+        "Соединённое Королевство",
+        "United Kingdom of Great Britain and Northern Ireland"
+      ]
+    },
+    {
+      "key": "countryUnitedStates",
+      "name": {
+        "ru": "США",
+        "en": "United States"
+      },
+      "description": {
+        "ru": "Страна производства — США; не место действия или съёмок",
+        "en": "Production country: United States; distinct from the story setting or filming location"
+      },
+      "aliases": [
+        "Соединённые Штаты Америки",
+        "Соединенные Штаты",
+        "USA",
+        "United States of America"
+      ]
+    },
+    {
+      "key": "countryUruguay",
+      "name": {
+        "ru": "Уругвай",
+        "en": "Uruguay"
+      },
+      "description": {
+        "ru": "Страна производства — Уругвай; не место действия или съёмок",
+        "en": "Production country: Uruguay; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryUzbekistan",
+      "name": {
+        "ru": "Узбекистан",
+        "en": "Uzbekistan"
+      },
+      "description": {
+        "ru": "Страна производства — Узбекистан; не место действия или съёмок",
+        "en": "Production country: Uzbekistan; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryVanuatu",
+      "name": {
+        "ru": "Вануату",
+        "en": "Vanuatu"
+      },
+      "description": {
+        "ru": "Страна производства — Вануату; не место действия или съёмок",
+        "en": "Production country: Vanuatu; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryVaticanCity",
+      "name": {
+        "ru": "Ватикан",
+        "en": "Vatican City"
+      },
+      "description": {
+        "ru": "Страна производства — Ватикан; не место действия или съёмок",
+        "en": "Production country: Vatican City; distinct from the story setting or filming location"
+      },
+      "aliases": ["Святой Престол", "Holy See"]
+    },
+    {
+      "key": "countryVenezuela",
+      "name": {
+        "ru": "Венесуэла",
+        "en": "Venezuela"
+      },
+      "description": {
+        "ru": "Страна производства — Венесуэла; не место действия или съёмок",
+        "en": "Production country: Venezuela; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryVietnam",
+      "name": {
+        "ru": "Вьетнам",
+        "en": "Vietnam"
+      },
+      "description": {
+        "ru": "Страна производства — Вьетнам; не место действия или съёмок",
+        "en": "Production country: Vietnam; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryYemen",
+      "name": {
+        "ru": "Йемен",
+        "en": "Yemen"
+      },
+      "description": {
+        "ru": "Страна производства — Йемен; не место действия или съёмок",
+        "en": "Production country: Yemen; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryYugoslavia",
+      "name": {
+        "ru": "Югославия",
+        "en": "Yugoslavia"
+      },
+      "description": {
+        "ru": "Страна производства — Югославия; не место действия или съёмок",
+        "en": "Production country: Yugoslavia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryZambia",
+      "name": {
+        "ru": "Замбия",
+        "en": "Zambia"
+      },
+      "description": {
+        "ru": "Страна производства — Замбия; не место действия или съёмок",
+        "en": "Production country: Zambia; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    },
+    {
+      "key": "countryZimbabwe",
+      "name": {
+        "ru": "Зимбабве",
+        "en": "Zimbabwe"
+      },
+      "description": {
+        "ru": "Страна производства — Зимбабве; не место действия или съёмок",
+        "en": "Production country: Zimbabwe; distinct from the story setting or filming location"
+      },
+      "aliases": []
+    }
+  ],
+  "tagRelations": []
+}
