@@ -1,4 +1,4 @@
-import { ELocale } from "./ELocale"
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
@@ -9,11 +9,11 @@ import type { Types } from "mongoose"
 class UserSettings extends MongoEntity {
   @Prop({
     type: String,
-    enum: Object.values(ELocale),
+    enum: Object.values(ELanguage),
     required: true,
-    default: ELocale.RU,
+    default: ELanguage.RUSSIAN,
   })
-  locale: ELocale
+  locale: ELanguage
 
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "User" })
   user: Types.ObjectId

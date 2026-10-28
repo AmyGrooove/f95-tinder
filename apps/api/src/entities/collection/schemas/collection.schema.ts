@@ -53,6 +53,9 @@ class Collection extends MongoEntity {
   })
   type: ECollectionType
 
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Tag", default: null })
+  tag: Types.ObjectId | null
+
   @Prop({
     type: [CollectionBlockSchema],
     required: true,
@@ -70,13 +73,26 @@ class Collection extends MongoEntity {
 
 type TCreateCollection = TCreateEntity<
   Collection,
-  "media" | "description" | "author" | "type" | "deletedAt" | "version",
+  "media" | "description" | "author" | "type" | "deletedAt" | "version" | "tag",
   {
     blocks?: TCreateCollectionBlock[]
   }
 >
 
 const CollectionSchema = SchemaFactory.createForClass(Collection)
+
+CollectionSchema.index(
+  { tag: 1 },
+  {
+    name: "tagCollectionUnique",
+    unique: true,
+    partialFilterExpression: {
+      type: ECollectionType.TAG,
+      author: null,
+      tag: { $type: "objectId" },
+    },
+  },
+)
 
 export { Collection, CollectionSchema }
 export type { TCreateCollection }

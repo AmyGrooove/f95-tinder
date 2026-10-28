@@ -861,6 +861,78 @@ describe("RecommendationsService MongoDB", () => {
     })
   })
 
+  it("пересекает заданных кандидатов с фильтрами и исключениями до total и не расширяет пустой список", async () => {
+    const first = await seedItem()
+    const excluded = await seedItem()
+    const wrongType = await seedItem({ type: EItemType.MOVIE })
+    await seedItem()
+    const missing = new Types.ObjectId()
+    const candidateItemIds = [wrongType, excluded, first, first, missing]
+    const props = {
+      candidateItemIds,
+      excludeItemIds: [excluded],
+      filter: { types: [EItemType.GAME] },
+    }
+    const result = await find(props)
+    expect(result.total).toBe(1)
+    expect(result.items.map((item) => item._id)).toEqual([first])
+    expect(
+      (await find({ ...props, pagination: { page: 2, limit: 1 } })).items,
+    ).toEqual([])
+    expect(await find({ candidateItemIds: [] })).toMatchObject({
+      items: [],
+      total: 0,
+    })
+    expect(candidateItemIds).toEqual([
+      wrongType,
+      excluded,
+      first,
+      first,
+      missing,
+    ])
+  })
+
+  it("меняет направление итогового балла до пагинации, сохраняя убывание рейтинга для равных баллов", async () => {
+    const liked = await seedTag()
+    const disliked = await seedTag()
+    await setProfile([
+      { tag: liked, explicitWeight: 1 },
+      { tag: disliked, explicitWeight: -1 },
+    ])
+    const positive = await seedItem()
+    const lowerRated = await seedItem()
+    const higherRated = await seedItem()
+    const negative = await seedItem()
+    await getTestDatabase()
+      .connection.collection("ItemMetric")
+      .insertMany([
+        { item: lowerRated, ratingAverage: 5, ratingsCount: 20 },
+        { item: higherRated, ratingAverage: 9, ratingsCount: 20 },
+      ])
+    await assignTags(positive, [{ tag: liked }])
+    await assignTags(negative, [{ tag: disliked }])
+    const descending = await find({ direction: "desc" })
+    const ascending = await find({ direction: "asc" })
+    expect(descending.items.map((item) => item._id)).toEqual([
+      positive,
+      higherRated,
+      lowerRated,
+      negative,
+    ])
+    expect(ascending.items.map((item) => item._id)).toEqual([
+      negative,
+      higherRated,
+      lowerRated,
+      positive,
+    ])
+    const page = await find({
+      direction: "asc",
+      pagination: { page: 2, limit: 2 },
+    })
+    expect(page.total).toBe(4)
+    expect(page.items.map((item) => item._id)).toEqual([lowerRated, positive])
+  })
+
   it("для нового пользователя разрешает равенство сглаженным рейтингом и затем ID", async () => {
     const unrated = await seedItem()
     const singleVote = await seedItem()

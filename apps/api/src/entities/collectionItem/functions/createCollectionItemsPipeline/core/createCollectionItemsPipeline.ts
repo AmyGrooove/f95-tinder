@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { PipelineStage } from "mongoose"
 
@@ -74,8 +75,8 @@ const createCollectionItemsPipeline = (
     pipeline.push({
       $match: {
         $or: [
-          { "itemDocument.title.ru": search },
-          { "itemDocument.title.en": search },
+          { [`itemDocument.title.${ELanguage.RUSSIAN}`]: search },
+          { [`itemDocument.title.${ELanguage.ENGLISH}`]: search },
           { "itemDocument.aliases": search },
         ],
       },
@@ -187,7 +188,7 @@ const createCollectionItemsPipeline = (
           _id: 1,
         }
   const languageTitle = `$itemDocument.title.${props.language}`
-  const fallbackTitle = `$itemDocument.title.${props.language === "ru" ? "en" : "ru"}`
+  const fallbackTitle = `$itemDocument.title.${props.language === ELanguage.RUSSIAN ? ELanguage.ENGLISH : ELanguage.RUSSIAN}`
 
   pipeline.push({
     $facet: {

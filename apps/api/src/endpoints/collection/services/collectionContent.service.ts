@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
 import {
   BadRequestException,
@@ -58,7 +59,10 @@ class CollectionContentService {
         id: tag._id.toHexString(),
         key: tag.key,
         group: tag.group,
-        name: { ru: tag.name.ru, en: tag.name.en },
+        name: {
+          [ELanguage.RUSSIAN]: tag.name[ELanguage.RUSSIAN],
+          [ELanguage.ENGLISH]: tag.name[ELanguage.ENGLISH],
+        },
       })),
       fields: options.fields.map((field) => this.mapField(field)),
       sorting: {
@@ -128,7 +132,7 @@ class CollectionContentService {
       isGrouped: mode === ECollectionMode.GROUPED,
       sort: query.sort ?? ECollectionSort.COLLECTION,
       direction: direction === "desc" ? -1 : 1,
-      language: query.language ?? "ru",
+      language: query.language ?? ELanguage.RUSSIAN,
       page,
       limit,
       tags: (query.tags ?? []).map((id) => new Types.ObjectId(id)),
@@ -286,7 +290,10 @@ class CollectionContentService {
     return {
       id: card.item._id.toHexString(),
       type: card.item.type,
-      title: { ru: card.item.title.ru, en: card.item.title.en },
+      title: {
+        [ELanguage.RUSSIAN]: card.item.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: card.item.title[ELanguage.ENGLISH],
+      },
       media: card.item.media.map((media) => ({
         src: media.src,
         language: media.language,

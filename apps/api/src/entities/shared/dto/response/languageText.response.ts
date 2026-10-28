@@ -1,11 +1,12 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ApiProperty } from "@nestjs/swagger"
 
 class LanguageTextResponseDto {
   @ApiProperty({ type: String, nullable: true })
-  ru: string | null
+  [ELanguage.RUSSIAN]: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  en: string | null
+  [ELanguage.ENGLISH]: string | null
 }
 
 export { LanguageTextResponseDto }

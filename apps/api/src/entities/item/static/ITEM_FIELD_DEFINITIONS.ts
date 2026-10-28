@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { EItemField } from "../schemas/EItemField"
 import { EItemFieldValueType } from "../schemas/EItemFieldValueType"
 import { EUnit } from "@entities/shared/schemas/EUnit"
@@ -7,47 +8,74 @@ const ITEM_FIELD_DEFINITIONS = {
   [EItemField.RELEASE_DATE]: {
     valueType: EItemFieldValueType.DATE,
     unit: null,
-    name: { ru: "Дата выпуска", en: "Release date" },
+    name: {
+      [ELanguage.RUSSIAN]: "Дата выпуска",
+      [ELanguage.ENGLISH]: "Release date",
+    },
   },
   [EItemField.AGE_RESTRICTION]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: null,
-    name: { ru: "Возрастное ограничение", en: "Age restriction" },
+    name: {
+      [ELanguage.RUSSIAN]: "Возрастное ограничение",
+      [ELanguage.ENGLISH]: "Age restriction",
+    },
   },
   [EItemField.DURATION]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.MINUTE,
-    name: { ru: "Продолжительность", en: "Duration" },
+    name: {
+      [ELanguage.RUSSIAN]: "Продолжительность",
+      [ELanguage.ENGLISH]: "Duration",
+    },
   },
   [EItemField.EPISODE_COUNT]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.EPISODE,
-    name: { ru: "Количество серий", en: "Episode count" },
+    name: {
+      [ELanguage.RUSSIAN]: "Количество серий",
+      [ELanguage.ENGLISH]: "Episode count",
+    },
   },
   [EItemField.RELEASED_EPISODE_COUNT]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.EPISODE,
-    name: { ru: "Вышедшие серии", en: "Released episode count" },
+    name: {
+      [ELanguage.RUSSIAN]: "Вышедшие серии",
+      [ELanguage.ENGLISH]: "Released episode count",
+    },
   },
   [EItemField.EPISODE_DURATION]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.MINUTE,
-    name: { ru: "Продолжительность серии", en: "Episode duration" },
+    name: {
+      [ELanguage.RUSSIAN]: "Продолжительность серии",
+      [ELanguage.ENGLISH]: "Episode duration",
+    },
   },
   [EItemField.NEXT_EPISODE_AT]: {
     valueType: EItemFieldValueType.DATE,
     unit: null,
-    name: { ru: "Следующая серия", en: "Next episode" },
+    name: {
+      [ELanguage.RUSSIAN]: "Следующая серия",
+      [ELanguage.ENGLISH]: "Next episode",
+    },
   },
   [EItemField.MAIN_STORY_DURATION]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.MINUTE,
-    name: { ru: "Время основной истории", en: "Main story duration" },
+    name: {
+      [ELanguage.RUSSIAN]: "Время основной истории",
+      [ELanguage.ENGLISH]: "Main story duration",
+    },
   },
   [EItemField.FULL_COMPLETION_DURATION]: {
     valueType: EItemFieldValueType.NUMBER,
     unit: EUnit.MINUTE,
-    name: { ru: "Время полного прохождения", en: "Full completion duration" },
+    name: {
+      [ELanguage.RUSSIAN]: "Время полного прохождения",
+      [ELanguage.ENGLISH]: "Full completion duration",
+    },
   },
 } satisfies Record<
   EItemField,

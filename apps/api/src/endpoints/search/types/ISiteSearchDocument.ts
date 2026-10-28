@@ -1,3 +1,4 @@
+import type { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
@@ -16,7 +17,7 @@ interface IItemSearchDocument {
   hasRating: number
   releaseDate: number | null
   hasReleaseDate: number
-  sortTitle: { ru: string; en: string }
+  sortTitle: Record<ELanguage, string>
 }
 
 interface IUserSearchDocument {
@@ -36,7 +37,7 @@ interface ICollectionSearchDocument {
   media: MediaSrc[]
   authorId: string | null
   updatedAt: number
-  sortTitle: { ru: string; en: string }
+  sortTitle: Record<ELanguage, string>
 }
 
 type TSiteSearchDocument =

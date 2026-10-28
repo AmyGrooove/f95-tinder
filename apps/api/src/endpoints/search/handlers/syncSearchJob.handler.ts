@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { Injectable } from "@nestjs/common"
 import { Types } from "mongoose"
 
@@ -148,8 +149,8 @@ class SyncSearchJobHandler implements IJobHandler<null> {
           ],
           sortableAttributes: [
             "id",
-            "sortTitle.ru",
-            "sortTitle.en",
+            `sortTitle.${ELanguage.RUSSIAN}`,
+            `sortTitle.${ELanguage.ENGLISH}`,
             "releaseDate",
             "hasReleaseDate",
             "rating",
@@ -236,8 +237,8 @@ class SyncSearchJobHandler implements IJobHandler<null> {
           filterableAttributes: ["id", "type", "authorId"],
           sortableAttributes: [
             "id",
-            "sortTitle.ru",
-            "sortTitle.en",
+            `sortTitle.${ELanguage.RUSSIAN}`,
+            `sortTitle.${ELanguage.ENGLISH}`,
             "updatedAt",
           ],
           displayedAttributes: ["id", "type", "title", "media", "authorId"],
@@ -273,10 +274,15 @@ class SyncSearchJobHandler implements IJobHandler<null> {
               : {
                   id: String(collection._id),
                   type: collection.type,
-                  title: { ru: collection.title.ru, en: collection.title.en },
+                  title: {
+                    [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
+                    [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
+                  },
                   description: {
-                    ru: collection.description.ru,
-                    en: collection.description.en,
+                    [ELanguage.RUSSIAN]:
+                      collection.description[ELanguage.RUSSIAN],
+                    [ELanguage.ENGLISH]:
+                      collection.description[ELanguage.ENGLISH],
                   },
                   media: collection.media.map((media) => ({
                     src: media.src,
@@ -305,12 +311,12 @@ class SyncSearchJobHandler implements IJobHandler<null> {
   }
 
   private mapSortTitle(title: LanguageText) {
-    const ru = title.ru?.trim() ?? ""
-    const en = title.en?.trim() ?? ""
+    const ru = title[ELanguage.RUSSIAN]?.trim() ?? ""
+    const en = title[ELanguage.ENGLISH]?.trim() ?? ""
 
     return {
-      ru: (ru.length > 0 ? ru : en).toLowerCase(),
-      en: (en.length > 0 ? en : ru).toLowerCase(),
+      [ELanguage.RUSSIAN]: (ru.length > 0 ? ru : en).toLowerCase(),
+      [ELanguage.ENGLISH]: (en.length > 0 ? en : ru).toLowerCase(),
     }
   }
 
@@ -318,9 +324,15 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     return {
       id: String(item._id),
       type: item.type,
-      title: { ru: item.title.ru, en: item.title.en },
+      title: {
+        [ELanguage.RUSSIAN]: item.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: item.title[ELanguage.ENGLISH],
+      },
       aliases: item.aliases,
-      description: { ru: item.description.ru, en: item.description.en },
+      description: {
+        [ELanguage.RUSSIAN]: item.description[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: item.description[ELanguage.ENGLISH],
+      },
       media: item.media.map((media) => ({
         src: media.src,
         type: media.type,

@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import {
   BadRequestException,
   ConflictException,
@@ -63,7 +64,10 @@ class CollectionService {
       id: collection._id.toHexString(),
       type: collection.type,
       authorId: collection.author?.toHexString() ?? null,
-      title: { ru: collection.title.ru, en: collection.title.en },
+      title: {
+        [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
+      },
       media: collection.media.map((media) => ({
         src: media.src,
         language: media.language,
@@ -458,10 +462,13 @@ class CollectionService {
       version: collection.version,
       authorId: collection.author?.toHexString() ?? null,
       type: collection.type,
-      title: { ru: collection.title.ru, en: collection.title.en },
+      title: {
+        [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
+      },
       description: {
-        ru: collection.description.ru,
-        en: collection.description.en,
+        [ELanguage.RUSSIAN]: collection.description[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: collection.description[ELanguage.ENGLISH],
       },
       media: collection.media.map((media) => ({
         src: media.src,
@@ -485,10 +492,16 @@ class CollectionService {
         type: ECollectionBlockType.GROUP,
         title: isNil(block.title)
           ? null
-          : { ru: block.title.ru, en: block.title.en },
+          : {
+              [ELanguage.RUSSIAN]: block.title[ELanguage.RUSSIAN],
+              [ELanguage.ENGLISH]: block.title[ELanguage.ENGLISH],
+            },
         description: isNil(block.description)
           ? null
-          : { ru: block.description.ru, en: block.description.en },
+          : {
+              [ELanguage.RUSSIAN]: block.description[ELanguage.RUSSIAN],
+              [ELanguage.ENGLISH]: block.description[ELanguage.ENGLISH],
+            },
       }
     }
 
@@ -496,8 +509,8 @@ class CollectionService {
       id,
       type: ECollectionBlockType.TEXT,
       content: {
-        ru: block.content?.ru ?? null,
-        en: block.content?.en ?? null,
+        [ELanguage.RUSSIAN]: block.content?.[ELanguage.RUSSIAN] ?? null,
+        [ELanguage.ENGLISH]: block.content?.[ELanguage.ENGLISH] ?? null,
       },
     }
   }

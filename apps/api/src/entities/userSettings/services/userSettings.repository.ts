@@ -13,7 +13,10 @@ import type { TCreateUserSettings } from "../schemas/userSettings.schema"
 
 @Injectable()
 class UserSettingsRepository {
-  readonly read: MongoReadRepository<UserSettings, HydratedDocument<UserSettings>>
+  readonly read: MongoReadRepository<
+    UserSettings,
+    HydratedDocument<UserSettings>
+  >
   readonly write: MongoWriteRepository<
     UserSettings,
     HydratedDocument<UserSettings>,
@@ -33,7 +36,8 @@ class UserSettingsRepository {
   >
 
   constructor(
-    @InjectModel(UserSettings.name) model: Model<HydratedDocument<UserSettings>>,
+    @InjectModel(UserSettings.name)
+    model: Model<HydratedDocument<UserSettings>>,
   ) {
     this.read = new MongoReadRepository<
       UserSettings,

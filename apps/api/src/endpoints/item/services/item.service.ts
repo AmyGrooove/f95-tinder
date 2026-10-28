@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { Injectable, NotFoundException } from "@nestjs/common"
 import type { Types } from "mongoose"
 
@@ -66,8 +67,14 @@ class ItemService {
             id: role._id.toString(),
             key: role.key,
             name: {
-              ru: roleNameOverride?.ru ?? role.name?.ru ?? null,
-              en: roleNameOverride?.en ?? role.name?.en ?? null,
+              [ELanguage.RUSSIAN]:
+                roleNameOverride?.[ELanguage.RUSSIAN] ??
+                role.name?.[ELanguage.RUSSIAN] ??
+                null,
+              [ELanguage.ENGLISH]:
+                roleNameOverride?.[ELanguage.ENGLISH] ??
+                role.name?.[ELanguage.ENGLISH] ??
+                null,
             },
           },
         }),
@@ -78,7 +85,10 @@ class ItemService {
   private mapLanguageText(
     text: LanguageText | null | undefined,
   ): LanguageTextResponseDto {
-    return { ru: text?.ru ?? null, en: text?.en ?? null }
+    return {
+      [ELanguage.RUSSIAN]: text?.[ELanguage.RUSSIAN] ?? null,
+      [ELanguage.ENGLISH]: text?.[ELanguage.ENGLISH] ?? null,
+    }
   }
 
   private mapMedia(media: MediaSrc[]): MediaResponseDto[] {

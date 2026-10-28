@@ -214,6 +214,47 @@ describe("TagWeightModifiersModule", () => {
     }
   })
 
+  it("не записывает коэффициенты группы при отмене после подсчёта поддержек", async () => {
+    const { connection } = getTestDatabase()
+    await createCatalogueFixture(connection)
+    const before = await connection
+      .collection("Tag")
+      .find()
+      .sort({ _id: 1 })
+      .toArray()
+    const repository = moduleRef?.get(ItemTagRepository)
+    const handler = moduleRef?.get(RecalculateTagWeightModifiersJobHandler)
+    if (repository === undefined || handler === undefined) {
+      throw new Error("Тестовый модуль не запущен")
+    }
+    const read = repository.getUsageCounts.bind(repository)
+    let isRead = false
+    const usage = jest
+      .spyOn(repository, "getUsageCounts")
+      .mockImplementation(async (...args) => {
+        const result = await read(...args)
+        isRead = true
+        return result
+      })
+    const error = new Error("cancelled")
+    await expect(
+      handler.handle(null, {
+        id: "cancel-modifiers",
+        attempt: 1,
+        updateProgress: async () => {},
+        throwIfCancelled: async () => {
+          if (isRead) {
+            throw error
+          }
+        },
+      }),
+    ).rejects.toBe(error)
+    expect(usage).toHaveBeenCalledTimes(1)
+    expect(
+      await connection.collection("Tag").find().sort({ _id: 1 }).toArray(),
+    ).toEqual(before)
+  })
+
   it("подавляет дубли во время выполнения и ожидания повтора после ошибки", async () => {
     const handler = moduleRef?.get(RecalculateTagWeightModifiersJobHandler)
 

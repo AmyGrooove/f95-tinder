@@ -433,6 +433,39 @@ describe("ItemRatingsModule", () => {
     ).toBe(0)
   })
 
+  it("сохраняет прежнюю метрику при отмене после чтения новых оценок и позволяет повторный расчёт", async () => {
+    const item = await createItem()
+    const rating = await createRating(item._id, 4)
+    await handler.handle(String(item._id), context)
+    const before = await getTestDatabase()
+      .connection.collection("ItemMetric")
+      .findOne({ item: item._id })
+    await userItems.write.updateById(String(rating._id), {
+      $set: { rating: 10 },
+    })
+    const error = new Error("cancelled")
+    const cancellation = jest
+      .fn<IJobContext["throwIfCancelled"]>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(error)
+    await expect(
+      handler.handle(String(item._id), {
+        ...context,
+        throwIfCancelled: cancellation,
+      }),
+    ).rejects.toBe(error)
+    expect(
+      await getTestDatabase()
+        .connection.collection("ItemMetric")
+        .findOne({ item: item._id }),
+    ).toEqual(before)
+    await handler.handle(String(item._id), context)
+    expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
+      ratingAverage: 10,
+      ratingsCount: 1,
+    })
+  })
+
   it("регистрирует обработчик, выполняет пересчёт через очередь и дедуплицирует ожидающие задачи", async () => {
     const item = await createItem()
     await createRating(item._id, 8)

@@ -9,6 +9,46 @@ import { getTestApplication } from "@test/setup/setupIntegration"
 import { createCollection } from "./functions/createCollection"
 
 describe("CollectionUserController HTTP", () => {
+  it("сохраняет параллельные первые реакции в одной записи без потери независимых полей", async () => {
+    const { app, connection } = getTestApplication()
+    const { collection } = await createCollection()
+    const { user, headers } = await createAccount()
+    const responses = await Promise.all(
+      [
+        { path: "favorite", payload: { isFavorite: true } },
+        { path: "hidden", payload: { isHidden: true } },
+        { path: "rating", payload: { rating: 8 } },
+      ].map(async ({ path, payload }) =>
+        app.inject({
+          method: "PATCH",
+          url: `/collections/${collection.id}/${path}`,
+          headers,
+          payload,
+        }),
+      ),
+    )
+    expect(responses.map((response) => response.statusCode)).toEqual([
+      200, 200, 200,
+    ])
+    const records = await connection
+      .collection("UserCollection")
+      .find({ user: user._id, collectionId: new Types.ObjectId(collection.id) })
+      .toArray()
+    expect(records).toHaveLength(1)
+    expect(records[0]).toMatchObject({
+      isFavorite: true,
+      isHidden: true,
+      rating: 8,
+    })
+    const read = await app.inject({
+      method: "GET",
+      url: `/collections/${collection.id}/user`,
+      headers,
+    })
+    expect(read.statusCode).toBe(200)
+    expect(read.json()).toEqual({ isFavorite: true, isHidden: true, rating: 8 })
+  })
+
   it("возвращает реакцию по умолчанию без создания записи", async () => {
     const { app, connection } = getTestApplication()
     const { collection, owner } = await createCollection()

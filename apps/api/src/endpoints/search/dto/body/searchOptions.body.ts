@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import { Type } from "class-transformer"
 import {
@@ -99,10 +100,10 @@ class SearchItemsBodyDto extends SearchSortingBodyDto {
   @IsIn(["relevance", "title", "releaseDate", "rating"])
   sort?: "relevance" | "title" | "releaseDate" | "rating"
 
-  @ApiPropertyOptional({ enum: ["ru", "en"], default: "ru" })
+  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
   @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsIn(["ru", "en"])
-  language?: "ru" | "en"
+  @IsEnum(ELanguage)
+  language?: ELanguage
 }
 
 class SearchUsersBodyDto extends SearchSortingBodyDto {
@@ -142,10 +143,10 @@ class SearchCollectionsBodyDto extends SearchSortingBodyDto {
   @IsIn(["relevance", "title", "updatedAt"])
   sort?: "relevance" | "title" | "updatedAt"
 
-  @ApiPropertyOptional({ enum: ["ru", "en"], default: "ru" })
+  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
   @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsIn(["ru", "en"])
-  language?: "ru" | "en"
+  @IsEnum(ELanguage)
+  language?: ELanguage
 }
 
 export { SearchItemsBodyDto, SearchUsersBodyDto, SearchCollectionsBodyDto }

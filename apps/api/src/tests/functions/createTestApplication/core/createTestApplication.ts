@@ -12,6 +12,7 @@ import { CollectionEndpointModule } from "@endpoints/collection/collection.modul
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { ItemEndpointModule } from "@endpoints/item/item.module"
+import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
@@ -26,7 +27,10 @@ import { TestMailModule, TestMailService } from "@test/modules/testMail"
 
 import { configureApplication } from "../../../../app/functions/configureApplication"
 
-const createTestApplication = async () => {
+const createTestApplication = async (search?: {
+  host: string
+  apiKey: string
+}) => {
   const cleanup: Array<() => Promise<unknown>> = []
   const close = async () => {
     const errors: unknown[] = []
@@ -60,6 +64,9 @@ const createTestApplication = async () => {
       database.uri,
       redisEnvironment.url,
     )
+    if (search !== undefined) {
+      configuration.search = search
+    }
     const { redis } = redisEnvironment
     const authRedis = await redisEnvironment.connect()
     const accountRedis = await redisEnvironment.connect()
@@ -71,6 +78,7 @@ const createTestApplication = async () => {
         UserItemEndpointModule,
         CollectionEndpointModule,
         ItemEndpointModule,
+        ...(search === undefined ? [] : [SearchEndpointModule]),
         LoggerModule,
         ThrottlingModule,
       ],

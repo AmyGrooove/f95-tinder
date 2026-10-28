@@ -134,6 +134,9 @@ describe("RecommendationsService", () => {
         exclude: [EUserItemStatus.COMPLETED],
       },
       excludeItemIds: [new Types.ObjectId()],
+      candidateItemIds: [new Types.ObjectId()],
+      isIncludingExcluded: true,
+      direction: "asc",
       pagination: { page: 2.9, limit: 1000 },
     }
 
@@ -148,6 +151,9 @@ describe("RecommendationsService", () => {
         country: ECountry.RUSSIA,
         library: props.library,
         excludeItemIds: props.excludeItemIds,
+        candidateItemIds: props.candidateItemIds,
+        isIncludingExcluded: true,
+        direction: "asc",
         page: 2,
         limit: 100,
       }),

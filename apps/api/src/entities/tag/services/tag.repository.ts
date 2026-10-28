@@ -19,7 +19,9 @@ class TagRepository {
   readonly bulk: MongoBulkRepository<Tag, HydratedDocument<Tag>, TCreateTag>
   readonly aggregation: MongoAggregationRepository<HydratedDocument<Tag>>
 
-  constructor(@InjectModel(Tag.name) model: Model<HydratedDocument<Tag>>) {
+  constructor(
+    @InjectModel(Tag.name) private readonly model: Model<HydratedDocument<Tag>>,
+  ) {
     this.read = new MongoReadRepository<Tag, HydratedDocument<Tag>>(model)
     this.write = new MongoWriteRepository<
       Tag,
@@ -35,6 +37,10 @@ class TagRepository {
     this.aggregation = new MongoAggregationRepository<HydratedDocument<Tag>>(
       model,
     )
+  }
+
+  async initialize() {
+    await this.model.init()
   }
 }
 

@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ApiPropertyOptional } from "@nestjs/swagger"
 import { Transform, Type } from "class-transformer"
 import {
@@ -109,10 +110,10 @@ class CollectionItemsBodyDto {
   @IsIn(["asc", "desc"])
   direction?: "asc" | "desc"
 
-  @ApiPropertyOptional({ enum: ["ru", "en"], default: "ru" })
+  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
   @IsOptional()
-  @IsIn(["ru", "en"])
-  language?: "ru" | "en"
+  @IsEnum(ELanguage)
+  language?: ELanguage
 
   @ApiPropertyOptional({
     type: Number,

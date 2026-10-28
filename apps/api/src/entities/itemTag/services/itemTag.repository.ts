@@ -9,53 +9,38 @@ import type { ITasteItemTag } from "../types/ITasteItemTag"
 import type { IGetTasteTagsProps } from "../types/IGetTasteTagsProps"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
-import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPagination.repository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
 
 import { ItemTag } from "../schemas/itemTag.schema"
-import type { TCreateItemTag } from "../schemas/itemTag.schema"
+import { ItemTagWriteRepository } from "./itemTagWrite.repository"
+import { ItemTagBulkRepository } from "./itemTagBulk.repository"
+import { ItemTagMutationService } from "./itemTagMutation.service"
 
 @Injectable()
 class ItemTagRepository {
   readonly read: MongoReadRepository<ItemTag, HydratedDocument<ItemTag>>
-  readonly write: MongoWriteRepository<
-    ItemTag,
-    HydratedDocument<ItemTag>,
-    TCreateItemTag
-  >
+  readonly write: ItemTagWriteRepository
   readonly pagination: MongoPaginationRepository<
     ItemTag,
     HydratedDocument<ItemTag>
   >
-  readonly bulk: MongoBulkRepository<
-    ItemTag,
-    HydratedDocument<ItemTag>,
-    TCreateItemTag
-  >
+  readonly bulk: ItemTagBulkRepository
   readonly aggregation: MongoAggregationRepository<HydratedDocument<ItemTag>>
 
   constructor(
     @InjectModel(ItemTag.name) model: Model<HydratedDocument<ItemTag>>,
+    mutations: ItemTagMutationService,
   ) {
     this.read = new MongoReadRepository<ItemTag, HydratedDocument<ItemTag>>(
       model,
     )
-    this.write = new MongoWriteRepository<
-      ItemTag,
-      HydratedDocument<ItemTag>,
-      TCreateItemTag
-    >(model)
+    this.write = new ItemTagWriteRepository(model, mutations)
     this.pagination = new MongoPaginationRepository<
       ItemTag,
       HydratedDocument<ItemTag>
     >(model)
-    this.bulk = new MongoBulkRepository<
-      ItemTag,
-      HydratedDocument<ItemTag>,
-      TCreateItemTag
-    >(model)
+    this.bulk = new ItemTagBulkRepository(model, mutations)
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<ItemTag>
     >(model)

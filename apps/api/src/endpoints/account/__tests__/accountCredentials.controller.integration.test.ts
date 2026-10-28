@@ -1,14 +1,81 @@
 import { createHash } from "node:crypto"
-import { describe, expect, it } from "@jest/globals"
+import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import type { Session } from "@entities/session/schemas/session.schema"
+import { SessionRepository } from "@entities/session/services/session.repository"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import { createAccount } from "./functions/createAccount"
 
 describe("AccountCredentialsController HTTP", () => {
+  it.each(["password", "accessCode"] as const)(
+    "откатывает смену секрета %s и текущего токена при сбое отзыва остальных сессий",
+    async (kind) => {
+      const { app, connection } = getTestApplication()
+      const account = await createAccount(
+        kind === "password" ? "password" : "anonymous",
+      )
+      const login = await app.inject({
+        method: "POST",
+        url: kind === "password" ? "/auth/login" : "/auth/login/code",
+        headers: { origin: account.headers.origin },
+        payload:
+          kind === "password"
+            ? { username: account.user.username, password: account.password }
+            : { accessCode: account.accessCode },
+      })
+      expect(login.statusCode).toBe(204)
+      const beforeUser = await connection
+        .collection("User")
+        .findOne({ _id: account.user._id })
+      const beforeSessions = await connection
+        .collection("Session")
+        .find({ user: account.user._id })
+        .sort({ _id: 1 })
+        .toArray()
+      expect(beforeSessions).toHaveLength(2)
+      const repository = app.get(SessionRepository)
+      const remove = repository.deleteOthers.bind(repository)
+      const failure = jest
+        .spyOn(repository, "deleteOthers")
+        .mockImplementationOnce(async (...args) => {
+          await remove(...args)
+          throw new Error("session revocation failed")
+        })
+      const request = {
+        method: "PATCH" as const,
+        url: kind === "password" ? "/account/password" : "/auth/login/code",
+        headers: account.headers,
+        payload:
+          kind === "password"
+            ? {
+                currentPassword: account.password,
+                newPassword: "New-password-123",
+              }
+            : { accessCode: account.accessCode },
+      }
+      const response = await app.inject(request)
+      expect(response.statusCode).toBe(500)
+      expect(response.headers["set-cookie"]).toBeUndefined()
+      expect(
+        await connection.collection("User").findOne({ _id: account.user._id }),
+      ).toEqual(beforeUser)
+      expect(
+        await connection
+          .collection("Session")
+          .find({ user: account.user._id })
+          .sort({ _id: 1 })
+          .toArray(),
+      ).toEqual(beforeSessions)
+      failure.mockRestore()
+      expect((await app.inject(request)).statusCode).toBe(
+        kind === "password" ? 204 : 200,
+      )
+    },
+  )
+
   it("меняет пароль, обновляет cookies и текущую сессию, удаляет остальные сессии", async () => {
     const { app, connection } = getTestApplication()
     const { user, session, headers, password } = await createAccount("password")

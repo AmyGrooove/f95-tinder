@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -33,10 +34,16 @@ const createCollectionDisplayBlocks = ({
           type: ECollectionBlockType.GROUP,
           title: isNil(block.title)
             ? null
-            : { ru: block.title.ru, en: block.title.en },
+            : {
+                [ELanguage.RUSSIAN]: block.title[ELanguage.RUSSIAN],
+                [ELanguage.ENGLISH]: block.title[ELanguage.ENGLISH],
+              },
           description: isNil(block.description)
             ? null
-            : { ru: block.description.ru, en: block.description.en },
+            : {
+                [ELanguage.RUSSIAN]: block.description[ELanguage.RUSSIAN],
+                [ELanguage.ENGLISH]: block.description[ELanguage.ENGLISH],
+              },
           beforeItemId: firstItem.id,
         })
       }
@@ -60,8 +67,8 @@ const createCollectionDisplayBlocks = ({
         id,
         type: ECollectionBlockType.TEXT,
         content: {
-          ru: block.content?.ru ?? null,
-          en: block.content?.en ?? null,
+          [ELanguage.RUSSIAN]: block.content?.[ELanguage.RUSSIAN] ?? null,
+          [ELanguage.ENGLISH]: block.content?.[ELanguage.ENGLISH] ?? null,
         },
         beforeItemId: page.items[offset - start]?.id ?? null,
       })

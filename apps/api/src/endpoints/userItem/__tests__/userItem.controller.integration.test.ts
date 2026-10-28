@@ -720,26 +720,41 @@ describe("UserItemController HTTP", () => {
         expect(response.json()).toMatchObject({ error: { message } })
         expect(await readEntry(entry.id)).toEqual(before)
       }
-      await connection.collection("UserItem").updateOne(
-        { _id: new Types.ObjectId(entry.id) },
-        {
-          $set: {
-            status: "skipped",
-            attempts: [],
-            expiresAt: new Date(Date.now() - 1000),
-          },
-        },
-      )
-      const skipped = await readEntry(entry.id)
-      const rejected = await app.inject({
-        method: "POST",
-        url: "/userItems",
-        headers,
-        payload: { itemId: item._id.toHexString(), status: "completed" },
+      const database = connection.db
+      if (database === undefined) {
+        throw new Error("Тестовая MongoDB не подключена")
+      }
+      await database.command({
+        collMod: "UserItem",
+        index: { name: "userItemSkippedExpiry", expireAfterSeconds: 3600 },
       })
-      expect(rejected.statusCode).toBe(409)
-      expect(rejected.json()).toMatchObject({ error: { message } })
-      expect(await readEntry(entry.id)).toEqual(skipped)
+      try {
+        await connection.collection("UserItem").updateOne(
+          { _id: new Types.ObjectId(entry.id) },
+          {
+            $set: {
+              status: "skipped",
+              attempts: [],
+              expiresAt: new Date(Date.now() - 1000),
+            },
+          },
+        )
+        const skipped = await readEntry(entry.id)
+        const rejected = await app.inject({
+          method: "POST",
+          url: "/userItems",
+          headers,
+          payload: { itemId: item._id.toHexString(), status: "completed" },
+        })
+        expect(rejected.statusCode).toBe(409)
+        expect(rejected.json()).toMatchObject({ error: { message } })
+        expect(await readEntry(entry.id)).toEqual(skipped)
+      } finally {
+        await database.command({
+          collMod: "UserItem",
+          index: { name: "userItemSkippedExpiry", expireAfterSeconds: 0 },
+        })
+      }
     },
   )
 

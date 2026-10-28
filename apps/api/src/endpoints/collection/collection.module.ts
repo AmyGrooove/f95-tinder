@@ -7,6 +7,9 @@ import { UserModule } from "@entities/user/user.module"
 import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
+import { JobsModule } from "@infrastructure/jobs/jobs.module"
+import { TagModule } from "@entities/tag/tag.module"
+import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 
 import { CollectionController } from "./controllers/collection.controller"
 import { CollectionUserController } from "./controllers/collectionUser.controller"
@@ -15,6 +18,9 @@ import { CollectionService } from "./services/collection.service"
 import { CollectionUserService } from "./services/collectionUser.service"
 import { CollectionContentService } from "./services/collectionContent.service"
 import { CollectionAuthService } from "./services/collectionAuth.service"
+import { TagCollectionsInitializationService } from "./services/tagCollectionsInitialization.service"
+import { TagCollectionsSynchronizationService } from "./services/tagCollectionsSynchronization.service"
+import { SynchronizeTagCollectionsJobHandler } from "./handlers/synchronizeTagCollectionsJob.handler"
 
 @Module({
   imports: [
@@ -25,6 +31,9 @@ import { CollectionAuthService } from "./services/collectionAuth.service"
     UserCollectionModule,
     AuthModule,
     DatabaseModule,
+    JobsModule,
+    TagModule,
+    ItemTagModule,
   ],
   controllers: [
     CollectionController,
@@ -36,6 +45,9 @@ import { CollectionAuthService } from "./services/collectionAuth.service"
     CollectionService,
     CollectionUserService,
     CollectionContentService,
+    TagCollectionsInitializationService,
+    TagCollectionsSynchronizationService,
+    SynchronizeTagCollectionsJobHandler,
   ],
 })
 class CollectionEndpointModule {}

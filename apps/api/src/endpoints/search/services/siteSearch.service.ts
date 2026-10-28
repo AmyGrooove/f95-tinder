@@ -1,3 +1,4 @@
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import {
   BadRequestException,
   HttpException,
@@ -112,7 +113,7 @@ class SiteSearchService {
           sort:
             collectionSort === "title"
               ? [
-                  `sortTitle.${body.collections?.language ?? "ru"}:${collectionDirection}`,
+                  `sortTitle.${body.collections?.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
                   "id:asc",
                 ]
               : collectionSort === "updatedAt"
@@ -194,7 +195,10 @@ class SiteSearchService {
                   {
                     id: String(collection._id),
                     type: collection.type,
-                    title: { ru: collection.title.ru, en: collection.title.en },
+                    title: {
+                      [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
+                      [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
+                    },
                     media: this.mapMedia(collection.media),
                     authorId: collection.author?.toString() ?? null,
                   },
@@ -276,7 +280,10 @@ class SiteSearchService {
       body.items?.direction ?? (sort === "title" ? "asc" : "desc")
     const sorting =
       sort === "title"
-        ? [`sortTitle.${body.items?.language ?? "ru"}:${direction}`, "id:asc"]
+        ? [
+            `sortTitle.${body.items?.language ?? ELanguage.RUSSIAN}:${direction}`,
+            "id:asc",
+          ]
         : sort === "releaseDate"
           ? ["hasReleaseDate:desc", `releaseDate:${direction}`, "id:asc"]
           : sort === "rating"
@@ -422,7 +429,10 @@ class SiteSearchService {
     return {
       id: String(item._id),
       type: item.type,
-      title: { ru: item.title.ru, en: item.title.en },
+      title: {
+        [ELanguage.RUSSIAN]: item.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: item.title[ELanguage.ENGLISH],
+      },
       media: this.mapMedia(item.media),
     }
   }
