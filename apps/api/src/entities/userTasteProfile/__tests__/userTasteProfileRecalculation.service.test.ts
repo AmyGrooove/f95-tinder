@@ -6,8 +6,8 @@ import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
 import type { ITasteItemTag } from "@entities/itemTag/types/ITasteItemTag"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import { EUnit } from "@entities/shared/schemas/EUnit"
 import { UserRepository } from "@entities/user/services/user.repository"
-import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
@@ -21,15 +21,10 @@ describe("UserTasteProfileRecalculationService", () => {
   const item = new Types.ObjectId()
   const tag = new Types.ObjectId()
   const exists = jest.fn<() => Promise<boolean>>()
-  const findMany =
-    jest.fn<
-      (
-        filter: unknown,
-        projection: unknown,
-      ) => Promise<
-        { item: Types.ObjectId; rating: number | null; isFavorite: boolean }[]
-      >
-    >()
+  const getTasteInputs = jest.fn<UserItemRepository["getTasteInputs"]>()
+  const findAffectedTags = jest.fn<() => Promise<{ tag: Types.ObjectId }[]>>()
+  const readTagPreferences =
+    jest.fn<UserTasteProfileRepository["readTagPreferences"]>()
   const getTasteTags = jest.fn<ItemTagRepository["getTasteTags"]>()
   const publish =
     jest.fn<UserTasteProfileRepository["tryReplaceCalculatedPreferences"]>()
@@ -44,9 +39,13 @@ describe("UserTasteProfileRecalculationService", () => {
 
   beforeEach(async () => {
     exists.mockReset().mockResolvedValue(true)
-    findMany
+    findAffectedTags.mockReset().mockResolvedValue([{ tag }])
+    readTagPreferences.mockReset().mockResolvedValue(null)
+    getTasteInputs
       .mockReset()
-      .mockResolvedValue([{ item, rating: 10, isFavorite: false }])
+      .mockResolvedValue([
+        { item, rating: 10, isFavorite: false, attempts: [] },
+      ])
     getTasteTags.mockReset().mockResolvedValue([
       {
         item,
@@ -68,11 +67,17 @@ describe("UserTasteProfileRecalculationService", () => {
           provide: UserRepository,
           useValue: { read: { checkIsExists: exists } },
         },
-        { provide: UserItemRepository, useValue: { read: { findMany } } },
-        { provide: ItemTagRepository, useValue: { getTasteTags } },
+        { provide: UserItemRepository, useValue: { getTasteInputs } },
+        {
+          provide: ItemTagRepository,
+          useValue: { getTasteTags, read: { findMany: findAffectedTags } },
+        },
         {
           provide: UserTasteProfileRepository,
-          useValue: { tryReplaceCalculatedPreferences: publish },
+          useValue: {
+            tryReplaceCalculatedPreferences: publish,
+            readTagPreferences,
+          },
         },
       ],
     }).compile()
@@ -105,11 +110,15 @@ describe("UserTasteProfileRecalculationService", () => {
   ])(
     "учитывает оценку %s и избранное %s как вклад %s",
     async (rating, isFavorite, weight) => {
-      findMany.mockResolvedValue([{ item, rating, isFavorite }])
-      await expect(service.recalculate(userId, context)).resolves.toEqual({
+      getTasteInputs.mockResolvedValue([
+        { item, rating, isFavorite, attempts: [] },
+      ])
+      await expect(
+        service.recalculate({ userId, itemId: item }, context),
+      ).resolves.toEqual({
         calculatedTags: 1,
       })
-      const preferences = publish.mock.calls[0]?.[1]
+      const preferences = publish.mock.calls[0]?.[0].preferences
       expect(preferences).toHaveLength(1)
       expect(preferences?.[0]).toMatchObject({ tag, count: 1 })
       expect(preferences?.[0]?.weight).toBeCloseTo(weight)
@@ -119,9 +128,9 @@ describe("UserTasteProfileRecalculationService", () => {
 
   it("усредняет выраженность по произведениям, включая нейтральную оценку", async () => {
     const second = new Types.ObjectId()
-    findMany.mockResolvedValue([
-      { item, rating: 10, isFavorite: false },
-      { item: second, rating: 6, isFavorite: false },
+    getTasteInputs.mockResolvedValue([
+      { item, rating: 10, isFavorite: false, attempts: [] },
+      { item: second, rating: 6, isFavorite: false, attempts: [] },
     ])
     getTasteTags.mockResolvedValue([
       {
@@ -139,10 +148,100 @@ describe("UserTasteProfileRecalculationService", () => {
         relevanceScore: 1,
       },
     ])
-    await service.recalculate(userId, context)
-    expect(publish).toHaveBeenCalledWith(userId, [
-      { tag, weight: 0.1, count: 2 },
-    ])
+    await service.recalculate({ userId, itemId: item }, context)
+    expect(publish).toHaveBeenCalledWith({
+      userId,
+      tagIds: [tag],
+      previousPreferences: null,
+      preferences: [{ tag, weight: 0.1, count: 2 }],
+    })
+  })
+
+  it.each([
+    { rating: null, isFavorite: false, completed: 0, weight: 0 },
+    { rating: null, isFavorite: false, completed: 1, weight: 0.1 },
+    { rating: null, isFavorite: false, completed: 2, weight: 0.2 },
+    { rating: null, isFavorite: false, completed: 3, weight: 0.3 },
+    { rating: null, isFavorite: false, completed: 8, weight: 0.3 },
+    { rating: 5, isFavorite: false, completed: 2, weight: 0.2 },
+    { rating: 7, isFavorite: false, completed: 2, weight: 0.45 },
+    { rating: 9, isFavorite: false, completed: 3, weight: 1 },
+    { rating: 10, isFavorite: false, completed: 1, weight: 1 },
+    { rating: 7, isFavorite: true, completed: 1, weight: 0.95 },
+    { rating: null, isFavorite: true, completed: 3, weight: 1 },
+    { rating: 1, isFavorite: true, completed: 3, weight: -1 },
+    { rating: 4, isFavorite: false, completed: 3, weight: -0.25 },
+  ])(
+    "учитывает $completed завершённых попыток при оценке $rating и избранном $isFavorite как $weight",
+    async ({ rating, isFavorite, completed, weight }) => {
+      getTasteInputs.mockResolvedValue([
+        {
+          item,
+          rating,
+          isFavorite,
+          attempts: Array.from({ length: completed + 2 }, (_, index) => ({
+            id: new Types.ObjectId(),
+            isCompleted: index < completed,
+            progress: 100,
+            unit: EUnit.PERCENT,
+            startedAt: null,
+            completedAt: new Date("2026-10-01T00:00:00Z"),
+          })),
+        },
+      ])
+
+      await service.recalculate({ userId, itemId: item }, context)
+
+      const preference = publish.mock.calls[0]?.[0].preferences[0]
+      expect(preference).toMatchObject({ tag, count: 1 })
+      expect(preference?.weight).toBeCloseTo(weight)
+    },
+  )
+
+  it("не читает профиль и библиотеку, если у изменённого Item нет тегов", async () => {
+    findAffectedTags.mockResolvedValue([])
+
+    await expect(
+      service.recalculate({ userId, itemId: item }, context),
+    ).resolves.toEqual({ calculatedTags: 0 })
+
+    expect(readTagPreferences).not.toHaveBeenCalled()
+    expect(getTasteInputs).not.toHaveBeenCalled()
+    expect(publish).not.toHaveBeenCalled()
+  })
+
+  it("при конфликте перечитывает профиль и публикует новый расчёт вместо устаревшего", async () => {
+    const updatedPreferences = [
+      { tag, weight: 0, count: 1, explicitWeight: -0.4 },
+    ]
+    readTagPreferences
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(updatedPreferences)
+    getTasteInputs
+      .mockResolvedValueOnce([
+        { item, rating: 10, isFavorite: false, attempts: [] },
+      ])
+      .mockResolvedValueOnce([
+        { item, rating: 1, isFavorite: false, attempts: [] },
+      ])
+    publish.mockResolvedValueOnce(false)
+
+    await service.recalculate({ userId, itemId: item }, context)
+
+    expect(publish.mock.calls[0]?.[0]).toMatchObject({
+      previousPreferences: null,
+      preferences: [{ tag, weight: 1, count: 1 }],
+    })
+    expect(publish.mock.calls[1]?.[0]).toMatchObject({
+      previousPreferences: updatedPreferences,
+      preferences: [{ tag, weight: -1, count: 1 }],
+    })
+    expect(readTagPreferences.mock.invocationCallOrder[0]).toBeLessThan(
+      getTasteInputs.mock.invocationCallOrder[0],
+    )
+    expect(readTagPreferences.mock.invocationCallOrder[1]).toBeLessThan(
+      getTasteInputs.mock.invocationCallOrder[1],
+    )
   })
 
   it("ослабляет единственный вклад выраженностью тега", async () => {
@@ -155,10 +254,13 @@ describe("UserTasteProfileRecalculationService", () => {
         relevanceScore: 0.2,
       },
     ])
-    await service.recalculate(userId, context)
-    expect(publish).toHaveBeenCalledWith(userId, [
-      { tag, weight: 0.2, count: 1 },
-    ])
+    await service.recalculate({ userId, itemId: item }, context)
+    expect(publish).toHaveBeenCalledWith({
+      userId,
+      tagIds: [tag],
+      previousPreferences: null,
+      preferences: [{ tag, weight: 0.2, count: 1 }],
+    })
   })
 
   it("не переносит признаки на недопустимый тип и не учитывает неизвестное произведение", async () => {
@@ -179,46 +281,55 @@ describe("UserTasteProfileRecalculationService", () => {
       },
     ]
     getTasteTags.mockResolvedValue(records)
-    await service.recalculate(userId, context)
-    expect(publish).toHaveBeenCalledWith(userId, [])
+    await service.recalculate({ userId, itemId: item }, context)
+    expect(publish).toHaveBeenCalledWith({
+      userId,
+      tagIds: [tag],
+      previousPreferences: null,
+      preferences: [],
+    })
   })
 
   it("читает только реакции владельца вне skipped и передаёт только вкусовые группы", async () => {
-    await service.recalculate(userId, context)
-    expect(findMany).toHaveBeenCalledWith(
-      {
-        user: userId,
-        status: { $ne: EUserItemStatus.SKIPPED },
-        $or: [{ rating: { $ne: null } }, { isFavorite: true }],
-      },
-      { item: 1, rating: 1, isFavorite: 1 },
-    )
-    const groups = getTasteTags.mock.calls[0]?.[1]
+    await service.recalculate({ userId, itemId: item }, context)
+    expect(getTasteInputs).toHaveBeenCalledWith(userId, [tag])
+    expect(getTasteTags.mock.calls[0]?.[0]).toMatchObject({
+      itemIds: [item],
+      tagIds: [tag],
+    })
+    const groups = getTasteTags.mock.calls[0]?.[0].groups
     expect(groups).toContain(ETagGroup.GENRE)
     expect(groups).not.toContain(ETagGroup.COUNTRY)
   })
 
   it("публикует пустую пересборку без запроса тегов при отсутствии реакций", async () => {
-    findMany.mockResolvedValue([])
-    await service.recalculate(userId, context)
+    getTasteInputs.mockResolvedValue([])
+    await service.recalculate({ userId, itemId: item }, context)
     expect(getTasteTags).not.toHaveBeenCalled()
-    expect(publish).toHaveBeenCalledWith(userId, [])
+    expect(publish).toHaveBeenCalledWith({
+      userId,
+      tagIds: [tag],
+      previousPreferences: null,
+      preferences: [],
+    })
   })
 
   it("пропускает несуществующего пользователя", async () => {
     exists.mockResolvedValue(false)
-    await expect(service.recalculate(userId, context)).resolves.toEqual({
+    await expect(
+      service.recalculate({ userId, itemId: item }, context),
+    ).resolves.toEqual({
       calculatedTags: 0,
     })
-    expect(findMany).not.toHaveBeenCalled()
+    expect(getTasteInputs).not.toHaveBeenCalled()
     expect(publish).not.toHaveBeenCalled()
   })
 
-  it("повторяет публикацию после конфликтов и не меняет рассчитанные вклады", async () => {
+  it("заново читает источники и рассчитывает вклады после конфликтов публикации", async () => {
     publish.mockResolvedValueOnce(false).mockResolvedValueOnce(false)
-    await service.recalculate(userId, context)
+    await service.recalculate({ userId, itemId: item }, context)
     expect(publish).toHaveBeenCalledTimes(3)
-    expect(findMany).toHaveBeenCalledTimes(1)
+    expect(getTasteInputs).toHaveBeenCalledTimes(3)
     expect(publish.mock.calls[2]).toEqual(publish.mock.calls[0])
   })
 
@@ -234,7 +345,9 @@ describe("UserTasteProfileRecalculationService", () => {
           throw error
         }
       })
-      await expect(service.recalculate(userId, context)).rejects.toBe(error)
+      await expect(
+        service.recalculate({ userId, itemId: item }, context),
+      ).rejects.toBe(error)
       expect(publish).toHaveBeenCalledTimes(checkpoint === 4 ? 1 : 0)
       expect(context.updateProgress).not.toHaveBeenCalled()
     },
@@ -243,23 +356,25 @@ describe("UserTasteProfileRecalculationService", () => {
   it("передаёт ошибку публикации очереди без ложного завершения", async () => {
     const error = new Error("database unavailable")
     publish.mockRejectedValue(error)
-    await expect(service.recalculate(userId, context)).rejects.toBe(error)
+    await expect(
+      service.recalculate({ userId, itemId: item }, context),
+    ).rejects.toBe(error)
     expect(context.updateProgress).not.toHaveBeenCalled()
   })
 
   it("ставит версионированную задачу с повторами и сохранением следующего запуска", async () => {
-    await expect(service.enqueue(userId)).resolves.toBe("queued")
+    await expect(service.enqueue(userId, item)).resolves.toBe("queued")
     expect(RECALCULATE_USER_TASTE_PROFILE_JOB).toMatchObject({
       name: "userTasteProfile.recalculate",
-      version: 1,
+      version: 2,
       retryDelays: [5000, 30000, 120000],
     })
     expect(add).toHaveBeenCalledWith(
       RECALCULATE_USER_TASTE_PROFILE_JOB,
-      String(userId),
+      { userId: String(userId), itemId: String(item) },
       {
         deduplication: {
-          id: `userTasteProfile.recalculate:${userId}`,
+          id: `userTasteProfile.recalculate:${userId}:${item}`,
           keepLastIfActive: true,
         },
       },

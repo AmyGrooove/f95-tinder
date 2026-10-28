@@ -12,6 +12,7 @@ import { mongo, Types } from "mongoose"
 import type { HydratedDocument } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/auth.service"
+import { ItemRatingsRecalculationService } from "@endpoints/itemRatings/services/itemRatingsRecalculation.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { UserRepository } from "@entities/user/services/user.repository"
@@ -50,6 +51,7 @@ class UserItemService {
     private readonly transactionService: MongoTransactionService,
     private readonly itemTagRepository: ItemTagRepository,
     private readonly tasteProfileRecalculationService: UserTasteProfileRecalculationService,
+    private readonly itemRatingsRecalculationService: ItemRatingsRecalculationService,
   ) {}
 
   async query(
@@ -148,7 +150,7 @@ class UserItemService {
           : [],
       })
 
-      await this.tasteProfileRecalculationService.enqueue(userId)
+      await this.tasteProfileRecalculationService.enqueue(userId, itemId)
 
       return this.mapResponse(userItem)
     } catch (error) {
@@ -211,7 +213,12 @@ class UserItemService {
       throw new NotFoundException(DICTIONARY.userItem.notFound)
     }
 
-    await this.tasteProfileRecalculationService.enqueue(userId)
+    await Promise.all([
+      this.tasteProfileRecalculationService.enqueue(userId, userItem.item),
+      !isNil(userItem.rating)
+        ? this.itemRatingsRecalculationService.enqueue(userItem.item)
+        : undefined,
+    ])
   }
 
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
@@ -316,7 +323,7 @@ class UserItemService {
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
     const userId = await this.authenticate(accessToken)
 
-    const response = await this.transactionService.run(async (session) => {
+    const result = await this.transactionService.run(async (session) => {
       const filter = {
         _id: props.id,
         user: userId,
@@ -334,6 +341,14 @@ class UserItemService {
       if (isNil(userItem)) {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
+
+      const previousRating = userItem.rating
+      const isPreviouslyFavorite = userItem.isFavorite
+      const isPreviouslySkipped = userItem.status === EUserItemStatus.SKIPPED
+      const previousCompletedAttempts = Math.min(
+        3,
+        userItem.attempts.filter((attempt) => attempt.isCompleted).length,
+      )
 
       await props.mutate(userItem, session)
       this.validateUserItem(userItem)
@@ -377,12 +392,33 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      return this.mapResponse(updated)
+      return {
+        response: this.mapResponse(updated),
+        itemId: updated.item,
+        isRatingChanged: previousRating !== updated.rating,
+        isTasteChanged:
+          previousRating !== updated.rating ||
+          isPreviouslyFavorite !== updated.isFavorite ||
+          isPreviouslySkipped !==
+            (updated.status === EUserItemStatus.SKIPPED) ||
+          previousCompletedAttempts !==
+            Math.min(
+              3,
+              updated.attempts.filter((attempt) => attempt.isCompleted).length,
+            ),
+      }
     })
 
-    await this.tasteProfileRecalculationService.enqueue(userId)
+    await Promise.all([
+      result.isTasteChanged
+        ? this.tasteProfileRecalculationService.enqueue(userId, result.itemId)
+        : undefined,
+      result.isRatingChanged
+        ? this.itemRatingsRecalculationService.enqueue(result.itemId)
+        : undefined,
+    ])
 
-    return response
+    return result.response
   }
 
   private async validateCompletion(props: IValidateCompletionProps) {

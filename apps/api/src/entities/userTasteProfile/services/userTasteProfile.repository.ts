@@ -13,7 +13,7 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 import { UserTasteProfile } from "../schemas/userTasteProfile.schema"
 import type { TCreateUserTasteProfile } from "../schemas/userTasteProfile.schema"
 import type { TasteTagPreference } from "../schemas/tasteTagPreference.schema"
-import type { TCalculatedTasteTagPreference } from "../types/TCalculatedTasteTagPreference"
+import type { IReplaceCalculatedPreferencesProps } from "../types/IReplaceCalculatedPreferencesProps"
 
 @Injectable()
 class UserTasteProfileRepository {
@@ -66,14 +66,20 @@ class UserTasteProfileRepository {
     >(model)
   }
 
-  async tryReplaceCalculatedPreferences(
-    userId: Types.ObjectId,
-    preferences: readonly TCalculatedTasteTagPreference[],
-  ) {
-    const currentProfile = await this.model
-      .findOne({ user: userId })
+  async readTagPreferences(userId: Types.ObjectId) {
+    const profile = await this.model
+      .findOne({ user: userId }, { tagPreferences: 1 })
       .lean()
       .exec()
+
+    return profile?.tagPreferences ?? null
+  }
+
+  async tryReplaceCalculatedPreferences(
+    props: IReplaceCalculatedPreferencesProps,
+  ) {
+    const { userId, tagIds, preferences, previousPreferences } = props
+    const affectedTagIds = new Set(tagIds.map(String))
     const preferencesByTag = new Map<string, TasteTagPreference>(
       preferences.map((preference) => [
         String(preference.tag),
@@ -81,8 +87,10 @@ class UserTasteProfileRepository {
       ]),
     )
 
-    for (const preference of currentProfile?.tagPreferences ?? []) {
-      if (preference.explicitWeight !== 0) {
+    for (const preference of previousPreferences ?? []) {
+      if (!affectedTagIds.has(String(preference.tag))) {
+        preferencesByTag.set(String(preference.tag), preference)
+      } else if (preference.explicitWeight !== 0) {
         const calculatedPreference = preferencesByTag.get(
           String(preference.tag),
         )
@@ -98,7 +106,7 @@ class UserTasteProfileRepository {
 
     const tagPreferences = [...preferencesByTag.values()]
 
-    if (currentProfile === null) {
+    if (previousPreferences === null) {
       if (tagPreferences.length === 0) {
         return true
       }
@@ -122,9 +130,9 @@ class UserTasteProfileRepository {
 
     const updatedProfile = await this.write.updateByFilter(
       {
-        _id: currentProfile._id,
+        user: userId,
         $expr: {
-          $eq: [{ $literal: currentProfile.tagPreferences }, "$tagPreferences"],
+          $eq: [{ $literal: previousPreferences }, "$tagPreferences"],
         },
       },
       { $set: { tagPreferences } },

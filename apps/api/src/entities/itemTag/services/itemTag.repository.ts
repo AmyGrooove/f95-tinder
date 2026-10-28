@@ -6,7 +6,7 @@ import { Item } from "@entities/item/schemas/item.schema"
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { ICheckItemTagKeysProps } from "../types/ICheckItemTagKeysProps"
 import type { ITasteItemTag } from "../types/ITasteItemTag"
-import type { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import type { IGetTasteTagsProps } from "../types/IGetTasteTagsProps"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
@@ -132,14 +132,12 @@ class ItemTagRepository {
     }
   }
 
-  async getTasteTags(
-    itemIds: readonly Types.ObjectId[],
-    groups: readonly ETagGroup[],
-  ) {
+  async getTasteTags(props: IGetTasteTagsProps) {
     return await this.aggregation.aggregate<ITasteItemTag>([
       {
         $match: {
-          item: { $in: itemIds },
+          item: { $in: props.itemIds },
+          tag: { $in: props.tagIds },
           relevanceScore: { $gt: 0 },
         },
       },
@@ -162,7 +160,7 @@ class ItemTagRepository {
           localField: "tag",
           foreignField: "_id",
           pipeline: [
-            { $match: { group: { $in: groups } } },
+            { $match: { group: { $in: props.groups } } },
             { $project: { group: 1 } },
           ],
           as: "matchedTag",

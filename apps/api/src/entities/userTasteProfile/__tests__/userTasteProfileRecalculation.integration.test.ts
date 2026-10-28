@@ -34,6 +34,7 @@ import { UserTasteProfileRepository } from "../services/userTasteProfile.reposit
 import { UserTasteProfileRecalculationService } from "../services/userTasteProfileRecalculation.service"
 import { RECALCULATE_USER_TASTE_PROFILE_JOB } from "../static/RECALCULATE_USER_TASTE_PROFILE_JOB"
 import { UserTasteProfileModule } from "../userTasteProfile.module"
+import type { TCalculatedTasteTagPreference } from "../types/TCalculatedTasteTagPreference"
 
 describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
   let database: Awaited<ReturnType<typeof createTestDatabase>> | undefined
@@ -46,6 +47,8 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
   let profiles: Model<HydratedDocument<UserTasteProfile>>
   let queue: Queue
   let user: Types.ObjectId
+  let queuedItemId: Types.ObjectId
+  let seededItemIds: Types.ObjectId[]
   const context = {
     id: "direct-test",
     attempt: 1,
@@ -54,6 +57,8 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
   } satisfies IJobContext
 
   beforeEach(async () => {
+    queuedItemId = new Types.ObjectId()
+    seededItemIds = []
     database = await createTestDatabase()
     redis = await createTestRedis()
     module = await Test.createTestingModule({
@@ -117,6 +122,8 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
     deletedAt?: Date | null
   }) => {
     const item = new Types.ObjectId()
+    queuedItemId = item
+    seededItemIds.push(item)
     await database?.connection.collection("Item").insertOne({
       _id: item,
       type: props.type ?? EItemType.MOVIE,
@@ -135,6 +142,25 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       isFavorite: props.isFavorite ?? false,
     })
     return record
+  }
+
+  const recalculateSeededItems = async () => {
+    for (const itemId of seededItemIds.length > 0
+      ? seededItemIds
+      : [queuedItemId]) {
+      await service.recalculate({ userId: user, itemId }, context)
+    }
+  }
+
+  const replacePreferences = async (
+    preferences: readonly TCalculatedTasteTagPreference[],
+  ) => {
+    return await repository.tryReplaceCalculatedPreferences({
+      userId: user,
+      tagIds: preferences.map((preference) => preference.tag),
+      preferences,
+      previousPreferences: await repository.readTagPreferences(user),
+    })
   }
 
   const readPreferences = async () => {
@@ -169,7 +195,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
     await database?.connection
       .collection("UserItem")
       .updateOne({ _id: foreign._id }, { $set: { user: new Types.ObjectId() } })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 0.5, count: 2, explicitWeight: 0 },
     ])
@@ -182,7 +208,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       const tag = await seedTag()
       await seedReaction({ tag, status, isFavorite: true })
     }
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     const preferences = await readPreferences()
     expect(preferences).toHaveLength(Object.values(EUserItemStatus).length - 1)
     expect(
@@ -205,7 +231,11 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
     await seedReaction({ tag: await seedTag(null), rating: 1 })
     await seedReaction({ tag: await seedTag(ETagGroup.COUNTRY), rating: 1 })
     expect(
-      await itemTags.getTasteTags([live.item, missing.item], [ETagGroup.GENRE]),
+      await itemTags.getTasteTags({
+        itemIds: [live.item, missing.item],
+        groups: [ETagGroup.GENRE],
+        tagIds: [tag],
+      }),
     ).toEqual([
       {
         item: live.item,
@@ -215,7 +245,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         relevanceScore: 0.2,
       },
     ])
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 0.2, count: 1, explicitWeight: 0 },
     ])
@@ -234,7 +264,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       relevanceScore: 0.2,
     })
     await seedReaction({ tag, rating: 1, type: EItemType.GAME })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 0.2, count: 1, explicitWeight: 0 },
     ])
@@ -243,26 +273,189 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
   it("заменяет прежнюю оценку и удаляет последний неявный вклад", async () => {
     const tag = await seedTag()
     const record = await seedReaction({ tag, rating: 10 })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     await userItems.write.updateById(String(record._id), {
       $set: { rating: 1 },
     })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: -1, count: 1, explicitWeight: 0 },
     ])
     await userItems.write.deleteById(String(record._id))
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([])
   })
 
+  it("пересчитывает только теги изменённого Item с учётом остальных произведений", async () => {
+    const firstTag = await seedTag()
+    const secondTag = await seedTag()
+    const unrelatedTag = await seedTag()
+    const changed = await seedReaction({ tag: firstTag, rating: 10 })
+    await itemTags.write.create({
+      item: changed.item,
+      tag: secondTag,
+      relevanceScore: 0.5,
+    })
+    await seedReaction({ tag: firstTag, rating: 1 })
+    await seedReaction({ tag: secondTag, rating: 8 })
+    await seedReaction({ tag: unrelatedTag, rating: 1 })
+    await repository.write.create({
+      user,
+      tagPreferences: [
+        { tag: firstTag, weight: -0.5, count: 5, explicitWeight: -0.4 },
+        { tag: unrelatedTag, weight: 0.7, count: 7, explicitWeight: 0.2 },
+      ],
+    })
+
+    await service.recalculate({ userId: user, itemId: changed.item }, context)
+
+    expect(await readPreferences()).toEqual(
+      expect.arrayContaining([
+        { tag: firstTag, weight: 0, count: 2, explicitWeight: -0.4 },
+        { tag: secondTag, weight: 0.5, count: 2, explicitWeight: 0 },
+        { tag: unrelatedTag, weight: 0.7, count: 7, explicitWeight: 0.2 },
+      ]),
+    )
+    expect(await readPreferences()).toHaveLength(3)
+
+    await userItems.write.deleteById(String(changed._id))
+    await service.recalculate({ userId: user, itemId: changed.item }, context)
+
+    expect(await readPreferences()).toEqual(
+      expect.arrayContaining([
+        { tag: firstTag, weight: -1, count: 1, explicitWeight: -0.4 },
+        { tag: secondTag, weight: 0.5, count: 1, explicitWeight: 0 },
+        { tag: unrelatedTag, weight: 0.7, count: 7, explicitWeight: 0.2 },
+      ]),
+    )
+    expect(await readPreferences()).toHaveLength(3)
+  })
+
+  it.each([0, 0.6])(
+    "при удалении последнего вклада сохраняет только явную настройку %s затронутого тега",
+    async (explicitWeight) => {
+      const tag = await seedTag()
+      const record = await seedReaction({ tag, rating: 10 })
+      await repository.write.create({
+        user,
+        tagPreferences: [{ tag, weight: 1, count: 1, explicitWeight }],
+      })
+      await userItems.write.deleteById(String(record._id))
+
+      await service.recalculate({ userId: user, itemId: record.item }, context)
+
+      expect(await readPreferences()).toEqual(
+        explicitWeight === 0
+          ? []
+          : [{ tag, weight: 0, count: 0, explicitWeight }],
+      )
+    },
+  )
+
+  it.each([
+    { rating: null, completed: 1, weight: 0.1 },
+    { rating: null, completed: 4, weight: 0.3 },
+    { rating: 7, completed: 2, weight: 0.45 },
+    { rating: 4, completed: 3, weight: -0.25 },
+  ])(
+    "считает $completed завершённых попыток с оценкой $rating как одно подтверждение веса $weight",
+    async ({ rating, completed, weight }) => {
+      const tag = await seedTag()
+      const record = await seedReaction({ tag, rating })
+      await userItems.write.updateById(String(record._id), {
+        $set: {
+          attempts: Array.from({ length: completed + 1 }, (_, index) => ({
+            id: new Types.ObjectId(),
+            isCompleted: index < completed,
+            progress: 100,
+            unit: EUnit.PERCENT,
+            startedAt: null,
+            completedAt: new Date("2026-10-01T00:00:00Z"),
+          })),
+        },
+      })
+
+      await service.recalculate({ userId: user, itemId: record.item }, context)
+
+      const preferences = await readPreferences()
+      expect(preferences).toHaveLength(1)
+      expect(preferences?.[0]).toMatchObject({
+        tag,
+        count: 1,
+        explicitWeight: 0,
+      })
+      expect(preferences?.[0].weight).toBeCloseTo(weight)
+    },
+  )
+
+  it.each([false, true])(
+    "сохраняет оба конкурентных расчёта разных Item при общих тегах=%s",
+    async (isSharedTag) => {
+      const firstTag = await seedTag()
+      const secondTag = isSharedTag ? firstTag : await seedTag()
+      const first = await seedReaction({ tag: firstTag, rating: 10 })
+      const second = await seedReaction({ tag: secondTag, rating: 10 })
+      await repository.write.create({
+        user,
+        tagPreferences: [{ tag: firstTag, weight: -0.5, count: 2 }],
+      })
+      let releaseRead = () => {}
+      let reportRead = () => {}
+      const canContinue = new Promise<void>((resolve) => {
+        releaseRead = resolve
+      })
+      const readStarted = new Promise<void>((resolve) => {
+        reportRead = resolve
+      })
+      const getTags = itemTags.getTasteTags.bind(itemTags)
+      jest
+        .spyOn(itemTags, "getTasteTags")
+        .mockImplementationOnce(async (props) => {
+          reportRead()
+          await canContinue
+
+          return await getTags(props)
+        })
+      const publish = jest.spyOn(repository, "tryReplaceCalculatedPreferences")
+      const firstRun = service.recalculate(
+        { userId: user, itemId: first.item },
+        context,
+      )
+
+      try {
+        await readStarted
+        await userItems.write.updateById(String(second._id), {
+          $set: { rating: 1 },
+        })
+        await service.recalculate(
+          { userId: user, itemId: second.item },
+          context,
+        )
+      } finally {
+        releaseRead()
+        await firstRun
+      }
+
+      expect(publish).toHaveBeenCalledTimes(3)
+      expect(await readPreferences()).toEqual(
+        isSharedTag
+          ? [{ tag: firstTag, weight: 0, count: 2, explicitWeight: 0 }]
+          : expect.arrayContaining([
+              { tag: firstTag, weight: 1, count: 1, explicitWeight: 0 },
+              { tag: secondTag, weight: -1, count: 1, explicitWeight: 0 },
+            ]),
+      )
+      expect(await readPreferences()).toHaveLength(isSharedTag ? 1 : 2)
+    },
+  )
+
   it("не создаёт пустой профиль и пропускает отсутствующего пользователя", async () => {
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await profiles.countDocuments()).toBe(0)
     const tag = await seedTag()
     await seedReaction({ tag, rating: 10 })
     await database?.connection.collection("User").deleteOne({ _id: user })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await profiles.countDocuments()).toBe(0)
   })
 
@@ -281,7 +474,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         })),
       },
     })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 1, count: 1, explicitWeight: 0 },
     ])
@@ -297,7 +490,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
     ).rejects.toMatchObject({ code: 11000 })
   })
 
-  it("сохраняет explicitWeight и сбрасывает неподдержанные расчёты без добавления count", async () => {
+  it("обновляет затронутый тег и сохраняет явные настройки и расчёты остальных тегов", async () => {
     const tag = await seedTag()
     const explicit = await seedTag()
     const stale = await seedTag()
@@ -310,10 +503,11 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       ],
     })
     await seedReaction({ tag, rating: 10 })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 1, count: 1, explicitWeight: -0.7 },
-      { tag: explicit, weight: 0, count: 0, explicitWeight: 0.6 },
+      { tag: explicit, weight: 1, count: 4, explicitWeight: 0.6 },
+      { tag: stale, weight: 1, count: 3, explicitWeight: 0 },
     ])
   })
 
@@ -334,16 +528,14 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         return await update(...args)
       })
     await expect(
-      repository.tryReplaceCalculatedPreferences(user, [
-        { tag, weight: 1, count: 1 },
-      ]),
+      replacePreferences([{ tag, weight: 1, count: 1 }]),
     ).resolves.toBe(false)
     expect(await readPreferences()).toEqual([
       { tag, weight: 0, count: 1, explicitWeight: -0.8 },
     ])
     spy.mockRestore()
     await seedReaction({ tag, rating: 10 })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 1, count: 1, explicitWeight: -0.8 },
     ])
@@ -368,7 +560,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
           )
           return await update(...args)
         })
-      await service.recalculate(user, context)
+      await recalculateSeededItems()
       expect(spy).toHaveBeenCalledTimes(2)
       expect(await readPreferences()).toEqual([
         { tag, weight: 1, count: 1, explicitWeight },
@@ -386,14 +578,10 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         return await create(...args)
       })
     await expect(
-      repository.tryReplaceCalculatedPreferences(user, [
-        { tag, weight: 1, count: 1 },
-      ]),
+      replacePreferences([{ tag, weight: 1, count: 1 }]),
     ).resolves.toBe(false)
     await expect(
-      repository.tryReplaceCalculatedPreferences(user, [
-        { tag, weight: 1, count: 1 },
-      ]),
+      replacePreferences([{ tag, weight: 1, count: 1 }]),
     ).resolves.toBe(true)
     expect(await profiles.countDocuments({ user })).toBe(1)
     expect(await readPreferences()).toEqual([
@@ -408,9 +596,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       tagPreferences: [{ tag, count: 1, explicitWeight: 0.5 }],
     })
     await expect(
-      repository.tryReplaceCalculatedPreferences(user, [
-        { tag, weight: 0.25, count: 1 },
-      ]),
+      replacePreferences([{ tag, weight: 0.25, count: 1 }]),
     ).resolves.toBe(true)
     expect(await readPreferences()).toEqual([
       { tag, weight: 0.25, count: 1, explicitWeight: 0.5 },
@@ -434,9 +620,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         tagPreferences: [{ tag, weight: 0.7, count: 2 }],
       })
       await expect(
-        repository.tryReplaceCalculatedPreferences(user, [
-          { tag, ...calculated },
-        ]),
+        replacePreferences([{ tag, ...calculated }]),
       ).rejects.toMatchObject({
         name: Number.isNaN(calculated.weight) ? "CastError" : "ValidationError",
       })
@@ -472,9 +656,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       weight: 0.5,
       count: 1,
     }))
-    await expect(
-      repository.tryReplaceCalculatedPreferences(user, preferences),
-    ).resolves.toBe(true)
+    await expect(replacePreferences(preferences)).resolves.toBe(true)
     expect(await readPreferences()).toHaveLength(4096)
     await profiles.collection.updateOne(
       { user },
@@ -484,9 +666,9 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       ...preferences.slice(1),
       { tag: new Types.ObjectId(), weight: 0.5, count: 1 },
     ]
-    await expect(
-      repository.tryReplaceCalculatedPreferences(user, replacement),
-    ).rejects.toMatchObject({ name: "ValidationError" })
+    await expect(replacePreferences(replacement)).rejects.toMatchObject({
+      name: "ValidationError",
+    })
     expect(await readPreferences()).toHaveLength(4096)
   })
 
@@ -506,36 +688,39 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
         ])
         return await getTags(...args)
       })
-    await service.recalculate(user, context)
+    await recalculateSeededItems()
     expect(await readPreferences()).toEqual([
       { tag, weight: 1, count: 1, explicitWeight: 0 },
     ])
   })
 
-  it("объединяет ожидающие задачи отдельно для каждого пользователя и сохраняет конверт повторов", async () => {
-    const first = await service.enqueue(user)
-    expect(await service.enqueue(user)).toBe(first)
-    const other = await service.enqueue(new Types.ObjectId())
+  it("объединяет ожидающие задачи по пользователю и Item, сохраняя разные Item отдельно", async () => {
+    const first = await service.enqueue(user, queuedItemId)
+    expect(await service.enqueue(user, queuedItemId)).toBe(first)
+    const other = await service.enqueue(new Types.ObjectId(), queuedItemId)
     expect(other).not.toBe(first)
-    expect(await queue.getWaitingCount()).toBe(2)
+    const otherItem = await service.enqueue(user, new Types.ObjectId())
+    expect(otherItem).not.toBe(first)
+    expect(otherItem).not.toBe(other)
+    expect(await queue.getWaitingCount()).toBe(3)
     const queued = await queue.getJob(first)
     expect(queued?.data).toEqual({
       name: "userTasteProfile.recalculate",
-      version: 1,
-      payload: String(user),
+      version: 2,
+      payload: { userId: String(user), itemId: String(queuedItemId) },
       retryDelays: [5000, 30000, 120000],
       cancellationState: "none",
     })
     expect(queued?.opts).toMatchObject({
       attempts: 4,
       deduplication: {
-        id: `userTasteProfile.recalculate:${user}`,
+        id: `userTasteProfile.recalculate:${user}:${queuedItemId}`,
         keepLastIfActive: true,
       },
     })
     expect(queued?.opts.deduplication).not.toHaveProperty("ttl")
     await queue.resume()
-    await waitForCompletedCount(2)
+    await waitForCompletedCount(3)
   })
 
   it("повторяет неуспешный расчёт через очередь и объединяет изменения во время задержки", async () => {
@@ -544,14 +729,14 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
     const publish = jest
       .spyOn(repository, "tryReplaceCalculatedPreferences")
       .mockRejectedValueOnce(new Error("temporary publication failure"))
-    const id = await service.enqueue(user)
+    const id = await service.enqueue(user, queuedItemId)
     await queue.resume()
     const deadline = Date.now() + 4000
     while (Date.now() < deadline && (await queue.getDelayedCount()) === 0) {
       await setTimeout(20)
     }
     expect(await queue.getDelayedCount()).toBe(1)
-    expect(await service.enqueue(user)).toBe(id)
+    expect(await service.enqueue(user, queuedItemId)).toBe(id)
     const queued = await queue.getJob(id)
     expect(queued?.attemptsMade).toBe(1)
     await queued?.promote()
@@ -576,18 +761,18 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
           await userItems.write.updateById(String(record._id), {
             $set: { rating: 1 },
           })
-          await service.enqueue(user)
-          await service.enqueue(user)
+          await service.enqueue(user, queuedItemId)
+          await service.enqueue(user, queuedItemId)
         }
         if (runs === 2) {
           await userItems.write.updateById(String(record._id), {
             $set: { rating: 8 },
           })
-          await service.enqueue(user)
+          await service.enqueue(user, queuedItemId)
         }
         return isPublished
       })
-    const first = await service.enqueue(user)
+    const first = await service.enqueue(user, queuedItemId)
     await queue.resume()
     await waitForCompletedCount(3)
     expect(runs).toBe(3)
@@ -598,7 +783,7 @@ describe("UserTasteProfileRecalculation MongoDB и Redis", () => {
       { tag, weight: 0.5, count: 1, explicitWeight: 0 },
     ])
     expect(await queue.getWaitingCount()).toBe(0)
-    await service.enqueue(user)
+    await service.enqueue(user, queuedItemId)
     await waitForCompletedCount(4)
     expect(runs).toBe(4)
     expect(RECALCULATE_USER_TASTE_PROFILE_JOB.name).toBe(

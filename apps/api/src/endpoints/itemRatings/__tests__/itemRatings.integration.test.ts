@@ -1,4 +1,5 @@
 import { setTimeout } from "node:timers/promises"
+import { EventEmitter, once } from "node:events"
 import {
   afterEach,
   beforeEach,
@@ -8,7 +9,6 @@ import {
   jest,
 } from "@jest/globals"
 import { getQueueToken } from "@nestjs/bullmq"
-import { SchedulerRegistry } from "@nestjs/schedule"
 import { Test, type TestingModule } from "@nestjs/testing"
 import type { Queue } from "bullmq"
 import { Types } from "mongoose"
@@ -31,7 +31,7 @@ import { getTestRedis } from "@test/setup/setupRedis"
 
 import { RecalculateItemRatingsJobHandler } from "../handlers/recalculateItemRatingsJob.handler"
 import { ItemRatingsModule } from "../itemRatings.module"
-import { ItemRatingsSchedulerService } from "../services/itemRatingsScheduler.service"
+import { ItemRatingsRecalculationService } from "../services/itemRatingsRecalculation.service"
 import { RECALCULATE_ITEM_RATINGS_JOB } from "../static/RECALCULATE_ITEM_RATINGS_JOB"
 
 describe("ItemRatingsModule", () => {
@@ -39,7 +39,7 @@ describe("ItemRatingsModule", () => {
   let queue: Queue
   let jobs: JobService
   let handler: RecalculateItemRatingsJobHandler
-  let scheduler: ItemRatingsSchedulerService
+  let recalculation: ItemRatingsRecalculationService
   let items: ItemRepository
   let userItems: UserItemRepository
   let metrics: ItemMetricRepository
@@ -106,19 +106,12 @@ describe("ItemRatingsModule", () => {
     queue = moduleRef.get<Queue>(getQueueToken(JOBS_QUEUE_NAME))
     jobs = moduleRef.get(JobService)
     handler = moduleRef.get(RecalculateItemRatingsJobHandler)
-    scheduler = moduleRef.get(ItemRatingsSchedulerService)
+    recalculation = moduleRef.get(ItemRatingsRecalculationService)
     items = moduleRef.get(ItemRepository)
     userItems = moduleRef.get(UserItemRepository)
     metrics = moduleRef.get(ItemMetricRepository)
     await queue.pause()
     await moduleRef.init()
-
-    for (const cron of moduleRef
-      .get(SchedulerRegistry)
-      .getCronJobs()
-      .values()) {
-      await cron.stop()
-    }
   })
 
   afterEach(async () => {
@@ -141,11 +134,13 @@ describe("ItemRatingsModule", () => {
       status: EUserItemStatus.PLANNED,
     })
     await createRating(second._id, 1)
-    await handler.handle(null, context)
+    await handler.handle(String(first._id), context)
 
     const firstMetric = await metrics.read.findOne({ item: first._id })
     expect(firstMetric?.ratingAverage).toBeCloseTo(19 / 3, 12)
     expect(firstMetric?.ratingsCount).toBe(3)
+    await expect(metrics.read.findOne({ item: second._id })).resolves.toBeNull()
+    await handler.handle(String(second._id), context)
     expect(await metrics.read.findOne({ item: second._id })).toMatchObject({
       ratingAverage: 1,
       ratingsCount: 1,
@@ -179,9 +174,12 @@ describe("ItemRatingsModule", () => {
       .toArray()
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      await expect(handler.handle(null, context)).resolves.toEqual({
-        processedItems: 2,
-      })
+      await expect(handler.handle(String(rated._id), context)).resolves.toEqual(
+        {
+          processedItems: 1,
+        },
+      )
+      await handler.handle(String(unrated._id), context)
       const stored = await metrics.read.findOne({ item: rated._id })
       expect(stored?.toObject()).toEqual({
         ...before,
@@ -234,13 +232,13 @@ describe("ItemRatingsModule", () => {
     const item = await createItem()
     const first = await createRating(item._id, 8)
     const second = await createRating(item._id, 10)
-    await handler.handle(null, context)
+    await handler.handle(String(item._id), context)
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: 9,
       ratingsCount: 2,
     })
     await userItems.write.updateById(String(first._id), { $set: { rating: 1 } })
-    await handler.handle(null, context)
+    await handler.handle(String(item._id), context)
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: 5.5,
       ratingsCount: 2,
@@ -248,13 +246,13 @@ describe("ItemRatingsModule", () => {
     await userItems.write.updateById(String(first._id), {
       $set: { rating: null },
     })
-    await handler.handle(null, context)
+    await handler.handle(String(item._id), context)
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: 10,
       ratingsCount: 1,
     })
     await userItems.write.deleteById(String(second._id))
-    await handler.handle(null, context)
+    await handler.handle(String(item._id), context)
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: null,
       ratingsCount: 0,
@@ -270,53 +268,23 @@ describe("ItemRatingsModule", () => {
     const missingId = new Types.ObjectId()
     await createRating(missingId, 10)
 
-    await expect(handler.handle(null, context)).resolves.toEqual({
+    await expect(handler.handle(String(item._id), context)).resolves.toEqual({
       processedItems: 1,
     })
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: 7,
       ratingsCount: 1,
     })
+    await expect(handler.handle(String(missingId), context)).resolves.toEqual({
+      processedItems: 0,
+    })
     await expect(metrics.read.findOne({ item: missingId })).resolves.toBeNull()
   })
 
-  it("обрабатывает 501 Item без пропусков и сохраняет оценки по обе стороны границы порций", async () => {
-    const catalogue = await items.bulk.createMany(
-      Array.from({ length: 501 }, (_, index) => ({
-        type: EItemType.MOVIE,
-        title: { ru: null, en: `Movie ${index}` },
-      })),
-    )
-    const sorted = [...catalogue].sort((first, second) => {
-      return String(first._id).localeCompare(String(second._id))
-    })
-    await createRating(sorted[499]._id, 1)
-    await createRating(sorted[500]._id, 10)
-
-    await expect(handler.handle(null, context)).resolves.toEqual({
-      processedItems: 501,
-    })
-    expect(
-      await getTestDatabase()
-        .connection.collection("ItemMetric")
-        .countDocuments(),
-    ).toBe(501)
-    expect(await metrics.read.findOne({ item: sorted[499]._id })).toMatchObject(
-      {
-        ratingAverage: 1,
-        ratingsCount: 1,
-      },
-    )
-    expect(await metrics.read.findOne({ item: sorted[500]._id })).toMatchObject(
-      {
-        ratingAverage: 10,
-        ratingsCount: 1,
-      },
-    )
-  })
-
-  it("завершает пустой каталог без создания метрик", async () => {
-    await expect(handler.handle(null, context)).resolves.toEqual({
+  it("не создаёт метрику отсутствующего Item в пустом каталоге", async () => {
+    await expect(
+      handler.handle(String(new Types.ObjectId()), context),
+    ).resolves.toEqual({
       processedItems: 0,
     })
     expect(
@@ -335,17 +303,12 @@ describe("ItemRatingsModule", () => {
       definition: RECALCULATE_ITEM_RATINGS_JOB,
       handler,
     })
-    const ratingCrons = [
-      ...moduleRef.get(SchedulerRegistry).getCronJobs().values(),
-    ].filter((cron) => cron.cronTime.source === "0 0 */5 * * *")
-    expect(ratingCrons).toHaveLength(1)
-    expect(ratingCrons[0].cronTime.timeZone).toBe("Europe/Moscow")
-    const id = await scheduler.enqueueRecalculation()
-    await expect(scheduler.enqueueRecalculation()).resolves.toBe(id)
+    const id = await recalculation.enqueue(item._id)
+    await expect(recalculation.enqueue(item._id)).resolves.toBe(id)
     expect((await queue.getJob(id))?.data).toEqual({
       name: "item.recalculateRatings",
-      version: 1,
-      payload: null,
+      version: 2,
+      payload: String(item._id),
       retryDelays: [5000, 30000, 120000],
       cancellationState: "none",
     })
@@ -356,7 +319,7 @@ describe("ItemRatingsModule", () => {
       ratingAverage: 8,
       ratingsCount: 1,
     })
-    const nextId = await scheduler.enqueueRecalculation()
+    const nextId = await recalculation.enqueue(item._id)
     expect(nextId).not.toBe(id)
     await waitForCompletion(nextId)
     expect(
@@ -370,9 +333,9 @@ describe("ItemRatingsModule", () => {
     const item = await createItem()
     await createRating(item._id, 9)
     jest
-      .spyOn(metrics.bulk, "bulkWrite")
+      .spyOn(metrics.write, "updateByFilter")
       .mockRejectedValueOnce(new Error("Temporary write failure"))
-    const id = await scheduler.enqueueRecalculation()
+    const id = await recalculation.enqueue(item._id)
     await queue.resume()
     await waitForCompletion(id)
 
@@ -386,5 +349,82 @@ describe("ItemRatingsModule", () => {
         .connection.collection("ItemMetric")
         .countDocuments(),
     ).toBe(1)
+  })
+
+  it("ставит задачи разных Item независимо друг от друга", async () => {
+    const first = await createItem()
+    const second = await createItem()
+    await createRating(first._id, 2)
+    await createRating(second._id, 10)
+
+    const firstId = await recalculation.enqueue(first._id)
+    const secondId = await recalculation.enqueue(second._id)
+    expect(secondId).not.toBe(firstId)
+    await queue.resume()
+    await Promise.all([waitForCompletion(firstId), waitForCompletion(secondId)])
+
+    expect(await metrics.read.findOne({ item: first._id })).toMatchObject({
+      ratingAverage: 2,
+      ratingsCount: 1,
+    })
+    expect(await metrics.read.findOne({ item: second._id })).toMatchObject({
+      ratingAverage: 10,
+      ratingsCount: 1,
+    })
+  })
+
+  it("объединяет события во время расчёта в один повторный запуск с актуальной оценкой", async () => {
+    const item = await createItem()
+    const rating = await createRating(item._id, 8)
+    const gate = new EventEmitter()
+    const started = once(gate, "started", { signal: AbortSignal.timeout(5000) })
+    const resume = once(gate, "resume")
+    const getRatingSummaries = userItems.getRatingSummaries.bind(userItems)
+    const aggregate = jest
+      .spyOn(userItems, "getRatingSummaries")
+      .mockImplementationOnce(async (ids) => {
+        const summaries = await getRatingSummaries(ids)
+        gate.emit("started")
+        await resume
+
+        return summaries
+      })
+
+    try {
+      const id = await recalculation.enqueue(item._id)
+      await queue.resume()
+      await started
+      await userItems.write.updateById(String(rating._id), {
+        $set: { rating: 10 },
+      })
+      await recalculation.enqueue(item._id)
+      await userItems.write.updateById(String(rating._id), {
+        $set: { rating: 1 },
+      })
+      await recalculation.enqueue(item._id)
+      gate.emit("resume")
+      await waitForCompletion(id)
+
+      const deadline = Date.now() + 5000
+
+      while (Date.now() < deadline) {
+        const completed = await queue.getJobs(["completed"])
+
+        if (completed.length === 2) {
+          break
+        }
+
+        await setTimeout(20)
+      }
+
+      expect(await queue.getJobs(["completed"])).toHaveLength(2)
+      expect(aggregate).toHaveBeenCalledTimes(2)
+      expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
+        ratingAverage: 1,
+        ratingsCount: 1,
+      })
+    } finally {
+      gate.emit("resume")
+    }
   })
 })

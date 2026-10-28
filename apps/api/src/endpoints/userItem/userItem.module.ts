@@ -2,6 +2,7 @@ import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 import { Module } from "@nestjs/common"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
+import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserModule } from "@entities/user/user.module"
@@ -14,6 +15,7 @@ import { UserItemService } from "./services/userItem.service"
 @Module({
   imports: [
     AuthModule,
+    ItemRatingsModule,
     ItemModule,
     ItemTagModule,
     UserItemModule,

@@ -10,19 +10,11 @@ import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { RecalculateItemRatingsJobHandler } from "../handlers/recalculateItemRatingsJob.handler"
 
 describe("RecalculateItemRatingsJobHandler", () => {
-  const findMany =
-    jest.fn<
-      (
-        ...args: Parameters<ItemRepository["read"]["findMany"]>
-      ) => Promise<{ _id: Types.ObjectId }[]>
-    >()
+  const itemId = new Types.ObjectId()
+  const checkIsExists = jest.fn<ItemRepository["read"]["checkIsExists"]>()
   const getRatingSummaries = jest.fn<UserItemRepository["getRatingSummaries"]>()
-  const bulkWrite =
-    jest.fn<
-      (
-        ...args: Parameters<ItemMetricRepository["bulk"]["bulkWrite"]>
-      ) => Promise<unknown>
-    >()
+  const updateByFilter =
+    jest.fn<ItemMetricRepository["write"]["updateByFilter"]>()
   const context = {
     id: "item-ratings",
     attempt: 1,
@@ -30,126 +22,83 @@ describe("RecalculateItemRatingsJobHandler", () => {
     updateProgress: jest.fn<IJobContext["updateProgress"]>(),
   } satisfies IJobContext
   const handler = new RecalculateItemRatingsJobHandler(
-    { read: { findMany } } as unknown as ItemRepository,
-    { bulk: { bulkWrite } } as unknown as ItemMetricRepository,
+    { read: { checkIsExists } } as unknown as ItemRepository,
+    { write: { updateByFilter } } as unknown as ItemMetricRepository,
     { getRatingSummaries } as unknown as UserItemRepository,
   )
 
   beforeEach(() => {
     jest.resetAllMocks()
-    findMany.mockResolvedValue([])
+    checkIsExists.mockResolvedValue(true)
     getRatingSummaries.mockResolvedValue([])
-    bulkWrite.mockResolvedValue(undefined)
+    updateByFilter.mockResolvedValue(null)
     context.throwIfCancelled.mockResolvedValue(undefined)
   })
 
-  it("завершает пустой каталог без агрегации и записи метрик", async () => {
-    await expect(handler.handle(null, context)).resolves.toEqual({
+  it("не агрегирует оценки и не создаёт метрику отсутствующего Item", async () => {
+    checkIsExists.mockResolvedValue(false)
+
+    await expect(handler.handle(String(itemId), context)).resolves.toEqual({
       processedItems: 0,
     })
-    expect(findMany).toHaveBeenCalledTimes(1)
+    expect(checkIsExists).toHaveBeenCalledWith({ _id: itemId })
     expect(getRatingSummaries).not.toHaveBeenCalled()
-    expect(bulkWrite).not.toHaveBeenCalled()
+    expect(updateByFilter).not.toHaveBeenCalled()
   })
 
-  it("сопоставляет оценки по значению ObjectId и обновляет только поля рейтинга", async () => {
-    const ratedId = new Types.ObjectId()
-    const unratedId = new Types.ObjectId()
-    findMany.mockResolvedValueOnce([{ _id: ratedId }, { _id: unratedId }])
+  it("пересчитывает только переданный Item и записывает только поля рейтинга", async () => {
     getRatingSummaries.mockResolvedValueOnce([
-      {
-        _id: new Types.ObjectId(String(ratedId)),
-        ratingAverage: 19 / 3,
-        ratingsCount: 3,
-      },
+      { _id: itemId, ratingAverage: 19 / 3, ratingsCount: 3 },
     ])
 
-    await expect(handler.handle(null, context)).resolves.toEqual({
-      processedItems: 2,
+    await expect(handler.handle(String(itemId), context)).resolves.toEqual({
+      processedItems: 1,
     })
-    expect(getRatingSummaries).toHaveBeenCalledWith([ratedId, unratedId])
-    expect(bulkWrite).toHaveBeenCalledTimes(1)
-    expect(bulkWrite).toHaveBeenCalledWith(
-      [
-        {
-          updateOne: {
-            filter: { item: ratedId },
-            update: {
-              $set: { ratingAverage: 19 / 3, ratingsCount: 3 },
-            },
-            upsert: true,
-          },
-        },
-        {
-          updateOne: {
-            filter: { item: unratedId },
-            update: { $set: { ratingAverage: null, ratingsCount: 0 } },
-            upsert: true,
-          },
-        },
-      ],
-      { ordered: false },
+    expect(checkIsExists).toHaveBeenCalledTimes(1)
+    expect(checkIsExists).toHaveBeenCalledWith({ _id: itemId })
+    expect(getRatingSummaries).toHaveBeenCalledTimes(1)
+    expect(getRatingSummaries).toHaveBeenCalledWith([itemId])
+    expect(updateByFilter).toHaveBeenCalledTimes(1)
+    expect(updateByFilter).toHaveBeenCalledWith(
+      { item: itemId },
+      { $set: { ratingAverage: 19 / 3, ratingsCount: 3 } },
+      { upsert: true },
     )
   })
 
-  it("обрабатывает несколько порций по 500 объектов без повторной обработки границы", async () => {
-    const items = Array.from({ length: 501 }, () => ({
-      _id: new Types.ObjectId(),
-    }))
-    findMany
-      .mockResolvedValueOnce(items.slice(0, 500))
-      .mockResolvedValueOnce(items.slice(500))
+  it("сбрасывает метрику в null и 0, если оценок больше нет", async () => {
+    await handler.handle(String(itemId), context)
 
-    await expect(handler.handle(null, context)).resolves.toEqual({
-      processedItems: 501,
-    })
-    expect(findMany.mock.calls).toEqual([
-      [{}, { _id: 1 }, { sort: { _id: 1 }, limit: 500 }],
-      [
-        { _id: { $gt: items[499]._id } },
-        { _id: 1 },
-        { sort: { _id: 1 }, limit: 500 },
-      ],
-      [
-        { _id: { $gt: items[500]._id } },
-        { _id: 1 },
-        { sort: { _id: 1 }, limit: 500 },
-      ],
-    ])
-    expect(getRatingSummaries.mock.calls).toEqual([
-      [items.slice(0, 500).map((item) => item._id)],
-      [[items[500]._id]],
-    ])
-    expect(
-      bulkWrite.mock.calls.map(([operations]) => operations.length),
-    ).toEqual([500, 1])
+    expect(updateByFilter).toHaveBeenCalledWith(
+      { item: itemId },
+      { $set: { ratingAverage: null, ratingsCount: 0 } },
+      { upsert: true },
+    )
   })
 
   it.each(["read", "aggregate", "write"])(
-    "пробрасывает ошибку на этапе %s без перехода к следующей порции",
+    "пробрасывает ошибку на этапе %s и не выполняет последующие операции",
     async (stage) => {
       const error = new Error(stage)
-      findMany.mockResolvedValueOnce([{ _id: new Types.ObjectId() }])
 
       if (stage === "read") {
-        findMany.mockReset().mockRejectedValueOnce(error)
+        checkIsExists.mockRejectedValueOnce(error)
       } else if (stage === "aggregate") {
         getRatingSummaries.mockRejectedValueOnce(error)
       } else {
-        bulkWrite.mockRejectedValueOnce(error)
+        updateByFilter.mockRejectedValueOnce(error)
       }
 
-      await expect(handler.handle(null, context)).rejects.toBe(error)
-      expect(findMany).toHaveBeenCalledTimes(1)
+      await expect(handler.handle(String(itemId), context)).rejects.toBe(error)
+      expect(checkIsExists).toHaveBeenCalledTimes(1)
       expect(getRatingSummaries).toHaveBeenCalledTimes(stage === "read" ? 0 : 1)
-      expect(bulkWrite).toHaveBeenCalledTimes(stage === "write" ? 1 : 0)
+      expect(updateByFilter).toHaveBeenCalledTimes(stage === "write" ? 1 : 0)
     },
   )
 
   it.each([1, 2])(
     "останавливает отменённую задачу на проверке %i до записи",
     async (check) => {
-      findMany.mockResolvedValueOnce([{ _id: new Types.ObjectId() }])
       const error = new JobCancelledError()
 
       if (check === 2) {
@@ -158,23 +107,9 @@ describe("RecalculateItemRatingsJobHandler", () => {
 
       context.throwIfCancelled.mockRejectedValueOnce(error)
 
-      await expect(handler.handle(null, context)).rejects.toBe(error)
-      expect(findMany).toHaveBeenCalledTimes(check === 1 ? 0 : 1)
-      expect(bulkWrite).not.toHaveBeenCalled()
+      await expect(handler.handle(String(itemId), context)).rejects.toBe(error)
+      expect(checkIsExists).toHaveBeenCalledTimes(check === 1 ? 0 : 1)
+      expect(updateByFilter).not.toHaveBeenCalled()
     },
   )
-
-  it("сохраняет записанную порцию при отмене перед следующей", async () => {
-    findMany.mockResolvedValueOnce([{ _id: new Types.ObjectId() }])
-    context.throwIfCancelled
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new JobCancelledError())
-
-    await expect(handler.handle(null, context)).rejects.toBeInstanceOf(
-      JobCancelledError,
-    )
-    expect(findMany).toHaveBeenCalledTimes(1)
-    expect(bulkWrite).toHaveBeenCalledTimes(1)
-  })
 })

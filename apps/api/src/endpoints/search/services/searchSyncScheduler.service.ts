@@ -18,7 +18,7 @@ class SearchSyncSchedulerService implements OnApplicationBootstrap {
     await this.enqueue()
   }
 
-  @Cron("0 * * * * *", { waitForCompletion: true })
+  @Cron("0 */5 * * * *", { waitForCompletion: true })
   async enqueue() {
     try {
       await this.jobService.add(SYNC_SEARCH_JOB, null, {

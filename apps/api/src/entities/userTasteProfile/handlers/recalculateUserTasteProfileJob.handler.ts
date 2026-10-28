@@ -7,17 +7,24 @@ import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 
 import { UserTasteProfileRecalculationService } from "../services/userTasteProfileRecalculation.service"
 import { RECALCULATE_USER_TASTE_PROFILE_JOB } from "../static/RECALCULATE_USER_TASTE_PROFILE_JOB"
+import type { IRecalculateUserTasteProfilePayload } from "../types/IRecalculateUserTasteProfilePayload"
 
 @Injectable()
 @JobHandler(RECALCULATE_USER_TASTE_PROFILE_JOB)
-class RecalculateUserTasteProfileJobHandler implements IJobHandler<string> {
+class RecalculateUserTasteProfileJobHandler implements IJobHandler<IRecalculateUserTasteProfilePayload> {
   constructor(
     private readonly recalculationService: UserTasteProfileRecalculationService,
   ) {}
 
-  async handle(userId: string, context: IJobContext) {
+  async handle(
+    payload: IRecalculateUserTasteProfilePayload,
+    context: IJobContext,
+  ) {
     return await this.recalculationService.recalculate(
-      new Types.ObjectId(userId),
+      {
+        userId: new Types.ObjectId(payload.userId),
+        itemId: new Types.ObjectId(payload.itemId),
+      },
       context,
     )
   }

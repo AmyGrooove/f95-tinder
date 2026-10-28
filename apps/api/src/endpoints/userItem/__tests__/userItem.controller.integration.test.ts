@@ -3,6 +3,7 @@ import { Types } from "mongoose"
 import type { FastifyInstance } from "fastify"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
+import { ItemRatingsRecalculationService } from "@endpoints/itemRatings/services/itemRatingsRecalculation.service"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
@@ -27,9 +28,13 @@ describe("UserItemController HTTP", () => {
       const { app, connection } = getTestApplication()
       const account = await createAccount()
       const item = await createItem()
+      const enqueueRating = jest
+        .spyOn(app.get(ItemRatingsRecalculationService), "enqueue")
+        .mockResolvedValue("rating-job")
       const enqueue = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockImplementation(async (userId) => {
+        .mockImplementation(async (userId, itemId) => {
+          expect(itemId).toEqual(item._id)
           expect(userId).toEqual(account.user._id)
           expect(
             await connection
@@ -56,6 +61,7 @@ describe("UserItemController HTTP", () => {
       })
       expect(response.statusCode).toBe(201)
       expect(enqueue).toHaveBeenCalledTimes(1)
+      expect(enqueueRating).not.toHaveBeenCalled()
     },
   )
 
@@ -64,18 +70,27 @@ describe("UserItemController HTTP", () => {
     async (operation) => {
       const { app } = getTestApplication()
       const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
+      const enqueueRating = jest
+        .spyOn(app.get(ItemRatingsRecalculationService), "enqueue")
+        .mockImplementation(async (itemId) => {
+          expect(itemId).toEqual(owner.item._id)
+          expect((await readEntry(owner.entry.id)).rating).toBe(9)
+
+          return "rating-job"
+        })
       const enqueue = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockImplementation(async (userId) => {
+        .mockImplementation(async (userId, itemId) => {
+          expect(itemId).toEqual(owner.item._id)
           expect(userId).toEqual(owner.user._id)
           const committed = await readEntry(owner.entry.id)
           if (operation === "update") {
             expect(committed.rating).toBe(9)
           } else if (operation === "createAttempt") {
             expect(committed.attempts).toHaveLength(2)
-            expect(committed.attempts.at(-1)?.progress).toBe(42)
+            expect(committed.attempts.at(-1)?.isCompleted).toBe(true)
           } else {
-            expect(committed.attempts[0]?.progress).toBe(42)
+            expect(committed.attempts[0]?.isCompleted).toBe(true)
           }
           return "queued"
         })
@@ -88,41 +103,70 @@ describe("UserItemController HTTP", () => {
               ? `/userItems/${owner.entry.id}/attempts`
               : `/userItems/${owner.entry.id}/attempts/${owner.entry.attempts[0]?.id}`,
         headers: owner.headers,
-        payload: operation === "update" ? { rating: 9 } : { progress: 42 },
+        payload: operation === "update" ? { rating: 9 } : { isCompleted: true },
       })
       expect(response.statusCode).toBe(
         operation === "createAttempt" ? 201 : 200,
       )
       expect(enqueue).toHaveBeenCalledTimes(1)
+      expect(enqueueRating).toHaveBeenCalledTimes(
+        operation === "update" ? 1 : 0,
+      )
     },
   )
 
-  it("ставит пересчёт после удаления записи", async () => {
-    const { app, connection } = getTestApplication()
-    const owner = await createEntry()
-    const enqueue = jest
-      .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-      .mockImplementation(async (userId) => {
-        expect(userId).toEqual(owner.user._id)
-        expect(
-          await connection
-            .collection("UserItem")
-            .countDocuments({ _id: new Types.ObjectId(owner.entry.id) }),
-        ).toBe(0)
-        return "queued"
+  it.each([null, 8])(
+    "ставит пересчёты после удаления записи с оценкой %s",
+    async (rating) => {
+      const { app, connection } = getTestApplication()
+      const owner = await createEntry()
+      await connection
+        .collection("UserItem")
+        .updateOne(
+          { _id: new Types.ObjectId(owner.entry.id) },
+          { $set: { rating } },
+        )
+      const enqueueRating = jest
+        .spyOn(app.get(ItemRatingsRecalculationService), "enqueue")
+        .mockImplementation(async (itemId) => {
+          expect(itemId).toEqual(owner.item._id)
+          expect(
+            await connection.collection("UserItem").countDocuments({
+              _id: new Types.ObjectId(owner.entry.id),
+            }),
+          ).toBe(0)
+
+          return "rating-job"
+        })
+      const enqueue = jest
+        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
+        .mockImplementation(async (userId, itemId) => {
+          expect(itemId).toEqual(owner.item._id)
+          expect(userId).toEqual(owner.user._id)
+          expect(
+            await connection
+              .collection("UserItem")
+              .countDocuments({ _id: new Types.ObjectId(owner.entry.id) }),
+          ).toBe(0)
+          return "queued"
+        })
+      const response = await app.inject({
+        method: "DELETE",
+        url: `/userItems/${owner.entry.id}`,
+        headers: owner.headers,
       })
-    const response = await app.inject({
-      method: "DELETE",
-      url: `/userItems/${owner.entry.id}`,
-      headers: owner.headers,
-    })
-    expect(response.statusCode).toBe(204)
-    expect(enqueue).toHaveBeenCalledTimes(1)
-  })
+      expect(response.statusCode).toBe(204)
+      expect(enqueue).toHaveBeenCalledTimes(1)
+      expect(enqueueRating).toHaveBeenCalledTimes(rating === null ? 0 : 1)
+    },
+  )
 
   it("не ставит пересчёт при отказе создания, удаления и откате изменения", async () => {
     const { app } = getTestApplication()
     const owner = await createEntry(EUserItemStatus.PLANNED)
+    const enqueueRating = jest
+      .spyOn(app.get(ItemRatingsRecalculationService), "enqueue")
+      .mockResolvedValue("rating-job")
     const enqueue = jest
       .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
       .mockResolvedValue("queued")
@@ -157,6 +201,7 @@ describe("UserItemController HTTP", () => {
     })
     expect(attempt.statusCode).toBe(409)
     expect(enqueue).not.toHaveBeenCalled()
+    expect(enqueueRating).not.toHaveBeenCalled()
     expect(await readEntry(owner.entry.id)).toMatchObject({
       status: EUserItemStatus.PLANNED,
       rating: null,

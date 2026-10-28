@@ -11,6 +11,8 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 import { UserItem } from "../schemas/userItem.schema"
 import type { TCreateUserItem } from "../schemas/userItem.schema"
 import type { IItemRatingSummary } from "../types/IItemRatingSummary"
+import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { EUserItemStatus } from "../schemas/EUserItemStatus"
 
 @Injectable()
 class UserItemRepository {
@@ -54,6 +56,42 @@ class UserItemRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<UserItem>
     >(model)
+  }
+
+  async getTasteInputs(
+    userId: Types.ObjectId,
+    tagIds: readonly Types.ObjectId[],
+  ) {
+    return await this.aggregation.aggregate<
+      Pick<UserItem, "item" | "rating" | "isFavorite" | "attempts">
+    >([
+      {
+        $match: {
+          user: userId,
+          status: { $ne: EUserItemStatus.SKIPPED },
+          $or: [
+            { rating: { $ne: null } },
+            { isFavorite: true },
+            { "attempts.isCompleted": true },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: ItemTag.name,
+          localField: "item",
+          foreignField: "item",
+          pipeline: [
+            { $match: { tag: { $in: tagIds }, relevanceScore: { $gt: 0 } } },
+            { $limit: 1 },
+            { $project: { _id: 1 } },
+          ],
+          as: "matchedTag",
+        },
+      },
+      { $match: { "matchedTag.0": { $exists: true } } },
+      { $project: { _id: 0, item: 1, rating: 1, isFavorite: 1, attempts: 1 } },
+    ])
   }
 
   async getRatingAverage() {
