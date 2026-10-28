@@ -96,6 +96,15 @@ const Error: TStory = {
   },
 }
 
+const ErrorWithHint: TStory = {
+  name: 'Ошибка вместо подсказки',
+  args: {
+    errorText: 'Загрузка прервана. Повторите попытку.',
+    hintText: 'Этот текст не должен отображаться при ошибке.',
+    value: 40,
+  },
+}
+
 const WithLabel: TStory = {
   args: {
     label: 'Загрузка файлов',
@@ -108,5 +117,13 @@ const WithHint: TStory = {
   },
 }
 
-export { DocsPreview, Animated, Error, Indeterminate, WithLabel, WithHint }
+export {
+  DocsPreview,
+  Animated,
+  Error,
+  ErrorWithHint,
+  Indeterminate,
+  WithLabel,
+  WithHint,
+}
 export default meta

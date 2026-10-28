@@ -191,6 +191,7 @@ class AccountService {
       },
       session: {
         id: session._id.toHexString(),
+        country: session.country,
         expiresAt: session.expiresAt.toISOString(),
       },
     }

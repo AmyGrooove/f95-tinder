@@ -11,7 +11,8 @@
         "ru": "Произведение явно адресовано взрослой аудитории; не означает автоматически возрастной допуск 18+ или наличие эротики",
         "en": "A work explicitly targets adults without automatically implying an 18+ age rating or erotic content"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "childrenAudience",
@@ -23,7 +24,8 @@
         "ru": "Произведение явно рассчитано на детей как целевую аудиторию независимо от числового возрастного допуска",
         "en": "A work explicitly targets children independently of a numerical age classification"
       },
-      "aliases": ["Kids", "Детское"]
+      "aliases": ["Kids", "Детское"],
+      "parents": []
     },
     {
       "key": "familyAudience",
@@ -35,7 +37,8 @@
         "ru": "Произведение рассчитано на совместную аудиторию детей и взрослых; возрастная шкала устанавливается отдельно",
         "en": "A work is intended for a shared child-and-adult audience; age restrictions remain separate"
       },
-      "aliases": ["Familie", "Family"]
+      "aliases": ["Familie", "Family"],
+      "parents": []
     },
     {
       "key": "joseiAudience",
@@ -47,7 +50,8 @@
         "ru": "Издательская демографическая категория для взрослых женщин, не 18+",
         "en": "A publishing demographic directed at adult women, not an 18+ rating"
       },
-      "aliases": ["Josei"]
+      "aliases": ["Josei"],
+      "parents": []
     },
     {
       "key": "seinenAudience",
@@ -59,7 +63,8 @@
         "ru": "Издательская демографическая категория для взрослых мужчин, не 18+",
         "en": "A publishing demographic directed at adult men, not an 18+ rating"
       },
-      "aliases": ["Seinen"]
+      "aliases": ["Seinen"],
+      "parents": []
     },
     {
       "key": "shoujoAudience",
@@ -71,7 +76,8 @@
         "ru": "Издательская демографическая категория для девушек, не возрастное ограничение",
         "en": "A publishing demographic directed at girls, not a content-age rating"
       },
-      "aliases": ["Shoujo", "Shōjo"]
+      "aliases": ["Shoujo", "Shōjo"],
+      "parents": []
     },
     {
       "key": "shounenAudience",
@@ -83,8 +89,8 @@
         "ru": "Издательская демографическая категория для юношей, не возрастное ограничение",
         "en": "A publishing demographic directed at boys, not a content-age rating"
       },
-      "aliases": ["Shounen", "Shōnen"]
+      "aliases": ["Shounen", "Shōnen"],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

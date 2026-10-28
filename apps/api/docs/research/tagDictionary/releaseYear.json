@@ -11,7 +11,8 @@
         "ru": "Год первого выпуска — с 1 по 1929 включительно",
         "en": "First release year: 1–1929, inclusive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1930To1950",
@@ -23,7 +24,8 @@
         "ru": "Год первого выпуска — с 1930 по 1949 включительно",
         "en": "First release year: 1930–1949, inclusive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1950To1980",
@@ -35,7 +37,8 @@
         "ru": "Год первого выпуска — с 1950 по 1979 включительно",
         "en": "First release year: 1950–1979, inclusive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1980To1990",
@@ -47,7 +50,8 @@
         "ru": "Год первого выпуска — с 1980 по 1989 включительно",
         "en": "First release year: 1980–1989, inclusive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1990",
@@ -59,7 +63,8 @@
         "ru": "Год первого выпуска — 1990",
         "en": "First release year: 1990"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1991",
@@ -71,7 +76,8 @@
         "ru": "Год первого выпуска — 1991",
         "en": "First release year: 1991"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1992",
@@ -83,7 +89,8 @@
         "ru": "Год первого выпуска — 1992",
         "en": "First release year: 1992"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1993",
@@ -95,7 +102,8 @@
         "ru": "Год первого выпуска — 1993",
         "en": "First release year: 1993"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1994",
@@ -107,7 +115,8 @@
         "ru": "Год первого выпуска — 1994",
         "en": "First release year: 1994"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1995",
@@ -119,7 +128,8 @@
         "ru": "Год первого выпуска — 1995",
         "en": "First release year: 1995"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1996",
@@ -131,7 +141,8 @@
         "ru": "Год первого выпуска — 1996",
         "en": "First release year: 1996"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1997",
@@ -143,7 +154,8 @@
         "ru": "Год первого выпуска — 1997",
         "en": "First release year: 1997"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1998",
@@ -155,7 +167,8 @@
         "ru": "Год первого выпуска — 1998",
         "en": "First release year: 1998"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear1999",
@@ -167,7 +180,8 @@
         "ru": "Год первого выпуска — 1999",
         "en": "First release year: 1999"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2000",
@@ -179,7 +193,8 @@
         "ru": "Год первого выпуска — 2000",
         "en": "First release year: 2000"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2001",
@@ -191,7 +206,8 @@
         "ru": "Год первого выпуска — 2001",
         "en": "First release year: 2001"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2002",
@@ -203,7 +219,8 @@
         "ru": "Год первого выпуска — 2002",
         "en": "First release year: 2002"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2003",
@@ -215,7 +232,8 @@
         "ru": "Год первого выпуска — 2003",
         "en": "First release year: 2003"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2004",
@@ -227,7 +245,8 @@
         "ru": "Год первого выпуска — 2004",
         "en": "First release year: 2004"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2005",
@@ -239,7 +258,8 @@
         "ru": "Год первого выпуска — 2005",
         "en": "First release year: 2005"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2006",
@@ -251,7 +271,8 @@
         "ru": "Год первого выпуска — 2006",
         "en": "First release year: 2006"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2007",
@@ -263,7 +284,8 @@
         "ru": "Год первого выпуска — 2007",
         "en": "First release year: 2007"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2008",
@@ -275,7 +297,8 @@
         "ru": "Год первого выпуска — 2008",
         "en": "First release year: 2008"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2009",
@@ -287,7 +310,8 @@
         "ru": "Год первого выпуска — 2009",
         "en": "First release year: 2009"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2010",
@@ -299,7 +323,8 @@
         "ru": "Год первого выпуска — 2010",
         "en": "First release year: 2010"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2011",
@@ -311,7 +336,8 @@
         "ru": "Год первого выпуска — 2011",
         "en": "First release year: 2011"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2012",
@@ -323,7 +349,8 @@
         "ru": "Год первого выпуска — 2012",
         "en": "First release year: 2012"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2013",
@@ -335,7 +362,8 @@
         "ru": "Год первого выпуска — 2013",
         "en": "First release year: 2013"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2014",
@@ -347,7 +375,8 @@
         "ru": "Год первого выпуска — 2014",
         "en": "First release year: 2014"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2015",
@@ -359,7 +388,8 @@
         "ru": "Год первого выпуска — 2015",
         "en": "First release year: 2015"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2016",
@@ -371,7 +401,8 @@
         "ru": "Год первого выпуска — 2016",
         "en": "First release year: 2016"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2017",
@@ -383,7 +414,8 @@
         "ru": "Год первого выпуска — 2017",
         "en": "First release year: 2017"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2018",
@@ -395,7 +427,8 @@
         "ru": "Год первого выпуска — 2018",
         "en": "First release year: 2018"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2019",
@@ -407,7 +440,8 @@
         "ru": "Год первого выпуска — 2019",
         "en": "First release year: 2019"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2020",
@@ -419,7 +453,8 @@
         "ru": "Год первого выпуска — 2020",
         "en": "First release year: 2020"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2021",
@@ -431,7 +466,8 @@
         "ru": "Год первого выпуска — 2021",
         "en": "First release year: 2021"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2022",
@@ -443,7 +479,8 @@
         "ru": "Год первого выпуска — 2022",
         "en": "First release year: 2022"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2023",
@@ -455,7 +492,8 @@
         "ru": "Год первого выпуска — 2023",
         "en": "First release year: 2023"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2024",
@@ -467,7 +505,8 @@
         "ru": "Год первого выпуска — 2024",
         "en": "First release year: 2024"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2025",
@@ -479,7 +518,8 @@
         "ru": "Год первого выпуска — 2025",
         "en": "First release year: 2025"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2026",
@@ -491,7 +531,8 @@
         "ru": "Год первого выпуска — 2026",
         "en": "First release year: 2026"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2027",
@@ -503,7 +544,8 @@
         "ru": "Год первого выпуска — 2027",
         "en": "First release year: 2027"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2028",
@@ -515,7 +557,8 @@
         "ru": "Год первого выпуска — 2028",
         "en": "First release year: 2028"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2029",
@@ -527,7 +570,8 @@
         "ru": "Год первого выпуска — 2029",
         "en": "First release year: 2029"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseYear2030",
@@ -539,8 +583,8 @@
         "ru": "Год первого выпуска — 2030",
         "en": "First release year: 2030"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declaration": false,
     "incremental": false,
+    "isolatedModules": true,
     "noEmit": true,
     "esModuleInterop": true,
     "paths": {

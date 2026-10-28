@@ -5,6 +5,7 @@ import { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.
 import { SourceItem } from "@entities/sourceItem/schemas/sourceItem.schema"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { createItemFilterPipeline } from "../../createItemFilterPipeline"
@@ -143,7 +144,15 @@ const createRecommendationEligibilityPipeline = (
               foreignField: "source",
               let: { externalId: "$externalId" },
               pipeline: [
-                { $match: { $expr: { $eq: ["$externalId", "$$externalId"] } } },
+                {
+                  $match: {
+                    $expr: { $eq: ["$externalId", "$$externalId"] },
+                    $or: [
+                      { countries: { $size: 0 } },
+                      { countries: props.country ?? ECountry.UNKNOWN },
+                    ],
+                  },
+                },
                 { $limit: 1 },
                 { $project: { _id: 1 } },
               ],

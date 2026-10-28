@@ -27,6 +27,17 @@ const setupIntegration = async ({ maxWorkers }) => {
       throw redis.reason
     }
 
+    const ttlConfiguration = await mongo.value.exec([
+      "mongosh",
+      "--quiet",
+      "--eval",
+      "db.adminCommand({ setParameter: 1, ttlMonitorSleepSecs: 1 })",
+    ])
+
+    if (ttlConfiguration.exitCode !== 0) {
+      throw new Error(ttlConfiguration.output)
+    }
+
     const client = createClient({
       url: redis.value.getConnectionUrl(),
       socket: { reconnectStrategy: false },

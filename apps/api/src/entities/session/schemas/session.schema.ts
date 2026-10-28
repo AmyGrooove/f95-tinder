@@ -3,6 +3,7 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 import { SESSION_EXPIRY_GRACE_SECONDS } from "../static/SESSION_EXPIRY_GRACE_SECONDS"
 
 @Schema({
@@ -18,6 +19,14 @@ class Session extends MongoEntity {
   @Prop({ type: String, default: null })
   userAgent: string | null
 
+  @Prop({
+    type: String,
+    enum: ECountry,
+    required: true,
+    default: ECountry.UNKNOWN,
+  })
+  country: ECountry
+
   @Prop({ type: Date, required: true })
   expiresAt: Date
 
@@ -25,7 +34,10 @@ class Session extends MongoEntity {
   lastRefreshedAt: Date | null
 }
 
-type TCreateSession = TCreateEntity<Session, "userAgent" | "lastRefreshedAt"> &
+type TCreateSession = TCreateEntity<
+  Session,
+  "userAgent" | "country" | "lastRefreshedAt"
+> &
   Partial<Pick<Session, "_id">>
 
 const SessionSchema = SchemaFactory.createForClass(Session)

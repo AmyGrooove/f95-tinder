@@ -11,7 +11,8 @@
         "ru": "Возрастное ограничение 0+ по шкале Bisky",
         "en": "Age restriction 0+ on the Bisky scale"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "ageRestriction6",
@@ -23,7 +24,8 @@
         "ru": "Возрастное ограничение 6+ по шкале Bisky",
         "en": "Age restriction 6+ on the Bisky scale"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "ageRestriction12",
@@ -35,7 +37,8 @@
         "ru": "Возрастное ограничение 12+ по шкале Bisky",
         "en": "Age restriction 12+ on the Bisky scale"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "ageRestriction16",
@@ -47,7 +50,8 @@
         "ru": "Возрастное ограничение 16+ по шкале Bisky",
         "en": "Age restriction 16+ on the Bisky scale"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "ageRestriction18",
@@ -59,7 +63,8 @@
         "ru": "Возрастное ограничение 18+ по шкале Bisky",
         "en": "Age restriction 18+ on the Bisky scale"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "ageRestriction18PlusPlus",
@@ -71,8 +76,8 @@
         "ru": "Порнографическая игра с подтверждённым порнографическим содержанием; эротики или рейтинга ESRB/PEGI 18+ самих по себе недостаточно",
         "en": "A game with confirmed pornographic content; erotica or an ESRB/PEGI adult rating alone is insufficient"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

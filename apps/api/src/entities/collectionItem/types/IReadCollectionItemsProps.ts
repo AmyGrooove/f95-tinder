@@ -5,7 +5,7 @@ import type { TCollectionFieldFilter } from "./TCollectionFieldFilter"
 
 interface IReadCollectionItemsProps extends ICollectionContentSelectionProps {
   isGrouped: boolean
-  sort: "collection" | "title"
+  sort: "collection" | "title" | "relevanceScore"
   direction: 1 | -1
   language: "ru" | "en"
   page: number

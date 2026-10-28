@@ -306,6 +306,9 @@ class CollectionItemRepository {
             $set: {
               groupId: item.groupId,
               position: item.position,
+              ...(!isUndefined(item.relevanceScore)
+                ? { relevanceScore: item.relevanceScore }
+                : {}),
               ...(!isUndefined(item.note)
                 ? {
                     note: normalizeEmptyStringToNull(item.note?.trim() ?? null),

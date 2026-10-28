@@ -10,6 +10,7 @@ import { isISO8601 } from "class-validator"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import type { TCollectionFieldOptions } from "@entities/collectionItem/types/TCollectionFieldOptions"
 import type { TCollectionFieldFilter } from "@entities/collectionItem/types/TCollectionFieldFilter"
@@ -90,6 +91,14 @@ class CollectionContentService {
       id,
       query.groupId,
     )
+
+    if (
+      query.sort === ECollectionSort.RELEVANCE_SCORE &&
+      collection.type !== ECollectionType.TAG
+    ) {
+      throw new BadRequestException(DICTIONARY.collection.unavailableSort)
+    }
+
     const fields = this.prepareFieldFilters(query.fields)
     const groupCounts =
       await this.collectionItemRepository.countAvailableItemsByGroup({
@@ -109,13 +118,16 @@ class CollectionContentService {
       throw new BadRequestException(DICTIONARY.collection.unavailableMode)
     }
 
+    const direction =
+      query.direction ??
+      (query.sort === ECollectionSort.RELEVANCE_SCORE ? "desc" : "asc")
     const result = await this.collectionItemRepository.readContentPage({
       collectionId: id,
       groupIds,
       groupId,
       isGrouped: mode === ECollectionMode.GROUPED,
       sort: query.sort ?? ECollectionSort.COLLECTION,
-      direction: query.direction === "desc" ? -1 : 1,
+      direction: direction === "desc" ? -1 : 1,
       language: query.language ?? "ru",
       page,
       limit,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
+import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
 import { EItemField } from "@entities/item/schemas/EItemField"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
@@ -10,6 +11,7 @@ import { getTestApplication } from "@test/setup/setupIntegration"
 
 import { createCollection } from "./functions/createCollection"
 import type { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
+import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
 
 describe("CollectionReadController HTTP", () => {
   describe("QUERY /collections", () => {
@@ -515,6 +517,194 @@ describe("CollectionReadController HTTP", () => {
           payload: {},
         } as unknown as Parameters<typeof app.inject>[0])
         expect(response.statusCode).toBe(status)
+      }
+    })
+  })
+
+  describe("сортировка по значимости тега", () => {
+    const createRelevanceFixture = async (type = ECollectionType.TAG) => {
+      const { connection } = getTestApplication()
+      const collectionId = new Types.ObjectId()
+      const groupIds = [new Types.ObjectId(), new Types.ObjectId()]
+      const itemIds = Array.from({ length: 6 }, () => new Types.ObjectId())
+      const scores = [0.2, 0.8, 0.8, 1, null, undefined]
+      const membershipIds = [6, 2, 1, 4, 3, 5]
+
+      await connection.collection("Collection").insertOne({
+        _id: collectionId,
+        type,
+        title: { ru: "Теговая подборка", en: null },
+        deletedAt: null,
+        blocks: groupIds.map((id) => ({ id, type: "group" })),
+      })
+      await connection.collection("Item").insertMany(
+        itemIds.map((_id, index) => ({
+          _id,
+          type: "movie",
+          title: { ru: `Произведение ${index}`, en: null },
+          aliases: [],
+          media: [],
+          deletedAt: null,
+        })),
+      )
+      await connection.collection("CollectionItem").insertMany(
+        itemIds.map((item, index) => ({
+          _id: new Types.ObjectId(
+            membershipIds[index].toString(16).padStart(24, "0"),
+          ),
+          collectionId,
+          item,
+          groupId: groupIds[index === 3 || index === 5 ? 1 : 0],
+          position: index,
+          note: null,
+          ...(scores[index] === undefined
+            ? {}
+            : { relevanceScore: scores[index] }),
+        })),
+      )
+
+      return { collectionId, groupIds, itemIds }
+    }
+
+    it.each([
+      { direction: undefined, order: [3, 2, 1, 0, 4, 5] },
+      { direction: "desc", order: [3, 2, 1, 0, 4, 5] },
+      { direction: "asc", order: [0, 2, 1, 3, 4, 5] },
+    ])(
+      "сортирует весь состав в направлении $direction с пустыми значениями в конце и устойчивыми равенствами",
+      async ({ direction, order }) => {
+        const { app } = getTestApplication()
+        const { collectionId, itemIds } = await createRelevanceFixture()
+        const response = await app.inject({
+          method: "QUERY",
+          url: `/collections/${collectionId}/items`,
+          payload: { sort: "relevanceScore", direction, mode: "flat" },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(200)
+        const result = response.json<CollectionItemsResponseDto>()
+        expect(result.total).toBe(6)
+        expect(result.items.map((item) => item.id)).toEqual(
+          order.map((index) => itemIds[index].toHexString()),
+        )
+      },
+    )
+
+    it("сортирует до пагинации без пропусков и повторов на соседних страницах", async () => {
+      const { app } = getTestApplication()
+      const { collectionId, itemIds } = await createRelevanceFixture()
+      const expectedPages = [[3, 2], [1, 0], [4, 5], []]
+
+      for (const [index, expected] of expectedPages.entries()) {
+        const response = await app.inject({
+          method: "QUERY",
+          url: `/collections/${collectionId}/items`,
+          payload: {
+            sort: "relevanceScore",
+            mode: "flat",
+            page: index + 1,
+            limit: 2,
+          },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(200)
+        const result = response.json<CollectionItemsResponseDto>()
+        expect(result).toMatchObject({ total: 6, pages: 3, page: index + 1 })
+        expect(result.items.map((item) => item.id)).toEqual(
+          expected.map((itemIndex) => itemIds[itemIndex].toHexString()),
+        )
+      }
+    })
+
+    it.each([
+      { direction: "desc", order: [2, 1, 0, 4, 3, 5] },
+      { direction: "asc", order: [0, 2, 1, 4, 3, 5] },
+    ])(
+      "сохраняет порядок групп при сортировке $direction внутри каждой группы",
+      async ({ direction, order }) => {
+        const { app } = getTestApplication()
+        const { collectionId, groupIds, itemIds } =
+          await createRelevanceFixture()
+        const response = await app.inject({
+          method: "QUERY",
+          url: `/collections/${collectionId}/items`,
+          payload: { sort: "relevanceScore", direction, mode: "grouped" },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(200)
+        const result = response.json<CollectionItemsResponseDto>()
+        expect(result.items.map((item) => item.id)).toEqual(
+          order.map((index) => itemIds[index].toHexString()),
+        )
+        expect(result.displayBlocks.map((block) => block.id)).toEqual(
+          groupIds.map((id) => id.toHexString()),
+        )
+      },
+    )
+
+    it("применяет фильтр группы до сортировки, подсчёта и пагинации", async () => {
+      const { app } = getTestApplication()
+      const { collectionId, groupIds, itemIds } = await createRelevanceFixture()
+      const response = await app.inject({
+        method: "QUERY",
+        url: `/collections/${collectionId}/items`,
+        payload: {
+          sort: "relevanceScore",
+          groupId: groupIds[0].toHexString(),
+          mode: "flat",
+          limit: 2,
+        },
+      } as unknown as Parameters<typeof app.inject>[0])
+
+      expect(response.statusCode).toBe(200)
+      const result = response.json<CollectionItemsResponseDto>()
+      expect(result).toMatchObject({ total: 4, pages: 2 })
+      expect(result.items.map((item) => item.id)).toEqual([
+        itemIds[2].toHexString(),
+        itemIds[1].toHexString(),
+      ])
+    })
+
+    it.each([
+      ECollectionType.CUSTOM,
+      ECollectionType.FRANCHISE,
+      ECollectionType.FEATURE,
+    ])(
+      "возвращает 400 для сортировки по значимости у типа %s",
+      async (type) => {
+        const { app } = getTestApplication()
+        const { collectionId } = await createRelevanceFixture(type)
+        const response = await app.inject({
+          method: "QUERY",
+          url: `/collections/${collectionId}/items`,
+          payload: { sort: "relevanceScore" },
+        } as unknown as Parameters<typeof app.inject>[0])
+
+        expect(response.statusCode).toBe(400)
+      },
+    )
+
+    it("обновляет сохранённую значимость, сохраняет её при пропуске поля и сбрасывает через null", async () => {
+      const { app, connection } = getTestApplication()
+      const { collectionId, groupIds, itemIds } = await createRelevanceFixture()
+      const repository = app.get(CollectionItemRepository)
+      const item = { item: itemIds[0], groupId: groupIds[0], position: 0 }
+
+      for (const [changes, expected] of [
+        [{ relevanceScore: 0.9 }, 0.9],
+        [{}, 0.9],
+        [{ relevanceScore: null }, null],
+      ] as const) {
+        await repository.upsertForCollection({
+          collectionId,
+          items: [{ ...item, ...changes }],
+        })
+
+        const saved = await connection.collection("CollectionItem").findOne({
+          collectionId,
+          item: itemIds[0],
+        })
+        expect(saved?.relevanceScore).toBe(expected)
       }
     })
   })

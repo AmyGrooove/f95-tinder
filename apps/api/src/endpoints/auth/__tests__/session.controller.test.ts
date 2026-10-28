@@ -2,6 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals"
 import { NotFoundException, UnauthorizedException } from "@nestjs/common"
 import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
 
@@ -37,6 +38,7 @@ describe("SessionController", () => {
       {
         id: new Types.ObjectId().toHexString(),
         userAgent: null,
+        country: ECountry.UNKNOWN,
         createdAt: "2026-10-22T00:00:00.000Z",
         expiresAt: "2026-10-23T00:00:00.000Z",
         lastRefreshedAt: null,

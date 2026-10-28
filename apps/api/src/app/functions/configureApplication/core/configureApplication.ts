@@ -35,6 +35,7 @@ const configureApplication = async (app: NestFastifyApplication) => {
         requestId: request.id,
         method: request.method,
         path: request.url.split("?")[0],
+        ip: request.ip,
       },
       done,
     )

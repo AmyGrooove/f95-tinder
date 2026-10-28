@@ -94,5 +94,11 @@ const FlexShrinkDisabled: TStory = {
   },
 }
 
-export { DocsPreview, FlexShrinkDisabled, Layout }
+const FlexShrinkAllowed: TStory = {
+  ...FlexShrinkDisabled,
+  name: 'Сжатие разрешено',
+  args: { isFlexShrinkDisabled: false },
+}
+
+export { DocsPreview, FlexShrinkAllowed, FlexShrinkDisabled, Layout }
 export default meta

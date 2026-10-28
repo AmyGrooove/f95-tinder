@@ -6,6 +6,8 @@ import type { Types } from "mongoose"
 
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "CollectionItem" })
 class CollectionItem extends MongoEntity {
@@ -27,6 +29,14 @@ class CollectionItem extends MongoEntity {
   position: number
 
   @Prop({
+    type: Number,
+    default: null,
+    validate: (value: unknown) =>
+      isNil(value) || (isFiniteNumber(value) && value > 0 && value <= 1),
+  })
+  relevanceScore: number | null
+
+  @Prop({
     type: String,
     default: null,
     trim: true,
@@ -38,7 +48,10 @@ class CollectionItem extends MongoEntity {
   groupId: Types.ObjectId
 }
 
-type TCreateCollectionItem = TCreateEntity<CollectionItem, "note">
+type TCreateCollectionItem = TCreateEntity<
+  CollectionItem,
+  "note" | "relevanceScore"
+>
 
 const CollectionItemSchema = SchemaFactory.createForClass(CollectionItem)
 

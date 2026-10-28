@@ -13,6 +13,7 @@ import type { TCreateUserItem } from "../schemas/userItem.schema"
 import type { IItemRatingSummary } from "../types/IItemRatingSummary"
 import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { EUserItemStatus } from "../schemas/EUserItemStatus"
+import { USER_ITEM_LIBRARY_STATUSES } from "../static/USER_ITEM_LIBRARY_STATUSES"
 
 @Injectable()
 class UserItemRepository {
@@ -104,13 +105,72 @@ class UserItemRepository {
   }
 
   async getRatingSummaries(itemIds: Types.ObjectId[]) {
+    const ratingCounts = Object.fromEntries(
+      Object.entries({
+        one: 1,
+        two: 2,
+        three: 3,
+        four: 4,
+        five: 5,
+        six: 6,
+        seven: 7,
+        eight: 8,
+        nine: 9,
+        ten: 10,
+      }).map(([key, rating]) => [
+        key,
+        { $sum: { $cond: [{ $eq: ["$rating", rating] }, 1, 0] } },
+      ]),
+    )
+    const statusCounts = Object.fromEntries(
+      USER_ITEM_LIBRARY_STATUSES.map((status) => [
+        status,
+        { $sum: { $cond: [{ $eq: ["$status", status] }, 1, 0] } },
+      ]),
+    )
+
     return await this.aggregation.aggregate<IItemRatingSummary>([
-      { $match: { item: { $in: itemIds }, rating: { $ne: null } } },
+      { $match: { item: { $in: itemIds } } },
       {
         $group: {
           _id: "$item",
           ratingAverage: { $avg: "$rating" },
-          ratingsCount: { $sum: 1 },
+          ratingsCount: {
+            $sum: {
+              $cond: [{ $ne: [{ $ifNull: ["$rating", null] }, null] }, 1, 0],
+            },
+          },
+          completedAttemptsCount: {
+            $sum: {
+              $size: {
+                $filter: {
+                  input: "$attempts",
+                  as: "attempt",
+                  cond: { $eq: ["$$attempt.isCompleted", true] },
+                },
+              },
+            },
+          },
+          favoritesCount: {
+            $sum: { $cond: [{ $eq: ["$isFavorite", true] }, 1, 0] },
+          },
+          ...ratingCounts,
+          ...statusCounts,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          ratingAverage: 1,
+          ratingsCount: 1,
+          completedAttemptsCount: 1,
+          favoritesCount: 1,
+          ratingDistribution: Object.fromEntries(
+            Object.keys(ratingCounts).map((key) => [key, `$${key}`]),
+          ),
+          statusCounts: Object.fromEntries(
+            USER_ITEM_LIBRARY_STATUSES.map((status) => [status, `$${status}`]),
+          ),
         },
       },
     ])

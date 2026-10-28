@@ -10,6 +10,11 @@ import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
 import { EmbeddingSchema } from "@entities/shared/schemas/embedding.schema"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
+import { Schema as MongooseSchema } from "mongoose"
+import type { Types } from "mongoose"
+import { validateTagParents } from "../functions/validateTagParents"
+import { validateTagParentsUpdate } from "../functions/validateTagParentsUpdate"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 @Schema({ collection: "Tag" })
 class Tag extends MongoEntity {
@@ -33,6 +38,18 @@ class Tag extends MongoEntity {
   })
   aliases: string[]
 
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: "Tag" }],
+    required: true,
+    default: [],
+    validate: function (this: Tag, parents: Types.ObjectId[]) {
+      validateTagParents({ id: this._id, parents })
+
+      return true
+    },
+  })
+  parents: Types.ObjectId[]
+
   @Prop({ type: EmbeddingSchema, default: null })
   embedding: Embedding | null
 
@@ -48,7 +65,12 @@ class Tag extends MongoEntity {
 
 type TCreateTag = TCreateEntity<
   Tag,
-  "group" | "description" | "aliases" | "embedding" | "weightModifier"
+  | "group"
+  | "description"
+  | "aliases"
+  | "parents"
+  | "embedding"
+  | "weightModifier"
 >
 
 const TagSchema = SchemaFactory.createForClass(Tag)
@@ -56,6 +78,79 @@ const TagSchema = SchemaFactory.createForClass(Tag)
 TagSchema.pre("validate", function () {
   if (!checkIsTagKeyAllowed({ key: this.key, group: this.group })) {
     this.invalidate("key", "Tag key does not match its group rule")
+  }
+})
+
+TagSchema.pre("save", function () {
+  validateTagParents({ id: this._id, parents: this.parents })
+
+  if (this.isModified("parents")) {
+    this.set("parents", [...this.parents])
+    this.markModified("parents")
+  }
+})
+
+TagSchema.pre(
+  [
+    "updateOne",
+    "updateMany",
+    "findOneAndUpdate",
+    "replaceOne",
+    "findOneAndReplace",
+  ],
+  function () {
+    if (this.getOptions().upsert === true) {
+      throw new Error(DICTIONARY.tag.unsupportedParentsWrite)
+    }
+
+    validateTagParentsUpdate({
+      id: this.getFilter()._id,
+      update: this.getUpdate(),
+    })
+  },
+)
+
+TagSchema.pre("insertMany", function (documents, options) {
+  if (options?.lean === true) {
+    throw new Error(DICTIONARY.tag.unsupportedParentsWrite)
+  }
+
+  for (const document of documents) {
+    validateTagParents({ id: document._id, parents: document.parents })
+  }
+})
+
+TagSchema.pre("bulkWrite", function (operations) {
+  for (const operation of operations) {
+    if ("insertOne" in operation) {
+      const document = operation.insertOne.document
+
+      validateTagParents({ id: document._id, parents: document.parents })
+    }
+
+    if ("replaceOne" in operation) {
+      const { filter, replacement, upsert: isUpsert } = operation.replaceOne
+
+      if (isUpsert === true) {
+        throw new Error(DICTIONARY.tag.unsupportedParentsWrite)
+      }
+
+      validateTagParentsUpdate({
+        id: replacement._id ?? filter._id,
+        update: replacement,
+      })
+    }
+
+    if ("updateOne" in operation || "updateMany" in operation) {
+      const update =
+        "updateOne" in operation ? operation.updateOne : operation.updateMany
+
+      if (update.upsert === true) {
+        throw new Error(DICTIONARY.tag.unsupportedParentsWrite)
+      }
+
+      validateTagParentsUpdate({ id: update.filter._id, update: update.update })
+    }
   }
 })
 

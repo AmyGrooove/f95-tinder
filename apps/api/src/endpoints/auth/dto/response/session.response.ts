@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 class SessionResponseDto {
@@ -11,6 +12,13 @@ class SessionResponseDto {
     nullable: true,
   })
   userAgent: string | null
+
+  @ApiProperty({
+    description: SWAGGER_DICTIONARY.common.sessionCountry,
+    enum: ECountry,
+    enumName: "ECountry",
+  })
+  country: ECountry
 
   @ApiProperty({
     description: SWAGGER_DICTIONARY.auth.dto.sessionResponse.createdAt,

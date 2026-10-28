@@ -11,7 +11,8 @@
         "ru": "Игровой жанр с основой в реакции, исполнении действий и активных столкновениях",
         "en": "Gameplay centered on reflexes, execution and active encounters"
       },
-      "aliases": ["Action"]
+      "aliases": ["Action"],
+      "parents": []
     },
     {
       "key": "adventureGame",
@@ -23,7 +24,8 @@
         "ru": "Игровой жанр исследования и решения сюжетных задач; не просто приключенческий сюжет",
         "en": "Gameplay centered on exploration and narrative problem solving"
       },
-      "aliases": ["Adventure"]
+      "aliases": ["Adventure"],
+      "parents": []
     },
     {
       "key": "battleRoyaleGame",
@@ -35,7 +37,8 @@
         "ru": "Состязание на выбывание до последнего участника или команды в ограничивающейся игровой арене",
         "en": "Elimination competition until one player or team remains in a progressively constrained arena"
       },
-      "aliases": ["Battle Royale"]
+      "aliases": ["Battle Royale"],
+      "parents": []
     },
     {
       "key": "boardGame",
@@ -47,7 +50,8 @@
         "ru": "Цифровая реализация игры настольного типа с формальными ходами и правилами",
         "en": "A digital board-style game with formal moves and rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "cardGame",
@@ -59,7 +63,8 @@
         "ru": "Правила игры строятся вокруг карт и действий с ними",
         "en": "Rules are organized around cards and card-based actions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "comedy",
@@ -71,7 +76,8 @@
         "ru": "Произведение, в котором комический эффект — определяющая художественная задача",
         "en": "A work whose defining artistic aim is comic effect"
       },
-      "aliases": ["Komödie"]
+      "aliases": ["Komödie"],
+      "parents": []
     },
     {
       "key": "crime",
@@ -83,7 +89,8 @@
         "ru": "Преступная деятельность и её последствия определяют сюжет",
         "en": "Criminal activity and its consequences drive the narrative"
       },
-      "aliases": ["Krimi"]
+      "aliases": ["Krimi"],
+      "parents": []
     },
     {
       "key": "disasterStory",
@@ -95,7 +102,8 @@
         "ru": "Масштабная катастрофа и реакция людей на неё организуют центральный конфликт произведения",
         "en": "A large-scale disaster and human responses organize the central conflict"
       },
-      "aliases": ["Disaster"]
+      "aliases": ["Disaster"],
+      "parents": []
     },
     {
       "key": "drama",
@@ -107,7 +115,8 @@
         "ru": "История, в которой важны конфликты, переживания и отношения персонажей",
         "en": "Narrative emphasizing character conflict, emotions and relationships"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "dungeonCrawler",
@@ -119,7 +128,8 @@
         "ru": "Исследование подземелий с последовательным преодолением опасностей; не обязательно ролевая игра",
         "en": "Dungeon exploration with successive hazards; not necessarily a role-playing game"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fantasy",
@@ -131,7 +141,8 @@
         "ru": "Вымышленный мир с магией или сверхъестественными законами",
         "en": "Fiction using magic or supernatural rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fightingGame",
@@ -143,7 +154,8 @@
         "ru": "Поединки бойцов с набором боевых приёмов составляют основу игры",
         "en": "Fighter duels using move sets form the core of play"
       },
-      "aliases": ["Fighting"]
+      "aliases": ["Fighting"],
+      "parents": []
     },
     {
       "key": "firstPersonShooter",
@@ -155,7 +167,8 @@
         "ru": "Стрельба — основа игры, действие показывается с позиции управляемого персонажа",
         "en": "Shooting-centered gameplay shown from the controlled character’s viewpoint"
       },
-      "aliases": ["FPS"]
+      "aliases": ["FPS"],
+      "parents": ["shooter"]
     },
     {
       "key": "horror",
@@ -167,7 +180,8 @@
         "ru": "Произведение, художественно направленное на переживание ужаса и страха",
         "en": "A work artistically directed at eliciting fear and horror"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "idleGame",
@@ -179,7 +193,8 @@
         "ru": "Часть игрового прогресса происходит без непрерывных действий игрока",
         "en": "Some progress occurs without continuous player input"
       },
-      "aliases": ["Idler"]
+      "aliases": ["Idler"],
+      "parents": []
     },
     {
       "key": "immersiveSim",
@@ -191,7 +206,8 @@
         "ru": "Игра с взаимосвязанными моделируемыми системами, позволяющими находить разные способы решения задач",
         "en": "A game with interconnected simulated systems supporting multiple ways to solve problems"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "incrementalGame",
@@ -203,7 +219,8 @@
         "ru": "Развитие через накопление ресурсов и последовательное увеличение темпа их получения",
         "en": "Progression through resource accumulation and successive growth in acquisition rates"
       },
-      "aliases": ["Incremental"]
+      "aliases": ["Incremental"],
+      "parents": []
     },
     {
       "key": "interactiveFiction",
@@ -215,7 +232,8 @@
         "ru": "Игра, где текст служит основным средством взаимодействия и повествования: команды или выбор меняют состояние истории; визуальная постановка сцен не является определяющей",
         "en": "A game whose primary medium of interaction and narrative is text; commands or choices change story state, while visual scene staging is not defining"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "managementGame",
@@ -227,7 +245,8 @@
         "ru": "Планирование работы организации или хозяйства и распределение ограниченных ресурсов",
         "en": "Planning an organization or enterprise and allocating constrained resources"
       },
-      "aliases": ["Management"]
+      "aliases": ["Management"],
+      "parents": []
     },
     {
       "key": "musical",
@@ -239,7 +258,8 @@
         "ru": "Музыкальные номера участвуют в развитии сюжета",
         "en": "Songs or musical performances advance the narrative"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mystery",
@@ -251,7 +271,8 @@
         "ru": "Сюжет построен вокруг раскрытия неизвестных обстоятельств; детективный герой не обязателен",
         "en": "Narrative organized around uncovering hidden facts; a detective is not required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "narrativeAction",
@@ -263,7 +284,8 @@
         "ru": "Физические столкновения, погони и опасные действия определяют развитие истории; не требования к реакции игрока",
         "en": "Physical conflict, chases and dangerous action drive the story; distinct from action gameplay"
       },
-      "aliases": ["Action", "Экшен"]
+      "aliases": ["Action", "Экшен"],
+      "parents": []
     },
     {
       "key": "narrativeAdventure",
@@ -275,7 +297,8 @@
         "ru": "Путешествие, поиск и преодоление опасностей определяют развитие истории; не устройство игрового процесса",
         "en": "A journey, quest and overcoming danger drive the story; distinct from adventure gameplay"
       },
-      "aliases": ["Abenteuer", "Adventure", "Приключения"]
+      "aliases": ["Abenteuer", "Adventure", "Приключения"],
+      "parents": []
     },
     {
       "key": "partyGame",
@@ -287,7 +310,8 @@
         "ru": "Короткие разнообразные задания рассчитаны на совместное развлечение компании",
         "en": "Short varied activities designed for group entertainment"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "pinballGame",
@@ -299,7 +323,8 @@
         "ru": "Управление флипперами удерживает шар на поле и приносит очки за попадания",
         "en": "Flipper control keeps a ball in play and scores target hits"
       },
-      "aliases": ["Pinball"]
+      "aliases": ["Pinball"],
+      "parents": []
     },
     {
       "key": "platformer",
@@ -311,7 +336,8 @@
         "ru": "Игровое продвижение через прыжки и преодоление платформенных препятствий",
         "en": "Progress through jumping and traversing platform obstacles"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "puzzleGame",
@@ -323,7 +349,8 @@
         "ru": "Решение логических или пространственных задач является основой игры",
         "en": "Solving logical or spatial problems forms the core of play"
       },
-      "aliases": ["Puzzle"]
+      "aliases": ["Puzzle"],
+      "parents": []
     },
     {
       "key": "racingGame",
@@ -335,7 +362,8 @@
         "ru": "Соревнование в скорости и управлении транспортом определяет игру",
         "en": "Competition in speed and vehicle handling defines play"
       },
-      "aliases": ["Racing"]
+      "aliases": ["Racing"],
+      "parents": []
     },
     {
       "key": "rhythmGame",
@@ -347,7 +375,8 @@
         "ru": "Успех зависит от выполнения действий в музыкальном ритме",
         "en": "Success depends on performing actions in musical rhythm"
       },
-      "aliases": ["Rhythm"]
+      "aliases": ["Rhythm"],
+      "parents": []
     },
     {
       "key": "roguelike",
@@ -359,7 +388,8 @@
         "ru": "Широкое семейство игр с повторяемыми прохождениями, процедурной изменчивостью и потерей существенной части прогресса попытки после гибели; включает традиционные рогалики и roguelite",
         "en": "A broad family built around repeated runs, procedural variation and substantial loss of current-run progress on death, including traditional roguelikes and roguelites"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "rolePlayingGame",
@@ -371,7 +401,8 @@
         "ru": "Развитие персонажа и принятие его роли организуют игровой процесс",
         "en": "Character development and role-taking organize gameplay"
       },
-      "aliases": ["RPG", "Role-playing (RPG)"]
+      "aliases": ["RPG", "Role-playing (RPG)"],
+      "parents": []
     },
     {
       "key": "romance",
@@ -383,7 +414,8 @@
         "ru": "Любовные отношения определяют основную сюжетную линию",
         "en": "Romantic relationships drive the main narrative"
       },
-      "aliases": ["Liebesfilm"]
+      "aliases": ["Liebesfilm"],
+      "parents": []
     },
     {
       "key": "romanceGame",
@@ -395,7 +427,8 @@
         "ru": "Развитие романтических отношений является основной целью и организующим принципом игры; подача и пол аудитории определяются отдельно",
         "en": "Developing romantic relationships is the central goal and organizing principle of the game; presentation and audience gender are separate"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "scienceFiction",
@@ -407,7 +440,8 @@
         "ru": "Вымысел, опирающийся на научные или технологические допущения",
         "en": "Fiction built around scientific or technological speculation"
       },
-      "aliases": ["Sci-fi"]
+      "aliases": ["Sci-fi"],
+      "parents": []
     },
     {
       "key": "shooter",
@@ -419,7 +453,8 @@
         "ru": "Стрельба составляет основное действие, определяющее игровой процесс",
         "en": "Shooting is the main action organizing gameplay"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "simulationGame",
@@ -431,7 +466,8 @@
         "ru": "Игровые системы моделируют процессы, деятельность или поведение мира",
         "en": "Gameplay systems model processes, activities or world behavior"
       },
-      "aliases": ["Simulation"]
+      "aliases": ["Simulation"],
+      "parents": []
     },
     {
       "key": "sliceOfLife",
@@ -443,7 +479,8 @@
         "ru": "В центре внимания повседневный опыт и отношения, а не исключительная большая интрига",
         "en": "Everyday experience and relationships take precedence over an exceptional overarching plot"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sportsGame",
@@ -455,7 +492,8 @@
         "ru": "Правила спорта или его игровая симуляция определяют игровой процесс",
         "en": "Sports rules or their simulation define gameplay"
       },
-      "aliases": ["Sports"]
+      "aliases": ["Sports"],
+      "parents": []
     },
     {
       "key": "strategyGame",
@@ -467,7 +505,8 @@
         "ru": "Планирование и распределение сил определяют игровой результат",
         "en": "Planning and allocation of forces determine play outcomes"
       },
-      "aliases": ["Strategy"]
+      "aliases": ["Strategy"],
+      "parents": []
     },
     {
       "key": "survivalGame",
@@ -479,7 +518,8 @@
         "ru": "Поддержание жизни в опасной среде через обеспечение потребностей персонажа и преодоление угроз составляет основной игровой цикл",
         "en": "Keeping a character alive in a hostile environment through needs management and overcoming threats is the core loop"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "thriller",
@@ -491,7 +531,8 @@
         "ru": "Напряжение, опасность и ожидание исхода определяют восприятие истории",
         "en": "Suspense, danger and anticipation drive the experience"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "visualNovel",
@@ -503,7 +544,8 @@
         "ru": "История в игровой форме, построенная вокруг чтения текста и визуальной постановки персонажей и сцен; выбор и ветвление возможны, но не обязательны",
         "en": "A game-form story organized around reading and visual staging of characters and scenes; choices and branching are optional"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "western",
@@ -515,14 +557,8 @@
         "ru": "История использует конфликты и конвенции освоения североамериканского фронтира",
         "en": "The story uses conflicts and conventions of the North American frontier"
       },
-      "aliases": []
-    }
-  ],
-  "tagRelations": [
-    {
-      "first": "firstPersonShooter",
-      "second": "shooter",
-      "type": "parent"
+      "aliases": [],
+      "parents": []
     }
   ]
 }

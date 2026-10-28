@@ -4,8 +4,6 @@ import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { TAG_GROUP_RULES } from "@entities/tag/static/TAG_GROUP_RULES"
-import { TagRelation } from "@entities/tagRelation/schemas/tagRelation.schema"
-import { ETagRelationType } from "@entities/tagRelation/schemas/ETagRelationType"
 
 import { EItemType } from "../../../schemas/EItemType"
 import type { IReadRecommendationsProps } from "../../../types/IReadRecommendationsProps"
@@ -71,7 +69,7 @@ const createRecommendationTastePipeline = (
                     },
                   },
                 },
-                { $project: { _id: 0, weightModifier: 1 } },
+                { $project: { _id: 0, weightModifier: 1, parents: 1 } },
               ],
               as: "tagDocument",
             },
@@ -79,12 +77,11 @@ const createRecommendationTastePipeline = (
           { $unwind: "$tagDocument" },
           {
             $graphLookup: {
-              from: TagRelation.name,
-              startWith: "$tag",
-              connectFromField: "second",
-              connectToField: "first",
-              restrictSearchWithMatch: { type: ETagRelationType.PARENT },
-              as: "parentRelations",
+              from: Tag.name,
+              startWith: "$tagDocument.parents",
+              connectFromField: "parents",
+              connectToField: "_id",
+              as: "parentTags",
             },
           },
           {
@@ -107,7 +104,7 @@ const createRecommendationTastePipeline = (
             $project: {
               _id: 0,
               tag: 1,
-              ancestors: "$parentRelations.second",
+              ancestors: "$parentTags._id",
               significance: { $ifNull: ["$tagDocument.weightModifier", 1] },
               contribution: {
                 $multiply: [

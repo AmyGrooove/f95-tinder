@@ -11,7 +11,8 @@
         "ru": "Ориентировочная длительность обычной серии: менее 10 минут; длительность положительная",
         "en": "Approximate duration of a typical episode: under 10 minutes; duration must be positive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeDuration10To25",
@@ -23,7 +24,8 @@
         "ru": "Ориентировочная длительность обычной серии: от 10 до менее 25 минут",
         "en": "Approximate duration of a typical episode: 10 to under 25 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeDuration25To60",
@@ -35,7 +37,8 @@
         "ru": "Ориентировочная длительность обычной серии: от 25 до менее 60 минут",
         "en": "Approximate duration of a typical episode: 25 to under 60 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeDuration60To90",
@@ -47,7 +50,8 @@
         "ru": "Ориентировочная длительность обычной серии: от 60 до менее 90 минут",
         "en": "Approximate duration of a typical episode: 60 to under 90 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeDuration90To120",
@@ -59,7 +63,8 @@
         "ru": "Ориентировочная длительность обычной серии: от 90 до менее 120 минут",
         "en": "Approximate duration of a typical episode: 90 to under 120 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeDuration120Plus",
@@ -71,8 +76,8 @@
         "ru": "Ориентировочная длительность обычной серии: 120 минут и более",
         "en": "Approximate duration of a typical episode: 120 minutes or more"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

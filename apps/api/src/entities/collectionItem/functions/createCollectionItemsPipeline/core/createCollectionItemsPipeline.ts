@@ -176,9 +176,16 @@ const createCollectionItemsPipeline = (
   const sort: Record<string, 1 | -1> =
     props.sort === "collection"
       ? { groupOrder: 1, position: 1, _id: 1 }
-      : props.isGrouped
-        ? { groupOrder: 1, sortTitle: props.direction, _id: 1 }
-        : { sortTitle: props.direction, _id: 1 }
+      : {
+          ...(props.isGrouped ? { groupOrder: 1 as const } : {}),
+          ...(props.sort === "relevanceScore"
+            ? {
+                isRelevanceMissing: 1 as const,
+                relevanceScore: props.direction,
+              }
+            : { sortTitle: props.direction }),
+          _id: 1,
+        }
   const languageTitle = `$itemDocument.title.${props.language}`
   const fallbackTitle = `$itemDocument.title.${props.language === "ru" ? "en" : "ru"}`
 
@@ -189,6 +196,13 @@ const createCollectionItemsPipeline = (
         {
           $set: {
             groupOrder: { $indexOfArray: [props.groupIds, "$groupId"] },
+            ...(props.sort === "relevanceScore"
+              ? {
+                  isRelevanceMissing: {
+                    $eq: [{ $ifNull: ["$relevanceScore", null] }, null],
+                  },
+                }
+              : {}),
             sortTitle: {
               $cond: [
                 {

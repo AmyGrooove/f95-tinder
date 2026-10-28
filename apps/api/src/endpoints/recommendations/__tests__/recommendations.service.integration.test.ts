@@ -36,6 +36,7 @@ import {
 import { UserTasteProfileRepository } from "@entities/userTasteProfile/services/userTasteProfile.repository"
 import { getTestDatabase } from "@test/setup/setupDatabase"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { RecommendationsService } from "../services/recommendations.service"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
@@ -119,11 +120,12 @@ describe("RecommendationsService MongoDB", () => {
   const seedTag = async (
     group: ETagGroup | null = ETagGroup.GENRE,
     weightModifier = 1,
+    parents: Types.ObjectId[] = [],
   ) => {
     const tag = new Types.ObjectId()
     await getTestDatabase()
       .connection.collection("Tag")
-      .insertOne({ _id: tag, group, weightModifier })
+      .insertOne({ _id: tag, group, weightModifier, parents })
     return tag
   }
 
@@ -413,14 +415,8 @@ describe("RecommendationsService MongoDB", () => {
 
   it("предпочитает известный поджанр предкам по прямой и транзитивной связи", async () => {
     const parent = await seedTag()
-    const intermediate = await seedTag(ETagGroup.SUBGENRE)
-    const child = await seedTag(ETagGroup.SUBGENRE)
-    await getTestDatabase()
-      .connection.collection("TagRelation")
-      .insertMany([
-        { first: child, second: intermediate, type: "parent" },
-        { first: intermediate, second: parent, type: "parent" },
-      ])
+    const intermediate = await seedTag(ETagGroup.SUBGENRE, 1, [parent])
+    const child = await seedTag(ETagGroup.SUBGENRE, 1, [intermediate])
     await setProfile([
       { tag: parent, explicitWeight: 1 },
       { tag: intermediate, explicitWeight: 0.5 },
@@ -437,10 +433,7 @@ describe("RecommendationsService MongoDB", () => {
 
   it("не выводит родительский признак и не удаляет знакомого родителя из-за неизвестного поджанра", async () => {
     const parent = await seedTag()
-    const child = await seedTag(ETagGroup.SUBGENRE)
-    await getTestDatabase()
-      .connection.collection("TagRelation")
-      .insertOne({ first: child, second: parent, type: "parent" })
+    const child = await seedTag(ETagGroup.SUBGENRE, 1, [parent])
     await setProfile([{ tag: parent, explicitWeight: 0.8 }])
     const onlyChild = await seedItem()
     const both = await seedItem()
@@ -596,7 +589,7 @@ describe("RecommendationsService MongoDB", () => {
     await seedItem({ type: EItemType.MOVIE })
     await getTestDatabase()
       .connection.collection("BannedItem")
-      .insertOne({ source, externalId: "blocked" })
+      .insertOne({ source, externalId: "blocked", countries: [] })
     await getTestDatabase()
       .connection.collection("SourceItem")
       .insertMany([
@@ -616,6 +609,65 @@ describe("RecommendationsService MongoDB", () => {
     expect(result.total).toBe(2)
     expect((await find({ filter: { types: [] } })).total).toBe(0)
   })
+
+  it.each([
+    { countries: [ECountry.RUSSIA], country: ECountry.RUSSIA, isBlocked: true },
+    {
+      countries: [ECountry.RUSSIA],
+      country: ECountry.UNITED_STATES,
+      isBlocked: false,
+    },
+    {
+      countries: [ECountry.RUSSIA],
+      country: ECountry.UNKNOWN,
+      isBlocked: false,
+    },
+    { countries: [ECountry.RUSSIA], country: undefined, isBlocked: false },
+    {
+      countries: [ECountry.RUSSIA, ECountry.KAZAKHSTAN],
+      country: ECountry.KAZAKHSTAN,
+      isBlocked: true,
+    },
+    {
+      countries: [ECountry.UNKNOWN],
+      country: ECountry.UNKNOWN,
+      isBlocked: true,
+    },
+    { countries: [ECountry.UNKNOWN], country: undefined, isBlocked: true },
+    {
+      countries: [ECountry.UNKNOWN],
+      country: ECountry.RUSSIA,
+      isBlocked: false,
+    },
+    { countries: [], country: ECountry.RUSSIA, isBlocked: true },
+    { countries: [], country: ECountry.UNITED_STATES, isBlocked: true },
+    { countries: [], country: ECountry.UNKNOWN, isBlocked: true },
+    { countries: [], country: undefined, isBlocked: true },
+  ])(
+    "применяет запрет $countries для страны входа $country",
+    async ({ countries, country, isBlocked }) => {
+      const source = new Types.ObjectId()
+      const item = await seedItem()
+      const { connection } = getTestDatabase()
+      await connection.collection("BannedItem").insertOne({
+        source,
+        externalId: "regional",
+        countries,
+      })
+      await connection.collection("SourceItem").insertOne({
+        item,
+        source,
+        externalId: "regional",
+      })
+
+      const result = await find({ country })
+
+      expect(result.items.map((entry) => entry._id)).toEqual(
+        isBlocked ? [] : [item],
+      )
+      expect(result.total).toBe(isBlocked ? 0 : 1)
+    },
+  )
 
   it("объединяет точные теги, тип, даты, длительность и обычную оценку через И", async () => {
     const firstTag = await seedTag()

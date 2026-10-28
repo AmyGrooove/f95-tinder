@@ -10,7 +10,6 @@ const Attachment = (props: IAttachmentProps) => {
   const {
     alt,
     className,
-    handleImageLoad,
     handleImageLoadingStatusChange,
     isError,
     isLoaded,
@@ -30,7 +29,8 @@ const Attachment = (props: IAttachmentProps) => {
       <Avatar.Image
         alt={alt}
         className={st.image}
-        onLoad={handleImageLoad}
+        keepMounted
+        loading="lazy"
         onLoadingStatusChange={handleImageLoadingStatusChange}
         src={src}
       />

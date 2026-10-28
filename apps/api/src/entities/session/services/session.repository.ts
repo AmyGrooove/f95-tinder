@@ -76,7 +76,7 @@ class SessionRepository {
         user: props.userId,
         expiresAt: { $gt: new Date() },
       },
-      { _id: 1, expiresAt: 1 },
+      { _id: 1, expiresAt: 1, country: 1 },
     )
   }
 
@@ -86,6 +86,7 @@ class SessionRepository {
       {
         _id: 1,
         userAgent: 1,
+        country: 1,
         createdAt: 1,
         expiresAt: 1,
         lastRefreshedAt: 1,
@@ -152,7 +153,7 @@ class SessionRepository {
   }
 
   createNew(props: ICreateSessionProps, options?: CreateOptions) {
-    const { refreshToken, id, userId, userAgent = null } = props
+    const { refreshToken, id, userId, userAgent = null, country } = props
 
     const refreshTokenHash = createHash("sha256")
       .update(refreshToken)
@@ -165,6 +166,7 @@ class SessionRepository {
         user: userId,
         refreshTokenHash,
         userAgent,
+        country,
         expiresAt,
       },
       options,

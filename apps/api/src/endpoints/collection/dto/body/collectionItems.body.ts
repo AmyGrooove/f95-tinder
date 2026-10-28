@@ -95,12 +95,16 @@ class CollectionItemsBodyDto {
   @ApiPropertyOptional({
     enum: ECollectionSort,
     default: ECollectionSort.COLLECTION,
+    description: SWAGGER_DICTIONARY.collection.itemSort,
   })
   @IsOptional()
   @IsEnum(ECollectionSort)
   sort?: ECollectionSort
 
-  @ApiPropertyOptional({ enum: ["asc", "desc"], default: "asc" })
+  @ApiPropertyOptional({
+    enum: ["asc", "desc"],
+    description: SWAGGER_DICTIONARY.collection.itemSortDirection,
+  })
   @IsOptional()
   @IsIn(["asc", "desc"])
   direction?: "asc" | "desc"

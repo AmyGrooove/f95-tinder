@@ -5,8 +5,8 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
-@Schema({ collection: "UserSetting" })
-class UserSetting extends MongoEntity {
+@Schema({ collection: "UserSettings" })
+class UserSettings extends MongoEntity {
   @Prop({
     type: String,
     enum: Object.values(ELocale),
@@ -19,14 +19,14 @@ class UserSetting extends MongoEntity {
   user: Types.ObjectId
 }
 
-type TCreateUserSetting = TCreateEntity<UserSetting, "locale">
+type TCreateUserSettings = TCreateEntity<UserSettings, "locale">
 
-const UserSettingSchema = SchemaFactory.createForClass(UserSetting)
+const UserSettingsSchema = SchemaFactory.createForClass(UserSettings)
 
-UserSettingSchema.index(
+UserSettingsSchema.index(
   { user: 1 },
-  { name: "userSettingUnique", unique: true },
+  { name: "userSettingsUnique", unique: true },
 )
 
-export { UserSetting, UserSettingSchema }
-export type { TCreateUserSetting }
+export { UserSettings, UserSettingsSchema }
+export type { TCreateUserSettings }

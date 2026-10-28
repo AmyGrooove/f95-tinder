@@ -8,55 +8,55 @@ import { MongoPaginationRepository } from "@infrastructure/database/services/mon
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
 
-import { UserSetting } from "../schemas/userSetting.schema"
-import type { TCreateUserSetting } from "../schemas/userSetting.schema"
+import { UserSettings } from "../schemas/userSettings.schema"
+import type { TCreateUserSettings } from "../schemas/userSettings.schema"
 
 @Injectable()
-class UserSettingRepository {
-  readonly read: MongoReadRepository<UserSetting, HydratedDocument<UserSetting>>
+class UserSettingsRepository {
+  readonly read: MongoReadRepository<UserSettings, HydratedDocument<UserSettings>>
   readonly write: MongoWriteRepository<
-    UserSetting,
-    HydratedDocument<UserSetting>,
-    TCreateUserSetting
+    UserSettings,
+    HydratedDocument<UserSettings>,
+    TCreateUserSettings
   >
   readonly pagination: MongoPaginationRepository<
-    UserSetting,
-    HydratedDocument<UserSetting>
+    UserSettings,
+    HydratedDocument<UserSettings>
   >
   readonly bulk: MongoBulkRepository<
-    UserSetting,
-    HydratedDocument<UserSetting>,
-    TCreateUserSetting
+    UserSettings,
+    HydratedDocument<UserSettings>,
+    TCreateUserSettings
   >
   readonly aggregation: MongoAggregationRepository<
-    HydratedDocument<UserSetting>
+    HydratedDocument<UserSettings>
   >
 
   constructor(
-    @InjectModel(UserSetting.name) model: Model<HydratedDocument<UserSetting>>,
+    @InjectModel(UserSettings.name) model: Model<HydratedDocument<UserSettings>>,
   ) {
     this.read = new MongoReadRepository<
-      UserSetting,
-      HydratedDocument<UserSetting>
+      UserSettings,
+      HydratedDocument<UserSettings>
     >(model)
     this.write = new MongoWriteRepository<
-      UserSetting,
-      HydratedDocument<UserSetting>,
-      TCreateUserSetting
+      UserSettings,
+      HydratedDocument<UserSettings>,
+      TCreateUserSettings
     >(model)
     this.pagination = new MongoPaginationRepository<
-      UserSetting,
-      HydratedDocument<UserSetting>
+      UserSettings,
+      HydratedDocument<UserSettings>
     >(model)
     this.bulk = new MongoBulkRepository<
-      UserSetting,
-      HydratedDocument<UserSetting>,
-      TCreateUserSetting
+      UserSettings,
+      HydratedDocument<UserSettings>,
+      TCreateUserSettings
     >(model)
     this.aggregation = new MongoAggregationRepository<
-      HydratedDocument<UserSetting>
+      HydratedDocument<UserSettings>
     >(model)
   }
 }
 
-export { UserSettingRepository }
+export { UserSettingsRepository }

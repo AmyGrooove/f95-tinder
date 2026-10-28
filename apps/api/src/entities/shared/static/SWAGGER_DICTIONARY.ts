@@ -58,6 +58,10 @@ const SWAGGER_DICTIONARY = {
       "Возвращает доступные фильтры и режимы сортировки произведений подборки",
     filtersResponse: "Доступные фильтры и глобальные режимы сортировки",
     filterGroup: "ID группы подборки; без него учитывается весь состав",
+    itemSort:
+      "Порядок подборки, название или значимость тега; relevanceScore доступен только для теговых подборок",
+    itemSortDirection:
+      "Направление сортировки: по умолчанию desc для relevanceScore, asc для названия; порядок подборки всегда прямой",
     update: "Изменить свою подборку",
     updateDescription:
       "Изменяет основные данные, блоки и состав своей подборки",
@@ -234,6 +238,8 @@ const SWAGGER_DICTIONARY = {
       "Новый пароль: от 8 символов до 72 байт UTF-8, без нормализации",
     currentSession: "Текущая сессия",
     sessionExpiration: "Срок действия сессии",
+    sessionCountry:
+      "Страна входа по IP, unknown если страна не определена или отсутствует в справочнике",
     clearAuthCookies: "Очищает __Host-accessToken и __Host-refreshToken",
     sessionCreated: "Сессия создана",
     loginRateLimitExceeded: "Превышен лимит попыток входа",

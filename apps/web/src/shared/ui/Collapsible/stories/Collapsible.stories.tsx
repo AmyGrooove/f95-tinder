@@ -14,6 +14,7 @@ const meta = {
     children: null,
   },
   argTypes: {
+    className: { control: 'text' },
     children: {
       control: false,
       table: {
@@ -64,5 +65,39 @@ const DocsPreview: TStory = {
   tags: ['!dev'],
 }
 
-export { DocsPreview }
+const InitiallyOpen: TStory = {
+  name: 'Открыта при первом рендере',
+  args: { isOpen: true },
+}
+
+const WithUnmountedContent: TStory = {
+  name: 'Сброс содержимого после закрытия',
+  args: { isOpen: true },
+  render: (args) => {
+    const [isOpen, setIsOpen] = useState(args.isOpen)
+
+    return (
+      <Box flexDirection="column" gap={12}>
+        <CheckboxGroup
+          label="Управление панелью"
+          onChange={(values) => {
+            setIsOpen(values.includes('content'))
+          }}
+          options={[{ label: 'Показать содержимое', value: 'content' }]}
+          value={isOpen ? ['content'] : []}
+        />
+        <Text>
+          Измените текст, закройте панель и откройте снова. После завершения
+          закрытия поле возвращается к исходному значению. Быстрые повторные
+          переключения не должны оставлять панель скрытой.
+        </Text>
+        <Collapsible {...args} isOpen={isOpen}>
+          <input defaultValue="Исходный текст" />
+        </Collapsible>
+      </Box>
+    )
+  },
+}
+
+export { DocsPreview, InitiallyOpen, WithUnmountedContent }
 export default meta

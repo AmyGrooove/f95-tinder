@@ -7,6 +7,7 @@ import { isObjectIdOrHexString, mongo, Types } from "mongoose"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { SessionRepository } from "@entities/session/services/session.repository"
+import { getCountryByIp } from "@entities/session/functions/getCountryByIp"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
@@ -244,7 +245,13 @@ class AuthService {
     })
 
     await this.sessionRepository.createNew(
-      { id: sessionId, userId, refreshToken: tokens.refreshToken, userAgent },
+      {
+        id: sessionId,
+        userId,
+        refreshToken: tokens.refreshToken,
+        userAgent,
+        country: getCountryByIp(requestContext.get("ip")),
+      },
       { session },
     )
 

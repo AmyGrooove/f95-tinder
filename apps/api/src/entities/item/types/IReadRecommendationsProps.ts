@@ -1,4 +1,5 @@
 import type { Types } from "mongoose"
+import type { ECountry } from "@entities/shared/schemas/ECountry"
 
 import type { TasteTagPreference } from "@entities/userTasteProfile/schemas/tasteTagPreference.schema"
 
@@ -14,6 +15,7 @@ interface IReadRecommendationsProps {
   limit: number
 
   filter?: IRecommendationFilter
+  country?: ECountry
   library?: IRecommendationLibrary
   excludeItemIds?: readonly Types.ObjectId[]
   collectionGroupIds?: readonly Types.ObjectId[]

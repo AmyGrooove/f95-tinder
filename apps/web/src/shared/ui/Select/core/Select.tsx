@@ -62,6 +62,7 @@ const Select = (props: ISelectProps) => {
           {isClearButtonVisible && (
             <button
               className={st.clearButton}
+              disabled={isDisabled}
               onClick={handleClear}
               type="button"
             >

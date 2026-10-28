@@ -28,6 +28,7 @@ describe("AccountController HTTP", () => {
       },
       session: {
         id: session._id.toHexString(),
+        country: session.country,
         expiresAt: session.expiresAt.toISOString(),
       },
     })

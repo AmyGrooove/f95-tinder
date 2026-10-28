@@ -17,7 +17,7 @@ class ItemTag extends MongoEntity {
     type: Number,
     required: true,
     validate: (value: unknown) =>
-      isFiniteNumber(value) && value >= 0 && value <= 1,
+      isFiniteNumber(value) && value > 0 && value <= 1,
   })
   relevanceScore: number
 }

@@ -11,7 +11,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: менее 2 часов; длительность положительная; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: under 2 hours; duration must be positive; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration120To300",
@@ -23,7 +24,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: от 2 до менее 5 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 2 to under 5 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration300To600",
@@ -35,7 +37,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: от 5 до менее 10 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 5 to under 10 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration600To1200",
@@ -47,7 +50,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: от 10 до менее 20 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 10 to under 20 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration1200To2400",
@@ -59,7 +63,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: от 20 до менее 40 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 20 to under 40 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration2400To4800",
@@ -71,7 +76,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: от 40 до менее 80 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 40 to under 80 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mainStoryDuration4800Plus",
@@ -83,8 +89,8 @@
         "ru": "Оценка времени основной истории базовой игры без DLC: 80 часов и более; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game main story time excluding DLC: 80 hours or more; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

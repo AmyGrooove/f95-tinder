@@ -11,7 +11,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: менее 30 минут; длительность положительная",
         "en": "Duration of a feature or short film: under 30 minutes; duration must be positive"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration30To60",
@@ -23,7 +24,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: от 30 до менее 60 минут",
         "en": "Duration of a feature or short film: 30 to under 60 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration60To90",
@@ -35,7 +37,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: от 60 до менее 90 минут",
         "en": "Duration of a feature or short film: 60 to under 90 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration90To120",
@@ -47,7 +50,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: от 90 до менее 120 минут",
         "en": "Duration of a feature or short film: 90 to under 120 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration120To150",
@@ -59,7 +63,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: от 120 до менее 150 минут",
         "en": "Duration of a feature or short film: 120 to under 150 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration150To180",
@@ -71,7 +76,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: от 150 до менее 180 минут",
         "en": "Duration of a feature or short film: 150 to under 180 minutes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "duration180Plus",
@@ -83,8 +89,8 @@
         "ru": "Длительность полнометражного или короткометражного фильма: 180 минут и более",
         "en": "Duration of a feature or short film: 180 minutes or more"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

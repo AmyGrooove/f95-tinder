@@ -11,7 +11,8 @@
         "ru": "Камера показывает мир примерно из положения глаз управляемого персонажа",
         "en": "Camera presents the world approximately from the controlled character’s eye position"
       },
-      "aliases": ["First-Person"]
+      "aliases": ["First-Person"],
+      "parents": []
     },
     {
       "key": "fixedCamera",
@@ -23,7 +24,8 @@
         "ru": "Положение камеры задаётся фиксированными точками или сценами",
         "en": "Camera placement uses fixed positions or scenes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "isometric",
@@ -35,7 +37,8 @@
         "ru": "Игровое пространство представлено изометрической или близкой аксонометрической проекцией",
         "en": "Play space uses an isometric or closely related axonometric projection"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sideView",
@@ -47,7 +50,8 @@
         "ru": "Камера смотрит на игровое пространство преимущественно сбоку",
         "en": "Camera views play space predominantly from the side"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "thirdPerson",
@@ -59,7 +63,8 @@
         "ru": "Камера показывает управляемого персонажа со стороны",
         "en": "Camera views the controlled character from outside"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "topDown",
@@ -71,8 +76,8 @@
         "ru": "Камера смотрит на игровое пространство преимущественно сверху",
         "en": "Camera views play space predominantly from above"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

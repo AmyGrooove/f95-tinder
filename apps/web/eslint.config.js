@@ -11,12 +11,6 @@ const eslintConfig = defineConfig([
   ...nextTypeScript,
   prettier,
   {
-    files: ['**/*.stories.{ts,tsx}'],
-    rules: {
-      'react-hooks/rules-of-hooks': 'off',
-    },
-  },
-  {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { amy },
     languageOptions: {
@@ -111,6 +105,13 @@ const eslintConfig = defineConfig([
           allowString: false,
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.stories.{ts,tsx}'],
+    rules: {
+      'import/no-default-export': 'off',
+      'react-hooks/rules-of-hooks': 'off',
     },
   },
   {

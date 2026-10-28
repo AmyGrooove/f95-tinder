@@ -119,17 +119,24 @@ describe("UserItemService: background events", () => {
   })
 
   it.each([
-    { body: { rating: 8 }, tasteJobs: 0 },
-    { body: { note: "Новая заметка" }, tasteJobs: 0 },
-    { body: { isFavorite: true }, tasteJobs: 1 },
-    { body: { status: EUserItemStatus.BLOCKED }, tasteJobs: 0 },
+    { body: { rating: 8 }, tasteJobs: 0, metricJobs: 0 },
+    { body: { note: "Новая заметка" }, tasteJobs: 0, metricJobs: 0 },
+    { body: { isFavorite: true }, tasteJobs: 1, metricJobs: 1 },
+    { body: { isFavorite: false }, tasteJobs: 0, metricJobs: 0 },
+    { body: { status: EUserItemStatus.BLOCKED }, tasteJobs: 0, metricJobs: 1 },
+    { body: { status: EUserItemStatus.PLANNED }, tasteJobs: 0, metricJobs: 0 },
   ])(
-    "не пересчитывает рейтинг при изменении %j без изменения оценки",
-    async ({ body, tasteJobs }) => {
+    "ставит задачи вкуса и метрик при изменении %j без изменения оценки",
+    async ({ body, tasteJobs, metricJobs }) => {
       await service.update("token", { id: entry._id, body })
 
-      expect(enqueueRating).not.toHaveBeenCalled()
+      expect(enqueueRating).toHaveBeenCalledTimes(metricJobs)
       expect(enqueueTaste).toHaveBeenCalledTimes(tasteJobs)
+
+      if (metricJobs > 0) {
+        expect(isCommitted).toBe(true)
+        expect(enqueueRating).toHaveBeenCalledWith(itemId)
+      }
     },
   )
 
@@ -165,16 +172,58 @@ describe("UserItemService: background events", () => {
   )
 
   it.each([
-    { previous: 0, operation: "create", isCompleted: true, tasteJobs: 1 },
-    { previous: 2, operation: "create", isCompleted: true, tasteJobs: 1 },
-    { previous: 3, operation: "create", isCompleted: true, tasteJobs: 0 },
-    { previous: 1, operation: "update", isCompleted: false, tasteJobs: 1 },
-    { previous: 3, operation: "update", isCompleted: false, tasteJobs: 1 },
-    { previous: 4, operation: "update", isCompleted: false, tasteJobs: 0 },
-    { previous: 1, operation: "update", isCompleted: true, tasteJobs: 0 },
+    {
+      previous: 0,
+      operation: "create",
+      isCompleted: true,
+      tasteJobs: 1,
+      metricJobs: 1,
+    },
+    {
+      previous: 2,
+      operation: "create",
+      isCompleted: true,
+      tasteJobs: 1,
+      metricJobs: 1,
+    },
+    {
+      previous: 3,
+      operation: "create",
+      isCompleted: true,
+      tasteJobs: 0,
+      metricJobs: 1,
+    },
+    {
+      previous: 1,
+      operation: "update",
+      isCompleted: false,
+      tasteJobs: 1,
+      metricJobs: 1,
+    },
+    {
+      previous: 3,
+      operation: "update",
+      isCompleted: false,
+      tasteJobs: 1,
+      metricJobs: 1,
+    },
+    {
+      previous: 4,
+      operation: "update",
+      isCompleted: false,
+      tasteJobs: 0,
+      metricJobs: 1,
+    },
+    {
+      previous: 1,
+      operation: "update",
+      isCompleted: true,
+      tasteJobs: 0,
+      metricJobs: 0,
+    },
   ])(
-    "ставит $tasteJobs задач вкуса при $operation попытки с isCompleted=$isCompleted после $previous завершённых",
-    async ({ previous, operation, isCompleted, tasteJobs }) => {
+    "ставит $tasteJobs задач вкуса и $metricJobs задач метрик при $operation попытки с isCompleted=$isCompleted после $previous завершённых",
+    async ({ previous, operation, isCompleted, tasteJobs, metricJobs }) => {
       entry.status = EUserItemStatus.IN_PROGRESS
       entry.attempts = Array.from(
         { length: Math.max(1, previous) },
@@ -209,11 +258,16 @@ describe("UserItemService: background events", () => {
       }
 
       expect(enqueueTaste).toHaveBeenCalledTimes(tasteJobs)
-      expect(enqueueRating).not.toHaveBeenCalled()
+      expect(enqueueRating).toHaveBeenCalledTimes(metricJobs)
+
+      if (metricJobs > 0) {
+        expect(isCommitted).toBe(true)
+        expect(enqueueRating).toHaveBeenCalledWith(itemId)
+      }
     },
   )
 
-  it("пересчитывает теги при завершении первой попытки через смену статуса", async () => {
+  it("пересчитывает теги и метрики при завершении первой попытки через смену статуса", async () => {
     entry.rating = null
 
     await service.update("token", {
@@ -223,7 +277,8 @@ describe("UserItemService: background events", () => {
 
     expect(entry.attempts[0].isCompleted).toBe(true)
     expect(enqueueTaste).toHaveBeenCalledWith(userId, itemId)
-    expect(enqueueRating).not.toHaveBeenCalled()
+    expect(enqueueRating).toHaveBeenCalledTimes(1)
+    expect(enqueueRating).toHaveBeenCalledWith(itemId)
   })
 
   it.each([null, "Только заметка"])(
@@ -241,7 +296,7 @@ describe("UserItemService: background events", () => {
   )
 
   it.each([8, null])(
-    "пересчитывает удалённую запись с оценкой %s только при наличии оценки",
+    "пересчитывает метрики после удаления записи с оценкой %s",
     async (rating) => {
       entry.rating = rating
       enqueueRating.mockImplementation(async () => {
@@ -255,7 +310,8 @@ describe("UserItemService: background events", () => {
 
       await service.remove("token", entry._id)
 
-      expect(enqueueRating).toHaveBeenCalledTimes(rating === null ? 0 : 1)
+      expect(enqueueRating).toHaveBeenCalledTimes(1)
+      expect(enqueueRating).toHaveBeenCalledWith(itemId)
       expect(enqueueTaste).toHaveBeenCalledTimes(1)
     },
   )

@@ -11,7 +11,8 @@
         "ru": "Выпуск произведения объявлен, но ещё не начался",
         "en": "Release announced but not yet started"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseStatusCancelled",
@@ -23,7 +24,8 @@
         "ru": "Выпуск отменён до предусмотренного завершения",
         "en": "Release cancelled before its intended completion"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseStatusOngoing",
@@ -35,7 +37,8 @@
         "ru": "Выпуск произведения или сезона продолжается; не обновления уже выпущенной игры",
         "en": "The work or season is still being released; excludes updates to a released game"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "releaseStatusReleased",
@@ -47,8 +50,8 @@
         "ru": "Выпуск произведения или сезона завершён",
         "en": "Release of the work or season is complete"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

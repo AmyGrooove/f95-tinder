@@ -47,6 +47,8 @@ const DICTIONARY = {
     invalidPagination: "Слишком большое смещение страницы",
     invalidRatingRange: "Минимальная оценка не может превышать максимальную",
     unavailableMode: "Режим grouped недоступен для этой подборки",
+    unavailableSort:
+      "Сортировка по значимости тега доступна только для теговых подборок",
     invalidFieldFilters:
       "Некорректные условия полей Item: проверьте поля, типы значений и границы",
     emptyUpdate: "Укажите хотя бы одно изменение подборки",
@@ -73,8 +75,12 @@ const DICTIONARY = {
     textContentRequired: "Текстовый блок требует хотя бы один непустой перевод",
     textGroupFields: "Название и описание допустимы только для группы",
   },
-  tagRelation: {
-    selfRelation: "Тег не может быть связан сам с собой",
+  tag: {
+    selfParent: "Тег не может быть собственным родителем",
+    duplicateParents: "Родительские теги не должны повторяться",
+    invalidParents: "Родители должны быть массивом ObjectId тегов",
+    unsupportedParentsWrite:
+      "Используйте создание тега, сохранение документа или полную замену parents по конкретному _id без upsert",
   },
   account: {
     emailConfirmationInvalid:

@@ -20,13 +20,12 @@ import { RelationModule } from "@entities/relation/relation.module"
 import { ItemRelationRoleModule } from "@entities/itemRelationRole/itemRelationRole.module"
 import { TagModule } from "@entities/tag/tag.module"
 import { ItemTagModule } from "@entities/itemTag/itemTag.module"
-import { TagRelationModule } from "@entities/tagRelation/tagRelation.module"
 import { FactModule } from "@entities/fact/fact.module"
 import { SourceModule } from "@entities/source/source.module"
 import { SourceItemModule } from "@entities/sourceItem/sourceItem.module"
 import { ItemMetricModule } from "@entities/itemMetric/itemMetric.module"
 import { UserModule } from "@entities/user/user.module"
-import { UserSettingModule } from "@entities/userSetting/userSetting.module"
+import { UserSettingsModule } from "@entities/userSettings/userSettings.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserSourceAccountModule } from "@entities/userSourceAccount/userSourceAccount.module"
 import { SessionModule } from "@entities/session/session.module"
@@ -68,13 +67,12 @@ import { AppController } from "./controllers/app.controller"
     ItemRelationRoleModule,
     TagModule,
     ItemTagModule,
-    TagRelationModule,
     FactModule,
     SourceModule,
     SourceItemModule,
     ItemMetricModule,
     UserModule,
-    UserSettingModule,
+    UserSettingsModule,
     UserItemModule,
     UserSourceAccountModule,
     SessionModule,

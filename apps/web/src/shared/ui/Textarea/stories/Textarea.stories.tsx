@@ -12,6 +12,13 @@ const meta = {
     value: '',
   },
   argTypes: {
+    className: { control: 'text' },
+    onBlur: { control: false },
+    onChange: { control: false },
+    onFocus: { control: false },
+    placeholder: { control: 'text' },
+    ref: { control: false },
+    value: { control: 'text' },
     errorText: {
       control: { type: 'text' },
       table: {
@@ -39,7 +46,7 @@ const meta = {
     },
   },
   render: (args) => {
-    const [value, setValue] = useState('')
+    const [value, setValue] = useState(args.value)
 
     return <Textarea {...args} onChange={setValue} value={value} />
   },
@@ -81,6 +88,34 @@ const Disabled: TStory = {
   },
 }
 
+const ResizableWidth: TStory = {
+  name: 'Переносы при изменении ширины',
+  args: {
+    label: 'Автоматическая высота',
+    hintText:
+      'Потяните правый нижний угол контейнера. Высота должна меняться без редактирования текста.',
+    value:
+      'Один и тот же текст занимает разное количество строк в зависимости от ширины поля. При сужении контейнера поле увеличивается до максимальной высоты, после чего появляется прокрутка. При расширении контейнера поле снова уменьшается, а лишняя прокрутка исчезает.',
+  },
+  decorators: [
+    (Story) => {
+      return (
+        <div
+          style={{
+            maxWidth: '100%',
+            minWidth: 160,
+            overflow: 'auto',
+            resize: 'horizontal',
+            width: 480,
+          }}
+        >
+          <Story />
+        </div>
+      )
+    },
+  ],
+}
+
 export {
   DocsPreview,
   WithLabel,
@@ -88,5 +123,6 @@ export {
   WithPlaceholder,
   WithError,
   Disabled,
+  ResizableWidth,
 }
 export default meta

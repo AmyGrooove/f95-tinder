@@ -132,6 +132,8 @@ describe("ItemRatingsModule", () => {
       item: first._id,
       user: new Types.ObjectId(),
       status: EUserItemStatus.PLANNED,
+      attempts: [],
+      isFavorite: false,
     })
     await createRating(second._id, 1)
     await handler.handle(String(first._id), context)
@@ -151,7 +153,7 @@ describe("ItemRatingsModule", () => {
     ).resolves.toEqual([])
   })
 
-  it("создаёт метрики с defaults, сохраняет остальные поля и исходные данные при повторном пересчёте", async () => {
+  it("создаёт метрики с defaults, обновляет агрегаты и сохраняет исходные данные при повторном пересчёте", async () => {
     const rated = await createItem()
     const unrated = await createItem()
     await createRating(rated._id, 10)
@@ -160,7 +162,6 @@ describe("ItemRatingsModule", () => {
       ratingAverage: 2,
       ratingsCount: 20,
       completedAttemptsCount: 7,
-      recommendationsCount: 11,
       favoritesCount: 3,
       ratingDistribution: { two: 20 },
       statusCounts: { planned: 2, completed: 7 },
@@ -185,6 +186,27 @@ describe("ItemRatingsModule", () => {
         ...before,
         ratingAverage: 10,
         ratingsCount: 1,
+        completedAttemptsCount: 0,
+        favoritesCount: 0,
+        ratingDistribution: {
+          one: 0,
+          two: 0,
+          three: 0,
+          four: 0,
+          five: 0,
+          six: 0,
+          seven: 0,
+          eight: 0,
+          nine: 0,
+          ten: 1,
+        },
+        statusCounts: {
+          planned: 1,
+          inProgress: 0,
+          onHold: 0,
+          completed: 0,
+          dropped: 0,
+        },
         updatedAt: expect.any(Date),
       })
       const created = await metrics.read.findOne({ item: unrated._id })
@@ -192,7 +214,6 @@ describe("ItemRatingsModule", () => {
         ratingAverage: null,
         ratingsCount: 0,
         completedAttemptsCount: 0,
-        recommendationsCount: 0,
         favoritesCount: 0,
         ratingDistribution: {
           one: 0,
@@ -256,6 +277,124 @@ describe("ItemRatingsModule", () => {
     expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
       ratingAverage: null,
       ratingsCount: 0,
+    })
+  })
+
+  it("считает все оценки, статусы, избранное и завершённые попытки без ограничения до трёх", async () => {
+    const item = await createItem()
+    const other = await createItem()
+    const statuses = [
+      EUserItemStatus.PLANNED,
+      EUserItemStatus.IN_PROGRESS,
+      EUserItemStatus.ON_HOLD,
+      EUserItemStatus.COMPLETED,
+      EUserItemStatus.DROPPED,
+    ]
+
+    for (let rating = 1; rating <= 10; rating += 1) {
+      await userItems.write.create({
+        item: item._id,
+        user: new Types.ObjectId(),
+        rating,
+        status: statuses[(rating - 1) % statuses.length],
+        isFavorite: rating % 2 === 0,
+        attempts:
+          rating === 1
+            ? [
+                { isCompleted: true },
+                { isCompleted: true },
+                { isCompleted: true },
+                { isCompleted: true },
+                { isCompleted: false },
+              ]
+            : [],
+      })
+    }
+
+    await userItems.write.create({
+      item: item._id,
+      user: new Types.ObjectId(),
+      rating: 10,
+      status: EUserItemStatus.BLOCKED,
+      isFavorite: true,
+      attempts: [{ isCompleted: true }],
+    })
+    await userItems.write.create({
+      item: item._id,
+      user: new Types.ObjectId(),
+      status: EUserItemStatus.SKIPPED,
+    })
+    await userItems.write.create({
+      item: item._id,
+      user: new Types.ObjectId(),
+      status: EUserItemStatus.COMPLETED,
+      isFavorite: true,
+      attempts: [{ isCompleted: true }, { isCompleted: false }],
+    })
+    await userItems.write.create({
+      item: other._id,
+      user: new Types.ObjectId(),
+      status: EUserItemStatus.COMPLETED,
+      rating: 1,
+      isFavorite: true,
+      attempts: [{ isCompleted: true }],
+    })
+
+    await handler.handle(String(item._id), context)
+    const metric = await metrics.read.findOne({ item: item._id })
+    expect(metric?.ratingAverage).toBeCloseTo(65 / 11, 12)
+    expect(metric).toMatchObject({
+      ratingsCount: 11,
+      completedAttemptsCount: 6,
+      favoritesCount: 7,
+      ratingDistribution: {
+        one: 1,
+        two: 1,
+        three: 1,
+        four: 1,
+        five: 1,
+        six: 1,
+        seven: 1,
+        eight: 1,
+        nine: 1,
+        ten: 2,
+      },
+      statusCounts: {
+        planned: 2,
+        inProgress: 2,
+        onHold: 2,
+        completed: 3,
+        dropped: 2,
+      },
+    })
+    await expect(metrics.read.findOne({ item: other._id })).resolves.toBeNull()
+
+    await userItems.bulk.deleteMany({ item: item._id })
+    await handler.handle(String(item._id), context)
+    expect(await metrics.read.findOne({ item: item._id })).toMatchObject({
+      ratingAverage: null,
+      ratingsCount: 0,
+      completedAttemptsCount: 0,
+      favoritesCount: 0,
+      ratingDistribution: {
+        one: 0,
+        two: 0,
+        three: 0,
+        four: 0,
+        five: 0,
+        six: 0,
+        seven: 0,
+        eight: 0,
+        nine: 0,
+        ten: 0,
+      },
+      statusCounts: {
+        planned: 0,
+        inProgress: 0,
+        onHold: 0,
+        completed: 0,
+        dropped: 0,
+      },
     })
   })
 

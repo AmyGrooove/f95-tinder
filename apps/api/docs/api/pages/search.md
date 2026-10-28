@@ -42,11 +42,11 @@
 
 Условия групп необязательны и независимы:
 
-| Группа        | Фильтры                                                                                             | Значения `sort`                                              |
-| ------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Группа        | Фильтры                                                                                             | Значения `sort`                               |
+| ------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | `items`       | `types: EItemType[]`, `tagIds: ObjectId[]`, `fields: [{field,min?,max?}]`, `ratingMin`, `ratingMax` | `relevance`, `title`, `releaseDate`, `rating` |
-| `users`       | Нет                                                                                                 | `relevance`, `username`, `displayName`                       |
-| `collections` | `types: ECollectionType[]`, `authorIds: ObjectId[]`                                                 | `relevance`, `title`, `updatedAt`                            |
+| `users`       | Нет                                                                                                 | `relevance`, `username`, `displayName`        |
+| `collections` | `types: ECollectionType[]`, `authorIds: ObjectId[]`                                                 | `relevance`, `title`, `updatedAt`             |
 
 `tagIds` требует совпадения всех выбранных существующих тегов, без неявного добавления предков. `types` и `authorIds` допускают любое из выбранных значений. `authorIds` содержит ID создателей подборок, а не их имена; подборки сайта с author=null при таком фильтре не проходят. Массивы непустые и без повторов; максимум 100 tagIds/authorIds.
 

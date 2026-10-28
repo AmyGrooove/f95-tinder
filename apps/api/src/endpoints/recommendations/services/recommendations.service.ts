@@ -67,6 +67,7 @@ class RecommendationsService {
       siteRatingAverage,
       now: new Date(),
       filter: props.filter,
+      country: props.country,
       library: props.library,
       excludeItemIds: props.excludeItemIds,
       collectionGroupIds,

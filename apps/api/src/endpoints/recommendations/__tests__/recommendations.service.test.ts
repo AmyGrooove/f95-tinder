@@ -23,6 +23,7 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 import { RecommendationsService } from "../services/recommendations.service"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 
 describe("RecommendationsService", () => {
   const userId = new Types.ObjectId()
@@ -126,6 +127,7 @@ describe("RecommendationsService", () => {
     readRecommendations.mockResolvedValue({ items: [item], total: 250 })
     const props: IFindRecommendationsProps = {
       userId,
+      country: ECountry.RUSSIA,
       filter: { types: [EItemType.GAME], tagIds: [preferences[0].tag] },
       library: {
         include: [EUserItemStatus.PLANNED],
@@ -143,6 +145,7 @@ describe("RecommendationsService", () => {
         preferences,
         siteRatingAverage: 7,
         filter: props.filter,
+        country: ECountry.RUSSIA,
         library: props.library,
         excludeItemIds: props.excludeItemIds,
         page: 2,

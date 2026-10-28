@@ -5,6 +5,35 @@ import { validate } from "class-validator"
 import { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
 
 describe("CollectionItemsBodyDto", () => {
+  it.each([undefined, "asc", "desc"])(
+    "принимает сортировку relevanceScore с направлением %s",
+    async (direction) => {
+      const dto = plainToInstance(CollectionItemsBodyDto, {
+        sort: "relevanceScore",
+        direction,
+      })
+
+      expect(
+        await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
+      ).toEqual([])
+      expect(dto.sort).toBe("relevanceScore")
+    },
+  )
+
+  it.each([
+    { sort: "score", property: "sort" },
+    { sort: "relevanceScore", direction: "down", property: "direction" },
+  ])(
+    "отклоняет недопустимую сортировку $sort/$direction",
+    async ({ property, ...query }) => {
+      const dto = plainToInstance(CollectionItemsBodyDto, query)
+
+      expect(await validate(dto)).toEqual([
+        expect.objectContaining({ property }),
+      ])
+    },
+  )
+
   it.each([1, 20, 60])(
     "принимает размер страницы %i в допустимом диапазоне",
     async (limit) => {

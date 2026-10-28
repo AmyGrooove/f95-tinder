@@ -11,7 +11,8 @@
         "ru": "Язык оригинала — абхазский; не язык перевода или интерфейса",
         "en": "Original language: Abkhazian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAfar",
@@ -23,7 +24,8 @@
         "ru": "Язык оригинала — афарский; не язык перевода или интерфейса",
         "en": "Original language: Afar; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAfrikaans",
@@ -35,7 +37,8 @@
         "ru": "Язык оригинала — африкаанс; не язык перевода или интерфейса",
         "en": "Original language: Afrikaans; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAkan",
@@ -47,7 +50,8 @@
         "ru": "Язык оригинала — акан; не язык перевода или интерфейса",
         "en": "Original language: Akan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAlbanian",
@@ -59,7 +63,8 @@
         "ru": "Язык оригинала — албанский; не язык перевода или интерфейса",
         "en": "Original language: Albanian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAmharic",
@@ -71,7 +76,8 @@
         "ru": "Язык оригинала — амхарский; не язык перевода или интерфейса",
         "en": "Original language: Amharic; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageArabic",
@@ -83,7 +89,8 @@
         "ru": "Язык оригинала — арабский; не язык перевода или интерфейса",
         "en": "Original language: Arabic; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAragonese",
@@ -95,7 +102,8 @@
         "ru": "Язык оригинала — арагонский; не язык перевода или интерфейса",
         "en": "Original language: Aragonese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageArmenian",
@@ -107,7 +115,8 @@
         "ru": "Язык оригинала — армянский; не язык перевода или интерфейса",
         "en": "Original language: Armenian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAssamese",
@@ -119,7 +128,8 @@
         "ru": "Язык оригинала — ассамский; не язык перевода или интерфейса",
         "en": "Original language: Assamese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAvaric",
@@ -131,7 +141,8 @@
         "ru": "Язык оригинала — аварский; не язык перевода или интерфейса",
         "en": "Original language: Avaric; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAvestan",
@@ -143,7 +154,8 @@
         "ru": "Язык оригинала — авестийский; не язык перевода или интерфейса",
         "en": "Original language: Avestan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAymara",
@@ -155,7 +167,8 @@
         "ru": "Язык оригинала — аймара; не язык перевода или интерфейса",
         "en": "Original language: Aymara; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageAzerbaijani",
@@ -167,7 +180,8 @@
         "ru": "Язык оригинала — азербайджанский; не язык перевода или интерфейса",
         "en": "Original language: Azerbaijani; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBambara",
@@ -179,7 +193,8 @@
         "ru": "Язык оригинала — бамбара; не язык перевода или интерфейса",
         "en": "Original language: Bambara; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBangla",
@@ -191,7 +206,8 @@
         "ru": "Язык оригинала — бенгальский; не язык перевода или интерфейса",
         "en": "Original language: Bangla; excludes translations and interface language"
       },
-      "aliases": ["Bengali"]
+      "aliases": ["Bengali"],
+      "parents": []
     },
     {
       "key": "languageBashkir",
@@ -203,7 +219,8 @@
         "ru": "Язык оригинала — башкирский; не язык перевода или интерфейса",
         "en": "Original language: Bashkir; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBasque",
@@ -215,7 +232,8 @@
         "ru": "Язык оригинала — баскский; не язык перевода или интерфейса",
         "en": "Original language: Basque; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBelarusian",
@@ -227,7 +245,8 @@
         "ru": "Язык оригинала — белорусский; не язык перевода или интерфейса",
         "en": "Original language: Belarusian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBislama",
@@ -239,7 +258,8 @@
         "ru": "Язык оригинала — бислама; не язык перевода или интерфейса",
         "en": "Original language: Bislama; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBosnian",
@@ -251,7 +271,8 @@
         "ru": "Язык оригинала — боснийский; не язык перевода или интерфейса",
         "en": "Original language: Bosnian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBreton",
@@ -263,7 +284,8 @@
         "ru": "Язык оригинала — бретонский; не язык перевода или интерфейса",
         "en": "Original language: Breton; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBulgarian",
@@ -275,7 +297,8 @@
         "ru": "Язык оригинала — болгарский; не язык перевода или интерфейса",
         "en": "Original language: Bulgarian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageBurmese",
@@ -287,7 +310,8 @@
         "ru": "Язык оригинала — бирманский; не язык перевода или интерфейса",
         "en": "Original language: Burmese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCantonese",
@@ -299,7 +323,8 @@
         "ru": "Язык оригинала — кантонский; не язык перевода или интерфейса",
         "en": "Original language: Cantonese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCatalan",
@@ -311,7 +336,8 @@
         "ru": "Язык оригинала — каталанский; не язык перевода или интерфейса",
         "en": "Original language: Catalan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCentralKhmer",
@@ -323,7 +349,8 @@
         "ru": "Язык оригинала — кхмерский; не язык перевода или интерфейса",
         "en": "Original language: Central Khmer; excludes translations and interface language"
       },
-      "aliases": ["Khmer"]
+      "aliases": ["Khmer"],
+      "parents": []
     },
     {
       "key": "languageChamorro",
@@ -335,7 +362,8 @@
         "ru": "Язык оригинала — чаморро; не язык перевода или интерфейса",
         "en": "Original language: Chamorro; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageChechen",
@@ -347,7 +375,8 @@
         "ru": "Язык оригинала — чеченский; не язык перевода или интерфейса",
         "en": "Original language: Chechen; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageChichewa",
@@ -359,7 +388,8 @@
         "ru": "Язык оригинала — ньянджа; не язык перевода или интерфейса",
         "en": "Original language: Chichewa; excludes translations and interface language"
       },
-      "aliases": ["Chichewa; Nyanja"]
+      "aliases": ["Chichewa; Nyanja"],
+      "parents": []
     },
     {
       "key": "languageChuvash",
@@ -371,7 +401,8 @@
         "ru": "Язык оригинала — чувашский; не язык перевода или интерфейса",
         "en": "Original language: Chuvash; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCornish",
@@ -383,7 +414,8 @@
         "ru": "Язык оригинала — корнский; не язык перевода или интерфейса",
         "en": "Original language: Cornish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCorsican",
@@ -395,7 +427,8 @@
         "ru": "Язык оригинала — корсиканский; не язык перевода или интерфейса",
         "en": "Original language: Corsican; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCree",
@@ -407,7 +440,8 @@
         "ru": "Язык оригинала — кри; не язык перевода или интерфейса",
         "en": "Original language: Cree; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCroatian",
@@ -419,7 +453,8 @@
         "ru": "Язык оригинала — хорватский; не язык перевода или интерфейса",
         "en": "Original language: Croatian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageCzech",
@@ -431,7 +466,8 @@
         "ru": "Язык оригинала — чешский; не язык перевода или интерфейса",
         "en": "Original language: Czech; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageDanish",
@@ -443,7 +479,8 @@
         "ru": "Язык оригинала — датский; не язык перевода или интерфейса",
         "en": "Original language: Danish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageDivehi",
@@ -455,7 +492,8 @@
         "ru": "Язык оригинала — дивехи; не язык перевода или интерфейса",
         "en": "Original language: Divehi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageDutch",
@@ -467,7 +505,8 @@
         "ru": "Язык оригинала — нидерландский; не язык перевода или интерфейса",
         "en": "Original language: Dutch; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageDzongkha",
@@ -479,7 +518,8 @@
         "ru": "Язык оригинала — дзонг-кэ; не язык перевода или интерфейса",
         "en": "Original language: Dzongkha; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageEnglish",
@@ -491,7 +531,8 @@
         "ru": "Язык оригинала — английский; не язык перевода или интерфейса",
         "en": "Original language: English; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageEsperanto",
@@ -503,7 +544,8 @@
         "ru": "Язык оригинала — эсперанто; не язык перевода или интерфейса",
         "en": "Original language: Esperanto; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageEstonian",
@@ -515,7 +557,8 @@
         "ru": "Язык оригинала — эстонский; не язык перевода или интерфейса",
         "en": "Original language: Estonian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageEwe",
@@ -527,7 +570,8 @@
         "ru": "Язык оригинала — эве; не язык перевода или интерфейса",
         "en": "Original language: Ewe; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageFaroese",
@@ -539,7 +583,8 @@
         "ru": "Язык оригинала — фарерский; не язык перевода или интерфейса",
         "en": "Original language: Faroese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageFijian",
@@ -551,7 +596,8 @@
         "ru": "Язык оригинала — фиджийский; не язык перевода или интерфейса",
         "en": "Original language: Fijian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageFinnish",
@@ -563,7 +609,8 @@
         "ru": "Язык оригинала — финский; не язык перевода или интерфейса",
         "en": "Original language: Finnish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageFrench",
@@ -575,7 +622,8 @@
         "ru": "Язык оригинала — французский; не язык перевода или интерфейса",
         "en": "Original language: French; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageFulah",
@@ -587,7 +635,8 @@
         "ru": "Язык оригинала — фула; не язык перевода или интерфейса",
         "en": "Original language: Fulah; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGalician",
@@ -599,7 +648,8 @@
         "ru": "Язык оригинала — галисийский; не язык перевода или интерфейса",
         "en": "Original language: Galician; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGanda",
@@ -611,7 +661,8 @@
         "ru": "Язык оригинала — ганда; не язык перевода или интерфейса",
         "en": "Original language: Ganda; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGeorgian",
@@ -623,7 +674,8 @@
         "ru": "Язык оригинала — грузинский; не язык перевода или интерфейса",
         "en": "Original language: Georgian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGerman",
@@ -635,7 +687,8 @@
         "ru": "Язык оригинала — немецкий; не язык перевода или интерфейса",
         "en": "Original language: German; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGreek",
@@ -647,7 +700,8 @@
         "ru": "Язык оригинала — греческий; не язык перевода или интерфейса",
         "en": "Original language: Greek; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGuarani",
@@ -659,7 +713,8 @@
         "ru": "Язык оригинала — гуарани; не язык перевода или интерфейса",
         "en": "Original language: Guarani; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageGujarati",
@@ -671,7 +726,8 @@
         "ru": "Язык оригинала — гуджарати; не язык перевода или интерфейса",
         "en": "Original language: Gujarati; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHaitianCreole",
@@ -683,7 +739,8 @@
         "ru": "Язык оригинала — гаитянский креольский; не язык перевода или интерфейса",
         "en": "Original language: Haitian Creole; excludes translations and interface language"
       },
-      "aliases": ["Haitian; Haitian Creole"]
+      "aliases": ["Haitian; Haitian Creole"],
+      "parents": []
     },
     {
       "key": "languageHausa",
@@ -695,7 +752,8 @@
         "ru": "Язык оригинала — хауса; не язык перевода или интерфейса",
         "en": "Original language: Hausa; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHebrew",
@@ -707,7 +765,8 @@
         "ru": "Язык оригинала — иврит; не язык перевода или интерфейса",
         "en": "Original language: Hebrew; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHerero",
@@ -719,7 +778,8 @@
         "ru": "Язык оригинала — гереро; не язык перевода или интерфейса",
         "en": "Original language: Herero; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHindi",
@@ -731,7 +791,8 @@
         "ru": "Язык оригинала — хинди; не язык перевода или интерфейса",
         "en": "Original language: Hindi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHiriMotu",
@@ -743,7 +804,8 @@
         "ru": "Язык оригинала — хири-моту; не язык перевода или интерфейса",
         "en": "Original language: Hiri Motu; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageHungarian",
@@ -755,7 +817,8 @@
         "ru": "Язык оригинала — венгерский; не язык перевода или интерфейса",
         "en": "Original language: Hungarian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageIcelandic",
@@ -767,7 +830,8 @@
         "ru": "Язык оригинала — исландский; не язык перевода или интерфейса",
         "en": "Original language: Icelandic; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageIdo",
@@ -779,7 +843,8 @@
         "ru": "Язык оригинала — идо; не язык перевода или интерфейса",
         "en": "Original language: Ido; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageIgbo",
@@ -791,7 +856,8 @@
         "ru": "Язык оригинала — игбо; не язык перевода или интерфейса",
         "en": "Original language: Igbo; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageIndonesian",
@@ -803,7 +869,8 @@
         "ru": "Язык оригинала — индонезийский; не язык перевода или интерфейса",
         "en": "Original language: Indonesian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageInterlingua",
@@ -815,7 +882,8 @@
         "ru": "Язык оригинала — интерлингва; не язык перевода или интерфейса",
         "en": "Original language: Interlingua; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageInterlingue",
@@ -827,7 +895,8 @@
         "ru": "Язык оригинала — интерлингве; не язык перевода или интерфейса",
         "en": "Original language: Interlingue; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageInuktitut",
@@ -839,7 +908,8 @@
         "ru": "Язык оригинала — инуктитут; не язык перевода или интерфейса",
         "en": "Original language: Inuktitut; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageInupiaq",
@@ -851,7 +921,8 @@
         "ru": "Язык оригинала — инупиак; не язык перевода или интерфейса",
         "en": "Original language: Inupiaq; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageIrish",
@@ -863,7 +934,8 @@
         "ru": "Язык оригинала — ирландский; не язык перевода или интерфейса",
         "en": "Original language: Irish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageItalian",
@@ -875,7 +947,8 @@
         "ru": "Язык оригинала — итальянский; не язык перевода или интерфейса",
         "en": "Original language: Italian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageJapanese",
@@ -887,7 +960,8 @@
         "ru": "Язык оригинала — японский; не язык перевода или интерфейса",
         "en": "Original language: Japanese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageJavanese",
@@ -899,7 +973,8 @@
         "ru": "Язык оригинала — яванский; не язык перевода или интерфейса",
         "en": "Original language: Javanese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKalaallisut",
@@ -911,7 +986,8 @@
         "ru": "Язык оригинала — гренландский; не язык перевода или интерфейса",
         "en": "Original language: Kalaallisut; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKannada",
@@ -923,7 +999,8 @@
         "ru": "Язык оригинала — каннада; не язык перевода или интерфейса",
         "en": "Original language: Kannada; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKanuri",
@@ -935,7 +1012,8 @@
         "ru": "Язык оригинала — канури; не язык перевода или интерфейса",
         "en": "Original language: Kanuri; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKashmiri",
@@ -947,7 +1025,8 @@
         "ru": "Язык оригинала — кашмири; не язык перевода или интерфейса",
         "en": "Original language: Kashmiri; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKazakh",
@@ -959,7 +1038,8 @@
         "ru": "Язык оригинала — казахский; не язык перевода или интерфейса",
         "en": "Original language: Kazakh; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKikuyu",
@@ -971,7 +1051,8 @@
         "ru": "Язык оригинала — кикуйю; не язык перевода или интерфейса",
         "en": "Original language: Kikuyu; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKinyarwanda",
@@ -983,7 +1064,8 @@
         "ru": "Язык оригинала — киньяруанда; не язык перевода или интерфейса",
         "en": "Original language: Kinyarwanda; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKomi",
@@ -995,7 +1077,8 @@
         "ru": "Язык оригинала — коми; не язык перевода или интерфейса",
         "en": "Original language: Komi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKongo",
@@ -1007,7 +1090,8 @@
         "ru": "Язык оригинала — конго; не язык перевода или интерфейса",
         "en": "Original language: Kongo; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKorean",
@@ -1019,7 +1103,8 @@
         "ru": "Язык оригинала — корейский; не язык перевода или интерфейса",
         "en": "Original language: Korean; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKuanyama",
@@ -1031,7 +1116,8 @@
         "ru": "Язык оригинала — куаньяма; не язык перевода или интерфейса",
         "en": "Original language: Kuanyama; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKurdish",
@@ -1043,7 +1129,8 @@
         "ru": "Язык оригинала — курдский; не язык перевода или интерфейса",
         "en": "Original language: Kurdish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageKyrgyz",
@@ -1055,7 +1142,8 @@
         "ru": "Язык оригинала — киргизский; не язык перевода или интерфейса",
         "en": "Original language: Kyrgyz; excludes translations and interface language"
       },
-      "aliases": ["Kirghiz"]
+      "aliases": ["Kirghiz"],
+      "parents": []
     },
     {
       "key": "languageLao",
@@ -1067,7 +1155,8 @@
         "ru": "Язык оригинала — лаосский; не язык перевода или интерфейса",
         "en": "Original language: Lao; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLatin",
@@ -1079,7 +1168,8 @@
         "ru": "Язык оригинала — латинский; не язык перевода или интерфейса",
         "en": "Original language: Latin; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLatvian",
@@ -1091,7 +1181,8 @@
         "ru": "Язык оригинала — латышский; не язык перевода или интерфейса",
         "en": "Original language: Latvian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLimburgish",
@@ -1103,7 +1194,8 @@
         "ru": "Язык оригинала — лимбургский; не язык перевода или интерфейса",
         "en": "Original language: Limburgish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLingala",
@@ -1115,7 +1207,8 @@
         "ru": "Язык оригинала — лингала; не язык перевода или интерфейса",
         "en": "Original language: Lingala; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLithuanian",
@@ -1127,7 +1220,8 @@
         "ru": "Язык оригинала — литовский; не язык перевода или интерфейса",
         "en": "Original language: Lithuanian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLubaKatanga",
@@ -1139,7 +1233,8 @@
         "ru": "Язык оригинала — луба-катанга; не язык перевода или интерфейса",
         "en": "Original language: Luba-Katanga; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageLuxembourgish",
@@ -1151,7 +1246,8 @@
         "ru": "Язык оригинала — люксембургский; не язык перевода или интерфейса",
         "en": "Original language: Luxembourgish; excludes translations and interface language"
       },
-      "aliases": ["Letzeburgesch"]
+      "aliases": ["Letzeburgesch"],
+      "parents": []
     },
     {
       "key": "languageMacedonian",
@@ -1163,7 +1259,8 @@
         "ru": "Язык оригинала — македонский; не язык перевода или интерфейса",
         "en": "Original language: Macedonian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMalagasy",
@@ -1175,7 +1272,8 @@
         "ru": "Язык оригинала — малагасийский; не язык перевода или интерфейса",
         "en": "Original language: Malagasy; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMalay",
@@ -1187,7 +1285,8 @@
         "ru": "Язык оригинала — малайский; не язык перевода или интерфейса",
         "en": "Original language: Malay; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMalayalam",
@@ -1199,7 +1298,8 @@
         "ru": "Язык оригинала — малаялам; не язык перевода или интерфейса",
         "en": "Original language: Malayalam; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMaltese",
@@ -1211,7 +1311,8 @@
         "ru": "Язык оригинала — мальтийский; не язык перевода или интерфейса",
         "en": "Original language: Maltese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMandarin",
@@ -1223,7 +1324,8 @@
         "ru": "Язык оригинала — мандаринский китайский; не общее обозначение всех китайских языков",
         "en": "The original language is Mandarin Chinese, not a blanket designation for all Chinese languages"
       },
-      "aliases": ["Mandarin"]
+      "aliases": ["Mandarin"],
+      "parents": []
     },
     {
       "key": "languageManx",
@@ -1235,7 +1337,8 @@
         "ru": "Язык оригинала — мэнский; не язык перевода или интерфейса",
         "en": "Original language: Manx; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMaori",
@@ -1247,7 +1350,8 @@
         "ru": "Язык оригинала — маори; не язык перевода или интерфейса",
         "en": "Original language: Maori; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMarathi",
@@ -1259,7 +1363,8 @@
         "ru": "Язык оригинала — маратхи; не язык перевода или интерфейса",
         "en": "Original language: Marathi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageMarshallese",
@@ -1271,7 +1376,8 @@
         "ru": "Язык оригинала — маршалльский; не язык перевода или интерфейса",
         "en": "Original language: Marshallese; excludes translations and interface language"
       },
-      "aliases": ["Marshall"]
+      "aliases": ["Marshall"],
+      "parents": []
     },
     {
       "key": "languageMongolian",
@@ -1283,7 +1389,8 @@
         "ru": "Язык оригинала — монгольский; не язык перевода или интерфейса",
         "en": "Original language: Mongolian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNauru",
@@ -1295,7 +1402,8 @@
         "ru": "Язык оригинала — науру; не язык перевода или интерфейса",
         "en": "Original language: Nauru; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNavajo",
@@ -1307,7 +1415,8 @@
         "ru": "Язык оригинала — навахо; не язык перевода или интерфейса",
         "en": "Original language: Navajo; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNdonga",
@@ -1319,7 +1428,8 @@
         "ru": "Язык оригинала — ндонга; не язык перевода или интерфейса",
         "en": "Original language: Ndonga; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNepali",
@@ -1331,7 +1441,8 @@
         "ru": "Язык оригинала — непальский; не язык перевода или интерфейса",
         "en": "Original language: Nepali; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNoLinguisticContent",
@@ -1343,7 +1454,8 @@
         "ru": "В оригинальном произведении нет речи и языкового текста; не неизвестный язык и не просто отсутствие озвучки",
         "en": "The original work contains neither speech nor linguistic text; not an unknown language or merely an absence of voice acting"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNorthernSami",
@@ -1355,7 +1467,8 @@
         "ru": "Язык оригинала — северносаамский; не язык перевода или интерфейса",
         "en": "Original language: Northern Sami; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNorthNdebele",
@@ -1367,7 +1480,8 @@
         "ru": "Язык оригинала — северный ндебеле; не язык перевода или интерфейса",
         "en": "Original language: North Ndebele; excludes translations and interface language"
       },
-      "aliases": ["Ndebele"]
+      "aliases": ["Ndebele"],
+      "parents": []
     },
     {
       "key": "languageNorwegian",
@@ -1379,7 +1493,8 @@
         "ru": "Язык оригинала — норвежский; не язык перевода или интерфейса",
         "en": "Original language: Norwegian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNorwegianBokmal",
@@ -1391,7 +1506,8 @@
         "ru": "Язык оригинала — норвежский букмол; не язык перевода или интерфейса",
         "en": "Original language: Norwegian Bokmål; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageNorwegianNynorsk",
@@ -1403,7 +1519,8 @@
         "ru": "Язык оригинала — норвежский нюнорск; не язык перевода или интерфейса",
         "en": "Original language: Norwegian Nynorsk; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageOccitan",
@@ -1415,7 +1532,8 @@
         "ru": "Язык оригинала — окситанский; не язык перевода или интерфейса",
         "en": "Original language: Occitan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageOdia",
@@ -1427,7 +1545,8 @@
         "ru": "Язык оригинала — ория; не язык перевода или интерфейса",
         "en": "Original language: Odia; excludes translations and interface language"
       },
-      "aliases": ["Oriya"]
+      "aliases": ["Oriya"],
+      "parents": []
     },
     {
       "key": "languageOjibwa",
@@ -1439,7 +1558,8 @@
         "ru": "Язык оригинала — оджибве; не язык перевода или интерфейса",
         "en": "Original language: Ojibwa; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageOromo",
@@ -1451,7 +1571,8 @@
         "ru": "Язык оригинала — оромо; не язык перевода или интерфейса",
         "en": "Original language: Oromo; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageOssetian",
@@ -1463,7 +1584,8 @@
         "ru": "Язык оригинала — осетинский; не язык перевода или интерфейса",
         "en": "Original language: Ossetian; excludes translations and interface language"
       },
-      "aliases": ["Ossetian; Ossetic"]
+      "aliases": ["Ossetian; Ossetic"],
+      "parents": []
     },
     {
       "key": "languagePali",
@@ -1475,7 +1597,8 @@
         "ru": "Язык оригинала — пали; не язык перевода или интерфейса",
         "en": "Original language: Pali; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languagePashto",
@@ -1487,7 +1610,8 @@
         "ru": "Язык оригинала — пушту; не язык перевода или интерфейса",
         "en": "Original language: Pashto; excludes translations and interface language"
       },
-      "aliases": ["Pushto"]
+      "aliases": ["Pushto"],
+      "parents": []
     },
     {
       "key": "languagePersian",
@@ -1499,7 +1623,8 @@
         "ru": "Язык оригинала — персидский; не язык перевода или интерфейса",
         "en": "Original language: Persian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languagePolish",
@@ -1511,7 +1636,8 @@
         "ru": "Язык оригинала — польский; не язык перевода или интерфейса",
         "en": "Original language: Polish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languagePortuguese",
@@ -1523,7 +1649,8 @@
         "ru": "Язык оригинала — португальский; не язык перевода или интерфейса",
         "en": "Original language: Portuguese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languagePunjabi",
@@ -1535,7 +1662,8 @@
         "ru": "Язык оригинала — панджаби; не язык перевода или интерфейса",
         "en": "Original language: Punjabi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageQuechua",
@@ -1547,7 +1675,8 @@
         "ru": "Язык оригинала — кечуа; не язык перевода или интерфейса",
         "en": "Original language: Quechua; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageRomanian",
@@ -1559,7 +1688,8 @@
         "ru": "Язык оригинала — румынский; не язык перевода или интерфейса",
         "en": "Original language: Romanian; excludes translations and interface language"
       },
-      "aliases": ["молдавский", "Moldavian", "Moldovan"]
+      "aliases": ["молдавский", "Moldavian", "Moldovan"],
+      "parents": []
     },
     {
       "key": "languageRomansh",
@@ -1571,7 +1701,8 @@
         "ru": "Язык оригинала — романшский; не язык перевода или интерфейса",
         "en": "Original language: Romansh; excludes translations and interface language"
       },
-      "aliases": ["Raeto-Romance"]
+      "aliases": ["Raeto-Romance"],
+      "parents": []
     },
     {
       "key": "languageRundi",
@@ -1583,7 +1714,8 @@
         "ru": "Язык оригинала — рунди; не язык перевода или интерфейса",
         "en": "Original language: Rundi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageRussian",
@@ -1595,7 +1727,8 @@
         "ru": "Язык оригинала — русский; не язык перевода или интерфейса",
         "en": "Original language: Russian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSamoan",
@@ -1607,7 +1740,8 @@
         "ru": "Язык оригинала — самоанский; не язык перевода или интерфейса",
         "en": "Original language: Samoan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSango",
@@ -1619,7 +1753,8 @@
         "ru": "Язык оригинала — санго; не язык перевода или интерфейса",
         "en": "Original language: Sango; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSanskrit",
@@ -1631,7 +1766,8 @@
         "ru": "Язык оригинала — санскрит; не язык перевода или интерфейса",
         "en": "Original language: Sanskrit; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSardinian",
@@ -1643,7 +1779,8 @@
         "ru": "Язык оригинала — сардинский; не язык перевода или интерфейса",
         "en": "Original language: Sardinian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageScottishGaelic",
@@ -1655,7 +1792,8 @@
         "ru": "Язык оригинала — шотландский гэльский; не язык перевода или интерфейса",
         "en": "Original language: Scottish Gaelic; excludes translations and interface language"
       },
-      "aliases": ["Gaelic"]
+      "aliases": ["Gaelic"],
+      "parents": []
     },
     {
       "key": "languageSerbian",
@@ -1667,7 +1805,8 @@
         "ru": "Язык оригинала — сербский; не язык перевода или интерфейса",
         "en": "Original language: Serbian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSerboCroatian",
@@ -1679,7 +1818,8 @@
         "ru": "Язык оригинала — сербохорватский; не язык перевода или интерфейса",
         "en": "Original language: Serbo-Croatian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageShona",
@@ -1691,7 +1831,8 @@
         "ru": "Язык оригинала — шона; не язык перевода или интерфейса",
         "en": "Original language: Shona; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSichuanYi",
@@ -1703,7 +1844,8 @@
         "ru": "Язык оригинала — сычуаньский и; не язык перевода или интерфейса",
         "en": "Original language: Sichuan Yi; excludes translations and interface language"
       },
-      "aliases": ["Yi"]
+      "aliases": ["Yi"],
+      "parents": []
     },
     {
       "key": "languageSindhi",
@@ -1715,7 +1857,8 @@
         "ru": "Язык оригинала — синдхи; не язык перевода или интерфейса",
         "en": "Original language: Sindhi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSinhala",
@@ -1727,7 +1870,8 @@
         "ru": "Язык оригинала — сингальский; не язык перевода или интерфейса",
         "en": "Original language: Sinhala; excludes translations and interface language"
       },
-      "aliases": ["Sinhalese"]
+      "aliases": ["Sinhalese"],
+      "parents": []
     },
     {
       "key": "languageSlovak",
@@ -1739,7 +1883,8 @@
         "ru": "Язык оригинала — словацкий; не язык перевода или интерфейса",
         "en": "Original language: Slovak; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSlovenian",
@@ -1751,7 +1896,8 @@
         "ru": "Язык оригинала — словенский; не язык перевода или интерфейса",
         "en": "Original language: Slovenian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSomali",
@@ -1763,7 +1909,8 @@
         "ru": "Язык оригинала — сомалийский; не язык перевода или интерфейса",
         "en": "Original language: Somali; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSouthernSotho",
@@ -1775,7 +1922,8 @@
         "ru": "Язык оригинала — сесото; не язык перевода или интерфейса",
         "en": "Original language: Southern Sotho; excludes translations and interface language"
       },
-      "aliases": ["Sotho"]
+      "aliases": ["Sotho"],
+      "parents": []
     },
     {
       "key": "languageSouthNdebele",
@@ -1787,7 +1935,8 @@
         "ru": "Язык оригинала — южный ндебеле; не язык перевода или интерфейса",
         "en": "Original language: South Ndebele; excludes translations and interface language"
       },
-      "aliases": ["Ndebele"]
+      "aliases": ["Ndebele"],
+      "parents": []
     },
     {
       "key": "languageSpanish",
@@ -1799,7 +1948,8 @@
         "ru": "Язык оригинала — испанский; не язык перевода или интерфейса",
         "en": "Original language: Spanish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSundanese",
@@ -1811,7 +1961,8 @@
         "ru": "Язык оригинала — сунданский; не язык перевода или интерфейса",
         "en": "Original language: Sundanese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSwahili",
@@ -1823,7 +1974,8 @@
         "ru": "Язык оригинала — суахили; не язык перевода или интерфейса",
         "en": "Original language: Swahili; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSwati",
@@ -1835,7 +1987,8 @@
         "ru": "Язык оригинала — свази; не язык перевода или интерфейса",
         "en": "Original language: Swati; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageSwedish",
@@ -1847,7 +2000,8 @@
         "ru": "Язык оригинала — шведский; не язык перевода или интерфейса",
         "en": "Original language: Swedish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTagalog",
@@ -1859,7 +2013,8 @@
         "ru": "Язык оригинала — тагальский; не объединяется с филиппинским языком",
         "en": "The original language is Tagalog, kept distinct from Filipino"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTahitian",
@@ -1871,7 +2026,8 @@
         "ru": "Язык оригинала — таитянский; не язык перевода или интерфейса",
         "en": "Original language: Tahitian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTajik",
@@ -1883,7 +2039,8 @@
         "ru": "Язык оригинала — таджикский; не язык перевода или интерфейса",
         "en": "Original language: Tajik; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTamil",
@@ -1895,7 +2052,8 @@
         "ru": "Язык оригинала — тамильский; не язык перевода или интерфейса",
         "en": "Original language: Tamil; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTatar",
@@ -1907,7 +2065,8 @@
         "ru": "Язык оригинала — татарский; не язык перевода или интерфейса",
         "en": "Original language: Tatar; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTelugu",
@@ -1919,7 +2078,8 @@
         "ru": "Язык оригинала — телугу; не язык перевода или интерфейса",
         "en": "Original language: Telugu; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageThai",
@@ -1931,7 +2091,8 @@
         "ru": "Язык оригинала — тайский; не язык перевода или интерфейса",
         "en": "Original language: Thai; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTibetan",
@@ -1943,7 +2104,8 @@
         "ru": "Язык оригинала — тибетский; не язык перевода или интерфейса",
         "en": "Original language: Tibetan; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTigrinya",
@@ -1955,7 +2117,8 @@
         "ru": "Язык оригинала — тигринья; не язык перевода или интерфейса",
         "en": "Original language: Tigrinya; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTongan",
@@ -1967,7 +2130,8 @@
         "ru": "Язык оригинала — тонганский; не язык перевода или интерфейса",
         "en": "Original language: Tongan; excludes translations and interface language"
       },
-      "aliases": ["Tonga"]
+      "aliases": ["Tonga"],
+      "parents": []
     },
     {
       "key": "languageTsonga",
@@ -1979,7 +2143,8 @@
         "ru": "Язык оригинала — тсонга; не язык перевода или интерфейса",
         "en": "Original language: Tsonga; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTswana",
@@ -1991,7 +2156,8 @@
         "ru": "Язык оригинала — тсвана; не язык перевода или интерфейса",
         "en": "Original language: Tswana; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTurkish",
@@ -2003,7 +2169,8 @@
         "ru": "Язык оригинала — турецкий; не язык перевода или интерфейса",
         "en": "Original language: Turkish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTurkmen",
@@ -2015,7 +2182,8 @@
         "ru": "Язык оригинала — туркменский; не язык перевода или интерфейса",
         "en": "Original language: Turkmen; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageTwi",
@@ -2027,7 +2195,8 @@
         "ru": "Язык оригинала — тви; не язык перевода или интерфейса",
         "en": "Original language: Twi; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageUkrainian",
@@ -2039,7 +2208,8 @@
         "ru": "Язык оригинала — украинский; не язык перевода или интерфейса",
         "en": "Original language: Ukrainian; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageUrdu",
@@ -2051,7 +2221,8 @@
         "ru": "Язык оригинала — урду; не язык перевода или интерфейса",
         "en": "Original language: Urdu; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageUyghur",
@@ -2063,7 +2234,8 @@
         "ru": "Язык оригинала — уйгурский; не язык перевода или интерфейса",
         "en": "Original language: Uyghur; excludes translations and interface language"
       },
-      "aliases": ["Uighur"]
+      "aliases": ["Uighur"],
+      "parents": []
     },
     {
       "key": "languageUzbek",
@@ -2075,7 +2247,8 @@
         "ru": "Язык оригинала — узбекский; не язык перевода или интерфейса",
         "en": "Original language: Uzbek; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageVenda",
@@ -2087,7 +2260,8 @@
         "ru": "Язык оригинала — венда; не язык перевода или интерфейса",
         "en": "Original language: Venda; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageVietnamese",
@@ -2099,7 +2273,8 @@
         "ru": "Язык оригинала — вьетнамский; не язык перевода или интерфейса",
         "en": "Original language: Vietnamese; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageVolapuk",
@@ -2111,7 +2286,8 @@
         "ru": "Язык оригинала — волапюк; не язык перевода или интерфейса",
         "en": "Original language: Volapük; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageWalloon",
@@ -2123,7 +2299,8 @@
         "ru": "Язык оригинала — валлонский; не язык перевода или интерфейса",
         "en": "Original language: Walloon; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageWelsh",
@@ -2135,7 +2312,8 @@
         "ru": "Язык оригинала — валлийский; не язык перевода или интерфейса",
         "en": "Original language: Welsh; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageWesternFrisian",
@@ -2147,7 +2325,8 @@
         "ru": "Язык оригинала — западнофризский; не язык перевода или интерфейса",
         "en": "Original language: Western Frisian; excludes translations and interface language"
       },
-      "aliases": ["Frisian"]
+      "aliases": ["Frisian"],
+      "parents": []
     },
     {
       "key": "languageWolof",
@@ -2159,7 +2338,8 @@
         "ru": "Язык оригинала — волоф; не язык перевода или интерфейса",
         "en": "Original language: Wolof; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageXhosa",
@@ -2171,7 +2351,8 @@
         "ru": "Язык оригинала — коса; не язык перевода или интерфейса",
         "en": "Original language: Xhosa; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageYiddish",
@@ -2183,7 +2364,8 @@
         "ru": "Язык оригинала — идиш; не язык перевода или интерфейса",
         "en": "Original language: Yiddish; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageYoruba",
@@ -2195,7 +2377,8 @@
         "ru": "Язык оригинала — йоруба; не язык перевода или интерфейса",
         "en": "Original language: Yoruba; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageZhuang",
@@ -2207,7 +2390,8 @@
         "ru": "Язык оригинала — чжуанский; не язык перевода или интерфейса",
         "en": "Original language: Zhuang; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "languageZulu",
@@ -2219,8 +2403,8 @@
         "ru": "Язык оригинала — зулу; не язык перевода или интерфейса",
         "en": "Original language: Zulu; excludes translations and interface language"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

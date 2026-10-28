@@ -5,22 +5,11 @@ import st from './Collapsible.module.scss'
 import type { ICollapsibleProps } from '../types/ICollapsibleProps'
 
 const Collapsible = (props: ICollapsibleProps) => {
-  const { children, className, isMounted, isPanelOpen, onTransitionEnd } =
-    useCollapsible(props)
-
-  if (!isMounted) {
-    return null
-  }
+  const { children, className, isOpen } = useCollapsible(props)
 
   return (
-    <CollapsiblePrimitive.Root
-      className={cn(st.root, className)}
-      open={isPanelOpen}
-    >
-      <CollapsiblePrimitive.Panel
-        className={st.panel}
-        onTransitionEnd={onTransitionEnd}
-      >
+    <CollapsiblePrimitive.Root className={cn(st.root, className)} open={isOpen}>
+      <CollapsiblePrimitive.Panel className={st.panel}>
         {children}
       </CollapsiblePrimitive.Panel>
     </CollapsiblePrimitive.Root>

@@ -11,7 +11,8 @@
         "ru": "Игроки или команды соперничают друг с другом",
         "en": "Players or teams compete against one another"
       },
-      "aliases": ["PvP"]
+      "aliases": ["PvP"],
+      "parents": []
     },
     {
       "key": "cooperativeMultiplayer",
@@ -23,7 +24,8 @@
         "ru": "Несколько игроков совместно решают задачи; локальность и сеть здесь не различаются",
         "en": "Players collaborate on shared goals; local and online delivery are not distinguished"
       },
-      "aliases": ["Co-op", "Online Co-Op", "Local Co-Op", "Co-op Campaign"]
+      "aliases": ["Co-op", "Online Co-Op", "Local Co-Op", "Co-op Campaign"],
+      "parents": []
     },
     {
       "key": "multiplayer",
@@ -35,7 +37,8 @@
         "ru": "Режим с участием нескольких игроков; сам по себе не определяет сотрудничество или соперничество",
         "en": "A mode involving multiple players; it does not by itself specify cooperation or competition"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "playerVsEnvironment",
@@ -47,7 +50,8 @@
         "ru": "Игроки противостоят управляемым игрой противникам и испытаниям; режим может быть одиночным или многопользовательским",
         "en": "Players face game-controlled opponents and challenges; the mode may be single-player or multiplayer"
       },
-      "aliases": ["PvE"]
+      "aliases": ["PvE"],
+      "parents": []
     },
     {
       "key": "singlePlayer",
@@ -59,7 +63,8 @@
         "ru": "Режим рассчитан на одного игрока",
         "en": "A mode designed for one player"
       },
-      "aliases": ["Singleplayer"]
+      "aliases": ["Singleplayer"],
+      "parents": []
     },
     {
       "key": "splitScreen",
@@ -71,8 +76,8 @@
         "ru": "Несколько игроков играют с разделением общего экрана на отдельные области обзора; сотрудничество или соперничество определяется отдельно",
         "en": "Multiple players use separate views on a shared divided screen; cooperation or competition is specified separately"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

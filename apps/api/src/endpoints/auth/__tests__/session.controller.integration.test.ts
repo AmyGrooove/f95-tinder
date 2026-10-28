@@ -6,6 +6,7 @@ import { Types } from "mongoose"
 import type { Session } from "@entities/session/schemas/session.schema"
 import type { User } from "@entities/user/schemas/user.schema"
 import { EUserRole } from "@entities/user/schemas/EUserRole"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
 import { JWT_ACCESS_EXPIRATION } from "@infrastructure/security/static/JWT_ACCESS_EXPIRATION"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
@@ -83,6 +84,7 @@ describe("SessionController HTTP", () => {
       ].map((session) => ({
         id: session._id.toHexString(),
         userAgent: session.userAgent,
+        country: session.country,
         createdAt: session.createdAt.toISOString(),
         expiresAt: session.expiresAt.toISOString(),
         lastRefreshedAt: session.lastRefreshedAt?.toISOString() ?? null,
@@ -268,7 +270,7 @@ describe("SessionController HTTP", () => {
     },
   )
 
-  it("обновляет токены без access cookie, продлевает ту же сессию и использует актуальную роль пользователя", async () => {
+  it("обновляет токены без access cookie, сохраняет страну входа и использует актуальную роль пользователя", async () => {
     const { app, connection } = getTestApplication()
     const account = await createAccount()
     const extra = await addSession(account.session)
@@ -277,7 +279,12 @@ describe("SessionController HTTP", () => {
     const sessions = connection.collection<Session>("Session")
     await sessions.updateOne(
       { _id: account.session._id },
-      { $set: { expiresAt: new Date(Date.now() + 60_000) } },
+      {
+        $set: {
+          expiresAt: new Date(Date.now() + 60_000),
+          country: ECountry.RUSSIA,
+        },
+      },
     )
     await connection
       .collection<User>("User")
@@ -286,6 +293,7 @@ describe("SessionController HTTP", () => {
     const response = await app.inject({
       method: "PATCH",
       url: "/auth/session/refresh",
+      remoteAddress: "8.8.8.8",
       headers: {
         origin: "http://localhost",
         cookie: `__Host-refreshToken=${oldRefresh}`,
@@ -334,6 +342,7 @@ describe("SessionController HTTP", () => {
       user: account.user._id,
       createdAt: account.session.createdAt,
       userAgent: account.session.userAgent,
+      country: ECountry.RUSSIA,
       refreshTokenHash: createHash("sha256").update(refreshToken).digest("hex"),
     })
     expect(updated?.expiresAt.getTime()).toBeGreaterThanOrEqual(

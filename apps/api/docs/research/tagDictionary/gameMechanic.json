@@ -11,7 +11,8 @@
         "ru": "Игрок выполняет прицеливание и стрельбу стрелами из лука",
         "en": "Players aim and shoot arrows with a bow"
       },
-      "aliases": ["Archery"]
+      "aliases": ["Archery"],
+      "parents": []
     },
     {
       "key": "automation",
@@ -23,7 +24,8 @@
         "ru": "Игрок строит системы, выполняющие повторяющиеся производственные или логистические действия",
         "en": "Players build systems performing recurring production or logistics actions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "baseBuilding",
@@ -35,7 +37,8 @@
         "ru": "Игрок сооружает и развивает базу или опорное поселение",
         "en": "Players build and develop a base or supporting settlement"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "bossRush",
@@ -47,7 +50,8 @@
         "ru": "Ключевые испытания организованы как последовательность сражений с боссами",
         "en": "Principal challenges are organized as a sequence of boss encounters"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "building",
@@ -59,7 +63,8 @@
         "ru": "Игрок размещает и соединяет элементы для создания сооружений",
         "en": "Players place and connect elements to construct structures"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "bulletTime",
@@ -71,7 +76,8 @@
         "ru": "Игровое время замедляется при сохранении возможности выбирать и исполнять действия",
         "en": "Game time slows while players retain opportunities to choose and execute actions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "characterCustomization",
@@ -83,7 +89,8 @@
         "ru": "Игрок изменяет внешность, свойства или состав возможностей управляемого персонажа",
         "en": "Players alter a controlled character's appearance, properties or capabilities"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "classBasedCharacters",
@@ -95,7 +102,8 @@
         "ru": "Классы задают различные способности и игровые роли персонажей",
         "en": "Character classes define different abilities and play roles"
       },
-      "aliases": ["Class-Based"]
+      "aliases": ["Class-Based"],
+      "parents": []
     },
     {
       "key": "cleaning",
@@ -107,7 +115,8 @@
         "ru": "Игрок удаляет загрязнения или беспорядок из игровых объектов и среды",
         "en": "Players remove dirt or clutter from game objects and environments"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "collectathon",
@@ -119,7 +128,8 @@
         "ru": "Поиск многочисленных коллекционных объектов служит самостоятельной целью прохождения",
         "en": "Finding numerous collectible objects forms a progression goal"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "combat",
@@ -131,7 +141,8 @@
         "ru": "Игрок участвует в системе атак, защиты и противодействия противникам",
         "en": "Players engage in attacks, defense and opposition against adversaries"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "cookingGameplay",
@@ -143,7 +154,8 @@
         "ru": "Игрок соединяет и обрабатывает ингредиенты для получения блюд",
         "en": "Players combine and process ingredients to prepare dishes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "crafting",
@@ -155,7 +167,8 @@
         "ru": "Игрок создаёт предметы из компонентов или ресурсов",
         "en": "Players produce items from components or resources"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "creatureCollection",
@@ -167,7 +180,8 @@
         "ru": "Получение и расширение набора игровых существ является системой прогресса",
         "en": "Acquiring and expanding a roster of creatures is a progression system"
       },
-      "aliases": ["Creature Collector"]
+      "aliases": ["Creature Collector"],
+      "parents": []
     },
     {
       "key": "deckBuilding",
@@ -179,7 +193,8 @@
         "ru": "Игрок составляет и меняет колоду, определяющую доступные карточные действия",
         "en": "Players construct and modify a deck determining available card actions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "decorating",
@@ -191,7 +206,8 @@
         "ru": "Игрок выбирает и размещает элементы оформления пространства или объекта",
         "en": "Players choose and place decorative elements in a space or object"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "destruction",
@@ -203,7 +219,8 @@
         "ru": "Игрок разрушает объекты или части среды, изменяя игровое пространство",
         "en": "Players destroy objects or environment parts and alter play space"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "diceGameplay",
@@ -215,7 +232,8 @@
         "ru": "Броски игровых костей участвуют в выборе действий или определении результатов",
         "en": "Dice rolls participate in action selection or outcome resolution"
       },
-      "aliases": ["Dice"]
+      "aliases": ["Dice"],
+      "parents": []
     },
     {
       "key": "diplomacyGameplay",
@@ -227,7 +245,8 @@
         "ru": "Переговоры и соглашения между игровыми сторонами изменяют состояние игры",
         "en": "Negotiation and agreements between game parties change game state"
       },
-      "aliases": ["Diplomacy"]
+      "aliases": ["Diplomacy"],
+      "parents": []
     },
     {
       "key": "drivingGameplay",
@@ -239,7 +258,8 @@
         "ru": "Игрок управляет движением и манёврами наземного транспортного средства",
         "en": "Players control movement and maneuvers of a ground vehicle"
       },
-      "aliases": ["Driving"]
+      "aliases": ["Driving"],
+      "parents": []
     },
     {
       "key": "exploration",
@@ -251,7 +271,8 @@
         "ru": "Игрок исследует пространство и открывает новые места или сведения",
         "en": "Players investigate spaces and discover places or information"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "farmingGameplay",
@@ -263,7 +284,8 @@
         "ru": "Игрок выращивает и собирает сельскохозяйственные культуры",
         "en": "Players grow and harvest agricultural crops"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fishingGameplay",
@@ -275,7 +297,8 @@
         "ru": "Игрок выполняет действия по ловле водных животных",
         "en": "Players perform actions to catch aquatic animals"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "flightGameplay",
@@ -287,7 +310,8 @@
         "ru": "Игрок управляет перемещением и ориентацией летательного аппарата",
         "en": "Players control an aircraft's movement and orientation"
       },
-      "aliases": ["Flight"]
+      "aliases": ["Flight"],
+      "parents": []
     },
     {
       "key": "gamblingGameplay",
@@ -299,7 +323,8 @@
         "ru": "Ставка игровых ценностей и случайный исход образуют игровую систему; реальная денежная монетизация не подразумевается",
         "en": "Wagering game values on chance forms a system without implying real-money monetization"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "gridBasedMovement",
@@ -311,7 +336,8 @@
         "ru": "Перемещение разрешается между дискретными клетками игрового поля",
         "en": "Movement resolves between discrete cells of the play field"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "gunCustomization",
@@ -323,7 +349,8 @@
         "ru": "Игрок изменяет комплектацию или характеристики огнестрельного оружия",
         "en": "Players alter firearm configurations or properties"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "hackingGameplay",
@@ -335,7 +362,8 @@
         "ru": "Игрок получает или меняет доступ к моделируемым цифровым системам",
         "en": "Players gain or alter access to simulated digital systems"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "hexagonalGrid",
@@ -347,7 +375,8 @@
         "ru": "Поле взаимодействия или перемещения организовано шестиугольными ячейками",
         "en": "Interaction or movement space is organized into hexagonal cells"
       },
-      "aliases": ["Hex Grid"]
+      "aliases": ["Hex Grid"],
+      "parents": []
     },
     {
       "key": "huntingGameplay",
@@ -359,7 +388,8 @@
         "ru": "Игрок выслеживает и добывает животных или иных существ",
         "en": "Players track and capture or kill animals or other creatures"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "inventoryManagement",
@@ -371,7 +401,8 @@
         "ru": "Игрок выбирает хранение и использование предметов с учётом ограничений инвентаря",
         "en": "Players choose item storage and use under inventory constraints"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "investigationGameplay",
@@ -383,7 +414,8 @@
         "ru": "Игрок собирает и сопоставляет сведения для установления обстоятельств",
         "en": "Players collect and connect information to establish facts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "logicalChallenges",
@@ -395,7 +427,8 @@
         "ru": "Игрок выводит решение из правил и условий задачи; это само по себе не определяет жанр",
         "en": "Players deduce solutions from rules and constraints; this alone does not determine genre"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "lootCollection",
@@ -407,7 +440,8 @@
         "ru": "Получение и подбор добычи образуют отдельную систему наград или прогресса",
         "en": "Acquiring and picking up loot forms a reward or progression system"
       },
-      "aliases": ["Loot"]
+      "aliases": ["Loot"],
+      "parents": []
     },
     {
       "key": "meaningfulChoices",
@@ -419,7 +453,8 @@
         "ru": "Решения игрока меняют события или отношения, а не только внешний вариант ответа",
         "en": "Player decisions change events or relationships beyond cosmetic response variants"
       },
-      "aliases": ["Choices Matter"]
+      "aliases": ["Choices Matter"],
+      "parents": []
     },
     {
       "key": "mining",
@@ -431,7 +466,8 @@
         "ru": "Игрок извлекает сырьё из месторождений или разрушаемой среды",
         "en": "Players extract raw materials from deposits or destructible environments"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "multipleEndings",
@@ -443,7 +479,8 @@
         "ru": "У произведения предусмотрены разные конечные исходы, зависящие от прохождения",
         "en": "The work provides different final outcomes depending on play"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "musicDrivenGeneration",
@@ -455,7 +492,8 @@
         "ru": "Структура игрового содержимого алгоритмически зависит от свойств музыки",
         "en": "Game content structure depends algorithmically on musical properties"
       },
-      "aliases": ["Music-Based Procedural Generation"]
+      "aliases": ["Music-Based Procedural Generation"],
+      "parents": []
     },
     {
       "key": "navalCombatGameplay",
@@ -467,7 +505,8 @@
         "ru": "Игрок управляет атакой и защитой кораблей в морском бою",
         "en": "Players control ship offense and defense in naval combat"
       },
-      "aliases": ["Naval Combat"]
+      "aliases": ["Naval Combat"],
+      "parents": []
     },
     {
       "key": "nonlinearProgression",
@@ -479,7 +518,8 @@
         "ru": "Игрок выбирает порядок задач или пути продвижения; открытый мир и нелинейное повествование не обязательны",
         "en": "Players choose task order or progression paths; an open world or nonlinear narrative is not required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "openWorld",
@@ -491,7 +531,8 @@
         "ru": "Игровое пространство позволяет выбирать направления исследования без единой обязательной линейной последовательности",
         "en": "Play space supports choosing exploration directions without one mandatory linear sequence"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "organizing",
@@ -503,7 +544,8 @@
         "ru": "Игрок упорядочивает предметы по заданным или выбираемым пространственным правилам",
         "en": "Players arrange objects under prescribed or chosen spatial rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "parkour",
@@ -515,7 +557,8 @@
         "ru": "Перемещение включает преодоление препятствий прыжками, лазанием и связными акробатическими действиями",
         "en": "Movement involves obstacles navigated through jumping, climbing and connected acrobatics"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "permanentDeath",
@@ -527,7 +570,8 @@
         "ru": "Гибель необратимо завершает жизнь персонажа или текущую попытку",
         "en": "Death irreversibly ends a character’s life or the current run"
       },
-      "aliases": ["Perma Death"]
+      "aliases": ["Perma Death"],
+      "parents": []
     },
     {
       "key": "physicsSimulation",
@@ -539,7 +583,8 @@
         "ru": "Физические свойства и взаимодействия объектов существенно участвуют в решении игровых задач",
         "en": "Physical properties and object interactions materially participate in solving tasks"
       },
-      "aliases": ["Physics"]
+      "aliases": ["Physics"],
+      "parents": []
     },
     {
       "key": "pointAndClickInteraction",
@@ -551,7 +596,8 @@
         "ru": "Действия задаются выбором объектов указателем без вывода о жанре игры",
         "en": "Actions are specified by pointing at objects, without inferring the game genre"
       },
-      "aliases": ["Point & Click"]
+      "aliases": ["Point & Click"],
+      "parents": []
     },
     {
       "key": "proceduralGeneration",
@@ -563,7 +609,8 @@
         "ru": "Часть игрового содержимого создаётся алгоритмически по правилам",
         "en": "Some game content is generated algorithmically under rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "programmingGameplay",
@@ -575,7 +622,8 @@
         "ru": "Игрок задаёт последовательности команд, исполняемые игровой системой",
         "en": "Players construct command sequences executed by the game system"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "quickTimeEvents",
@@ -587,7 +635,8 @@
         "ru": "Игра требует определённого ввода за короткое время в ходе заданной сцены",
         "en": "A scene requires a specified input within a short time window"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "realTimeCombat",
@@ -599,7 +648,8 @@
         "ru": "Атаки, защита и перемещение участников боя развиваются непрерывно во времени",
         "en": "Combat attacks, defense and movement unfold continuously in time"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "realTimeGameplay",
@@ -611,7 +661,8 @@
         "ru": "Игровая система развивается непрерывно во времени, а не только при завершении хода",
         "en": "The gameplay system progresses continuously rather than only when a turn is completed"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "realTimeWithPause",
@@ -623,7 +674,8 @@
         "ru": "Непрерывное течение игры можно приостановить для принятия решений",
         "en": "Continuous simulation can be paused for decision-making"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "resourceManagement",
@@ -635,7 +687,8 @@
         "ru": "Игрок распределяет ограниченные ресурсы между конкурирующими целями",
         "en": "Players allocate limited resources among competing objectives"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sailingGameplay",
@@ -647,7 +700,8 @@
         "ru": "Игрок управляет парусным судном с учётом направления движения и ветра",
         "en": "Players control a sailing vessel considering movement and wind direction"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sandboxGameplay",
@@ -659,7 +713,8 @@
         "ru": "Игровые системы допускают самостоятельную постановку целей и свободное экспериментирование",
         "en": "Systems allow players to set goals and experiment freely"
       },
-      "aliases": ["Sandbox"]
+      "aliases": ["Sandbox"],
+      "parents": []
     },
     {
       "key": "scoreAttack",
@@ -671,7 +726,8 @@
         "ru": "Повторное прохождение направлено на максимизацию количественного результата",
         "en": "Repeated play aims to maximize a numerical score"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sideScrolling",
@@ -683,7 +739,8 @@
         "ru": "Игровая сцена прокручивается по горизонтали по мере продвижения; это не синоним ракурса камеры",
         "en": "The scene scrolls horizontally as play progresses; this is distinct from camera perspective"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sixDegreesOfFreedom",
@@ -695,7 +752,8 @@
         "ru": "Игрок свободно управляет тремя осями поступательного движения и тремя осями вращения",
         "en": "Players control three translational and three rotational axes"
       },
-      "aliases": ["6DOF"]
+      "aliases": ["6DOF"],
+      "parents": []
     },
     {
       "key": "snipingGameplay",
@@ -707,7 +765,8 @@
         "ru": "Игрок выполняет прицельную стрельбу по удалённым целям",
         "en": "Players execute aimed shooting at distant targets"
       },
-      "aliases": ["Sniper"]
+      "aliases": ["Sniper"],
+      "parents": []
     },
     {
       "key": "socialDeduction",
@@ -719,7 +778,8 @@
         "ru": "Игроки выявляют скрытые роли по поведению, обсуждениям и неполной информации",
         "en": "Players infer hidden roles from behavior, discussion and incomplete information"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "spellingGameplay",
@@ -731,7 +791,8 @@
         "ru": "Правильное составление написания слов является игровой задачей",
         "en": "Constructing correct word spellings is a gameplay task"
       },
-      "aliases": ["Spelling"]
+      "aliases": ["Spelling"],
+      "parents": []
     },
     {
       "key": "stealth",
@@ -743,7 +804,8 @@
         "ru": "Избегание обнаружения составляет отдельную игровую систему",
         "en": "Avoiding detection constitutes a gameplay system"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "survivalGameplay",
@@ -755,7 +817,8 @@
         "ru": "Игрок поддерживает жизнеспособность, управляя ресурсами и угрозами; не просто тема выживания",
         "en": "Players maintain viability by managing resources and hazards, distinct from a survival story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "swordplayGameplay",
@@ -767,7 +830,8 @@
         "ru": "Действия игрока организованы вокруг атак и защиты клинковым оружием",
         "en": "Player actions involve attacks and defense using bladed weapons"
       },
-      "aliases": ["Swordplay"]
+      "aliases": ["Swordplay"],
+      "parents": []
     },
     {
       "key": "timeAttack",
@@ -779,7 +843,8 @@
         "ru": "Прохождение направлено на минимизацию затраченного времени",
         "en": "Play aims to minimize completion time"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "timeManagementGameplay",
@@ -791,7 +856,8 @@
         "ru": "Игрок распределяет ограниченное время между конкурирующими задачами",
         "en": "Players allocate limited time among competing tasks"
       },
-      "aliases": ["Time Management"]
+      "aliases": ["Time Management"],
+      "parents": []
     },
     {
       "key": "timeManipulationGameplay",
@@ -803,7 +869,8 @@
         "ru": "Игрок изменяет течение, порядок или состояние игрового времени",
         "en": "Players alter the flow, order or state of game time"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "trading",
@@ -815,7 +882,8 @@
         "ru": "Обмен предметами или ценностями с игровыми участниками является доступным действием",
         "en": "Exchanging items or value with game participants is an available action"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "turnBasedCombat",
@@ -827,7 +895,8 @@
         "ru": "Действия участников боя разрешаются отдельными последовательными ходами",
         "en": "Combatants' actions resolve in separate successive turns"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "turnBasedGameplay",
@@ -839,7 +908,8 @@
         "ru": "Игровые действия организованы отдельными ходами; признак не ограничен боем",
         "en": "Gameplay actions are organized into discrete turns, including systems beyond combat"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "typingGameplay",
@@ -851,8 +921,8 @@
         "ru": "Ввод текста и точность или скорость печати непосредственно определяют результат",
         "en": "Text entry and typing speed or accuracy directly determine outcomes"
       },
-      "aliases": ["Typing"]
+      "aliases": ["Typing"],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

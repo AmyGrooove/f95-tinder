@@ -46,9 +46,34 @@ describe("RecalculateItemRatingsJobHandler", () => {
     expect(updateByFilter).not.toHaveBeenCalled()
   })
 
-  it("пересчитывает только переданный Item и записывает только поля рейтинга", async () => {
+  it("пересчитывает только переданный Item и записывает все поля метрик", async () => {
     getRatingSummaries.mockResolvedValueOnce([
-      { _id: itemId, ratingAverage: 19 / 3, ratingsCount: 3 },
+      {
+        _id: itemId,
+        ratingAverage: 19 / 3,
+        ratingsCount: 3,
+        completedAttemptsCount: 5,
+        favoritesCount: 2,
+        ratingDistribution: {
+          one: 1,
+          two: 0,
+          three: 0,
+          four: 0,
+          five: 0,
+          six: 0,
+          seven: 0,
+          eight: 1,
+          nine: 0,
+          ten: 1,
+        },
+        statusCounts: {
+          planned: 1,
+          inProgress: 2,
+          onHold: 3,
+          completed: 4,
+          dropped: 5,
+        },
+      },
     ])
 
     await expect(handler.handle(String(itemId), context)).resolves.toEqual({
@@ -61,17 +86,69 @@ describe("RecalculateItemRatingsJobHandler", () => {
     expect(updateByFilter).toHaveBeenCalledTimes(1)
     expect(updateByFilter).toHaveBeenCalledWith(
       { item: itemId },
-      { $set: { ratingAverage: 19 / 3, ratingsCount: 3 } },
+      {
+        $set: {
+          ratingAverage: 19 / 3,
+          ratingsCount: 3,
+          completedAttemptsCount: 5,
+          favoritesCount: 2,
+          ratingDistribution: {
+            one: 1,
+            two: 0,
+            three: 0,
+            four: 0,
+            five: 0,
+            six: 0,
+            seven: 0,
+            eight: 1,
+            nine: 0,
+            ten: 1,
+          },
+          statusCounts: {
+            planned: 1,
+            inProgress: 2,
+            onHold: 3,
+            completed: 4,
+            dropped: 5,
+          },
+        },
+      },
       { upsert: true },
     )
   })
 
-  it("сбрасывает метрику в null и 0, если оценок больше нет", async () => {
+  it("сбрасывает среднюю в null и все счётчики в 0, если записей больше нет", async () => {
     await handler.handle(String(itemId), context)
 
     expect(updateByFilter).toHaveBeenCalledWith(
       { item: itemId },
-      { $set: { ratingAverage: null, ratingsCount: 0 } },
+      {
+        $set: {
+          ratingAverage: null,
+          ratingsCount: 0,
+          completedAttemptsCount: 0,
+          favoritesCount: 0,
+          ratingDistribution: {
+            one: 0,
+            two: 0,
+            three: 0,
+            four: 0,
+            five: 0,
+            six: 0,
+            seven: 0,
+            eight: 0,
+            nine: 0,
+            ten: 0,
+          },
+          statusCounts: {
+            planned: 0,
+            inProgress: 0,
+            onHold: 0,
+            completed: 0,
+            dropped: 0,
+          },
+        },
+      },
       { upsert: true },
     )
   })

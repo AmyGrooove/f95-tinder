@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { useState } from 'react'
 import { Box } from '@shared/ui/Box'
+import { Button } from '@shared/ui/Button'
+import { Text } from '@shared/ui/Text'
 import { Attachment } from '../core/Attachment'
 
 const meta = {
@@ -8,9 +11,11 @@ const meta = {
   tags: ['autodocs'],
   args: {
     alt: 'Предпросмотр вложения',
-    src: 'https://cdn.androidadult.com/wp-content/uploads/2024/09/Nene-has-a-desire-for-exposure-APK-Android-Adult-Hentai-Game-Download-Featured.png',
+    src: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="steelblue"/><circle cx="120" cy="80" r="48" fill="gold"/></svg>')}`,
   },
   argTypes: {
+    className: { control: 'text' },
+    ref: { control: false },
     alt: {
       control: { type: 'text' },
       table: {
@@ -26,7 +31,7 @@ const meta = {
   },
   render: (args) => {
     return (
-      <Box style={{ height: 160, width: 240 }}>
+      <Box style={{ display: 'grid', height: 160, width: 240 }}>
         <Attachment {...args} />
       </Box>
     )
@@ -41,9 +46,51 @@ const DocsPreview: TStory = {
 
 const Error: TStory = {
   args: {
-    src: 'https://example.invalid/attachment.jpg',
+    src: 'data:image/png;base64,broken',
   },
 }
 
-export { DocsPreview, Error }
+const BelowViewport: TStory = {
+  name: 'Ленивая загрузка ниже экрана',
+  render: (args) => {
+    return (
+      <Box flexDirection="column" gap={16}>
+        <Text>Прокрутите вниз к изображению.</Text>
+        <Box style={{ minHeight: '200vh' }}>
+          <Text>Изображение находится ниже первого экрана.</Text>
+        </Box>
+        <Box style={{ display: 'grid', height: 160, width: 240 }}>
+          <Attachment {...args} />
+        </Box>
+      </Box>
+    )
+  },
+}
+
+const SourceChange: TStory = {
+  name: 'Смена изображения и восстановление после ошибки',
+  render: (args) => {
+    const [isBroken, setIsBroken] = useState(false)
+
+    return (
+      <Box flexDirection="column" gap={16}>
+        <Button
+          onClick={() => {
+            setIsBroken((isCurrentlyBroken) => !isCurrentlyBroken)
+          }}
+        >
+          {isBroken ? 'Загрузить изображение' : 'Показать ошибку'}
+        </Button>
+        <Box style={{ display: 'grid', height: 160, width: 240 }}>
+          <Attachment
+            {...args}
+            src={isBroken ? 'data:image/png;base64,broken' : args.src}
+          />
+        </Box>
+      </Box>
+    )
+  },
+}
+
+export { BelowViewport, DocsPreview, Error, SourceChange }
 export default meta

@@ -33,14 +33,6 @@ class ItemMetric extends MongoEntity {
     default: 0,
     validate: checkIsNonNegativeSafeInteger,
   })
-  recommendationsCount: number
-
-  @Prop({
-    required: true,
-    type: Number,
-    default: 0,
-    validate: checkIsNonNegativeSafeInteger,
-  })
   ratingsCount: number
 
   @Prop({
@@ -72,7 +64,6 @@ class ItemMetric extends MongoEntity {
 
 type TCreateItemMetric = TCreateEntity<
   ItemMetric,
-  | "recommendationsCount"
   | "ratingsCount"
   | "ratingAverage"
   | "favoritesCount"

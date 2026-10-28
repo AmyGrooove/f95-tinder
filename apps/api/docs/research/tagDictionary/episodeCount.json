@@ -11,7 +11,8 @@
         "ru": "Общее число серий одного сезона — 1–6, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 1–6, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeCount7To14",
@@ -23,7 +24,8 @@
         "ru": "Общее число серий одного сезона — 7–13, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 7–13, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeCount14To27",
@@ -35,7 +37,8 @@
         "ru": "Общее число серий одного сезона — 14–26, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 14–26, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeCount27To53",
@@ -47,7 +50,8 @@
         "ru": "Общее число серий одного сезона — 27–52, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 27–52, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeCount53To101",
@@ -59,7 +63,8 @@
         "ru": "Общее число серий одного сезона — 53–100, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 53–100, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "episodeCount101Plus",
@@ -71,8 +76,8 @@
         "ru": "Общее число серий одного сезона — 101 и более, включая ещё не вышедшие серии при известном итоговом количестве",
         "en": "Total episodes in one season: 101 or more, including unreleased episodes when the total is known"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

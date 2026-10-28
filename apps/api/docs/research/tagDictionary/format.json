@@ -11,7 +11,8 @@
         "ru": "Произведение объединяет самостоятельные истории по общей рамке или принципу",
         "en": "The work collects independent stories under a shared frame or organizing principle"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "beautyCompetition",
@@ -23,7 +24,8 @@
         "ru": "Программа организована вокруг состязания участников по установленным эстетическим критериям",
         "en": "A program organized around contestants judged by prescribed aesthetic criteria"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["gameShow"]
     },
     {
       "key": "businessRealityShow",
@@ -35,7 +37,8 @@
         "ru": "Реальные предпринимательские ситуации или деловые состязания организуют программу",
         "en": "Real business situations or entrepreneurial competitions organize the program"
       },
-      "aliases": ["Business Reality TV"]
+      "aliases": ["Business Reality TV"],
+      "parents": ["realityShow"]
     },
     {
       "key": "concert",
@@ -47,7 +50,8 @@
         "ru": "Запись или представление музыкального исполнения перед аудиторией",
         "en": "Recording or presentation of musical performance for an audience"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "cookingCompetition",
@@ -59,7 +63,8 @@
         "ru": "Участники соревнуются в приготовлении пищи по правилам программы",
         "en": "Contestants compete in preparing food under program rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["gameShow"]
     },
     {
       "key": "crimeRealityShow",
@@ -71,7 +76,8 @@
         "ru": "Программа наблюдает за реальными криминальными ситуациями или работой правоохранителей",
         "en": "A program observes real criminal situations or law-enforcement work"
       },
-      "aliases": ["Crime Reality TV"]
+      "aliases": ["Crime Reality TV"],
+      "parents": ["realityShow"]
     },
     {
       "key": "datingRealityShow",
@@ -83,7 +89,8 @@
         "ru": "Знакомства и романтический выбор реальных участников организуют программу",
         "en": "Dating and romantic selection among real participants organize the program"
       },
-      "aliases": ["Dating Reality TV"]
+      "aliases": ["Dating Reality TV"],
+      "parents": ["realityShow"]
     },
     {
       "key": "docudrama",
@@ -95,7 +102,8 @@
         "ru": "Реальные события реконструируются драматическими средствами с опорой на факты",
         "en": "Real events are reconstructed dramatically with a factual basis"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "documentary",
@@ -107,7 +115,8 @@
         "ru": "Документальная форма представления действительных событий; не синоним non-fiction любого вида",
         "en": "Documentary presentation of real subjects, distinct from all non-fiction"
       },
-      "aliases": ["Dokumentarfilm"]
+      "aliases": ["Dokumentarfilm"],
+      "parents": []
     },
     {
       "key": "docusoapRealityShow",
@@ -119,7 +128,8 @@
         "ru": "Повседневная жизнь повторяющихся реальных участников организована в продолжающееся реалити-повествование",
         "en": "Everyday lives of recurring real participants form an ongoing reality narrative"
       },
-      "aliases": ["Docusoap Reality TV"]
+      "aliases": ["Docusoap Reality TV"],
+      "parents": ["realityShow"]
     },
     {
       "key": "educationalWork",
@@ -131,7 +141,8 @@
         "ru": "Передача знаний или навыков является явной задачей произведения; это не возрастная группа",
         "en": "Teaching knowledge or skills is an explicit purpose rather than an age group"
       },
-      "aliases": ["Education", "Educational"]
+      "aliases": ["Education", "Educational"],
+      "parents": []
     },
     {
       "key": "gameShow",
@@ -143,7 +154,8 @@
         "ru": "Участники программы соревнуются по установленным игровым правилам",
         "en": "Program participants compete under defined game rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "hiddenCameraShow",
@@ -155,7 +167,8 @@
         "ru": "Содержание организовано вокруг записи реакций участников, не осведомлённых о съёмке в момент события",
         "en": "Content centers on recording reactions of participants unaware of filming at the time"
       },
-      "aliases": ["Hidden Camera"]
+      "aliases": ["Hidden Camera"],
+      "parents": []
     },
     {
       "key": "madeForTvMovie",
@@ -167,7 +180,8 @@
         "ru": "Фильм изначально предназначен для телевизионного показа, а не регулярного сезона сериала",
         "en": "A film initially intended for television presentation rather than a regular series season"
       },
-      "aliases": ["TV-Film"]
+      "aliases": ["TV-Film"],
+      "parents": []
     },
     {
       "key": "makeoverShow",
@@ -179,7 +193,8 @@
         "ru": "Изменение внешности участников под руководством специалистов организует программу",
         "en": "Participants' appearance transformations under expert guidance organize the program"
       },
-      "aliases": ["Beauty Makeover"]
+      "aliases": ["Beauty Makeover"],
+      "parents": ["realityShow"]
     },
     {
       "key": "minigameCollection",
@@ -191,7 +206,8 @@
         "ru": "Игра целиком организована как сборник мини-игр; отдельная встроенная мини-игра не устанавливает формат",
         "en": "A game organized as a collection of minigames; an embedded minigame alone does not establish this format"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "mockumentary",
@@ -203,7 +219,8 @@
         "ru": "Вымышленная история подаётся средствами документального наблюдения",
         "en": "Fiction is presented through documentary conventions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "musicVideo",
@@ -215,7 +232,8 @@
         "ru": "Самостоятельное видеопроизведение, созданное как сопровождение музыкальной записи; чистые рекламные и промоматериалы исключены",
         "en": "A standalone video work accompanying a musical recording, excluding purely advertising and promotional material"
       },
-      "aliases": ["MUSIC"]
+      "aliases": ["MUSIC"],
+      "parents": []
     },
     {
       "key": "newsProgram",
@@ -227,7 +245,8 @@
         "ru": "Сообщение и обсуждение актуальных событий организуют программу",
         "en": "Reporting and discussing current events organizes the program"
       },
-      "aliases": ["News"]
+      "aliases": ["News"],
+      "parents": []
     },
     {
       "key": "originalNetAnimation",
@@ -239,7 +258,8 @@
         "ru": "Аниме, изначально выпущенное в интернете",
         "en": "Anime initially released online"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "originalVideoAnimation",
@@ -251,7 +271,8 @@
         "ru": "Аниме, изначально выпущенное непосредственно на видеоносителе",
         "en": "Anime initially released directly to video"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "paranormalRealityShow",
@@ -263,7 +284,8 @@
         "ru": "Участники исследуют заявленные паранормальные явления в формате реалити без утверждения их достоверности",
         "en": "Participants investigate claimed paranormal events in a reality format without asserting their truth"
       },
-      "aliases": ["Paranormal Reality TV"]
+      "aliases": ["Paranormal Reality TV"],
+      "parents": ["realityShow"]
     },
     {
       "key": "quizShow",
@@ -275,7 +297,8 @@
         "ru": "Участники телепрограммы соревнуются в ответах на вопросы",
         "en": "Program contestants compete by answering questions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["gameShow"]
     },
     {
       "key": "realityShow",
@@ -287,7 +310,8 @@
         "ru": "Программа организована вокруг наблюдения за участниками, выступающими преимущественно от собственного лица",
         "en": "A program organized around observing participants largely appearing as themselves"
       },
-      "aliases": ["Reality", "Reality-TV", "Reality TV"]
+      "aliases": ["Reality", "Reality-TV", "Reality TV"],
+      "parents": []
     },
     {
       "key": "shortFilm",
@@ -299,7 +323,8 @@
         "ru": "Самостоятельный фильм короткометражного формата; категория не назначается только по числу минут",
         "en": "A standalone short-form film; runtime alone does not establish this category"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "sketchComedy",
@@ -311,7 +336,8 @@
         "ru": "Произведение состоит из коротких относительно самостоятельных комических сцен",
         "en": "A work composed of short relatively independent comic scenes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "special",
@@ -323,7 +349,8 @@
         "ru": "Самостоятельный дополнительный выпуск вне обычной основной последовательности видеопроизведения",
         "en": "A standalone additional installment outside the regular main sequence of a video work"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "standUp",
@@ -335,7 +362,8 @@
         "ru": "Исполнитель обращается к аудитории с комическим монологом",
         "en": "A performer addresses an audience through comic monologue"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "survivalCompetition",
@@ -347,7 +375,8 @@
         "ru": "Реальные участники состязаются в заданиях выживания, а не игровые персонажи в survival-системе",
         "en": "Real participants compete in survival tasks, distinct from a survival-game system"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["realityShow"]
     },
     {
       "key": "talentCompetition",
@@ -359,7 +388,8 @@
         "ru": "Участники демонстрируют исполнительские способности в организованном конкурсе",
         "en": "Participants demonstrate performance skills in an organized contest"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["gameShow"]
     },
     {
       "key": "talkShow",
@@ -371,64 +401,8 @@
         "ru": "Разговор с гостями или панельная дискуссия организуют программу",
         "en": "Guest conversation or panel discussion organizes the program"
       },
-      "aliases": ["Talk", "Talk-Show"]
-    }
-  ],
-  "tagRelations": [
-    {
-      "first": "beautyCompetition",
-      "second": "gameShow",
-      "type": "parent"
-    },
-    {
-      "first": "businessRealityShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "cookingCompetition",
-      "second": "gameShow",
-      "type": "parent"
-    },
-    {
-      "first": "crimeRealityShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "datingRealityShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "docusoapRealityShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "makeoverShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "paranormalRealityShow",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "quizShow",
-      "second": "gameShow",
-      "type": "parent"
-    },
-    {
-      "first": "survivalCompetition",
-      "second": "realityShow",
-      "type": "parent"
-    },
-    {
-      "first": "talentCompetition",
-      "second": "gameShow",
-      "type": "parent"
+      "aliases": ["Talk", "Talk-Show"],
+      "parents": []
     }
   ]
 }

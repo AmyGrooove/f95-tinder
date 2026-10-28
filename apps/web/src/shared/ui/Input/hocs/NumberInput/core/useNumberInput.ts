@@ -43,6 +43,10 @@ const useNumberInput = (props: INumberInputProps) => {
       ? null
       : Number(normalizedValue)
 
+    if (!isNil(nextNumberValue) && !Number.isSafeInteger(nextNumberValue)) {
+      return
+    }
+
     setInputValue(normalizedValue)
     onChange(nextNumberValue)
   }

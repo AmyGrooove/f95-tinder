@@ -8,6 +8,7 @@ import {
 import { Test } from "@nestjs/testing"
 
 import { EUserRole } from "@entities/user/schemas/EUserRole"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { AccountController } from "../controllers/account.controller"
 import { AccountService } from "../services/account.service"
@@ -103,6 +104,7 @@ describe("AccountController", () => {
       },
       session: {
         id: "507f1f77bcf86cd799439012",
+        country: ECountry.RUSSIA,
         expiresAt: "2026-10-22T00:00:00.000Z",
       },
     }

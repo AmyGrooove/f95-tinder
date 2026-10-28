@@ -8,6 +8,7 @@ import { SecurityJwtService } from "@infrastructure/security/services/jwt.servic
 import { JWT_ACCESS_EXPIRATION } from "@infrastructure/security/static/JWT_ACCESS_EXPIRATION"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
 import { getTestApplication } from "@test/setup/setupIntegration"
+import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { createAccount } from "../../account/__tests__/functions/createAccount"
 import type { RegisterResponseDto } from "../dto/response/register.response"
@@ -41,6 +42,7 @@ describe("AuthController HTTP", () => {
     const response = await app.inject({
       method: "POST",
       url: "/auth/register",
+      remoteAddress: "2001:4860:4860::8888",
       headers: {
         origin: "http://localhost",
         "user-agent": "registration-browser",
@@ -87,6 +89,7 @@ describe("AuthController HTTP", () => {
     expect(session?._id.toHexString()).toBe(access.sessionId)
     expect(session).toMatchObject({
       userAgent: "registration-browser",
+      country: ECountry.UNITED_STATES,
       refreshTokenHash: createHash("sha256").update(refreshToken).digest("hex"),
     })
     expect(session?.expiresAt.getTime()).toBeGreaterThanOrEqual(
@@ -106,6 +109,68 @@ describe("AuthController HTTP", () => {
     ).toBe(200)
   })
 
+  it.each([
+    {
+      scenario: "страна из IP важнее заголовка страны",
+      remoteAddress: "8.8.8.8",
+      forwardedFor: "8.8.8.8",
+      expectedCountry: ECountry.UNITED_STATES,
+    },
+    {
+      scenario: "недоверенный клиент не подменяет IP через заголовок",
+      remoteAddress: "8.8.8.8",
+      forwardedFor: "77.88.8.8",
+      expectedCountry: ECountry.UNITED_STATES,
+    },
+    {
+      scenario: "доверенный локальный прокси передаёт IP клиента",
+      remoteAddress: "127.0.0.1",
+      forwardedFor: "77.88.8.8",
+      expectedCountry: ECountry.RUSSIA,
+    },
+    {
+      scenario: "локальный адрес остаётся unknown при заголовке страны",
+      remoteAddress: "127.0.0.1",
+      forwardedFor: "127.0.0.1",
+      expectedCountry: ECountry.UNKNOWN,
+    },
+  ])(
+    "сохраняет страну регистрации и возвращает её через whoami: $scenario",
+    async ({ remoteAddress, forwardedFor, expectedCountry }) => {
+      const { app, connection } = getTestApplication()
+      const response = await app.inject({
+        method: "POST",
+        url: "/auth/register",
+        remoteAddress,
+        headers: {
+          origin: "http://localhost",
+          "x-forwarded-for": forwardedFor,
+          "cf-ipcountry": "RU",
+        },
+      })
+
+      expect(response.statusCode).toBe(201)
+      const accessToken = response.cookies.find(
+        ({ name }) => name === "__Host-accessToken",
+      )?.value
+      expect(accessToken).toBeDefined()
+      const whoami = await app.inject({
+        method: "GET",
+        url: "/account/whoami",
+        headers: { cookie: `__Host-accessToken=${accessToken}` },
+      })
+
+      expect(whoami.statusCode).toBe(200)
+      expect(whoami.json()).toMatchObject({
+        session: { country: expectedCountry },
+      })
+      const session = await connection
+        .collection<Session>("Session")
+        .findOne({})
+      expect(session?.country).toBe(expectedCountry)
+    },
+  )
+
   it.each(["password", "anonymous"] as const)(
     "создаёт новую сессию при входе в аккаунт %s и сохраняет прежнюю",
     async (kind) => {
@@ -114,6 +179,7 @@ describe("AuthController HTTP", () => {
       const response = await app.inject({
         method: "POST",
         url: kind === "password" ? "/auth/login" : "/auth/login/code",
+        remoteAddress: "77.88.8.8",
         headers: { origin: "http://localhost", "user-agent": "login-browser" },
         payload:
           kind === "password"
@@ -151,6 +217,7 @@ describe("AuthController HTTP", () => {
       )
       expect(created).toMatchObject({
         userAgent: "login-browser",
+        country: ECountry.RUSSIA,
         refreshTokenHash: createHash("sha256")
           .update(refreshToken)
           .digest("hex"),
@@ -162,6 +229,9 @@ describe("AuthController HTTP", () => {
         headers: { cookie: `__Host-accessToken=${accessToken}` },
       })
       expect(whoami.statusCode).toBe(200)
+      expect(whoami.json()).toMatchObject({
+        session: { country: ECountry.RUSSIA },
+      })
     },
   )
 

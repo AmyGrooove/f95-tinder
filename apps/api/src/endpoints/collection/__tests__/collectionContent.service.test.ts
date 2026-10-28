@@ -4,20 +4,23 @@ import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
 
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 
 import { CollectionContentService } from "../services/collectionContent.service"
+import { ECollectionSort } from "../types/ECollectionSort"
 
 describe("CollectionContentService", () => {
-  const createService = async () => {
+  const createService = async (type = ECollectionType.CUSTOM) => {
     const id = new Types.ObjectId()
     const groupId = new Types.ObjectId()
     const textId = new Types.ObjectId()
     const itemId = new Types.ObjectId()
     const collection = {
       findNotDeletedById: jest.fn(async () => ({
+        type,
         blocks: [
           {
             id: textId,
@@ -122,4 +125,60 @@ describe("CollectionContentService", () => {
     expect(collection.findNotDeletedById).not.toHaveBeenCalled()
     expect(items.readContentPage).not.toHaveBeenCalled()
   })
+
+  it.each([
+    { direction: undefined, expected: -1 },
+    { direction: "desc" as const, expected: -1 },
+    { direction: "asc" as const, expected: 1 },
+  ])(
+    "передаёт направление $direction сортировки по значимости тега",
+    async ({ direction, expected }) => {
+      const { service, items, id } = await createService(ECollectionType.TAG)
+
+      await service.getItems({
+        id,
+        query: { sort: ECollectionSort.RELEVANCE_SCORE, direction },
+      })
+
+      expect(items.readContentPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sort: "relevanceScore",
+          direction: expected,
+        }),
+      )
+    },
+  )
+
+  it.each([
+    ECollectionType.CUSTOM,
+    ECollectionType.FRANCHISE,
+    ECollectionType.FEATURE,
+  ])(
+    "отклоняет сортировку по значимости для типа %s до чтения состава",
+    async (type) => {
+      const { service, items, id } = await createService(type)
+
+      await expect(
+        service.getItems({
+          id,
+          query: { sort: ECollectionSort.RELEVANCE_SCORE },
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException)
+      expect(items.countAvailableItemsByGroup).not.toHaveBeenCalled()
+      expect(items.readContentPage).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([ECollectionSort.COLLECTION, ECollectionSort.TITLE])(
+    "сохраняет прямое направление по умолчанию для сортировки %s",
+    async (sort) => {
+      const { service, items, id } = await createService()
+
+      await service.getItems({ id, query: { sort } })
+
+      expect(items.readContentPage).toHaveBeenCalledWith(
+        expect.objectContaining({ sort, direction: 1 }),
+      )
+    },
+  )
 })

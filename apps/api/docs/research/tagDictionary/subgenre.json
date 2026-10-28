@@ -11,7 +11,8 @@
         "ru": "Непосредственные экшен-действия совмещены с исследованием и сюжетными задачами",
         "en": "Direct action combines with exploration and narrative problem solving"
       },
-      "aliases": ["Action-Adventure"]
+      "aliases": ["Action-Adventure"],
+      "parents": ["actionGame"]
     },
     {
       "key": "actionEpic",
@@ -23,7 +24,8 @@
         "ru": "Физический конфликт разворачивается в масштабной истории с большой общественной ставкой",
         "en": "Physical conflict unfolds across a large-scale story with major collective stakes"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAction"]
     },
     {
       "key": "actionRealTimeStrategy",
@@ -35,7 +37,8 @@
         "ru": "Стратегическое управление в реальном времени существенно совмещено с непосредственными экшен-действиями",
         "en": "Real-time strategic control is substantially combined with direct action gameplay"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "actionRoguelike",
@@ -47,7 +50,8 @@
         "ru": "Процедурно изменяющиеся попытки совмещены с боем, требующим исполнения действий в реальном времени",
         "en": "Procedurally varying runs combine with combat requiring real-time execution"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["roguelike"]
     },
     {
       "key": "actionRpg",
@@ -59,7 +63,8 @@
         "ru": "Развитие ролевого персонажа совмещено с боем, требующим непосредственного исполнения действий",
         "en": "Role-playing character progression combines with combat requiring direct execution"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "adventureEpic",
@@ -71,7 +76,8 @@
         "ru": "Путешествие охватывает большой мир и определяющие судьбы сообществ события",
         "en": "The journey spans a large world and events shaping communities"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "americanFootballGame",
@@ -83,7 +89,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Американский футбол»",
         "en": "Players directly participate in a virtual contest under the rules of american football"
       },
-      "aliases": ["Football (American)"]
+      "aliases": ["Football (American)"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "animalAdventure",
@@ -95,7 +102,8 @@
         "ru": "Животные выступают основными участниками путешествия или поиска",
         "en": "Animals are principal participants in a journey or quest"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "arenaShooter",
@@ -107,7 +115,8 @@
         "ru": "Стрельба организована вокруг боевых столкновений на ограниченных аренах",
         "en": "Shooting is organized around combat encounters in bounded arenas"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "artificialIntelligenceScienceFiction",
@@ -119,7 +128,8 @@
         "ru": "Научно-фантастический конфликт строится вокруг искусственного интеллекта",
         "en": "Science fiction whose central conflict concerns artificial intelligence"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["scienceFiction"]
     },
     {
       "key": "autoBattler",
@@ -131,7 +141,8 @@
         "ru": "Игрок подбирает и размещает отряд, а сами бои преимущественно выполняются автоматически",
         "en": "Players assemble and position units while combat largely resolves automatically"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "automobileSimulation",
@@ -143,7 +154,8 @@
         "ru": "Игра моделирует управление автомобилем и его поведение",
         "en": "A game models vehicle handling and automobile behavior"
       },
-      "aliases": ["Automobile Sim"]
+      "aliases": ["Automobile Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "baseballGame",
@@ -155,7 +167,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Бейсбол»",
         "en": "Players directly participate in a virtual contest under the rules of baseball"
       },
-      "aliases": ["Baseball"]
+      "aliases": ["Baseball"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "basketballGame",
@@ -167,7 +180,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Баскетбол»",
         "en": "Players directly participate in a virtual contest under the rules of basketball"
       },
-      "aliases": ["Basketball"]
+      "aliases": ["Basketball"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "beatEmUp",
@@ -179,7 +193,8 @@
         "ru": "Ближний бой последовательно разворачивается против групп противников в игровых пространствах",
         "en": "Melee combat progresses through groups of enemies across play spaces"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["actionGame"]
     },
     {
       "key": "billiardsGame",
@@ -191,7 +206,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Бильярд»",
         "en": "Players directly participate in a virtual contest under the rules of billiards"
       },
-      "aliases": ["Billiards"]
+      "aliases": ["Billiards"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "bmxGame",
@@ -203,7 +219,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Велосипедный мотокросс»",
         "en": "Players directly participate in a virtual contest under the rules of bmx"
       },
-      "aliases": ["BMX"]
+      "aliases": ["BMX"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "bodyHorror",
@@ -215,7 +232,8 @@
         "ru": "Ужас строится вокруг нарушения целостности, превращений или искажения тела",
         "en": "Horror centers on bodily violation, transformation or distortion"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "bodySwapComedy",
@@ -227,7 +245,8 @@
         "ru": "Обмен телами между персонажами создаёт основной комический конфликт",
         "en": "Characters exchanging bodies create the central comic conflict"
       },
-      "aliases": ["Body Swap Comedy"]
+      "aliases": ["Body Swap Comedy"],
+      "parents": ["comedy"]
     },
     {
       "key": "boomerShooter",
@@ -239,7 +258,8 @@
         "ru": "Стрельба использует традиции быстрых FPS ранней эпохи: мобильность, арсенал и поиск ресурсов",
         "en": "Shooting uses early fast-FPS traditions of mobility, varied arsenals and resource discovery"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["firstPersonShooter"]
     },
     {
       "key": "bowlingGame",
@@ -251,7 +271,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Боулинг»",
         "en": "Players directly participate in a virtual contest under the rules of bowling"
       },
-      "aliases": ["Bowling"]
+      "aliases": ["Bowling"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "boxingGame",
@@ -263,7 +284,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Бокс»",
         "en": "Players directly participate in a virtual contest under the rules of boxing"
       },
-      "aliases": ["Boxing"]
+      "aliases": ["Boxing"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "buddyComedy",
@@ -275,7 +297,8 @@
         "ru": "Комический конфликт развивается через отношения несовпадающих по характеру напарников",
         "en": "Comic conflict develops through mismatched partners and their relationship"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "buddyCop",
@@ -287,7 +310,8 @@
         "ru": "Расследование организовано отношениями несовпадающих по характеру полицейских напарников",
         "en": "Investigation is organized around mismatched police partners"
       },
-      "aliases": ["Buddy Cop"]
+      "aliases": ["Buddy Cop"],
+      "parents": ["crime"]
     },
     {
       "key": "bulletHeaven",
@@ -299,7 +323,8 @@
         "ru": "Персонаж противостоит множеству врагов с преимущественно автоматическими атаками и развитием вооружения",
         "en": "A character faces enemy hordes using largely automatic attacks and weapon progression"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["actionGame"]
     },
     {
       "key": "bulletHell",
@@ -311,7 +336,8 @@
         "ru": "Плотные сложные узоры вражеских снарядов требуют точного уклонения",
         "en": "Dense complex patterns of enemy projectiles demand precise dodging"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shootEmUp"]
     },
     {
       "key": "caperStory",
@@ -323,7 +349,8 @@
         "ru": "Планирование и исполнение дерзкого преступления поданы как авантюрная история с игровым или комическим тоном",
         "en": "Planning and executing a daring crime is presented as an adventurous story with a playful or comic tone"
       },
-      "aliases": ["Caper"]
+      "aliases": ["Caper"],
+      "parents": ["crime"]
     },
     {
       "key": "carAction",
@@ -335,7 +362,8 @@
         "ru": "Автомобильные погони и столкновения организуют основное действие",
         "en": "Car chases and collisions organize the main action"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAction"]
     },
     {
       "key": "cardBattler",
@@ -347,7 +375,8 @@
         "ru": "Карты задают доступные боевые действия и разрешение столкновений",
         "en": "Cards define combat actions and encounter resolution"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["cardGame"]
     },
     {
       "key": "characterActionGame",
@@ -359,7 +388,8 @@
         "ru": "Ближний бой строится на освоении выразительных комбинаций и техническом исполнении",
         "en": "Melee action emphasizes expressive combos and technical execution"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["actionGame"]
     },
     {
       "key": "chessGame",
@@ -371,7 +401,8 @@
         "ru": "Игра реализует шахматные фигуры, ходы и условие мата или их явно обозначенный вариант",
         "en": "The game implements chess pieces, moves and checkmate conditions or an identified variant"
       },
-      "aliases": ["Chess"]
+      "aliases": ["Chess"],
+      "parents": ["boardGame"]
     },
     {
       "key": "cityBuilder",
@@ -383,7 +414,8 @@
         "ru": "Игрок размещает и развивает городскую инфраструктуру и обслуживающие системы",
         "en": "Players place and develop urban infrastructure and supporting systems"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["simulationGame"]
     },
     {
       "key": "classicMusical",
@@ -395,7 +427,8 @@
         "ru": "История использует конвенции классического постановочного музыкального номера",
         "en": "The story uses conventions of the classic staged musical number"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["musical"]
     },
     {
       "key": "classicWestern",
@@ -407,7 +440,8 @@
         "ru": "Конвенции фронтира поданы в традиционной форме классического вестерна",
         "en": "Frontier conventions are presented in the traditional form of the classical western"
       },
-      "aliases": ["Classical Western"]
+      "aliases": ["Classical Western"],
+      "parents": ["western"]
     },
     {
       "key": "colonySimulation",
@@ -419,7 +453,8 @@
         "ru": "Игрок организует жизнь поселения, потребности жителей и связанные хозяйственные системы",
         "en": "Players organize settlement life, inhabitants' needs and supporting systems"
       },
-      "aliases": ["Colony Sim"]
+      "aliases": ["Colony Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "combatRacingGame",
@@ -431,7 +466,8 @@
         "ru": "Гоночное состязание включает прямые атаки на соперников",
         "en": "Racing competition includes direct attacks against opponents"
       },
-      "aliases": ["Combat Racing"]
+      "aliases": ["Combat Racing"],
+      "parents": ["racingGame"]
     },
     {
       "key": "conspiracyThriller",
@@ -443,7 +479,8 @@
         "ru": "Раскрытие скрытого сговора и угрозы со стороны его участников создают напряжение",
         "en": "Uncovering a hidden conspiracy and threats from its participants generate suspense"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "contemporaryFantasy",
@@ -455,7 +492,8 @@
         "ru": "Магические элементы действуют в современном обществе; городское место действия не обязательно",
         "en": "Magic operates within contemporary society without requiring an urban location"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["fantasy"]
     },
     {
       "key": "contemporaryWestern",
@@ -467,7 +505,8 @@
         "ru": "Конвенции вестерна перенесены в современную или недавнюю общественную среду",
         "en": "Western conventions are transferred into a contemporary or recent social setting"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["western"]
     },
     {
       "key": "copDrama",
@@ -479,7 +518,8 @@
         "ru": "Драма сосредоточена на личных и профессиональных конфликтах полицейских",
         "en": "Drama focuses on police officers' personal and professional conflicts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "cosmicHorror",
@@ -491,7 +531,8 @@
         "ru": "Ужас строится на непостижимости мира и бессилии человека перед безразличными или несоизмеримыми с ним силами",
         "en": "Horror built on an incomprehensible universe and human helplessness before indifferent or vastly greater forces"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "costumeDrama",
@@ -503,7 +544,8 @@
         "ru": "Историческая драма уделяет заметное внимание материальной культуре, одежде и общественным обычаям эпохи",
         "en": "Period drama emphasizes material culture, clothing and social conventions of its era"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["periodDrama"]
     },
     {
       "key": "cozyMystery",
@@ -515,7 +557,8 @@
         "ru": "Раскрытие преступления подано без акцента на натуралистической жестокости и с камерной социальной средой",
         "en": "Crime solving avoids emphasis on graphic violence within an intimate social setting"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["mystery"]
     },
     {
       "key": "cricketGame",
@@ -527,7 +570,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Крикет»",
         "en": "Players directly participate in a virtual contest under the rules of cricket"
       },
-      "aliases": ["Cricket"]
+      "aliases": ["Cricket"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "crpg",
@@ -539,7 +583,8 @@
         "ru": "Компьютерная ролевая традиция с системными правилами персонажей, диалогами и выбором решений",
         "en": "Computer role-playing tradition using systemic character rules, dialogue and choices"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "cyberThriller",
@@ -551,7 +596,8 @@
         "ru": "Цифровые системы и информационные угрозы определяют напряжённую интригу",
         "en": "Digital systems and information threats drive suspense"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "cyclingGame",
@@ -563,7 +609,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Велоспорт»",
         "en": "Players directly participate in a virtual contest under the rules of cycling"
       },
-      "aliases": ["Cycling"]
+      "aliases": ["Cycling"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "darkComedy",
@@ -575,7 +622,8 @@
         "ru": "Комедийный жанр, в котором мрачные темы служат основой юмора; шире единичного приёма darkHumor",
         "en": "Comedy built around dark subject matter; distinct from an occasional dark-humor device"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "darkFantasy",
@@ -587,7 +635,8 @@
         "ru": "Магический мир представлен через мрачные, пугающие или трагические элементы",
         "en": "A magical world is presented through dark, frightening or tragic elements"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["fantasy"]
     },
     {
       "key": "darkRomance",
@@ -599,7 +648,8 @@
         "ru": "Любовная история исследует опасные, разрушительные или морально проблемные отношения",
         "en": "A romantic story explores dangerous, destructive or ethically troubling relationships"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "datingSimulation",
@@ -611,7 +661,8 @@
         "ru": "Игрок развивает романтические отношения через выбор действий и взаимодействий",
         "en": "Players develop romantic relationships through choices and interactions"
       },
-      "aliases": ["Dating Sim"]
+      "aliases": ["Dating Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "desertAdventure",
@@ -623,7 +674,8 @@
         "ru": "Путешествие определяется угрозами и открытиями пустынной среды",
         "en": "The journey is shaped by desert hazards and discoveries"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "dinosaurAdventure",
@@ -635,7 +687,8 @@
         "ru": "Динозавры определяют встречи и опасности путешествия",
         "en": "Dinosaurs define the encounters and hazards of the journey"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "dystopianScienceFiction",
@@ -647,7 +700,8 @@
         "ru": "Научно-фантастические допущения раскрывают угнетающее общественное устройство",
         "en": "Scientific speculation centers on an oppressive social order"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["scienceFiction"]
     },
     {
       "key": "eroticRomance",
@@ -659,7 +713,8 @@
         "ru": "Развитие центральной любовной линии организовано сексуальным влечением и откровенными интимными отношениями",
         "en": "A romance whose central relationship develops through sexual desire and explicit intimacy"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "eroticThriller",
@@ -671,7 +726,8 @@
         "ru": "Сексуальные отношения и желания непосредственно связаны с угрозой и напряжённой интригой",
         "en": "Sexual relationships and desire are directly tied to danger and suspense"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "escapeRoomGame",
@@ -683,7 +739,8 @@
         "ru": "Решение связанных загадок открывает выход из ограниченного пространства",
         "en": "Solving linked puzzles enables escape from a confined space"
       },
-      "aliases": ["Escape Room"]
+      "aliases": ["Escape Room"],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "extractionShooter",
@@ -695,7 +752,8 @@
         "ru": "После вооружённого рейда игрок должен выйти из опасной зоны с полученной добычей",
         "en": "After an armed raid players must leave a dangerous zone with acquired loot"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "fallingBlocksGame",
@@ -707,7 +765,8 @@
         "ru": "Размещение падающих фигур формирует комбинации и освобождает поле",
         "en": "Arranging falling pieces forms combinations and clears the board"
       },
-      "aliases": ["Falling Blocks"]
+      "aliases": ["Falling Blocks"],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "fantasyEpic",
@@ -719,7 +778,8 @@
         "ru": "Магический мир раскрывается через масштабный конфликт и судьбы сообществ",
         "en": "A magical world is explored through large-scale conflict and collective destinies"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["fantasy"]
     },
     {
       "key": "farce",
@@ -731,7 +791,8 @@
         "ru": "Комедия строится на преувеличенных ситуациях, нелепых недоразумениях и стремительном усложнении действия",
         "en": "Comedy relies on exaggerated situations, absurd misunderstandings and escalating action"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "farmingSimulation",
@@ -743,7 +804,8 @@
         "ru": "Игрок моделируемо выращивает культуры или содержит сельскохозяйственных животных",
         "en": "Players simulate growing crops or tending farm animals"
       },
-      "aliases": ["Farming Sim"]
+      "aliases": ["Farming Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "feelGoodRomance",
@@ -755,7 +817,8 @@
         "ru": "Любовная история подаётся с устойчивым акцентом на теплоту и обнадёживающий эмоциональный исход",
         "en": "A romantic story consistently emphasizes warmth and an emotionally hopeful outcome"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "filmNoir",
@@ -767,7 +830,8 @@
         "ru": "Исторический американский нуар 1927–1958 годов: мрачные криминальные истории, преимущественно чёрно-белые",
         "en": "American noir from 1927–1958: dark crime narratives, predominantly black-and-white"
       },
-      "aliases": ["Film Noir"]
+      "aliases": ["Film Noir"],
+      "parents": ["crime"]
     },
     {
       "key": "financialDrama",
@@ -779,7 +843,8 @@
         "ru": "Драматические конфликты определяются финансовыми решениями, рынками и рисками",
         "en": "Financial decisions, markets and risks drive dramatic conflict"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "folkHorror",
@@ -791,7 +856,8 @@
         "ru": "Угроза связана с фольклором, обрядами и замкнутыми традиционными сообществами",
         "en": "The threat is tied to folklore, ritual and enclosed traditional communities"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "footballGame",
@@ -803,7 +869,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Футбол»",
         "en": "Players directly participate in a virtual contest under the rules of association football"
       },
-      "aliases": ["Football (Soccer)"]
+      "aliases": ["Football (Soccer)"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "foundFootageHorror",
@@ -815,7 +882,8 @@
         "ru": "История ужаса представлена как найденные записи участников или наблюдателей событий",
         "en": "A horror story presented as recovered recordings made by participants or witnesses"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "fourXStrategy",
@@ -827,7 +895,8 @@
         "ru": "Игровая стратегия исследования, экспансии, эксплуатации ресурсов и борьбы за господство",
         "en": "Strategic play based on exploration, expansion, resource exploitation and domination"
       },
-      "aliases": ["4X", "4X (explore, expand, exploit, and exterminate)"]
+      "aliases": ["4X", "4X (explore, expand, exploit, and exterminate)"],
+      "parents": ["strategyGame"]
     },
     {
       "key": "giallo",
@@ -839,7 +908,8 @@
         "ru": "Итальянская традиция триллера сочетает загадочные убийства, стилизованную опасность и расследование",
         "en": "An Italian thriller tradition combines mysterious murders, stylized danger and investigation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "globetrottingAdventure",
@@ -851,7 +921,8 @@
         "ru": "Путешествие последовательно проходит через разные страны и культуры",
         "en": "The journey moves successively through different countries and cultures"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "godGame",
@@ -863,7 +934,8 @@
         "ru": "Игрок влияет на мир и его население с позиции внешней сверхъестественной силы",
         "en": "Players influence a world and its population as an external supernatural power"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["simulationGame"]
     },
     {
       "key": "golfGame",
@@ -875,7 +947,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Гольф»",
         "en": "Players directly participate in a virtual contest under the rules of golf"
       },
-      "aliases": ["Golf"]
+      "aliases": ["Golf"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "grandStrategy",
@@ -887,7 +960,8 @@
         "ru": "Игрок руководит крупными государственными или общественными системами на длительном временном горизонте",
         "en": "Players direct large state or social systems across long time horizons"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "hackAndSlashGame",
@@ -899,7 +973,8 @@
         "ru": "Динамичный ближний бой с последовательным поражением множества противников",
         "en": "Fast melee combat against successive groups of enemies"
       },
-      "aliases": ["Hack and Slash"]
+      "aliases": ["Hack and Slash"],
+      "parents": ["actionGame"]
     },
     {
       "key": "heroShooter",
@@ -911,7 +986,8 @@
         "ru": "Стрельба совмещена с выбором героев с различающимися способностями и ролями",
         "en": "Shooting combines with choosing heroes with distinct abilities and roles"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "hiddenObjectGame",
@@ -923,7 +999,8 @@
         "ru": "Обнаружение заданных скрытых объектов в насыщенных сценах определяет продвижение",
         "en": "Finding specified hidden objects in detailed scenes determines progression"
       },
-      "aliases": ["Hidden Object"]
+      "aliases": ["Hidden Object"],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "highConceptComedy",
@@ -935,7 +1012,8 @@
         "ru": "Комические конфликты всей истории порождаются одним центральным необычным допущением",
         "en": "The comedic conflicts of the story arise from one central unusual premise"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "historicalEpic",
@@ -947,7 +1025,8 @@
         "ru": "Историческая драма раскрывает масштабные общественные события через судьбы персонажей и сообществ",
         "en": "A historical drama presenting large-scale social events through lives of characters and communities"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["periodDrama"]
     },
     {
       "key": "hobbySimulation",
@@ -959,7 +1038,8 @@
         "ru": "Игра моделирует практику увлечения и обращение с его инструментами",
         "en": "A game models a hobby's practice and use of its tools"
       },
-      "aliases": ["Hobby Sim"]
+      "aliases": ["Hobby Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "hockeyGame",
@@ -971,7 +1051,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Хоккей»",
         "en": "Players directly participate in a virtual contest under the rules of hockey"
       },
-      "aliases": ["Hockey"]
+      "aliases": ["Hockey"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "holidayComedy",
@@ -983,7 +1064,8 @@
         "ru": "Праздник и подготовка к нему организуют комические конфликты",
         "en": "A holiday and its preparations organize comic conflicts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "holidayRomance",
@@ -995,7 +1077,8 @@
         "ru": "Праздничные события организуют развитие любовной истории",
         "en": "Holiday events organize the development of a love story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "iyashikei",
@@ -1007,7 +1090,8 @@
         "ru": "Спокойное низкоконфликтное повседневное повествование направлено на ощущение душевного восстановления",
         "en": "Calm low-conflict everyday storytelling aims at an emotionally restorative experience"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["sliceOfLife"]
     },
     {
       "key": "jobSimulation",
@@ -1019,7 +1103,8 @@
         "ru": "Игрок выполняет моделируемые действия и обязанности определённой профессии",
         "en": "Players perform modeled activities and duties of a profession"
       },
-      "aliases": ["Job Simulator"]
+      "aliases": ["Job Simulator"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "jrpg",
@@ -1031,7 +1116,8 @@
         "ru": "Ролевая игровая традиция JRPG; не код страны производства",
         "en": "JRPG design tradition, not a production-country label"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "jukeboxMusical",
@@ -1043,7 +1129,8 @@
         "ru": "Сюжет объединяет уже существовавшие популярные песни",
         "en": "The narrative incorporates pre-existing popular songs"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["musical"]
     },
     {
       "key": "jungleAdventure",
@@ -1055,7 +1142,8 @@
         "ru": "Путешествие определяется угрозами и открытиями тропических джунглей",
         "en": "The journey is shaped by tropical-jungle hazards and discoveries"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "kungFuAction",
@@ -1067,7 +1155,8 @@
         "ru": "История экшена строится вокруг поединков и практики китайских боевых искусств",
         "en": "An action story centered on fights and Chinese martial arts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["martialArtsAction"]
     },
     {
       "key": "legalDrama",
@@ -1079,7 +1168,8 @@
         "ru": "Персонажные конфликты раскрываются через правовые споры и судебную деятельность",
         "en": "Character conflicts unfold through legal disputes and court activity"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "legalThriller",
@@ -1091,7 +1181,8 @@
         "ru": "Судебный процесс или юридический конфликт разворачивается как опасная напряжённая интрига",
         "en": "A legal proceeding or dispute unfolds as a dangerous suspenseful plot"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "lifeSimulation",
@@ -1103,7 +1194,8 @@
         "ru": "Игрок управляет повседневными потребностями, отношениями и жизненными обстоятельствами персонажей",
         "en": "Players manage characters' everyday needs, relationships and life circumstances"
       },
-      "aliases": ["Life Sim"]
+      "aliases": ["Life Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "looterShooter",
@@ -1115,7 +1207,8 @@
         "ru": "Стрельба и получение снаряжения с меняющимися характеристиками образуют цикл прогресса",
         "en": "Shooting and acquiring equipment with varying properties form the progression loop"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "mahjongGame",
@@ -1127,7 +1220,8 @@
         "ru": "Игра организована вокруг маджонговых костей и установленных комбинаций",
         "en": "Play is organized around Mahjong tiles and prescribed combinations"
       },
-      "aliases": ["Mahjong"]
+      "aliases": ["Mahjong"],
+      "parents": ["boardGame"]
     },
     {
       "key": "martialArtsAction",
@@ -1139,7 +1233,8 @@
         "ru": "Поединки с использованием боевых искусств организуют основной конфликт истории",
         "en": "Martial arts fights organize the main action and conflict of the story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAction"]
     },
     {
       "key": "matchThree",
@@ -1151,7 +1246,8 @@
         "ru": "Перестановка элементов образует совпадающие группы, обычно от трёх элементов",
         "en": "Rearranging pieces forms matching groups, typically of at least three"
       },
-      "aliases": ["Match 3"]
+      "aliases": ["Match 3"],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "medicalDrama",
@@ -1163,7 +1259,8 @@
         "ru": "Личные и профессиональные конфликты раскрываются через лечение и медицинскую практику",
         "en": "Personal and professional conflicts unfold through treatment and medical practice"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "medicalSimulation",
@@ -1175,7 +1272,8 @@
         "ru": "Игрок выполняет моделируемые медицинские процедуры или управляет лечением",
         "en": "Players perform modeled medical procedures or manage treatment"
       },
-      "aliases": ["Medical Sim"]
+      "aliases": ["Medical Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "metroidvania",
@@ -1187,7 +1285,8 @@
         "ru": "Исследование связного мира, где новые способности открывают ранее недоступные области",
         "en": "Exploration of an interconnected world where acquired abilities unlock previously inaccessible areas"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["adventureGame"]
     },
     {
       "key": "miniGolfGame",
@@ -1199,7 +1298,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Мини-гольф»",
         "en": "Players directly participate in a virtual contest under the rules of mini golf"
       },
-      "aliases": ["Mini Golf"]
+      "aliases": ["Mini Golf"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "mmorpg",
@@ -1211,7 +1311,8 @@
         "ru": "Ролевая игра с большим числом участников в общем устойчивом онлайн-мире",
         "en": "A role-playing game with many participants in a shared persistent online world"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "moba",
@@ -1223,7 +1324,8 @@
         "ru": "Соревнование команд управляемых героев на общей арене с развитием в рамках матча",
         "en": "Teams of controlled heroes compete in an arena with within-match progression"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "monsterHorror",
@@ -1235,7 +1337,8 @@
         "ru": "Чудовищные существа выступают основной угрозой истории ужаса",
         "en": "Monstrous creatures constitute the main threat in a horror story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "motocrossGame",
@@ -1247,7 +1350,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Мотокросс»",
         "en": "Players directly participate in a virtual contest under the rules of motocross"
       },
-      "aliases": ["Motocross"]
+      "aliases": ["Motocross"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "mountainAdventure",
@@ -1259,7 +1363,8 @@
         "ru": "Путешествие определяется восхождениями и угрозами горной среды",
         "en": "The journey is shaped by climbs and mountain hazards"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "musouGame",
@@ -1271,7 +1376,8 @@
         "ru": "Масштабный ближний бой одного героя против многочисленных скоплений врагов",
         "en": "Large-scale melee combat by one hero against dense crowds of enemies"
       },
-      "aliases": ["Musou"]
+      "aliases": ["Musou"],
+      "parents": ["hackAndSlashGame"]
     },
     {
       "key": "mysteryDungeon",
@@ -1283,7 +1389,8 @@
         "ru": "Исследование меняющихся подземелий с последовательными попытками и управлением ресурсами",
         "en": "Exploration of changing dungeons through repeated attempts and resource management"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["dungeonCrawler"]
     },
     {
       "key": "onRailsShooter",
@@ -1295,7 +1402,8 @@
         "ru": "Игрок целится и стреляет, а перемещение по маршруту в основном задано заранее",
         "en": "Players aim and shoot while movement largely follows a prescribed route"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "openWorldSurvivalCraft",
@@ -1307,7 +1415,8 @@
         "ru": "Исследование открытого мира сочетается с поддержанием выживания и созданием предметов",
         "en": "Open-world exploration combines survival maintenance with crafting"
       },
-      "aliases": ["Open World Survival Craft"]
+      "aliases": ["Open World Survival Craft"],
+      "parents": ["survivalGame"]
     },
     {
       "key": "otomeGame",
@@ -1319,7 +1428,8 @@
         "ru": "Романтическая игра ориентирована на женскую аудиторию и обычно предлагает выбор отношений с мужскими персонажами",
         "en": "A romance game directed at a female audience, usually offering relationships with male characters"
       },
-      "aliases": ["Otome"]
+      "aliases": ["Otome"],
+      "parents": ["romanceGame"]
     },
     {
       "key": "outbreakSimulation",
@@ -1331,7 +1441,8 @@
         "ru": "Игровые системы моделируют распространение заболевания и действия по его изменению",
         "en": "Game systems model disease spread and actions that alter it"
       },
-      "aliases": ["Outbreak Sim"]
+      "aliases": ["Outbreak Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "partyBasedRpg",
@@ -1343,7 +1454,8 @@
         "ru": "Ролевая игра строится вокруг управления группой персонажей с дополняющими ролями",
         "en": "Role-playing centered on controlling a party of characters with complementary roles"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "periodDrama",
@@ -1355,7 +1467,8 @@
         "ru": "Драматические конфликты разворачиваются в исторической общественной среде",
         "en": "Dramatic conflicts unfold within a historical social environment"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "pokerGame",
@@ -1367,7 +1480,8 @@
         "ru": "Игроки формируют карточные комбинации и принимают решения о ставках по правилам покера",
         "en": "Players form card hands and make betting decisions under poker rules"
       },
-      "aliases": ["Poker"]
+      "aliases": ["Poker"],
+      "parents": ["cardGame"]
     },
     {
       "key": "policeProcedural",
@@ -1379,7 +1493,8 @@
         "ru": "Расследование показано через процедуры и повседневную работу правоохранителей",
         "en": "Investigation is shown through law-enforcement procedures and routine work"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["crime"]
     },
     {
       "key": "politicalDrama",
@@ -1391,7 +1506,8 @@
         "ru": "Отношения персонажей и конфликты развиваются внутри борьбы за политические решения и власть",
         "en": "Character relationships and conflicts develop within political decision-making and power struggles"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "politicalSimulation",
@@ -1403,7 +1519,8 @@
         "ru": "Игрок принимает политические решения внутри моделируемых институтов и конфликтов",
         "en": "Players make political decisions within modeled institutions and conflicts"
       },
-      "aliases": ["Political Sim"]
+      "aliases": ["Political Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "politicalThriller",
@@ -1415,7 +1532,8 @@
         "ru": "Борьба за политическую власть и политические угрозы формируют напряжённую интригу",
         "en": "Political power struggles and threats drive a suspenseful plot"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "popMusical",
@@ -1427,7 +1545,8 @@
         "ru": "Музыкальные номера используют конвенции поп-музыки",
         "en": "Musical numbers use pop-music conventions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["musical"]
     },
     {
       "key": "precisionPlatformer",
@@ -1439,7 +1558,8 @@
         "ru": "Прыжки и перемещения требуют точного исполнения и тайминга",
         "en": "Platform traversal demands precise execution and timing"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["platformer"]
     },
     {
       "key": "prisonDrama",
@@ -1451,7 +1571,8 @@
         "ru": "Драматические конфликты разворачиваются вокруг заключения и жизни в тюрьме",
         "en": "Dramatic conflicts center on incarceration and prison life"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "psychologicalDrama",
@@ -1463,7 +1584,8 @@
         "ru": "Внутренние состояния, мотивы и их изменение определяют драматический конфликт",
         "en": "Inner states, motivations and their changes drive dramatic conflict"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "psychologicalHorror",
@@ -1475,7 +1597,8 @@
         "ru": "Ужас строится прежде всего на восприятии, психическом напряжении и неуверенности",
         "en": "Horror is built primarily through perception, psychological tension and uncertainty"
       },
-      "aliases": ["Pyschological Horror"]
+      "aliases": ["Pyschological Horror"],
+      "parents": ["horror"]
     },
     {
       "key": "psychologicalThriller",
@@ -1487,7 +1610,8 @@
         "ru": "Психологические состояния и манипуляции формируют напряжённую интригу",
         "en": "Psychological states and manipulation shape the suspenseful plot"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["thriller"]
     },
     {
       "key": "puzzlePlatformer",
@@ -1499,7 +1623,8 @@
         "ru": "Платформенное перемещение сочетается с задачами, определяющими продвижение",
         "en": "Platform traversal combines with puzzles that determine progression"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["platformer"]
     },
     {
       "key": "raunchyComedy",
@@ -1511,7 +1636,8 @@
         "ru": "Грубый и откровенно сексуальный юмор определяет комедийную подачу",
         "en": "Crude and overtly sexual humor defines the comedy"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "realTimeStrategy",
@@ -1523,7 +1649,8 @@
         "ru": "Стратегические действия сторон развиваются одновременно в реальном времени",
         "en": "Strategic actions unfold simultaneously in real time"
       },
-      "aliases": ["RTS"]
+      "aliases": ["RTS"],
+      "parents": ["strategyGame"]
     },
     {
       "key": "realTimeTactics",
@@ -1535,7 +1662,8 @@
         "ru": "Тактическое управление подразделениями происходит непрерывно во времени",
         "en": "Tactical control of units unfolds continuously in time"
       },
-      "aliases": ["Real Time Tactics"]
+      "aliases": ["Real Time Tactics"],
+      "parents": ["strategyGame"]
     },
     {
       "key": "rockMusical",
@@ -1547,7 +1675,8 @@
         "ru": "Музыкальные номера используют конвенции рок-музыки",
         "en": "Musical numbers use rock-music conventions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["musical"]
     },
     {
       "key": "roguelikeDeckbuilder",
@@ -1559,7 +1688,8 @@
         "ru": "Процедурно изменяющиеся попытки совмещены с построением и использованием колоды",
         "en": "Variable run-based play combines with constructing and using a deck"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["cardGame"]
     },
     {
       "key": "roguelite",
@@ -1571,7 +1701,8 @@
         "ru": "Прохождения в духе рогалика с сохранением части развития между попытками",
         "en": "Roguelike-inspired runs retaining some progression across attempts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["roguelike"]
     },
     {
       "key": "romanticComedy",
@@ -1583,7 +1714,8 @@
         "ru": "Любовная история организована через комические конфликты и ситуации",
         "en": "A romantic story is organized through comic conflicts and situations"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "romanticEpic",
@@ -1595,7 +1727,8 @@
         "ru": "Любовная история разворачивается в масштабном повествовании, охватывающем значительные события или периоды",
         "en": "A love story unfolds across a large-scale narrative spanning major events or periods"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "rugbyGame",
@@ -1607,7 +1740,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Регби»",
         "en": "Players directly participate in a virtual contest under the rules of rugby"
       },
-      "aliases": ["Rugby"]
+      "aliases": ["Rugby"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "runnerGame",
@@ -1619,7 +1753,8 @@
         "ru": "Продвижение бегущего персонажа через препятствия составляет основу игры",
         "en": "Guiding a running character through obstacles forms the core of play"
       },
-      "aliases": ["Runner"]
+      "aliases": ["Runner"],
+      "parents": ["actionGame"]
     },
     {
       "key": "scienceFictionEpic",
@@ -1631,7 +1766,8 @@
         "ru": "Научно-фантастические допущения развиваются в масштабной истории с общественными последствиями",
         "en": "Scientific speculation develops across a large-scale story with collective consequences"
       },
-      "aliases": ["Sci-Fi Epic"]
+      "aliases": ["Sci-Fi Epic"],
+      "parents": ["scienceFiction"]
     },
     {
       "key": "screwballComedy",
@@ -1643,7 +1779,8 @@
         "ru": "Быстрые словесные столкновения и абсурдные недоразумения организуют комедийный конфликт",
         "en": "Rapid verbal clashes and absurd misunderstandings organize comic conflict"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "seaAdventure",
@@ -1655,7 +1792,8 @@
         "ru": "Путешествие и опасности морского плавания организуют события",
         "en": "Sea travel and maritime hazards organize events"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "shootEmUp",
@@ -1667,7 +1805,8 @@
         "ru": "Непрерывная стрельба и уклонение от атак организуют продвижение через потоки противников",
         "en": "Continuous shooting and dodging organize progress through streams of enemies"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "shopkeepingGame",
@@ -1679,7 +1818,8 @@
         "ru": "Игрок организует запасы, продажи и работу торговой точки",
         "en": "Players organize stock, sales and shop operations"
       },
-      "aliases": ["Shop Keeper"]
+      "aliases": ["Shop Keeper"],
+      "parents": ["managementGame"]
     },
     {
       "key": "showbizDrama",
@@ -1691,7 +1831,8 @@
         "ru": "Драматические конфликты разворачиваются в индустрии развлечений",
         "en": "Dramatic conflicts unfold within the entertainment industry"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "sitcom",
@@ -1703,7 +1844,8 @@
         "ru": "Повторяющийся состав персонажей попадает в комические бытовые ситуации в эпизодической форме",
         "en": "A recurring cast encounters comic everyday situations in episodic form"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "skateboardingGame",
@@ -1715,7 +1857,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Скейтбординг»",
         "en": "Players directly participate in a virtual contest under the rules of skateboarding"
       },
-      "aliases": ["Skateboarding"]
+      "aliases": ["Skateboarding"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "skatingGame",
@@ -1727,7 +1870,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Катание на коньках»",
         "en": "Players directly participate in a virtual contest under the rules of skating"
       },
-      "aliases": ["Skating"]
+      "aliases": ["Skating"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "skiingGame",
@@ -1739,7 +1883,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Горные лыжи»",
         "en": "Players directly participate in a virtual contest under the rules of skiing"
       },
-      "aliases": ["Skiing"]
+      "aliases": ["Skiing"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "slapstick",
@@ -1751,7 +1896,8 @@
         "ru": "Преувеличенные физические действия, падения и столкновения создают комический эффект",
         "en": "Exaggerated physical actions, falls and collisions create comic effect"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "slasherHorror",
@@ -1763,7 +1909,8 @@
         "ru": "Убийца последовательно преследует и физически уничтожает группу жертв",
         "en": "A killer successively stalks and physically attacks a group of victims"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "snowboardingGame",
@@ -1775,7 +1922,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Сноуборд»",
         "en": "Players directly participate in a virtual contest under the rules of snowboarding"
       },
-      "aliases": ["Snowboarding"]
+      "aliases": ["Snowboarding"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "soapOpera",
@@ -1787,7 +1935,8 @@
         "ru": "Продолжающиеся эмоциональные конфликты и отношения ансамбля персонажей организуют сериализацию",
         "en": "Continuing emotional conflicts and ensemble relationships organize serialization"
       },
-      "aliases": ["Soap"]
+      "aliases": ["Soap"],
+      "parents": ["drama"]
     },
     {
       "key": "sokoban",
@@ -1799,7 +1948,8 @@
         "ru": "Игрок толкает ящики на целевые клетки при ограниченном пространстве и запрете обычного вытягивания",
         "en": "Players push crates onto target cells in constrained spaces without ordinary pulling"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "solitaireGame",
@@ -1811,7 +1961,8 @@
         "ru": "Карточные раскладки решаются одним игроком по установленным правилам",
         "en": "Card layouts are solved by one player under prescribed rules"
       },
-      "aliases": ["Solitaire"]
+      "aliases": ["Solitaire"],
+      "parents": ["cardGame"]
     },
     {
       "key": "soulslike",
@@ -1823,7 +1974,8 @@
         "ru": "Экшен-игра, в которой изучение атак врагов, обдуманный бой и повторное преодоление опасных участков после смерти образуют основной игровой опыт; одной высокой сложности недостаточно",
         "en": "An action game centered on learning enemy attacks, deliberate combat and repeated attempts through dangerous areas after death; difficulty alone is insufficient"
       },
-      "aliases": ["Souls-like"]
+      "aliases": ["Souls-like"],
+      "parents": ["actionGame"]
     },
     {
       "key": "spaceScienceFiction",
@@ -1835,7 +1987,8 @@
         "ru": "Космические путешествия, внеземная среда или межпланетная жизнь организуют научно-фантастическую историю",
         "en": "Space travel, extraterrestrial environments or interplanetary life organize the science fiction story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["scienceFiction"]
     },
     {
       "key": "spaceSimulation",
@@ -1847,7 +2000,8 @@
         "ru": "Игра моделирует деятельность или управление аппаратами в космической среде",
         "en": "A game simulates activity or spacecraft handling in a space environment"
       },
-      "aliases": ["Space Sim"]
+      "aliases": ["Space Sim"],
+      "parents": ["simulationGame"]
     },
     {
       "key": "spaghettiWestern",
@@ -1859,7 +2013,8 @@
         "ru": "Вестерн итальянской традиции с характерными морально неоднозначными героями и стилизованной конфронтацией",
         "en": "An Italian-tradition western marked by morally ambiguous characters and stylized confrontation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["western"]
     },
     {
       "key": "spectacleFighter",
@@ -1871,7 +2026,8 @@
         "ru": "Зрелищные комбинации атак и мастерство их исполнения составляют центр боя",
         "en": "Spectacular attack combinations and skilled execution are central to combat"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["actionGame"]
     },
     {
       "key": "splatterHorror",
@@ -1883,7 +2039,8 @@
         "ru": "Подробное изображение телесных разрушений является определяющим средством ужаса",
         "en": "Graphic bodily destruction is a defining means of horror"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "stonerComedy",
@@ -1895,7 +2052,8 @@
         "ru": "Комические ситуации существенно связаны с употреблением каннабиса и соответствующей культурой",
         "en": "Comic situations substantially involve cannabis use and associated culture"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "strategyRpg",
@@ -1907,7 +2065,8 @@
         "ru": "Развитие ролевых персонажей связано со стратегическим управлением силами и ресурсами",
         "en": "Role-playing progression is tied to strategic control of forces and resources"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "supernaturalHorror",
@@ -1919,7 +2078,8 @@
         "ru": "Угроза в истории ужаса связана с силами за пределами обычных законов природы",
         "en": "A horror threat involves forces beyond ordinary natural laws"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "survivalHorror",
@@ -1931,7 +2091,8 @@
         "ru": "Игровой поджанр ужаса с ограниченными ресурсами и уязвимым персонажем",
         "en": "Horror gameplay emphasizing vulnerability and constrained resources"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "suspenseMystery",
@@ -1943,7 +2104,8 @@
         "ru": "Раскрытие тайны сопровождается устойчивым ожиданием опасного исхода",
         "en": "Uncovering a mystery is accompanied by sustained anticipation of danger"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["mystery"]
     },
     {
       "key": "swashbucklingAdventure",
@@ -1955,7 +2117,8 @@
         "ru": "Авантюрная история строится на рискованных подвигах, фехтовании и героических столкновениях",
         "en": "An adventurous story centered on daring exploits, swordplay and heroic confrontations"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "swordAndSorcery",
@@ -1967,7 +2130,8 @@
         "ru": "Героическое фэнтези сосредоточено на личных приключениях, вооружённых столкновениях и магических угрозах",
         "en": "Heroic fantasy centers on personal adventures, armed conflict and magical threats"
       },
-      "aliases": ["Sword & Sorcery"]
+      "aliases": ["Sword & Sorcery"],
+      "parents": ["fantasy"]
     },
     {
       "key": "tacticalRpg",
@@ -1979,7 +2143,8 @@
         "ru": "Развитие ролевых персонажей совмещено с позиционными тактическими решениями",
         "en": "Role-playing character progression combines with positional tactical decisions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["rolePlayingGame"]
     },
     {
       "key": "teenAdventure",
@@ -1991,7 +2156,8 @@
         "ru": "Поиск и путешествие организованы вокруг подростковых персонажей",
         "en": "Quests and travel are organized around adolescent characters"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "teenComedy",
@@ -2003,7 +2169,8 @@
         "ru": "Комические конфликты строятся вокруг подростковой жизни и взросления",
         "en": "Comic conflicts center on adolescent life and maturation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["comedy"]
     },
     {
       "key": "teenDrama",
@@ -2015,7 +2182,8 @@
         "ru": "Драматические конфликты сосредоточены на подростковой жизни и формировании личности",
         "en": "Dramatic conflict centers on adolescent life and identity formation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "teenFantasy",
@@ -2027,7 +2195,8 @@
         "ru": "Фантастический мир раскрывается через подростковые конфликты и взросление",
         "en": "A fantasy world unfolds through adolescent conflicts and maturation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["fantasy"]
     },
     {
       "key": "teenHorror",
@@ -2039,7 +2208,8 @@
         "ru": "Угроза и ужас разворачиваются вокруг подростковых персонажей и их среды",
         "en": "Threat and horror center on adolescent characters and their environment"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "teenRomance",
@@ -2051,7 +2221,8 @@
         "ru": "Любовная история сосредоточена на подростковых отношениях и связанном взрослении",
         "en": "A love story focuses on adolescent relationships and maturation"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "telenovela",
@@ -2063,7 +2234,8 @@
         "ru": "Сериализованная мелодраматическая история имеет заранее ограниченную основную сюжетную дугу",
         "en": "A serialized melodramatic story has a bounded principal story arc"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "tennisGame",
@@ -2075,7 +2247,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Теннис»",
         "en": "Players directly participate in a virtual contest under the rules of tennis"
       },
-      "aliases": ["Tennis"]
+      "aliases": ["Tennis"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "thirdPersonShooter",
@@ -2087,7 +2260,8 @@
         "ru": "Стрельба определяет игру, а камера показывает управляемого персонажа извне",
         "en": "Shooting defines play while the camera views the controlled character externally"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "threeDimensionalFighter",
@@ -2099,7 +2273,8 @@
         "ru": "Поединки бойцов допускают пространственное перемещение вокруг соперника",
         "en": "Fighter duels permit spatial movement around the opponent"
       },
-      "aliases": ["3D Fighter"]
+      "aliases": ["3D Fighter"],
+      "parents": ["fightingGame"]
     },
     {
       "key": "threeDimensionalPlatformer",
@@ -2111,7 +2286,8 @@
         "ru": "Прыжки и платформенные препятствия преодолеваются в трёхмерном пространстве",
         "en": "Jumps and platform obstacles are navigated in three-dimensional space"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["platformer"]
     },
     {
       "key": "topDownShooter",
@@ -2123,7 +2299,8 @@
         "ru": "Стрельба определяет игру с преимущественным обзором пространства сверху",
         "en": "Shooting defines play with a predominantly overhead view"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["shooter"]
     },
     {
       "key": "towerDefense",
@@ -2135,7 +2312,8 @@
         "ru": "Размещение оборонительных средств останавливает последовательные волны наступающих противников",
         "en": "Placing defensive structures stops successive waves of advancing enemies"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "tradingCardGame",
@@ -2147,7 +2325,8 @@
         "ru": "Создание колоды из расширяемой коллекции карт и состязание по карточным правилам",
         "en": "Building decks from an expandable card collection and competing under card rules"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["cardGame"]
     },
     {
       "key": "traditionalRoguelike",
@@ -2159,7 +2338,8 @@
         "ru": "Процедурные подземелья, дискретные ходы и необратимая гибель следуют традиции ранних рогаликов",
         "en": "Procedural dungeons, discrete turns and permanent death follow early roguelike traditions"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["roguelike"]
     },
     {
       "key": "tragedy",
@@ -2171,7 +2351,8 @@
         "ru": "Драматический конфликт ведёт к тяжёлой необратимой утрате или краху центрального героя",
         "en": "A dramatic conflict leads to grave irreversible loss or the downfall of the central character"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "tragicRomance",
@@ -2183,7 +2364,8 @@
         "ru": "Любовная история организована вокруг потери или неустранимого разрушительного конфликта",
         "en": "A romantic story centers on loss or an irreconcilably destructive conflict"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["romance"]
     },
     {
       "key": "triviaGame",
@@ -2195,7 +2377,8 @@
         "ru": "Продвижение определяется ответами на вопросы о фактах",
         "en": "Progress is determined by answering factual questions"
       },
-      "aliases": ["Trivia"]
+      "aliases": ["Trivia"],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "turnBasedStrategy",
@@ -2207,7 +2390,8 @@
         "ru": "Стратегические решения исполняются последовательными ходами",
         "en": "Strategic decisions are executed in successive turns"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "turnBasedTactics",
@@ -2219,7 +2403,8 @@
         "ru": "Тактические действия отрядов разрешаются последовательными ходами",
         "en": "Squad-level tactical actions resolve in successive turns"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "twinStickShooter",
@@ -2231,7 +2416,8 @@
         "ru": "Перемещение и направление стрельбы управляются независимо",
         "en": "Movement and firing direction are controlled independently"
       },
-      "aliases": ["Twin Stick Shooter"]
+      "aliases": ["Twin Stick Shooter"],
+      "parents": ["shooter"]
     },
     {
       "key": "twoDimensionalFighter",
@@ -2243,7 +2429,8 @@
         "ru": "Поединки бойцов разрешаются в двумерной плоскости перемещения",
         "en": "Fighter duels resolve on a two-dimensional movement plane"
       },
-      "aliases": ["2D Fighter"]
+      "aliases": ["2D Fighter"],
+      "parents": ["fightingGame"]
     },
     {
       "key": "twoDimensionalPlatformer",
@@ -2255,7 +2442,8 @@
         "ru": "Прыжки и платформенные препятствия разрешаются в двумерной плоскости перемещения",
         "en": "Jumps and platform obstacles resolve in a two-dimensional movement plane"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["platformer"]
     },
     {
       "key": "urbanAdventure",
@@ -2267,7 +2455,8 @@
         "ru": "Опасное исследование городской среды организует путешествие",
         "en": "Hazardous exploration of an urban environment organizes the journey"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["narrativeAdventure"]
     },
     {
       "key": "urbanFantasy",
@@ -2279,7 +2468,8 @@
         "ru": "Магия и фантастические существа действуют в городской повседневной среде; современная эпоха сама по себе недостаточна",
         "en": "Magic and fantastic beings operate within an urban everyday environment; a contemporary era alone is insufficient"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["fantasy"]
     },
     {
       "key": "vampireHorror",
@@ -2291,7 +2481,8 @@
         "ru": "Вампиры выступают определяющим источником угрозы в истории ужаса",
         "en": "Vampires are the defining source of threat in a horror story"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "vehicleCombatGame",
@@ -2303,7 +2494,8 @@
         "ru": "Управляемые транспортные средства используются как основное средство боя",
         "en": "Controlled vehicles are the primary means of combat"
       },
-      "aliases": ["Vehicular Combat"]
+      "aliases": ["Vehicular Combat"],
+      "parents": ["actionGame"]
     },
     {
       "key": "volleyballGame",
@@ -2315,7 +2507,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Волейбол»",
         "en": "Players directly participate in a virtual contest under the rules of volleyball"
       },
-      "aliases": ["Volleyball"]
+      "aliases": ["Volleyball"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "walkingSimulator",
@@ -2327,7 +2520,8 @@
         "ru": "Исследование среды и переживание истории преобладают над боем и сложными игровыми задачами",
         "en": "Environmental exploration and narrative experience dominate combat and complex challenges"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["adventureGame"]
     },
     {
       "key": "warEpic",
@@ -2339,7 +2533,8 @@
         "ru": "Война показана через масштабные события и судьбы множества участников",
         "en": "War is portrayed through large-scale events and the lives of many participants"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "wargame",
@@ -2351,7 +2546,8 @@
         "ru": "Военные операции представлены стратегической или тактической системой принятия решений",
         "en": "Military operations represented through strategic or tactical decision systems"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["strategyGame"]
     },
     {
       "key": "werewolfHorror",
@@ -2363,7 +2559,8 @@
         "ru": "Оборотни или превращение в них создают основную угрозу истории ужаса",
         "en": "Werewolves or transformation into them create the main horror threat"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "westernEpic",
@@ -2375,7 +2572,8 @@
         "ru": "Конфликт фронтира разворачивается в масштабной исторической панораме",
         "en": "Frontier conflict unfolds across a sweeping historical panorama"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["western"]
     },
     {
       "key": "whodunit",
@@ -2387,7 +2585,8 @@
         "ru": "Выявление виновного через сопоставление улик и круга подозреваемых составляет центральную загадку",
         "en": "Identifying the culprit through clues and a suspect pool forms the central puzzle"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["mystery"]
     },
     {
       "key": "witchHorror",
@@ -2399,7 +2598,8 @@
         "ru": "Ведьмы и их колдовство создают основную угрозу истории ужаса",
         "en": "Witches and their witchcraft create the main horror threat"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["horror"]
     },
     {
       "key": "wordGame",
@@ -2411,7 +2611,8 @@
         "ru": "Задания строятся на составлении, распознавании или преобразовании слов",
         "en": "Tasks involve constructing, recognizing or transforming words"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["puzzleGame"]
     },
     {
       "key": "workplaceDrama",
@@ -2423,7 +2624,8 @@
         "ru": "Драматические конфликты организованы профессиональными обязанностями и отношениями на работе",
         "en": "Professional duties and workplace relationships organize dramatic conflicts"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": ["drama"]
     },
     {
       "key": "wrestlingGame",
@@ -2435,7 +2637,8 @@
         "ru": "Игрок непосредственно участвует в виртуальном состязании по правилам дисциплины «Рестлинг»",
         "en": "Players directly participate in a virtual contest under the rules of wrestling"
       },
-      "aliases": ["Wrestling"]
+      "aliases": ["Wrestling"],
+      "parents": ["sportsGame"]
     },
     {
       "key": "zombieHorror",
@@ -2447,1029 +2650,8 @@
         "ru": "Зомби выступают определяющим источником угрозы в истории ужаса",
         "en": "Zombies are the defining source of threat in a horror story"
       },
-      "aliases": []
-    }
-  ],
-  "tagRelations": [
-    {
-      "first": "actionAdventureGame",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "actionEpic",
-      "second": "narrativeAction",
-      "type": "parent"
-    },
-    {
-      "first": "actionRealTimeStrategy",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "actionRoguelike",
-      "second": "roguelike",
-      "type": "parent"
-    },
-    {
-      "first": "actionRpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "adventureEpic",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "americanFootballGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "animalAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "arenaShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "artificialIntelligenceScienceFiction",
-      "second": "scienceFiction",
-      "type": "parent"
-    },
-    {
-      "first": "autoBattler",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "automobileSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "baseballGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "basketballGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "beatEmUp",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "billiardsGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "bmxGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "bodyHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "bodySwapComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "boomerShooter",
-      "second": "firstPersonShooter",
-      "type": "parent"
-    },
-    {
-      "first": "bowlingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "boxingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "buddyComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "buddyCop",
-      "second": "crime",
-      "type": "parent"
-    },
-    {
-      "first": "bulletHeaven",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "bulletHell",
-      "second": "shootEmUp",
-      "type": "parent"
-    },
-    {
-      "first": "caperStory",
-      "second": "crime",
-      "type": "parent"
-    },
-    {
-      "first": "carAction",
-      "second": "narrativeAction",
-      "type": "parent"
-    },
-    {
-      "first": "cardBattler",
-      "second": "cardGame",
-      "type": "parent"
-    },
-    {
-      "first": "characterActionGame",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "chessGame",
-      "second": "boardGame",
-      "type": "parent"
-    },
-    {
-      "first": "cityBuilder",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "classicMusical",
-      "second": "musical",
-      "type": "parent"
-    },
-    {
-      "first": "classicWestern",
-      "second": "western",
-      "type": "parent"
-    },
-    {
-      "first": "colonySimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "combatRacingGame",
-      "second": "racingGame",
-      "type": "parent"
-    },
-    {
-      "first": "conspiracyThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "contemporaryFantasy",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "contemporaryWestern",
-      "second": "western",
-      "type": "parent"
-    },
-    {
-      "first": "copDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "cosmicHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "costumeDrama",
-      "second": "periodDrama",
-      "type": "parent"
-    },
-    {
-      "first": "cozyMystery",
-      "second": "mystery",
-      "type": "parent"
-    },
-    {
-      "first": "cricketGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "crpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "cyberThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "cyclingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "darkComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "darkFantasy",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "darkRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "datingSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "desertAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "dinosaurAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "dystopianScienceFiction",
-      "second": "scienceFiction",
-      "type": "parent"
-    },
-    {
-      "first": "eroticRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "eroticThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "escapeRoomGame",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "extractionShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "fallingBlocksGame",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "fantasyEpic",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "farce",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "farmingSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "feelGoodRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "filmNoir",
-      "second": "crime",
-      "type": "parent"
-    },
-    {
-      "first": "financialDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "folkHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "footballGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "foundFootageHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "fourXStrategy",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "giallo",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "globetrottingAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "godGame",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "golfGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "grandStrategy",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "hackAndSlashGame",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "heroShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "hiddenObjectGame",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "highConceptComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "historicalEpic",
-      "second": "periodDrama",
-      "type": "parent"
-    },
-    {
-      "first": "hobbySimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "hockeyGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "holidayComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "holidayRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "iyashikei",
-      "second": "sliceOfLife",
-      "type": "parent"
-    },
-    {
-      "first": "jobSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "jrpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "jukeboxMusical",
-      "second": "musical",
-      "type": "parent"
-    },
-    {
-      "first": "jungleAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "kungFuAction",
-      "second": "martialArtsAction",
-      "type": "parent"
-    },
-    {
-      "first": "legalDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "legalThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "lifeSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "looterShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "mahjongGame",
-      "second": "boardGame",
-      "type": "parent"
-    },
-    {
-      "first": "martialArtsAction",
-      "second": "narrativeAction",
-      "type": "parent"
-    },
-    {
-      "first": "matchThree",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "medicalDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "medicalSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "metroidvania",
-      "second": "adventureGame",
-      "type": "parent"
-    },
-    {
-      "first": "miniGolfGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "mmorpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "moba",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "monsterHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "motocrossGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "mountainAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "musouGame",
-      "second": "hackAndSlashGame",
-      "type": "parent"
-    },
-    {
-      "first": "mysteryDungeon",
-      "second": "dungeonCrawler",
-      "type": "parent"
-    },
-    {
-      "first": "onRailsShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "openWorldSurvivalCraft",
-      "second": "survivalGame",
-      "type": "parent"
-    },
-    {
-      "first": "otomeGame",
-      "second": "romanceGame",
-      "type": "parent"
-    },
-    {
-      "first": "outbreakSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "partyBasedRpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "periodDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "pokerGame",
-      "second": "cardGame",
-      "type": "parent"
-    },
-    {
-      "first": "policeProcedural",
-      "second": "crime",
-      "type": "parent"
-    },
-    {
-      "first": "politicalDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "politicalSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "politicalThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "popMusical",
-      "second": "musical",
-      "type": "parent"
-    },
-    {
-      "first": "precisionPlatformer",
-      "second": "platformer",
-      "type": "parent"
-    },
-    {
-      "first": "prisonDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "psychologicalDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "psychologicalHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "psychologicalThriller",
-      "second": "thriller",
-      "type": "parent"
-    },
-    {
-      "first": "puzzlePlatformer",
-      "second": "platformer",
-      "type": "parent"
-    },
-    {
-      "first": "raunchyComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "realTimeStrategy",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "realTimeTactics",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "rockMusical",
-      "second": "musical",
-      "type": "parent"
-    },
-    {
-      "first": "roguelikeDeckbuilder",
-      "second": "cardGame",
-      "type": "parent"
-    },
-    {
-      "first": "roguelite",
-      "second": "roguelike",
-      "type": "parent"
-    },
-    {
-      "first": "romanticComedy",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "romanticEpic",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "rugbyGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "runnerGame",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "scienceFictionEpic",
-      "second": "scienceFiction",
-      "type": "parent"
-    },
-    {
-      "first": "screwballComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "seaAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "shootEmUp",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "shopkeepingGame",
-      "second": "managementGame",
-      "type": "parent"
-    },
-    {
-      "first": "showbizDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "sitcom",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "skateboardingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "skatingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "skiingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "slapstick",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "slasherHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "snowboardingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "soapOpera",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "sokoban",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "solitaireGame",
-      "second": "cardGame",
-      "type": "parent"
-    },
-    {
-      "first": "soulslike",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "spaceScienceFiction",
-      "second": "scienceFiction",
-      "type": "parent"
-    },
-    {
-      "first": "spaceSimulation",
-      "second": "simulationGame",
-      "type": "parent"
-    },
-    {
-      "first": "spaghettiWestern",
-      "second": "western",
-      "type": "parent"
-    },
-    {
-      "first": "spectacleFighter",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "splatterHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "stonerComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "strategyRpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "supernaturalHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "survivalHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "suspenseMystery",
-      "second": "mystery",
-      "type": "parent"
-    },
-    {
-      "first": "swashbucklingAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "swordAndSorcery",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "tacticalRpg",
-      "second": "rolePlayingGame",
-      "type": "parent"
-    },
-    {
-      "first": "teenAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "teenComedy",
-      "second": "comedy",
-      "type": "parent"
-    },
-    {
-      "first": "teenDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "teenFantasy",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "teenHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "teenRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "telenovela",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "tennisGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "thirdPersonShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "threeDimensionalFighter",
-      "second": "fightingGame",
-      "type": "parent"
-    },
-    {
-      "first": "threeDimensionalPlatformer",
-      "second": "platformer",
-      "type": "parent"
-    },
-    {
-      "first": "topDownShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "towerDefense",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "tradingCardGame",
-      "second": "cardGame",
-      "type": "parent"
-    },
-    {
-      "first": "traditionalRoguelike",
-      "second": "roguelike",
-      "type": "parent"
-    },
-    {
-      "first": "tragedy",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "tragicRomance",
-      "second": "romance",
-      "type": "parent"
-    },
-    {
-      "first": "triviaGame",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "turnBasedStrategy",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "turnBasedTactics",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "twinStickShooter",
-      "second": "shooter",
-      "type": "parent"
-    },
-    {
-      "first": "twoDimensionalFighter",
-      "second": "fightingGame",
-      "type": "parent"
-    },
-    {
-      "first": "twoDimensionalPlatformer",
-      "second": "platformer",
-      "type": "parent"
-    },
-    {
-      "first": "urbanAdventure",
-      "second": "narrativeAdventure",
-      "type": "parent"
-    },
-    {
-      "first": "urbanFantasy",
-      "second": "fantasy",
-      "type": "parent"
-    },
-    {
-      "first": "vampireHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "vehicleCombatGame",
-      "second": "actionGame",
-      "type": "parent"
-    },
-    {
-      "first": "volleyballGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "walkingSimulator",
-      "second": "adventureGame",
-      "type": "parent"
-    },
-    {
-      "first": "warEpic",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "wargame",
-      "second": "strategyGame",
-      "type": "parent"
-    },
-    {
-      "first": "werewolfHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "westernEpic",
-      "second": "western",
-      "type": "parent"
-    },
-    {
-      "first": "whodunit",
-      "second": "mystery",
-      "type": "parent"
-    },
-    {
-      "first": "witchHorror",
-      "second": "horror",
-      "type": "parent"
-    },
-    {
-      "first": "wordGame",
-      "second": "puzzleGame",
-      "type": "parent"
-    },
-    {
-      "first": "workplaceDrama",
-      "second": "drama",
-      "type": "parent"
-    },
-    {
-      "first": "wrestlingGame",
-      "second": "sportsGame",
-      "type": "parent"
-    },
-    {
-      "first": "zombieHorror",
-      "second": "horror",
-      "type": "parent"
+      "aliases": [],
+      "parents": ["horror"]
     }
   ]
 }

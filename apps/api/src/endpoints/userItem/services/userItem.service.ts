@@ -150,7 +150,10 @@ class UserItemService {
           : [],
       })
 
-      await this.tasteProfileRecalculationService.enqueue(userId, itemId)
+      await Promise.all([
+        this.tasteProfileRecalculationService.enqueue(userId, itemId),
+        this.itemRatingsRecalculationService.enqueue(itemId),
+      ])
 
       return this.mapResponse(userItem)
     } catch (error) {
@@ -215,9 +218,7 @@ class UserItemService {
 
     await Promise.all([
       this.tasteProfileRecalculationService.enqueue(userId, userItem.item),
-      !isNil(userItem.rating)
-        ? this.itemRatingsRecalculationService.enqueue(userItem.item)
-        : undefined,
+      this.itemRatingsRecalculationService.enqueue(userItem.item),
     ])
   }
 
@@ -344,11 +345,11 @@ class UserItemService {
 
       const previousRating = userItem.rating
       const isPreviouslyFavorite = userItem.isFavorite
+      const previousStatus = userItem.status
       const isPreviouslySkipped = userItem.status === EUserItemStatus.SKIPPED
-      const previousCompletedAttempts = Math.min(
-        3,
-        userItem.attempts.filter((attempt) => attempt.isCompleted).length,
-      )
+      const previousCompletedAttempts = userItem.attempts.filter(
+        (attempt) => attempt.isCompleted,
+      ).length
 
       await props.mutate(userItem, session)
       this.validateUserItem(userItem)
@@ -392,20 +393,25 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
+      const completedAttempts = updated.attempts.filter(
+        (attempt) => attempt.isCompleted,
+      ).length
+
       return {
         response: this.mapResponse(updated),
         itemId: updated.item,
-        isRatingChanged: previousRating !== updated.rating,
+        isMetricChanged:
+          previousRating !== updated.rating ||
+          isPreviouslyFavorite !== updated.isFavorite ||
+          previousStatus !== updated.status ||
+          previousCompletedAttempts !== completedAttempts,
         isTasteChanged:
           previousRating !== updated.rating ||
           isPreviouslyFavorite !== updated.isFavorite ||
           isPreviouslySkipped !==
             (updated.status === EUserItemStatus.SKIPPED) ||
-          previousCompletedAttempts !==
-            Math.min(
-              3,
-              updated.attempts.filter((attempt) => attempt.isCompleted).length,
-            ),
+          Math.min(3, previousCompletedAttempts) !==
+            Math.min(3, completedAttempts),
       }
     })
 
@@ -413,7 +419,7 @@ class UserItemService {
       result.isTasteChanged
         ? this.tasteProfileRecalculationService.enqueue(userId, result.itemId)
         : undefined,
-      result.isRatingChanged
+      result.isMetricChanged
         ? this.itemRatingsRecalculationService.enqueue(result.itemId)
         : undefined,
     ])

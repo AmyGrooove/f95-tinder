@@ -11,7 +11,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: менее 5 часов; длительность положительная; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: under 5 hours; duration must be positive; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration300To600",
@@ -23,7 +24,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 5 до менее 10 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 5 to under 10 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration600To1200",
@@ -35,7 +37,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 10 до менее 20 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 10 to under 20 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration1200To2400",
@@ -47,7 +50,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 20 до менее 40 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 20 to under 40 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration2400To4800",
@@ -59,7 +63,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 40 до менее 80 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 40 to under 80 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration4800To9000",
@@ -71,7 +76,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: от 80 до менее 150 часов; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 80 to under 150 hours; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     },
     {
       "key": "fullCompletionDuration9000Plus",
@@ -83,8 +89,8 @@
         "ru": "Оценка времени полного прохождения базовой игры с необязательным контентом, без DLC: 150 часов и более; требуется предусмотренное конечное прохождение",
         "en": "Estimated base-game full completion time including optional content, excluding DLC: 150 hours or more; a defined ending is required"
       },
-      "aliases": []
+      "aliases": [],
+      "parents": []
     }
-  ],
-  "tagRelations": []
+  ]
 }

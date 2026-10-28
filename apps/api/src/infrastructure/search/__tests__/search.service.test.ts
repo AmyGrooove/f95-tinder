@@ -95,7 +95,9 @@ describe("SearchService", () => {
         primaryKey: "id",
       })
       expect(context.updateSettings).toHaveBeenCalledWith(options)
-      expect(context.waitForTask).toHaveBeenCalledWith(task.taskUid)
+      expect(context.waitForTask).toHaveBeenCalledWith(task.taskUid, {
+        timeout: 120_000,
+      })
     })
 
     it("поддерживает отсутствие необязательных настроек", async () => {
@@ -301,7 +303,9 @@ describe("SearchService", () => {
         }
 
         if (isWaitForTask === true) {
-          expect(context.waitForTask).toHaveBeenCalledWith(task.taskUid)
+          expect(context.waitForTask).toHaveBeenCalledWith(task.taskUid, {
+            timeout: 120_000,
+          })
         } else {
           expect(context.waitForTask).not.toHaveBeenCalled()
         }

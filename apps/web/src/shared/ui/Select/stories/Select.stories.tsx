@@ -17,6 +17,11 @@ const meta = {
     ],
   },
   argTypes: {
+    className: { control: 'text' },
+    onChange: { control: false },
+    options: { control: 'object' },
+    ref: { control: false },
+    value: { control: 'text' },
     errorText: {
       control: { type: 'text' },
       table: {
@@ -112,6 +117,15 @@ const Disabled: TStory = {
   },
 }
 
+const DisabledWithValue: TStory = {
+  name: 'Отключённое поле с выбранным значением',
+  args: {
+    hintText: 'Выбор и очистка недоступны.',
+    isDisabled: true,
+    value: 'default',
+  },
+}
+
 const DisabledOption: TStory = {
   args: {
     options: [
@@ -136,6 +150,7 @@ export {
   WithError,
   WithIcon,
   Disabled,
+  DisabledWithValue,
   DisabledOption,
   Required,
 }

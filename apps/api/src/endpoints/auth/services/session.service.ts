@@ -49,6 +49,7 @@ class SessionService {
       return {
         id: session._id.toHexString(),
         userAgent: session.userAgent,
+        country: session.country,
         createdAt: session.createdAt.toISOString(),
         expiresAt: session.expiresAt.toISOString(),
         lastRefreshedAt: session.lastRefreshedAt?.toISOString() ?? null,

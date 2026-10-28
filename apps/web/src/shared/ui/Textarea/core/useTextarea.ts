@@ -33,6 +33,7 @@ const useTextarea = (props: ITextareaProps) => {
 
     const currentHeight = textareaElement.offsetHeight
 
+    textareaElement.style.overflowY = 'hidden'
     textareaElement.style.height = 'auto'
 
     const computedStyles = getComputedStyle(textareaElement)
@@ -57,6 +58,36 @@ const useTextarea = (props: ITextareaProps) => {
   useLayoutEffect(() => {
     resizeTextarea()
   }, [resizeTextarea, value])
+
+  useLayoutEffect(() => {
+    const textareaElement = textareaRef.current
+
+    if (isNil(textareaElement)) {
+      return
+    }
+
+    let previousWidth = 0
+    let animationFrameId = 0
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width
+
+      if (width === previousWidth) {
+        return
+      }
+
+      previousWidth = width
+      window.cancelAnimationFrame(animationFrameId)
+      animationFrameId = window.requestAnimationFrame(resizeTextarea)
+    })
+
+    resizeObserver.observe(textareaElement)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.cancelAnimationFrame(animationFrameId)
+    }
+  }, [resizeTextarea])
 
   return {
     className,
