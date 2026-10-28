@@ -20,6 +20,7 @@ import { isDate } from "@shared/functions/checks/isDate"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
+import type { IReadRecommendationsProps } from "@entities/item/types/IReadRecommendationsProps"
 
 @Injectable()
 class RecommendationsService {
@@ -39,6 +40,19 @@ class RecommendationsService {
       )
     }
 
+    const context = await this.createRankingContext(props)
+    const result = await this.itemRepository.readRecommendations({
+      ...context,
+      page,
+      limit,
+    })
+
+    return createPaginatedResult(result.items, result.total, page, limit)
+  }
+
+  private async createRankingContext(
+    props: IFindRecommendationsProps,
+  ): Promise<Omit<IReadRecommendationsProps, "page" | "limit">> {
     this.validateConditions(props)
 
     const collectionGroupIds = await this.getCollectionGroupIds(props.filter)
@@ -46,20 +60,20 @@ class RecommendationsService {
       this.userTasteProfileRepository.read.findOne({ user: props.userId }),
       this.userItemRepository.getRatingAverage(),
     ])
-    const result = await this.itemRepository.readRecommendations({
+
+    return {
       userId: props.userId,
       preferences: profile?.tagPreferences ?? [],
       siteRatingAverage,
       now: new Date(),
-      page,
-      limit,
       filter: props.filter,
       library: props.library,
       excludeItemIds: props.excludeItemIds,
       collectionGroupIds,
-    })
-
-    return createPaginatedResult(result.items, result.total, page, limit)
+      candidateItemIds: props.candidateItemIds,
+      isIncludingExcluded: props.isIncludingExcluded,
+      direction: props.direction,
+    }
   }
 
   private validateConditions(props: IFindRecommendationsProps) {

@@ -34,6 +34,7 @@ const DICTIONARY = {
 
   search: {
     unavailable: "Meilisearch недоступен",
+    taskFailed: "Задача Meilisearch завершилась с ошибкой",
   },
 
   mail: {

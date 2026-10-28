@@ -10,6 +10,9 @@ interface IFindRecommendationsProps {
   library?: IRecommendationLibrary
   excludeItemIds?: readonly Types.ObjectId[]
   pagination?: { page?: number; limit?: number }
+  candidateItemIds?: readonly Types.ObjectId[]
+  isIncludingExcluded?: boolean
+  direction?: "asc" | "desc"
 }
 
 export type { IFindRecommendationsProps }

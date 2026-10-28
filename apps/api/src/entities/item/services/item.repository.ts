@@ -14,6 +14,11 @@ import type { IItemDetails } from "../types/IItemDetails"
 import type { IReadRecommendationsProps } from "../types/IReadRecommendationsProps"
 import type { IRecommendedItem } from "../types/IRecommendedItem"
 import { createRecommendationPipeline } from "../functions/createRecommendationPipeline"
+import { ItemMetric } from "@entities/itemMetric/schemas/itemMetric.schema"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
+import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { Tag } from "@entities/tag/schemas/tag.schema"
 
 @Injectable()
 class ItemRepository {
@@ -58,6 +63,71 @@ class ItemRepository {
       items: result?.items ?? [],
       total: result?.count[0]?.total ?? 0,
     }
+  }
+
+  readSearchIndexBatch(props: { limit: number; afterId?: Types.ObjectId }) {
+    return this.aggregation.aggregate<IItemSearchIndexEntry>([
+      {
+        $match: !isUndefined(props.afterId)
+          ? { _id: { $gt: props.afterId } }
+          : {},
+      },
+      { $sort: { _id: 1 } },
+      { $limit: props.limit },
+      {
+        $lookup: {
+          from: ItemTag.name,
+          localField: "_id",
+          foreignField: "item",
+          pipeline: [
+            {
+              $lookup: {
+                from: Tag.name,
+                localField: "tag",
+                foreignField: "_id",
+                pipeline: [{ $project: { _id: 1 } }],
+                as: "existingTag",
+              },
+            },
+            { $match: { "existingTag.0": { $exists: true } } },
+            { $project: { tag: 1 } },
+          ],
+          as: "searchTags",
+        },
+      },
+      {
+        $lookup: {
+          from: ItemMetric.name,
+          localField: "_id",
+          foreignField: "item",
+          pipeline: [{ $project: { ratingAverage: 1 } }],
+          as: "searchMetrics",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          title: 1,
+          aliases: 1,
+          description: 1,
+          media: 1,
+          releaseDate: 1,
+          ageRestriction: 1,
+          movie: 1,
+          series: 1,
+          game: 1,
+          deletedAt: 1,
+          tagIds: "$searchTags.tag",
+          rating: {
+            $ifNull: [
+              { $arrayElemAt: ["$searchMetrics.ratingAverage", 0] },
+              null,
+            ],
+          },
+        },
+      },
+    ])
   }
 
   findNotDeletedByIds(

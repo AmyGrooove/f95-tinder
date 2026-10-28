@@ -17,6 +17,9 @@ interface IReadRecommendationsProps {
   library?: IRecommendationLibrary
   excludeItemIds?: readonly Types.ObjectId[]
   collectionGroupIds?: readonly Types.ObjectId[]
+  candidateItemIds?: readonly Types.ObjectId[]
+  isIncludingExcluded?: boolean
+  direction?: "asc" | "desc"
 }
 
 export type { IReadRecommendationsProps }

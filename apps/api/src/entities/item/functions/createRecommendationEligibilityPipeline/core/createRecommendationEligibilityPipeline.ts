@@ -2,16 +2,12 @@ import type { PipelineStage } from "mongoose"
 
 import { BannedItem } from "@entities/bannedItem/schemas/bannedItem.schema"
 import { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.schema"
-import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
 import { SourceItem } from "@entities/sourceItem/schemas/sourceItem.schema"
-import { Tag } from "@entities/tag/schemas/tag.schema"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { isDate } from "@shared/functions/checks/isDate"
 
-import { EAgeRestriction } from "../../../schemas/EAgeRestriction"
-import { EItemField } from "../../../schemas/EItemField"
+import { createItemFilterPipeline } from "../../createItemFilterPipeline"
 import type { IReadRecommendationsProps } from "../../../types/IReadRecommendationsProps"
 
 const createRecommendationEligibilityPipeline = (
@@ -19,59 +15,9 @@ const createRecommendationEligibilityPipeline = (
 ): PipelineStage[] => {
   const filter = props.filter
   const pipeline: PipelineStage[] = [
-    {
-      $match: {
-        deletedAt: null,
-        ...(!isUndefined(filter?.types) ? { type: { $in: filter.types } } : {}),
-        ...(!isUndefined(props.excludeItemIds)
-          ? { _id: { $nin: props.excludeItemIds } }
-          : {}),
-      },
-    },
+    ...createItemFilterPipeline(props),
+    { $project: { _id: 1, type: 1, title: 1, media: 1 } },
   ]
-
-  for (const field of filter?.fields ?? []) {
-    const value =
-      field.field === EItemField.AGE_RESTRICTION
-        ? {
-            $convert: {
-              input: {
-                $cond: [
-                  {
-                    $eq: ["$ageRestriction", EAgeRestriction.AGE_18_PLUS_PLUS],
-                  },
-                  EAgeRestriction.AGE_18,
-                  "$ageRestriction",
-                ],
-              },
-              to: "int",
-              onError: null,
-              onNull: null,
-            },
-          }
-        : `$${field.field}`
-
-    pipeline.push({
-      $match: {
-        $expr: {
-          $and: [
-            {
-              $in: [
-                { $type: value },
-                isDate(field.min) || isDate(field.max)
-                  ? ["date"]
-                  : ["int", "long", "double", "decimal"],
-              ],
-            },
-            ...(!isUndefined(field.min) ? [{ $gte: [value, field.min] }] : []),
-            ...(!isUndefined(field.max) ? [{ $lte: [value, field.max] }] : []),
-          ],
-        },
-      },
-    })
-  }
-
-  pipeline.push({ $project: { _id: 1, type: 1, title: 1, media: 1 } })
 
   if (!isUndefined(filter?.collectionId)) {
     pipeline.push(
@@ -98,41 +44,6 @@ const createRecommendationEligibilityPipeline = (
     )
   }
 
-  if (!isUndefined(filter?.tagIds) && filter.tagIds.length > 0) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: ItemTag.name,
-          localField: "_id",
-          foreignField: "item",
-          pipeline: [
-            { $match: { tag: { $in: filter.tagIds } } },
-            {
-              $lookup: {
-                from: Tag.name,
-                localField: "tag",
-                foreignField: "_id",
-                pipeline: [{ $project: { _id: 1 } }],
-                as: "existingTag",
-              },
-            },
-            { $match: { "existingTag.0": { $exists: true } } },
-            { $project: { _id: 0, tag: 1 } },
-          ],
-          as: "recommendationFilterTags",
-        },
-      },
-      {
-        $match: {
-          $expr: {
-            $setIsSubset: [filter.tagIds, "$recommendationFilterTags.tag"],
-          },
-        },
-      },
-      { $unset: "recommendationFilterTags" },
-    )
-  }
-
   pipeline.push(
     {
       $lookup: {
@@ -147,23 +58,45 @@ const createRecommendationEligibilityPipeline = (
       },
     },
     {
-      $match: {
-        recommendationUserItems: {
-          $not: {
-            $elemMatch: {
-              $or: [
-                { status: EUserItemStatus.BLOCKED },
-                {
-                  status: EUserItemStatus.SKIPPED,
-                  $or: [{ expiresAt: null }, { expiresAt: { $gt: props.now } }],
+      $set: {
+        isRecommendationExcluded: {
+          $anyElementTrue: [
+            {
+              $map: {
+                input: "$recommendationUserItems",
+                as: "entry",
+                in: {
+                  $or: [
+                    { $eq: ["$$entry.status", EUserItemStatus.BLOCKED] },
+                    {
+                      $and: [
+                        { $eq: ["$$entry.status", EUserItemStatus.SKIPPED] },
+                        {
+                          $or: [
+                            {
+                              $eq: [
+                                { $ifNull: ["$$entry.expiresAt", null] },
+                                null,
+                              ],
+                            },
+                            { $gt: ["$$entry.expiresAt", props.now] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
                 },
-              ],
+              },
             },
-          },
+          ],
         },
       },
     },
   )
+
+  if (props.isIncludingExcluded !== true) {
+    pipeline.push({ $match: { isRecommendationExcluded: false } })
+  }
 
   const library = props.library
 
@@ -224,9 +157,22 @@ const createRecommendationEligibilityPipeline = (
         as: "recommendationBans",
       },
     },
-    { $match: { "recommendationBans.0": { $exists: false } } },
+    {
+      $set: {
+        isRecommendationExcluded: {
+          $or: [
+            "$isRecommendationExcluded",
+            { $gt: [{ $size: "$recommendationBans" }, 0] },
+          ],
+        },
+      },
+    },
     { $unset: "recommendationBans" },
   )
+
+  if (props.isIncludingExcluded !== true) {
+    pipeline.push({ $match: { isRecommendationExcluded: false } })
+  }
 
   return pipeline
 }

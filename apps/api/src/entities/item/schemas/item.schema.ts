@@ -54,14 +54,14 @@ class Item extends MongoEntity {
   })
   ageRestriction: EAgeRestriction | null
 
-  @Prop({ type: ItemMovieSchema, default: null })
-  movie: ItemMovie | null
+  @Prop({ type: ItemMovieSchema })
+  movie?: ItemMovie | null
 
-  @Prop({ type: ItemSeriesSchema, default: null })
-  series: ItemSeries | null
+  @Prop({ type: ItemSeriesSchema })
+  series?: ItemSeries | null
 
-  @Prop({ type: ItemGameSchema, default: null })
-  game: ItemGame | null
+  @Prop({ type: ItemGameSchema })
+  game?: ItemGame | null
 
   @Prop({ type: Date, default: null })
   deletedAt: Date | null
@@ -74,9 +74,6 @@ type TCreateItem = TCreateEntity<
   | "media"
   | "releaseDate"
   | "ageRestriction"
-  | "movie"
-  | "series"
-  | "game"
   | "deletedAt"
 >
 

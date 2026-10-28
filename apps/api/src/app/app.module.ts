@@ -9,6 +9,7 @@ import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { TagWeightModifiersModule } from "@endpoints/tagWeightModifiers/tagWeightModifiers.module"
 import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
 import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
+import { SearchEndpointModule } from "@endpoints/search/search.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -81,6 +82,7 @@ import { AppController } from "./controllers/app.controller"
     TagWeightModifiersModule,
     ItemRatingsModule,
     RecommendationsModule,
+    SearchEndpointModule,
   ],
   controllers: [AppController],
   providers: [

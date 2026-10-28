@@ -84,6 +84,7 @@ const createRecommendationPipeline = (
         plannedBoost: 1,
         relationBoost: 1,
         ratingScore: 1,
+        isRecommendationExcluded: 1,
         finalScore: {
           $round: [
             {
@@ -97,7 +98,15 @@ const createRecommendationPipeline = (
         },
       },
     },
-    { $sort: { finalScore: -1, ratingScore: -1, _id: 1 } },
+    {
+      $sort: {
+        isRecommendationExcluded: 1,
+        finalScore: props.direction === "asc" ? 1 : -1,
+        ratingScore: -1,
+        _id: 1,
+      },
+    },
+    { $unset: "isRecommendationExcluded" },
     {
       $facet: {
         items: [
