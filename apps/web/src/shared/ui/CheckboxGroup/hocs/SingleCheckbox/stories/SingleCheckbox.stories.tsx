@@ -10,10 +10,10 @@ const meta = {
     isDisabled: false,
     label: 'Получать уведомления на почту',
     onChange: () => {},
-    value: false,
+    isChecked: false,
   },
   render: (args) => {
-    const [value, setValue] = useState(args.value)
+    const [isChecked, setIsChecked] = useState(args.isChecked)
 
     return (
       <SingleCheckbox
@@ -21,9 +21,9 @@ const meta = {
         hintText={args.hintText}
         isDisabled={args.isDisabled}
         label={args.label}
-        onChange={setValue}
+        onChange={setIsChecked}
         ref={args.ref}
-        value={value}
+        isChecked={isChecked}
       />
     )
   },

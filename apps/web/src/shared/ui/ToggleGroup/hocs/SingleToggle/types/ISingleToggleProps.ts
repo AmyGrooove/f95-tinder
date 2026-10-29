@@ -6,7 +6,7 @@ interface ISingleToggleProps extends Omit<
   'onChange' | 'options' | 'value' | 'label'
 > {
   onChange: (isPressed: boolean) => void
-  value: boolean
+  isPressed: boolean
   label: string
 
   icon?: TIconName

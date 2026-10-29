@@ -11,10 +11,10 @@ const meta = {
     isDisabled: false,
     label: 'Заголовок',
     onChange: () => {},
-    value: false,
+    isChecked: false,
   },
   argTypes: {
-    value: {
+    isChecked: {
       control: { type: 'boolean' },
       table: {
         type: { summary: 'boolean' },
@@ -41,9 +41,9 @@ const meta = {
     },
   },
   render: (args) => {
-    const [value, setValue] = useState(args.value)
+    const [isChecked, setIsChecked] = useState(args.isChecked)
 
-    return <Switch {...args} onChange={setValue} value={value} />
+    return <Switch {...args} onChange={setIsChecked} isChecked={isChecked} />
   },
 } satisfies Meta<typeof Switch>
 
@@ -57,8 +57,8 @@ const Disabled: TStory = {
   render: (args) => {
     return (
       <Box alignItems="start" flexDirection="column" gap={12}>
-        <Switch {...args} isDisabled onChange={() => {}} value={false} />
-        <Switch {...args} isDisabled onChange={() => {}} value />
+        <Switch {...args} isDisabled onChange={() => {}} isChecked={false} />
+        <Switch {...args} isDisabled onChange={() => {}} isChecked />
       </Box>
     )
   },

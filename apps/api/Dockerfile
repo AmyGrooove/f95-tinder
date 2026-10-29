@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:24-bookworm-slim AS base
+FROM node:26-bookworm-slim AS base
 
 WORKDIR /app
 
@@ -45,7 +45,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 # ---------- Runtime ----------
 
-FROM node:24-bookworm-slim AS production
+FROM node:26-bookworm-slim AS production
 
 WORKDIR /app
 

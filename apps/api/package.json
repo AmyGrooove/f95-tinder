@@ -1,10 +1,10 @@
 {
-  "name": "@bisky/api",
-  "version": "1.0.0",
+  "name": "bisky-back",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "nest start --watch",
@@ -45,11 +45,11 @@
     "class-validator": "0.15.1",
     "docsify": "5.0.0",
     "fastify": "5.12.7",
-    "geoip-lite": "1.4.10",
+    "geoip-lite": "2.0.3",
     "ioredis": "6.0.0",
     "keyv": "5.6.0",
     "meilisearch": "0.62.0",
-    "mermaid": "11.17.2",
+    "mermaid": "12.2.0",
     "mongoose": "9.11.4",
     "redis": "6.3.1",
     "reflect-metadata": "0.2.2",

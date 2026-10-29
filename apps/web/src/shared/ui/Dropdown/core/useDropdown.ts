@@ -12,8 +12,8 @@ const useDropdown = (props: IDropdownProps) => {
     side = 'bottom',
   } = props
 
-  const handleOpenChange = (nextIsOpen: boolean) => {
-    onOpenChange?.(nextIsOpen)
+  const handleOpenChange = (isNextOpen: boolean) => {
+    onOpenChange?.(isNextOpen)
   }
 
   return {

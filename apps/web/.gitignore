@@ -2,6 +2,7 @@ node_modules/
 .next/
 dist/
 release/
+coverage/
 .env
 .env.local
 .pnpm-store/

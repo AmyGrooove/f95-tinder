@@ -23,8 +23,8 @@ const useDialog = () => {
     }
   }
 
-  const handleOpenChangeComplete = (nextIsOpen: boolean) => {
-    if (!nextIsOpen) {
+  const handleOpenChangeComplete = (isNextOpen: boolean) => {
+    if (!isNextOpen) {
       clearDialog()
 
       if (!isOpen) {

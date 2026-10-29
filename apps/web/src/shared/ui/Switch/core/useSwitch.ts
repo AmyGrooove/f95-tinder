@@ -8,7 +8,7 @@ const useSwitch = (props: ISwitchProps) => {
     label,
     onChange,
     ref,
-    value,
+    isChecked,
   } = props
 
   const handleChange = (isChecked: boolean) => {
@@ -22,7 +22,7 @@ const useSwitch = (props: ISwitchProps) => {
     isDisabled,
     label,
     ref,
-    value,
+    isChecked,
   }
 }
 

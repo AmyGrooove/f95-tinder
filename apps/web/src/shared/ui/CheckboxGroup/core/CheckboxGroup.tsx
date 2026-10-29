@@ -43,8 +43,8 @@ const CheckboxGroup = (props: ICheckboxGroupProps) => {
                 checked={isChecked}
                 className={st.checkbox}
                 disabled={isOptionDisabled}
-                onCheckedChange={(nextIsChecked) => {
-                  handleCheckedChange(option.value, nextIsChecked)
+                onCheckedChange={(isNextChecked) => {
+                  handleCheckedChange(option.value, isNextChecked)
                 }}
               >
                 <CheckboxPrimitive.Indicator className={st.indicator}>

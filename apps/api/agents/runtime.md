@@ -62,6 +62,8 @@ AppModule imports 17 entity modules. DatabaseModule uses `autoIndex: true`, so a
 
 ## Tooling
 
+Both application packages require Node.js `>=24.0.0`, with no upper version bound. Their Dockerfiles use the Node.js 26 stable line for build and runtime stages.
+
 [package.json](../package.json) defines `dev` (`nest start --watch`), `build` (`nest build`), `start` (`node dist/main.js`) and `type-check` (`tsc --noEmit`). `tunnel` runs the local tunnel script with `.env.tunnel`; it is not needed for routine source verification. `lint:fix` and `format` operate on the entire package and write changes.
 
 [nest-cli.json](../nest-cli.json) selects Rspack. [tsconfig.json](../tsconfig.json) uses strict TypeScript 6, ESNext modules, Bundler resolution, ES2023 and decorator metadata, with `@infrastructure/*`, `@shared/*`, `@entities/*` and `@endpoints/*` aliases. Do not infer runtime behavior from type checking or a successful build.

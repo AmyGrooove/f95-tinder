@@ -12,8 +12,8 @@ const useCheckboxGroup = (props: ICheckboxGroupProps) => {
     value,
   } = props
 
-  const handleCheckedChange = (optionValue: string, IsNextChecked: boolean) => {
-    if (IsNextChecked) {
+  const handleCheckedChange = (optionValue: string, isNextChecked: boolean) => {
+    if (isNextChecked) {
       onChange([...value, optionValue])
 
       return

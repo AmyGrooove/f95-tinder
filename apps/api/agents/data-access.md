@@ -125,7 +125,7 @@ Read [endpoint implementation routes](endpoints.md) for library status/attempt t
 
 ## Redis cache
 
-[CacheModule](../src/infrastructure/cache/cache.module.ts) provides cache-manager backed by Keyv Redis and an app-name namespace. [CacheService](../src/infrastructure/cache/services/cache.service.ts) exposes `get`, `set` and `delete`, normalizing missing values to `null`.
+[CacheModule](../src/infrastructure/cache/cache.module.ts) provides cache-manager backed by Keyv Redis and an app-name namespace. Keep Keyv 5 and its Redis adapter 5 with the current Nest cache-manager: Keyv 6 removes the `opts` property used by Nest to recognize an existing Keyv instance, causing it to be wrapped again. [CacheService](../src/infrastructure/cache/services/cache.service.ts) exposes `get`, `set` and `delete`, normalizing missing values to `null`.
 
 [CacheEndpoint](../src/infrastructure/cache/decorators/CacheEndpoint/core/CacheEndpoint.ts) installs the Nest CacheInterceptor and a TTL from `ttlMs` or the existing default constant. It is not a custom per-user cache key policy; inspect key behavior before applying it to personalized responses.
 

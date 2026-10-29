@@ -48,7 +48,14 @@ describe("StorageService", () => {
       forcePathStyle: true,
       credentials: { accessKeyId: "test-key", secretAccessKey: "test-secret" },
     })
-    jest.spyOn(client, "send").mockImplementation(send)
+    jest
+      .spyOn(
+        client as {
+          send: (command: unknown) => Promise<Record<string, unknown>>
+        },
+        "send",
+      )
+      .mockImplementation(send)
     jest.spyOn(logger, "error").mockImplementation(() => undefined)
     service = new StorageService(client, config, logger)
   })

@@ -1,15 +1,15 @@
 import { AppProviders } from './AppProviders'
 import { GlassDistortionFilter } from './GlassDistortionFilter'
 
-import { ROBOTO_FONT } from '../static/ROBOTO_FONT'
+import { useRootLayout } from './useRootLayout'
 
 import type { IRootLayoutProps } from '../types/IRootLayoutProps'
 
 const RootLayout = (props: IRootLayoutProps) => {
-  const { children } = props
+  const { children, className } = useRootLayout(props)
 
   return (
-    <html className={ROBOTO_FONT.className} lang="ru">
+    <html className={className} lang="ru">
       <body>
         <GlassDistortionFilter />
         <AppProviders>{children}</AppProviders>

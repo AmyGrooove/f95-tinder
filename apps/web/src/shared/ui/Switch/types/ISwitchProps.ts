@@ -1,7 +1,7 @@
 import type { Ref } from 'react'
 
 interface ISwitchProps {
-  value: boolean
+  isChecked: boolean
   onChange: (isChecked: boolean) => void
   label: string
 

@@ -5,7 +5,7 @@ interface ISingleCheckboxProps extends Omit<
   'onChange' | 'options' | 'value' | 'label'
 > {
   onChange: (isChecked: boolean) => void
-  value: boolean
+  isChecked: boolean
   label: string
 }
 

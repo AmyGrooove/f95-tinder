@@ -11,10 +11,10 @@ const meta = {
     isDisabled: false,
     label: 'Показывать фильтры',
     onChange: () => {},
-    value: false,
+    isPressed: false,
   },
   render: (args) => {
-    const [value, setValue] = useState(args.value)
+    const [isPressed, setIsPressed] = useState(args.isPressed)
 
     return (
       <SingleToggle
@@ -23,9 +23,9 @@ const meta = {
         icon={args.icon}
         isDisabled={args.isDisabled}
         label={args.label}
-        onChange={setValue}
+        onChange={setIsPressed}
         ref={args.ref}
-        value={value}
+        isPressed={isPressed}
       />
     )
   },

@@ -7,8 +7,15 @@ import type { ISwitchProps } from '../types/ISwitchProps'
 import { isNil } from '@shared/functions/checks/isNil'
 
 const Switch = (props: ISwitchProps) => {
-  const { className, handleChange, hintText, isDisabled, label, ref, value } =
-    useSwitch(props)
+  const {
+    className,
+    handleChange,
+    hintText,
+    isDisabled,
+    label,
+    ref,
+    isChecked,
+  } = useSwitch(props)
 
   return (
     <label
@@ -17,7 +24,7 @@ const Switch = (props: ISwitchProps) => {
       })}
     >
       <SwitchPrimitive.Root
-        checked={value}
+        checked={isChecked}
         className={st.switch}
         disabled={isDisabled}
         onCheckedChange={handleChange}
