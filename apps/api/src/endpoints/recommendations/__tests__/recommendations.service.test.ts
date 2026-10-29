@@ -16,7 +16,7 @@ import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemField } from "@entities/item/schemas/EItemField"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
+import { SiteRatingsMetricRepository } from "@entities/siteMetric/services/siteRatingsMetric.repository"
 import { UserTasteProfileRepository } from "@entities/userTasteProfile/services/userTasteProfile.repository"
 import type { TasteTagPreference } from "@entities/userTasteProfile/schemas/tasteTagPreference.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
@@ -32,7 +32,8 @@ describe("RecommendationsService", () => {
   const otherGroupId = new Types.ObjectId()
   const textId = new Types.ObjectId()
   const readRecommendations = jest.fn<ItemRepository["readRecommendations"]>()
-  const getRatingAverage = jest.fn<() => Promise<number | null>>()
+  const readRatingBaseline =
+    jest.fn<SiteRatingsMetricRepository["readRatingBaseline"]>()
   const findProfile =
     jest.fn<
       (
@@ -49,7 +50,7 @@ describe("RecommendationsService", () => {
 
   beforeEach(async () => {
     readRecommendations.mockReset().mockResolvedValue({ items: [], total: 0 })
-    getRatingAverage.mockReset().mockResolvedValue(7)
+    readRatingBaseline.mockReset().mockResolvedValue({ average: 7 })
     findProfile.mockReset().mockResolvedValue(null)
     findCollection.mockReset().mockResolvedValue({
       blocks: [
@@ -66,7 +67,10 @@ describe("RecommendationsService", () => {
           provide: CollectionRepository,
           useValue: { findNotDeletedById: findCollection },
         },
-        { provide: UserItemRepository, useValue: { getRatingAverage } },
+        {
+          provide: SiteRatingsMetricRepository,
+          useValue: { readRatingBaseline },
+        },
         {
           provide: UserTasteProfileRepository,
           useValue: { read: { findOne: findProfile } },
@@ -81,14 +85,14 @@ describe("RecommendationsService", () => {
   })
 
   it("использует пустой профиль и стандартную страницу для нового пользователя", async () => {
-    getRatingAverage.mockResolvedValue(null)
+    readRatingBaseline.mockResolvedValue({ average: 5.5 })
     const result = await service.find({ userId })
 
     expect(readRecommendations).toHaveBeenCalledWith(
       expect.objectContaining({
         userId,
         preferences: [],
-        siteRatingAverage: null,
+        siteRatingAverage: 5.5,
         now: expect.any(Date),
         page: 1,
         limit: 20,
@@ -223,7 +227,7 @@ describe("RecommendationsService", () => {
       )
       expect(findCollection).not.toHaveBeenCalled()
       expect(findProfile).not.toHaveBeenCalled()
-      expect(getRatingAverage).not.toHaveBeenCalled()
+      expect(readRatingBaseline).not.toHaveBeenCalled()
       expect(readRecommendations).not.toHaveBeenCalled()
     },
   )
@@ -293,7 +297,7 @@ describe("RecommendationsService", () => {
       if (dependency === "profile") {
         findProfile.mockRejectedValue(error)
       } else if (dependency === "siteAverage") {
-        getRatingAverage.mockRejectedValue(error)
+        readRatingBaseline.mockRejectedValue(error)
       } else {
         readRecommendations.mockRejectedValue(error)
       }

@@ -7,7 +7,6 @@ import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { TagWeightModifiersModule } from "@endpoints/tagWeightModifiers/tagWeightModifiers.module"
-import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
 import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 
@@ -24,6 +23,7 @@ import { FactModule } from "@entities/fact/fact.module"
 import { SourceModule } from "@entities/source/source.module"
 import { SourceItemModule } from "@entities/sourceItem/sourceItem.module"
 import { ItemMetricModule } from "@entities/itemMetric/itemMetric.module"
+import { SiteMetricModule } from "@entities/siteMetric/siteMetric.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserSettingsModule } from "@entities/userSettings/userSettings.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
@@ -71,6 +71,7 @@ import { AppController } from "./controllers/app.controller"
     SourceModule,
     SourceItemModule,
     ItemMetricModule,
+    SiteMetricModule,
     UserModule,
     UserSettingsModule,
     UserItemModule,
@@ -78,7 +79,6 @@ import { AppController } from "./controllers/app.controller"
     SessionModule,
     UserTasteProfileModule,
     TagWeightModifiersModule,
-    ItemRatingsModule,
     RecommendationsModule,
     SearchEndpointModule,
   ],

@@ -74,12 +74,12 @@ const createRecommendationRelationPipeline = (
                                 $cond: [
                                   "$isFavorite",
                                   {
-                                    $add: [
-                                      0.8,
+                                    $max: [
+                                      0.5,
                                       {
-                                        $multiply: [
-                                          0.05,
+                                        $divide: [
                                           { $subtract: ["$rating", 6] },
+                                          4,
                                         ],
                                       },
                                     ],
@@ -91,7 +91,7 @@ const createRecommendationRelationPipeline = (
                               },
                             },
                           ],
-                          default: { $cond: ["$isFavorite", 0.8, 0] },
+                          default: { $cond: ["$isFavorite", 0.5, 0] },
                         },
                       },
                     },

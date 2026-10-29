@@ -2,7 +2,8 @@ import { ItemTagModule } from "@entities/itemTag/itemTag.module"
 import { Module } from "@nestjs/common"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
-import { ItemRatingsModule } from "@endpoints/itemRatings/itemRatings.module"
+import { ItemMetricModule } from "@entities/itemMetric/itemMetric.module"
+import { SiteMetricModule } from "@entities/siteMetric/siteMetric.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserModule } from "@entities/user/user.module"
@@ -11,11 +12,13 @@ import { DatabaseModule } from "@infrastructure/database/database.module"
 
 import { UserItemController } from "./controllers/userItem.controller"
 import { UserItemService } from "./services/userItem.service"
+import { UserItemMetricsService } from "./services/userItemMetrics.service"
 
 @Module({
   imports: [
     AuthModule,
-    ItemRatingsModule,
+    ItemMetricModule,
+    SiteMetricModule,
     ItemModule,
     ItemTagModule,
     UserItemModule,
@@ -24,7 +27,7 @@ import { UserItemService } from "./services/userItem.service"
     DatabaseModule,
   ],
   controllers: [UserItemController],
-  providers: [UserItemService],
+  providers: [UserItemService, UserItemMetricsService],
 })
 class UserItemEndpointModule {}
 

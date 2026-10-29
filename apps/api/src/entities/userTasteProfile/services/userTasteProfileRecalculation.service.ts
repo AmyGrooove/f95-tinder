@@ -10,6 +10,7 @@ import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
+import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { RECALCULATE_USER_TASTE_PROFILE_JOB } from "../static/RECALCULATE_USER_TASTE_PROFILE_JOB"
@@ -143,29 +144,20 @@ class UserTasteProfileRecalculationService {
     }))
   }
 
-  private getContribution(
-    userItem: Pick<UserItem, "rating" | "isFavorite" | "attempts">,
-  ) {
-    const { rating, isFavorite, attempts } = userItem
+  private getContribution(userItem: Pick<UserItem, "rating" | "isFavorite">) {
+    const { rating, isFavorite } = userItem
 
-    if (rating !== null && rating <= 4) {
+    if (!isNil(rating) && rating <= 4) {
       return (rating - 5) / 4
     }
 
-    const attemptBonus =
-      Math.min(3, attempts.filter((attempt) => attempt.isCompleted).length) *
-      0.1
-
-    if (rating !== null && rating >= 7) {
+    if (!isNil(rating) && rating >= 7) {
       const contribution = (rating - 6) / 4
 
-      return Math.min(
-        1,
-        (isFavorite ? 0.8 + 0.2 * contribution : contribution) + attemptBonus,
-      )
+      return isFavorite ? Math.max(0.5, contribution) : contribution
     }
 
-    return Math.min(1, (isFavorite ? 0.8 : 0) + attemptBonus)
+    return isFavorite ? 0.5 : 0
   }
 }
 

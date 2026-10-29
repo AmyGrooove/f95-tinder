@@ -4,6 +4,21 @@ import { createTestApplication } from "@test/functions/createTestApplication"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 describe("TestApplication", () => {
+  it("запускается без импорта словаря тегов и автоматических коллекций", async () => {
+    const environment = await createTestApplication()
+
+    try {
+      expect(
+        await environment.connection.collection("Tag").countDocuments(),
+      ).toBe(0)
+      expect(
+        await environment.connection.collection("Collection").countDocuments(),
+      ).toBe(0)
+    } finally {
+      await environment.close()
+    }
+  })
+
   it("сохраняет ошибку Redis и закрывает все соединения перед её возвратом", async () => {
     const environment = await createTestApplication()
     const error = new Error("Тестовый сбой Redis")

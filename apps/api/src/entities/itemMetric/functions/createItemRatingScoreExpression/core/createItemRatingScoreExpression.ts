@@ -1,9 +1,11 @@
+import { DEFAULT_SITE_RATING_AVERAGE } from "@entities/siteMetric/static/DEFAULT_SITE_RATING_AVERAGE"
+
 import type { ICreateItemRatingScoreExpressionProps } from "../types/ICreateItemRatingScoreExpressionProps"
 
 const createItemRatingScoreExpression = (
   props: ICreateItemRatingScoreExpressionProps,
 ) => {
-  const siteAverage = props.siteRatingAverage ?? 5.5
+  const siteAverage = props.siteRatingAverage ?? DEFAULT_SITE_RATING_AVERAGE
   const smoothingCount = 20
 
   return {

@@ -28,7 +28,16 @@ import {
   UserItem,
   UserItemSchema,
 } from "@entities/userItem/schemas/userItem.schema"
-import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
+import {
+  SiteMetric,
+  SiteMetricSchema,
+} from "@entities/siteMetric/schemas/siteMetric.schema"
+import {
+  SiteRatingsMetric,
+  SiteRatingsMetricSchema,
+} from "@entities/siteMetric/schemas/siteRatingsMetric.schema"
+import { SiteRatingsMetricRepository } from "@entities/siteMetric/services/siteRatingsMetric.repository"
+import { ESiteMetricKey } from "@entities/siteMetric/schemas/ESiteMetricKey"
 import {
   UserTasteProfile,
   UserTasteProfileSchema,
@@ -49,12 +58,22 @@ describe("RecommendationsService MongoDB", () => {
 
   beforeAll(async () => {
     const { connection } = getTestDatabase()
+    const siteModel = connection.model(SiteMetric.name, SiteMetricSchema)
+    const ratingsModel = siteModel.discriminator(
+      SiteRatingsMetric.name,
+      SiteRatingsMetricSchema,
+      ESiteMetricKey.RATINGS,
+    )
     module = await Test.createTestingModule({
       providers: [
         RecommendationsService,
+        SiteRatingsMetricRepository,
+        {
+          provide: getModelToken(SiteRatingsMetric.name),
+          useValue: ratingsModel,
+        },
         ItemRepository,
         CollectionRepository,
-        UserItemRepository,
         UserTasteProfileRepository,
         {
           provide: getModelToken(Item.name),
@@ -960,31 +979,14 @@ describe("RecommendationsService MongoDB", () => {
     )
   })
 
-  it("получает среднюю сайта по всем оценкам, а не среднее средних произведений", async () => {
+  it("использует сохранённую среднюю SiteMetric без обхода пользовательских оценок", async () => {
     const candidate = await seedItem()
-    const rated = await seedItem()
+    await getTestDatabase()
+      .connection.collection("SiteMetric")
+      .insertOne({ key: "ratings", sum: 181, count: 21, average: 181 / 21 })
     await getTestDatabase()
       .connection.collection("UserItem")
-      .insertMany([
-        ...Array.from({ length: 20 }, () => ({
-          item: rated,
-          user: new Types.ObjectId(),
-          status: EUserItemStatus.COMPLETED,
-          rating: 9,
-        })),
-        {
-          item: rated,
-          user: new Types.ObjectId(),
-          status: EUserItemStatus.BLOCKED,
-          rating: 1,
-        },
-        {
-          item: candidate,
-          user: new Types.ObjectId(),
-          status: EUserItemStatus.PLANNED,
-          rating: null,
-        },
-      ])
+      .insertOne({ item: candidate, user: new Types.ObjectId(), rating: 1 })
     expect(
       (await find()).items.find((item) => item._id.equals(candidate))
         ?.ratingScore,

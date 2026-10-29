@@ -9,7 +9,7 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
-import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
+import { SiteRatingsMetricRepository } from "@entities/siteMetric/services/siteRatingsMetric.repository"
 import { UserTasteProfileRepository } from "@entities/userTasteProfile/services/userTasteProfile.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
@@ -27,7 +27,7 @@ class RecommendationsService {
   constructor(
     private readonly itemRepository: ItemRepository,
     private readonly collectionRepository: CollectionRepository,
-    private readonly userItemRepository: UserItemRepository,
+    private readonly siteRatingsMetricRepository: SiteRatingsMetricRepository,
     private readonly userTasteProfileRepository: UserTasteProfileRepository,
   ) {}
 
@@ -56,15 +56,15 @@ class RecommendationsService {
     this.validateConditions(props)
 
     const collectionGroupIds = await this.getCollectionGroupIds(props.filter)
-    const [profile, siteRatingAverage] = await Promise.all([
+    const [profile, baseline] = await Promise.all([
       this.userTasteProfileRepository.read.findOne({ user: props.userId }),
-      this.userItemRepository.getRatingAverage(),
+      this.siteRatingsMetricRepository.readRatingBaseline(),
     ])
 
     return {
       userId: props.userId,
       preferences: profile?.tagPreferences ?? [],
-      siteRatingAverage,
+      siteRatingAverage: baseline.average,
       now: new Date(),
       filter: props.filter,
       country: props.country,

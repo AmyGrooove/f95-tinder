@@ -9,10 +9,9 @@ import {
   UnauthorizedException,
 } from "@nestjs/common"
 import { mongo, Types } from "mongoose"
-import type { HydratedDocument } from "mongoose"
+import type { ClientSession, HydratedDocument } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/auth.service"
-import { ItemRatingsRecalculationService } from "@endpoints/itemRatings/services/itemRatingsRecalculation.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { UserRepository } from "@entities/user/services/user.repository"
@@ -40,6 +39,7 @@ import type { IValidateCompletionProps } from "../types/IValidateCompletionProps
 import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
 import type { QueryUserItemsBodyDto } from "../dto/body/queryUserItems.body"
 import type { UserItemSummaryResponseDto } from "../dto/response/userItemSummary.response"
+import { UserItemMetricsService } from "./userItemMetrics.service"
 
 @Injectable()
 class UserItemService {
@@ -51,7 +51,7 @@ class UserItemService {
     private readonly transactionService: MongoTransactionService,
     private readonly itemTagRepository: ItemTagRepository,
     private readonly tasteProfileRecalculationService: UserTasteProfileRecalculationService,
-    private readonly itemRatingsRecalculationService: ItemRatingsRecalculationService,
+    private readonly userItemMetricsService: UserItemMetricsService,
   ) {}
 
   async query(
@@ -129,31 +129,44 @@ class UserItemService {
       await this.validateCompletion({ itemId, isCompletionRequested: true })
     }
 
-    await this.userItemRepository.write.deleteByFilter({
-      user: userId,
-      item: itemId,
-      status: EUserItemStatus.SKIPPED,
-      expiresAt: { $lte: new Date() },
-    })
-
     try {
-      const userItem = await this.userItemRepository.write.create({
-        user: userId,
-        item: itemId,
-        status: body.status,
-        expiresAt:
-          body.status === EUserItemStatus.SKIPPED
-            ? new Date(Date.now() + USER_ITEM_SKIP_DURATION_MS)
-            : null,
-        attempts: this.checkRequiresAttempt(body.status)
-          ? [this.createStatusAttempt(body.status)]
-          : [],
+      const userItem = await this.runMutation(async (session) => {
+        await this.userItemRepository.write.deleteByFilter(
+          {
+            user: userId,
+            item: itemId,
+            status: EUserItemStatus.SKIPPED,
+            expiresAt: { $lte: new Date() },
+          },
+          { session },
+        )
+
+        const created = await this.userItemRepository.write.create(
+          {
+            user: userId,
+            item: itemId,
+            status: body.status,
+            expiresAt:
+              body.status === EUserItemStatus.SKIPPED
+                ? new Date(Date.now() + USER_ITEM_SKIP_DURATION_MS)
+                : null,
+            attempts: this.checkRequiresAttempt(body.status)
+              ? [this.createStatusAttempt(body.status)]
+              : [],
+          },
+          { session },
+        )
+        await this.userItemMetricsService.update({
+          itemId,
+          previous: null,
+          next: this.userItemMetricsService.getState(created),
+          session,
+        })
+
+        return created
       })
 
-      await Promise.all([
-        this.tasteProfileRecalculationService.enqueue(userId, itemId),
-        this.itemRatingsRecalculationService.enqueue(itemId),
-      ])
+      await this.tasteProfileRecalculationService.enqueue(userId, itemId)
 
       return this.mapResponse(userItem)
     } catch (error) {
@@ -207,19 +220,27 @@ class UserItemService {
 
   async remove(accessToken: unknown, id: Types.ObjectId) {
     const userId = await this.authenticate(accessToken)
-    const userItem = await this.userItemRepository.write.deleteByFilter({
-      _id: id,
-      user: userId,
+    const userItem = await this.runMutation(async (session) => {
+      const removed = await this.userItemRepository.write.deleteByFilter(
+        { _id: id, user: userId },
+        { session },
+      )
+
+      if (isNil(removed)) {
+        throw new NotFoundException(DICTIONARY.userItem.notFound)
+      }
+
+      await this.userItemMetricsService.update({
+        itemId: removed.item,
+        previous: this.userItemMetricsService.getState(removed),
+        next: null,
+        session,
+      })
+
+      return removed
     })
 
-    if (isNil(userItem)) {
-      throw new NotFoundException(DICTIONARY.userItem.notFound)
-    }
-
-    await Promise.all([
-      this.tasteProfileRecalculationService.enqueue(userId, userItem.item),
-      this.itemRatingsRecalculationService.enqueue(userItem.item),
-    ])
+    await this.tasteProfileRecalculationService.enqueue(userId, userItem.item)
   }
 
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
@@ -324,7 +345,7 @@ class UserItemService {
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
     const userId = await this.authenticate(accessToken)
 
-    const result = await this.transactionService.run(async (session) => {
+    const result = await this.runMutation(async (session) => {
       const filter = {
         _id: props.id,
         user: userId,
@@ -343,13 +364,7 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      const previousRating = userItem.rating
-      const isPreviouslyFavorite = userItem.isFavorite
-      const previousStatus = userItem.status
-      const isPreviouslySkipped = userItem.status === EUserItemStatus.SKIPPED
-      const previousCompletedAttempts = userItem.attempts.filter(
-        (attempt) => attempt.isCompleted,
-      ).length
+      const previous = this.userItemMetricsService.getState(userItem)
 
       await props.mutate(userItem, session)
       this.validateUserItem(userItem)
@@ -393,38 +408,49 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      const completedAttempts = updated.attempts.filter(
-        (attempt) => attempt.isCompleted,
-      ).length
+      await this.userItemMetricsService.update({
+        itemId: updated.item,
+        previous,
+        next: this.userItemMetricsService.getState(updated),
+        session,
+      })
 
       return {
         response: this.mapResponse(updated),
         itemId: updated.item,
-        isMetricChanged:
-          previousRating !== updated.rating ||
-          isPreviouslyFavorite !== updated.isFavorite ||
-          previousStatus !== updated.status ||
-          previousCompletedAttempts !== completedAttempts,
         isTasteChanged:
-          previousRating !== updated.rating ||
-          isPreviouslyFavorite !== updated.isFavorite ||
-          isPreviouslySkipped !==
-            (updated.status === EUserItemStatus.SKIPPED) ||
-          Math.min(3, previousCompletedAttempts) !==
-            Math.min(3, completedAttempts),
+          previous.rating !== updated.rating ||
+          previous.isFavorite !== updated.isFavorite ||
+          (previous.status === EUserItemStatus.SKIPPED) !==
+            (updated.status === EUserItemStatus.SKIPPED),
       }
     })
 
-    await Promise.all([
-      result.isTasteChanged
-        ? this.tasteProfileRecalculationService.enqueue(userId, result.itemId)
-        : undefined,
-      result.isMetricChanged
-        ? this.itemRatingsRecalculationService.enqueue(result.itemId)
-        : undefined,
-    ])
+    if (result.isTasteChanged) {
+      await this.tasteProfileRecalculationService.enqueue(userId, result.itemId)
+    }
 
     return result.response
+  }
+
+  private async runMutation<TResult>(
+    mutate: (session: ClientSession) => Promise<TResult>,
+  ): Promise<TResult> {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await this.transactionService.run(mutate)
+      } catch (error) {
+        const isMetricCreationConflict =
+          error instanceof mongo.MongoServerError &&
+          error.code === 11000 &&
+          ((error.keyPattern?.item === 1 && error.keyPattern?.user !== 1) ||
+            error.keyPattern?.key === 1)
+
+        if (!isMetricCreationConflict || attempt >= 2) {
+          throw error
+        }
+      }
+    }
   }
 
   private async validateCompletion(props: IValidateCompletionProps) {

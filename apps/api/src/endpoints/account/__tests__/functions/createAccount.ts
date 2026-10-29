@@ -6,12 +6,18 @@ import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
-const createAccount = async (kind: "anonymous" | "password" = "anonymous") => {
+const createAccount = async (
+  kind: "anonymous" | "password" = "anonymous",
+  ip?: string,
+) => {
   const { app, connection } = getTestApplication()
   const response = await app.inject({
     method: "POST",
     url: "/auth/register",
-    headers: { origin: "http://localhost" },
+    headers: {
+      origin: "http://localhost",
+      ...(ip === undefined ? {} : { "x-forwarded-for": ip }),
+    },
   })
   expect(response.statusCode).toBe(201)
 
@@ -53,6 +59,7 @@ const createAccount = async (kind: "anonymous" | "password" = "anonymous") => {
     accessCode: registration.accessCode,
     headers: {
       origin: "http://localhost",
+      ...(ip === undefined ? {} : { "x-forwarded-for": ip }),
       cookie: response.cookies
         .map(({ name, value }) => `${name}=${value}`)
         .join("; "),
