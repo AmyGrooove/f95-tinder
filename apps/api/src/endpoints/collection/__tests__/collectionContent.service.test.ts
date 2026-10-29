@@ -6,7 +6,7 @@ import { Types } from "mongoose"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 
 import { CollectionContentService } from "../services/collectionContent.service"
@@ -38,7 +38,7 @@ describe("CollectionContentService", () => {
     }
     const items = {
       countAvailableItemsByGroup: jest.fn(async () => [{ groupId, total: 1 }]),
-      readContentPage: jest.fn<CollectionItemRepository["readContentPage"]>(),
+      readContentPage: jest.fn<ItemCollectionRepository["readContentPage"]>(),
     }
     items.readContentPage.mockResolvedValue({
       items: [
@@ -60,7 +60,7 @@ describe("CollectionContentService", () => {
       providers: [
         CollectionContentService,
         { provide: CollectionRepository, useValue: collection },
-        { provide: CollectionItemRepository, useValue: items },
+        { provide: ItemCollectionRepository, useValue: items },
       ],
     }).compile()
 

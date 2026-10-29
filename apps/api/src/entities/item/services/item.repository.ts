@@ -14,10 +14,10 @@ import type { IItemDetails } from "../types/IItemDetails"
 import type { IReadRecommendationsProps } from "../types/IReadRecommendationsProps"
 import type { IRecommendedItem } from "../types/IRecommendedItem"
 import { createRecommendationPipeline } from "../functions/createRecommendationPipeline"
-import { ItemMetric } from "@entities/itemMetric/schemas/itemMetric.schema"
+import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
-import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 
 @Injectable()
@@ -76,7 +76,7 @@ class ItemRepository {
       { $limit: props.limit },
       {
         $lookup: {
-          from: ItemTag.name,
+          from: TagItem.name,
           localField: "_id",
           foreignField: "item",
           pipeline: [
@@ -97,7 +97,7 @@ class ItemRepository {
       },
       {
         $lookup: {
-          from: ItemMetric.name,
+          from: ItemStats.name,
           localField: "_id",
           foreignField: "item",
           pipeline: [{ $project: { ratingAverage: 1 } }],
@@ -161,7 +161,7 @@ class ItemRepository {
       },
       {
         $lookup: {
-          from: "ItemTag",
+          from: "TagItem",
           localField: "_id",
           foreignField: "item",
           pipeline: [
@@ -183,7 +183,7 @@ class ItemRepository {
       },
       {
         $lookup: {
-          from: "Relation",
+          from: "ItemRelation",
           pipeline: [
             {
               $match: {
@@ -212,7 +212,7 @@ class ItemRepository {
             { $unwind: "$item" },
             {
               $lookup: {
-                from: "ItemRelationRole",
+                from: "Relation",
                 localField: "side.role",
                 foreignField: "_id",
                 pipeline: [{ $project: { _id: 1, key: 1, name: 1 } }],

@@ -18,7 +18,7 @@ import { MediaBodyDto } from "@entities/shared/dto/body/media.body"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { CreateBlockBodyDto } from "./createBlock.body"
-import { CreateCollectionItemBodyDto } from "./createCollectionItem.body"
+import { CreateItemCollectionBodyDto } from "./createItemCollection.body"
 
 class UpdateCollectionBodyDto {
   @ApiProperty({ type: Number, minimum: 0, maximum: Number.MAX_SAFE_INTEGER })
@@ -74,13 +74,13 @@ class UpdateCollectionBodyDto {
   @IsMongoId({ each: true })
   blockOrder?: string[]
 
-  @ApiPropertyOptional({ type: [CreateCollectionItemBodyDto] })
+  @ApiPropertyOptional({ type: [CreateItemCollectionBodyDto] })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
-  @Type(() => CreateCollectionItemBodyDto)
-  upsertItems?: CreateCollectionItemBodyDto[]
+  @Type(() => CreateItemCollectionBodyDto)
+  upsertItems?: CreateItemCollectionBodyDto[]
 
   @ApiPropertyOptional({ type: [String] })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))

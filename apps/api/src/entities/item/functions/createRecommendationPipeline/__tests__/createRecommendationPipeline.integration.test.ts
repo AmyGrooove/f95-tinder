@@ -18,7 +18,7 @@ describe("createRecommendationPipeline", () => {
         .insertMany(
           ids.map((_id) => ({ _id, title: { ru: "Название" }, media: [] })),
         )
-      await connection.collection("ItemMetric").insertMany([
+      await connection.collection("ItemStats").insertMany([
         { item: ids[0], ratingAverage: 9, ratingsCount: 20 },
         { item: ids[1], ratingAverage: 7, ratingsCount: 20 },
       ])
@@ -65,7 +65,7 @@ describe("createRecommendationPipeline", () => {
       new Types.ObjectId(),
     ]
     await connection.collection("Item").insertMany(ids.map((_id) => ({ _id })))
-    await connection.collection("ItemMetric").insertMany([
+    await connection.collection("ItemStats").insertMany([
       { item: ids[0], ratingAverage: 8, ratingsCount: 1 },
       { item: ids[1], ratingAverage: 7, ratingsCount: 100 },
     ])

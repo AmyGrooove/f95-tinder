@@ -3,16 +3,16 @@ import { Types } from "mongoose"
 import type { FastifyInstance } from "fastify"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import { ItemMetricRepository } from "@entities/itemMetric/services/itemMetric.repository"
+import { ItemStatsRepository } from "@entities/itemStats/services/itemStats.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import type { Item } from "@entities/item/schemas/item.schema"
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
@@ -28,8 +28,8 @@ describe("UserItemController HTTP", () => {
       const { app, connection } = getTestApplication()
       const account = await createAccount()
       const item = await createItem()
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const enqueue = jest
@@ -62,7 +62,7 @@ describe("UserItemController HTTP", () => {
       })
       expect(response.statusCode).toBe(201)
       expect(enqueue).toHaveBeenCalledTimes(1)
-      expect(applyItemMetric).toHaveBeenCalledTimes(
+      expect(applyItemStats).toHaveBeenCalledTimes(
         operation === "create" ? 1 : 0,
       )
     },
@@ -73,8 +73,8 @@ describe("UserItemController HTTP", () => {
     async (operation) => {
       const { app } = getTestApplication()
       const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const enqueue = jest
@@ -108,7 +108,7 @@ describe("UserItemController HTTP", () => {
         operation === "createAttempt" ? 201 : 200,
       )
       expect(enqueue).toHaveBeenCalledTimes(operation === "update" ? 1 : 0)
-      expect(applyItemMetric).toHaveBeenCalledTimes(1)
+      expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
 
@@ -134,8 +134,8 @@ describe("UserItemController HTTP", () => {
       const enqueueTaste = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
         .mockResolvedValue("taste-job")
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
 
@@ -147,7 +147,7 @@ describe("UserItemController HTTP", () => {
       })
 
       expect(response.statusCode).toBe(200)
-      expect(applyItemMetric).toHaveBeenCalledTimes(1)
+      expect(applyItemStats).toHaveBeenCalledTimes(1)
       expect(enqueueTaste).toHaveBeenCalledTimes(isTasteChanged ? 1 : 0)
     },
   )
@@ -181,8 +181,8 @@ describe("UserItemController HTTP", () => {
       const enqueueTaste = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
         .mockResolvedValue("taste-job")
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const response = await app.inject({
@@ -196,7 +196,7 @@ describe("UserItemController HTTP", () => {
       })
 
       expect(response.statusCode).toBe(operation === "create" ? 201 : 200)
-      expect(applyItemMetric).toHaveBeenCalledTimes(1)
+      expect(applyItemStats).toHaveBeenCalledTimes(1)
       expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
@@ -214,8 +214,8 @@ describe("UserItemController HTTP", () => {
       const enqueueTaste = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
         .mockResolvedValue("taste-job")
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const response = await app.inject({
@@ -229,7 +229,7 @@ describe("UserItemController HTTP", () => {
       })
 
       expect(response.statusCode).toBe(200)
-      expect(applyItemMetric).not.toHaveBeenCalled()
+      expect(applyItemStats).not.toHaveBeenCalled()
       expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
@@ -242,8 +242,8 @@ describe("UserItemController HTTP", () => {
       const enqueueTaste = jest
         .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
         .mockResolvedValue("taste-job")
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const isAttempt = operation !== "note"
@@ -270,7 +270,7 @@ describe("UserItemController HTTP", () => {
         operation === "unfinishedAttempt" ? 201 : 200,
       )
       expect(enqueueTaste).not.toHaveBeenCalled()
-      expect(applyItemMetric).not.toHaveBeenCalled()
+      expect(applyItemStats).not.toHaveBeenCalled()
       const saved = await readEntry(owner.entry.id)
       if (operation === "note") {
         expect(saved.note).toBe("Заметка")
@@ -297,8 +297,8 @@ describe("UserItemController HTTP", () => {
         payload: { rating },
       })
       expect(seeded.statusCode).toBe(200)
-      const applyItemMetric = jest.spyOn(
-        app.get(ItemMetricRepository),
+      const applyItemStats = jest.spyOn(
+        app.get(ItemStatsRepository),
         "applyChanges",
       )
       const enqueue = jest
@@ -320,15 +320,15 @@ describe("UserItemController HTTP", () => {
       })
       expect(response.statusCode).toBe(204)
       expect(enqueue).toHaveBeenCalledTimes(1)
-      expect(applyItemMetric).toHaveBeenCalledTimes(1)
+      expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
 
   it("не ставит пересчёт при отказе создания, удаления и откате изменения", async () => {
     const { app } = getTestApplication()
     const owner = await createEntry(EUserItemStatus.PLANNED)
-    const applyItemMetric = jest.spyOn(
-      app.get(ItemMetricRepository),
+    const applyItemStats = jest.spyOn(
+      app.get(ItemStatsRepository),
       "applyChanges",
     )
     const enqueue = jest
@@ -365,7 +365,7 @@ describe("UserItemController HTTP", () => {
     })
     expect(attempt.statusCode).toBe(409)
     expect(enqueue).not.toHaveBeenCalled()
-    expect(applyItemMetric).not.toHaveBeenCalled()
+    expect(applyItemStats).not.toHaveBeenCalled()
     expect(await readEntry(owner.entry.id)).toMatchObject({
       status: EUserItemStatus.PLANNED,
       rating: null,
@@ -548,7 +548,7 @@ describe("UserItemController HTTP", () => {
     await connection.collection("Tag").insertOne(tag)
 
     if (props.isAssigned !== false) {
-      await app.get(ItemTagRepository).write.create({
+      await app.get(TagItemRepository).write.create({
         item: props.item,
         tag: tag._id,
         relevanceScore: 1,
@@ -1662,14 +1662,14 @@ describe("UserItemController HTTP", () => {
 
       if (kind === "expired") {
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .updateOne(
             { _id: session._id },
             { $set: { expiresAt: new Date(Date.now() - 1000) } },
           )
       } else if (kind === "revoked") {
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .deleteOne({ _id: session._id })
       } else if (kind === "deletedUser") {
         await connection.collection<User>("User").deleteOne({ _id: user._id })
@@ -1779,7 +1779,7 @@ describe("UserItemController HTTP", () => {
     ).toBe(1)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({ _id: session._id }),
     ).toBe(1)
     const repeated = await app.inject({
@@ -2290,7 +2290,7 @@ describe("UserItemController HTTP", () => {
       const owner = await createEntry()
       if (state === "expired") {
         await connection
-          .collection("Session")
+          .collection("UserSession")
           .updateOne(
             { _id: owner.session._id },
             { $set: { expiresAt: new Date(Date.now() - 1000) } },
@@ -2298,7 +2298,7 @@ describe("UserItemController HTTP", () => {
       }
       if (state === "revoked") {
         await connection
-          .collection("Session")
+          .collection("UserSession")
           .deleteOne({ _id: owner.session._id })
       }
       if (state === "missingUser") {

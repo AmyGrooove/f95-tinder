@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common"
 import { Types } from "mongoose"
 
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
@@ -17,20 +17,20 @@ import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "../static/SYNCHRONIZE_TAG_COLLE
 @JobHandler(SYNCHRONIZE_TAG_COLLECTIONS_JOB)
 class SynchronizeTagCollectionsJobHandler implements IJobHandler<string> {
   constructor(
-    private readonly itemTags: ItemTagRepository,
+    private readonly tagItems: TagItemRepository,
     private readonly collections: CollectionRepository,
-    private readonly collectionItems: CollectionItemRepository,
+    private readonly itemCollections: ItemCollectionRepository,
   ) {}
 
   async handle(payload: string, context: IJobContext) {
     const item = new Types.ObjectId(payload)
     await context.throwIfCancelled()
 
-    const assignments = await this.itemTags.read.findMany(
+    const assignments = await this.tagItems.read.findMany(
       { item },
       { tag: 1, relevanceScore: 1 },
     )
-    const memberships = await this.collectionItems.read.findMany(
+    const memberships = await this.itemCollections.read.findMany(
       { item },
       { collectionId: 1 },
     )
@@ -59,7 +59,7 @@ class SynchronizeTagCollectionsJobHandler implements IJobHandler<string> {
       const relevanceScore = scores.get(String(collection.tag))
 
       if (isNil(relevanceScore) || !isNil(collection.deletedAt)) {
-        await this.collectionItems.write.deleteByFilter({
+        await this.itemCollections.write.deleteByFilter({
           collectionId: collection._id,
           item,
         })
@@ -74,7 +74,7 @@ class SynchronizeTagCollectionsJobHandler implements IJobHandler<string> {
         throw new Error(`Tag collection has no group: ${collection._id}`)
       }
 
-      await this.collectionItems.write.updateByFilter(
+      await this.itemCollections.write.updateByFilter(
         { collectionId: collection._id, item },
         {
           $set: { relevanceScore },

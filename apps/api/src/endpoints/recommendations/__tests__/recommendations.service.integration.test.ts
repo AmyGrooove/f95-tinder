@@ -29,15 +29,15 @@ import {
   UserItemSchema,
 } from "@entities/userItem/schemas/userItem.schema"
 import {
-  SiteMetric,
-  SiteMetricSchema,
-} from "@entities/siteMetric/schemas/siteMetric.schema"
+  SiteStats,
+  SiteStatsSchema,
+} from "@entities/siteStats/schemas/siteStats.schema"
 import {
-  SiteRatingsMetric,
-  SiteRatingsMetricSchema,
-} from "@entities/siteMetric/schemas/siteRatingsMetric.schema"
-import { SiteRatingsMetricRepository } from "@entities/siteMetric/services/siteRatingsMetric.repository"
-import { ESiteMetricKey } from "@entities/siteMetric/schemas/ESiteMetricKey"
+  SiteRatingsStats,
+  SiteRatingsStatsSchema,
+} from "@entities/siteStats/schemas/siteRatingsStats.schema"
+import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStats.repository"
+import { ESiteStatsKey } from "@entities/siteStats/schemas/ESiteStatsKey"
 import {
   UserTasteProfile,
   UserTasteProfileSchema,
@@ -58,18 +58,18 @@ describe("RecommendationsService MongoDB", () => {
 
   beforeAll(async () => {
     const { connection } = getTestDatabase()
-    const siteModel = connection.model(SiteMetric.name, SiteMetricSchema)
+    const siteModel = connection.model(SiteStats.name, SiteStatsSchema)
     const ratingsModel = siteModel.discriminator(
-      SiteRatingsMetric.name,
-      SiteRatingsMetricSchema,
-      ESiteMetricKey.RATINGS,
+      SiteRatingsStats.name,
+      SiteRatingsStatsSchema,
+      ESiteStatsKey.RATINGS,
     )
     module = await Test.createTestingModule({
       providers: [
         RecommendationsService,
-        SiteRatingsMetricRepository,
+        SiteRatingsStatsRepository,
         {
-          provide: getModelToken(SiteRatingsMetric.name),
+          provide: getModelToken(SiteRatingsStats.name),
           useValue: ratingsModel,
         },
         ItemRepository,
@@ -153,7 +153,7 @@ describe("RecommendationsService MongoDB", () => {
     tags: { tag: Types.ObjectId; relevanceScore?: number }[],
   ) => {
     await getTestDatabase()
-      .connection.collection("ItemTag")
+      .connection.collection("TagItem")
       .insertMany(
         tags.map(({ tag, relevanceScore = 1 }) => ({
           item,
@@ -221,7 +221,7 @@ describe("RecommendationsService MongoDB", () => {
     const candidateRole = new Types.ObjectId()
     const isCandidateFirst = props.isCandidateFirst ?? false
     await getTestDatabase()
-      .connection.collection("ItemRelationRole")
+      .connection.collection("Relation")
       .insertOne({
         _id: candidateRole,
         ...(isUndefined(props.multiplier)
@@ -231,7 +231,7 @@ describe("RecommendationsService MongoDB", () => {
     const candidate = { item: props.candidate, role: candidateRole }
     const source = { item: props.source, role: new Types.ObjectId() }
     await getTestDatabase()
-      .connection.collection("Relation")
+      .connection.collection("ItemRelation")
       .insertOne({
         first: isCandidateFirst ? candidate : source,
         second: isCandidateFirst ? source : candidate,
@@ -597,33 +597,23 @@ describe("RecommendationsService MongoDB", () => {
     expect(result.total).toBe(1)
   })
 
-  it("проверяет удаление, тип, клиентские исключения и точную пару глобального запрета до total", async () => {
-    const source = new Types.ObjectId()
-    const differentSource = new Types.ObjectId()
+  it("проверяет удаление, тип, клиентские исключения и глобальный запрет по ID произведения до total", async () => {
     const allowed = await seedItem()
-    const differentExternalId = await seedItem()
+    const anotherAllowed = await seedItem()
     const banned = await seedItem()
     const excluded = await seedItem()
     await seedItem({ deletedAt: new Date() })
     await seedItem({ type: EItemType.MOVIE })
     await getTestDatabase()
-      .connection.collection("BannedItem")
-      .insertOne({ source, externalId: "blocked", countries: [] })
-    await getTestDatabase()
-      .connection.collection("SourceItem")
-      .insertMany([
-        { item: allowed, source: differentSource, externalId: "blocked" },
-        { item: differentExternalId, source, externalId: "allowed" },
-        { item: banned, source: differentSource, externalId: "allowed" },
-        { item: banned, source, externalId: "blocked" },
-      ])
+      .connection.collection("ItemBan")
+      .insertOne({ item: banned, countries: [] })
     const result = await find({
       filter: { types: [EItemType.GAME] },
       excludeItemIds: [excluded],
     })
     expect(result.items.map((item) => item._id)).toEqual([
       allowed,
-      differentExternalId,
+      anotherAllowed,
     ])
     expect(result.total).toBe(2)
     expect((await find({ filter: { types: [] } })).total).toBe(0)
@@ -665,18 +655,11 @@ describe("RecommendationsService MongoDB", () => {
   ])(
     "применяет запрет $countries для страны входа $country",
     async ({ countries, country, isBlocked }) => {
-      const source = new Types.ObjectId()
       const item = await seedItem()
       const { connection } = getTestDatabase()
-      await connection.collection("BannedItem").insertOne({
-        source,
-        externalId: "regional",
-        countries,
-      })
-      await connection.collection("SourceItem").insertOne({
+      await connection.collection("ItemBan").insertOne({
         item,
-        source,
-        externalId: "regional",
+        countries,
       })
 
       const result = await find({ country })
@@ -743,7 +726,7 @@ describe("RecommendationsService MongoDB", () => {
     }
     await assignTags(missingTag, [{ tag: firstTag }])
     await getTestDatabase()
-      .connection.collection("ItemMetric")
+      .connection.collection("ItemStats")
       .insertMany(
         [
           lower,
@@ -826,7 +809,7 @@ describe("RecommendationsService MongoDB", () => {
     const orphan = await seedItem()
     await seedItem()
     await getTestDatabase()
-      .connection.collection("CollectionItem")
+      .connection.collection("ItemCollection")
       .insertMany([
         { collectionId, item: first, groupId: firstGroup },
         { collectionId, item: second, groupId: secondGroup },
@@ -923,7 +906,7 @@ describe("RecommendationsService MongoDB", () => {
     const higherRated = await seedItem()
     const negative = await seedItem()
     await getTestDatabase()
-      .connection.collection("ItemMetric")
+      .connection.collection("ItemStats")
       .insertMany([
         { item: lowerRated, ratingAverage: 5, ratingsCount: 20 },
         { item: higherRated, ratingAverage: 9, ratingsCount: 20 },
@@ -958,7 +941,7 @@ describe("RecommendationsService MongoDB", () => {
     const manyVotes = await seedItem()
     const sameScore = await seedItem()
     await getTestDatabase()
-      .connection.collection("ItemMetric")
+      .connection.collection("ItemStats")
       .insertMany([
         { item: singleVote, ratingAverage: 10, ratingsCount: 1 },
         { item: manyVotes, ratingAverage: 9, ratingsCount: 20 },
@@ -979,10 +962,10 @@ describe("RecommendationsService MongoDB", () => {
     )
   })
 
-  it("использует сохранённую среднюю SiteMetric без обхода пользовательских оценок", async () => {
+  it("использует сохранённую среднюю SiteStats без обхода пользовательских оценок", async () => {
     const candidate = await seedItem()
     await getTestDatabase()
-      .connection.collection("SiteMetric")
+      .connection.collection("SiteStats")
       .insertOne({ key: "ratings", sum: 181, count: 21, average: 181 / 21 })
     await getTestDatabase()
       .connection.collection("UserItem")
@@ -995,18 +978,18 @@ describe("RecommendationsService MongoDB", () => {
 
   it.each<{ rating: number | null; isFavorite: boolean; sympathy: number }>([
     { rating: null, isFavorite: false, sympathy: 0 },
-    { rating: null, isFavorite: true, sympathy: 0.8 },
+    { rating: null, isFavorite: true, sympathy: 0.5 },
     ...[1, 2, 3, 4, 5, 6].flatMap((rating) => [
       { rating, isFavorite: false, sympathy: 0 },
-      { rating, isFavorite: true, sympathy: rating <= 4 ? 0 : 0.8 },
+      { rating, isFavorite: true, sympathy: rating <= 4 ? 0 : 0.5 },
     ]),
     { rating: 7, isFavorite: false, sympathy: 0.25 },
     { rating: 8, isFavorite: false, sympathy: 0.5 },
     { rating: 9, isFavorite: false, sympathy: 0.75 },
     { rating: 10, isFavorite: false, sympathy: 1 },
-    { rating: 7, isFavorite: true, sympathy: 0.85 },
-    { rating: 8, isFavorite: true, sympathy: 0.9 },
-    { rating: 9, isFavorite: true, sympathy: 0.95 },
+    { rating: 7, isFavorite: true, sympathy: 0.5 },
+    { rating: 8, isFavorite: true, sympathy: 0.5 },
+    { rating: 9, isFavorite: true, sympathy: 0.75 },
     { rating: 10, isFavorite: true, sympathy: 1 },
   ])(
     "учитывает силу реакции на источник и приоритет низкой оценки: %j",
@@ -1132,7 +1115,7 @@ describe("RecommendationsService MongoDB", () => {
     await react({ item: planned })
     await link({ candidate: related, source, multiplier: 1.5 })
     await getTestDatabase()
-      .connection.collection("ItemMetric")
+      .connection.collection("ItemStats")
       .insertMany([
         { item: related, ratingAverage: 6, ratingsCount: 20 },
         { item: planned, ratingAverage: 9, ratingsCount: 20 },

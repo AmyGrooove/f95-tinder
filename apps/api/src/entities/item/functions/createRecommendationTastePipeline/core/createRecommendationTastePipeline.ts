@@ -1,6 +1,6 @@
 import type { PipelineStage } from "mongoose"
 
-import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { TAG_GROUP_RULES } from "@entities/tag/static/TAG_GROUP_RULES"
@@ -40,7 +40,7 @@ const createRecommendationTastePipeline = (
   return [
     {
       $lookup: {
-        from: ItemTag.name,
+        from: TagItem.name,
         localField: "_id",
         foreignField: "item",
         let: { candidateType: "$type" },

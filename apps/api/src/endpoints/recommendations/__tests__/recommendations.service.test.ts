@@ -16,7 +16,7 @@ import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemField } from "@entities/item/schemas/EItemField"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import { SiteRatingsMetricRepository } from "@entities/siteMetric/services/siteRatingsMetric.repository"
+import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStats.repository"
 import { UserTasteProfileRepository } from "@entities/userTasteProfile/services/userTasteProfile.repository"
 import type { TasteTagPreference } from "@entities/userTasteProfile/schemas/tasteTagPreference.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
@@ -33,7 +33,7 @@ describe("RecommendationsService", () => {
   const textId = new Types.ObjectId()
   const readRecommendations = jest.fn<ItemRepository["readRecommendations"]>()
   const readRatingBaseline =
-    jest.fn<SiteRatingsMetricRepository["readRatingBaseline"]>()
+    jest.fn<SiteRatingsStatsRepository["readRatingBaseline"]>()
   const findProfile =
     jest.fn<
       (
@@ -68,7 +68,7 @@ describe("RecommendationsService", () => {
           useValue: { findNotDeletedById: findCollection },
         },
         {
-          provide: SiteRatingsMetricRepository,
+          provide: SiteRatingsStatsRepository,
           useValue: { readRatingBaseline },
         },
         {

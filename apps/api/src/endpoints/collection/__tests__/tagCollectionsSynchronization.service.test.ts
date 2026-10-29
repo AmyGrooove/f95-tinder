@@ -2,19 +2,19 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 import type { Connection } from "mongoose"
 
-import { ItemTagEventsService } from "@entities/itemTag/services/itemTagEvents.service"
+import { TagItemEventsService } from "@entities/tagItem/services/tagItemEvents.service"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import type { JobService } from "@infrastructure/jobs/services/job.service"
 import { TagCollectionsSynchronizationService } from "../services/tagCollectionsSynchronization.service"
 
 describe("TagCollectionsSynchronizationService", () => {
   const add = jest.fn<JobService["add"]>()
-  let events: ItemTagEventsService
+  let events: TagItemEventsService
   let service: TagCollectionsSynchronizationService
 
   beforeEach(() => {
     add.mockReset().mockResolvedValue("queued")
-    events = new ItemTagEventsService(
+    events = new TagItemEventsService(
       new MongoTransactionService({} as Connection),
     )
     service = new TagCollectionsSynchronizationService(events, {

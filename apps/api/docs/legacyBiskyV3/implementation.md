@@ -31,7 +31,7 @@
 | Статус списка         | `userAnimeReaction/schemas/listStatus.entity.ts`            | `added`, `watching`, `completed`, `dropped`; это не статус выпуска Anime                                                                                      |
 | Прогресс эпизода      | `userEpisodeProgress/schemas/userEpisodeProgress.schema.ts` | `author` + `animeEpisodeID`, `lastWatchedDuration`, `isWatched`, `reWatchedCount`, `firstWatchedAt`; уникальный индекс пары пользователь/эпизод               |
 | Коллекция             | `collection/schemas/collection.schema.ts`                   | Название, описание, `author`, `isPublic`, `type`, `slug`, теги; автор может отсутствовать                                                                     |
-| Состав коллекции      | `collectionItem/schemas/collectionItem.schema.ts`           | `collectionID` + `animeID`, `order`; уникальный индекс пары коллекция/аниме                                                                                   |
+| Состав коллекции      | `itemCollection/schemas/itemCollection.schema.ts`           | `collectionID` + `animeID`, `order`; уникальный индекс пары коллекция/аниме                                                                                   |
 | Временный пропуск     | `skippedAnime/schemas/skippedAnime.schema.ts`               | Персональная пара `author` + `animeID`; TTL по `createdAt` задаётся `TIMER.SKIPPED_ANIME_EXPIRATION`                                                          |
 | Запрет по внешнему ID | `bannedAnime/schemas/bannedAnime.schema.ts`                 | Уникальный `shikimoriID`, без владельца; отдельная административная операция                                                                                  |
 
@@ -88,7 +88,7 @@ API-функции и Query hooks находятся в `src/entities/<area>/api
 | `Anime`, названия и постер                 | Единый `Item`, `title`, `aliases`, `media`     | Сейчас тип только `movie`; единая сущность карточки уже определена текущими основами и кодом              |
 | `UserAnimeReaction`                        | `UserItem`                                     | Пять текущих статусов; независимые оценка, избранное и заметка; использовать действующий контракт         |
 | `UserEpisodeProgress`, счётчик пересмотров | `UserItem.attempts`                            | Попытки с ID, статусом, датами и прогрессом в минутах; эпизодные поля не являются готовой миграцией       |
-| `Collection` / `CollectionItem`            | Публичные ручные подборки с блоками и версиями | Уже имеют отдельный контракт; не считать приватными списками или разделами статусов                       |
+| `Collection` / `ItemCollection`            | Публичные ручные подборки с блоками и версиями | Уже имеют отдельный контракт; не считать приватными списками или разделами статусов                       |
 | Главная, поиск и карточки                  | Будущие самостоятельные операции каталога      | Переносить пользовательскую задачу, а не маршруты или число запросов legacy                               |
 | `SkippedAnime` / `BannedAnime`             | Состояния рекомендаций и ограничения каталога  | Сохранять раздельные смыслы; legacy TTL и административный запрет не задают новую персональную блокировку |
 | Эпизоды, источники видео, плеер            | За пределами исходного MVP                     | Прогресс библиотеки не требует встроенного воспроизведения                                                |

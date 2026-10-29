@@ -6,7 +6,7 @@ import {
 import { isObjectIdOrHexString, Types } from "mongoose"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { SessionRepository } from "@entities/session/services/session.repository"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
 import { isNil } from "@shared/functions/checks/isNil"
@@ -21,7 +21,7 @@ import type { SessionResponseDto } from "../dto/response/session.response"
 class SessionService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly sessionRepository: SessionRepository,
+    private readonly userSessionRepository: UserSessionRepository,
     private readonly jwtService: SecurityJwtService,
     private readonly authService: AuthService,
   ) {}
@@ -31,7 +31,7 @@ class SessionService {
     const userId = new Types.ObjectId(payload.sub)
 
     const [sessions, isUserPresent] = await Promise.all([
-      this.sessionRepository.findActiveByUser(userId),
+      this.userSessionRepository.findActiveByUser(userId),
       this.userRepository.read.checkIsExists({ _id: userId }),
     ])
 
@@ -73,7 +73,7 @@ class SessionService {
 
     requestContext.set("userId", payload.sub)
 
-    const session = await this.sessionRepository.deleteActive({
+    const session = await this.userSessionRepository.deleteActive({
       id: sessionId,
       userId,
     })
@@ -101,7 +101,7 @@ class SessionService {
 
     requestContext.set("userId", payload.sub)
 
-    await this.sessionRepository.deleteOthers({
+    await this.userSessionRepository.deleteOthers({
       userId,
       id: currentSessionId,
     })
@@ -135,7 +135,7 @@ class SessionService {
       sessionId: payload.sessionId,
       role: user.role,
     })
-    const session = await this.sessionRepository.updateRefreshToken({
+    const session = await this.userSessionRepository.updateRefreshToken({
       id: new Types.ObjectId(payload.sessionId),
       userId: user._id,
       currentRefreshToken: refreshToken,

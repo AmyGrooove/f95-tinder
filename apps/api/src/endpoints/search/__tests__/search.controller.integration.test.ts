@@ -275,7 +275,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
         releaseDate: new Date("2020-01-01"),
       }),
     ])
-    await application.connection.collection("ItemTag").insertMany(
+    await application.connection.collection("TagItem").insertMany(
       candidates.flatMap((item, index) =>
         (index === 5 ? tags.slice(0, 1) : tags).map((tag) => ({
           item: item._id,
@@ -285,7 +285,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       ),
     )
     await application.connection
-      .collection("ItemMetric")
+      .collection("ItemStats")
       .insertMany(
         candidates
           .slice(0, 6)
@@ -396,7 +396,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       const unknown = await seedItem()
       const low = await seedItem({ releaseDate: new Date("2000-01-01") })
       const high = await seedItem({ releaseDate: new Date("2020-01-01") })
-      await application.connection.collection("ItemMetric").insertMany([
+      await application.connection.collection("ItemStats").insertMany([
         { item: low._id, ratingAverage: 6 },
         { item: high._id, ratingAverage: 9 },
       ])
@@ -517,7 +517,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     })
     const tagId = new Types.ObjectId()
     await application.connection
-      .collection("ItemTag")
+      .collection("TagItem")
       .insertOne({ item: item._id, tag: tagId })
     await synchronize()
     const body = {
@@ -533,7 +533,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       .collection("Tag")
       .insertOne({ _id: tagId, key: "searchUpdatedTag" })
     await application.connection
-      .collection("ItemMetric")
+      .collection("ItemStats")
       .insertOne({ item: item._id, ratingAverage: 8 })
     await synchronize()
     const matched = await query(body)
@@ -542,7 +542,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       matched.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
     ).toEqual([String(item._id)])
     await application.connection
-      .collection("ItemTag")
+      .collection("TagItem")
       .deleteMany({ item: item._id })
     await synchronize()
     expect((await query(body)).json<SearchResponseDto>().items.hits).toEqual([])

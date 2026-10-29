@@ -1,4 +1,4 @@
-import type { ItemRelationRole } from "@entities/itemRelationRole/schemas/itemRelationRole.schema"
+import type { Relation } from "@entities/relation/schemas/relation.schema"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import type { Tag } from "@entities/tag/schemas/tag.schema"
 
@@ -21,7 +21,7 @@ interface IItemDetails extends Pick<
   tags: Pick<Tag, "_id" | "key" | "group" | "name">[]
   relations: {
     item: Pick<Item, "_id" | "type" | "title" | "media">
-    role: Pick<ItemRelationRole, "_id" | "key" | "name">
+    role: Pick<Relation, "_id" | "key" | "name">
     roleNameOverride: LanguageText
   }[]
 }

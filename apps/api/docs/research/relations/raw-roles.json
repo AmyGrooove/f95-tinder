@@ -1,0 +1,1661 @@
+{
+  "formatVersion": 1,
+  "status": "researchSnapshotNotImportData",
+  "accessedOn": "2026-10-26",
+  "language": "ru",
+  "scope": "Роли связей самостоятельных произведений; документация и ограниченные примеры, без массового сбора и запросов в БД",
+  "coverageSummary": {
+    "sourcesInspected": 7,
+    "sourceDictionariesWithValues": 5,
+    "structuralSources": 1,
+    "unresolvedSources": 1,
+    "rawValues": 60,
+    "isExhaustiveAcrossSources": false,
+    "sourceDictionariesWithValuesMeaning": "AniList, IMDb, IGDB fields, Wikidata properties, historical VNDB; не пять живых API"
+  },
+  "readingGuide": {
+    "sourceRestrictions": "Каждая запись наследует ограничения access/useRestrictions/limitations своего sourceId",
+    "nullMeaning": "Не установлено или не предоставлено; не доказательство отсутствия",
+    "reverseEvidence": "semanticInference означает аналитическое предположение, не явную обратную роль поставщика",
+    "direction": "raw сохраняет перспективу поставщика; canonical явно указывает роли обеих сторон"
+  },
+  "sources": [
+    {
+      "id": "anilist",
+      "name": "AniList",
+      "coverage": ["animeSeries", "animeMovie", "manga outside Item"],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://docs.anilist.co/reference/enum/mediarelation",
+        "https://docs.anilist.co/guide/graphql/queries/media",
+        "https://anilist.gitbook.io/anilist-apiv2-docs/docs/reference/object/mediaedge",
+        "https://docs.anilist.co/guide/terms-of-use"
+      ],
+      "access": "Официальный enum прочитан в поисковом индексе; прямой fetch enum и MediaEdge получил 403. Прочитаны официальные примеры и прежняя официальная справка. Каталожные API-запросы не выполнялись",
+      "useRestrictions": "API запрещён для конкурирующих сервисов списков/трекеров и массового сбора; исследование терминов не разрешает импорт данных",
+      "limitations": [
+        "14 значений в текущей индексированной справке; это документированный enum, не проверка живой схемы",
+        "SOURCE/COMPILATION/CONTAINS отмечены version 2, SAME_UNIVERSE — version 3",
+        "Манга и романы не представлены среди семи Item.type"
+      ]
+    },
+    {
+      "id": "imdb",
+      "name": "IMDb",
+      "coverage": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "https://help.imdb.com/article/imdb/general-information/can-i-use-imdb-data-in-my-software/G5JTRESSHJBBHTGX",
+        "https://www.imdb.com/interfaces/?opt_id=undefined"
+      ],
+      "access": "Прочитан официальный contribution guide и условия; страницы каталога не собирались",
+      "useRestrictions": "Автоматизированный сбор сайта запрещён; ограниченные non-commercial datasets не дают произвольного права на построение каталога. Доступность title connections в лицензируемом продукте отдельно не подтверждена",
+      "limitations": [
+        "16 названий из guide; не доказательство полного словаря любого IMDb API",
+        "Связи на уровне сериала/эпизода нельзя без проверки переносить на Item сезона"
+      ]
+    },
+    {
+      "id": "igdb",
+      "name": "IGDB",
+      "coverage": ["game"],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://api-docs.igdb.com/#game",
+        "https://api-docs.igdb.com/#authentication",
+        "https://api-docs.igdb.com/#account-creation"
+      ],
+      "access": "Прочитана официальная документация; API требует Client-ID и OAuth token, запросов с секретами не было",
+      "useRestrictions": "Бесплатное некоммерческое использование по Twitch Developer Service Agreement; для коммерческого применения предусмотрено партнёрство",
+      "limitations": [
+        "Выбраны 14 релевантных полей Game, не полный API",
+        "Исторические category ID не являются ID ролей или проверенными ID новой таблицы game_type",
+        "parent_game контекстный: не считать универсальной обратной ролью",
+        "follows — deprecated integer, не основание для sequel"
+      ]
+    },
+    {
+      "id": "tmdb",
+      "name": "TMDB",
+      "coverage": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://developer.themoviedb.org/reference/collection-details",
+        "https://developer.themoviedb.org/reference/tv-season-details",
+        "https://developer.themoviedb.org/reference/movie-details",
+        "https://developer.themoviedb.org/reference/tv-series-details",
+        "https://developer.themoviedb.org/docs/faq"
+      ],
+      "access": "Прочитаны официальные collection/season reference и FAQ; movie/TV details загрузились без полезного тела схемы. API с ключом не вызывался",
+      "useRestrictions": "Некоммерческий API требует атрибуции; коммерческое использование требует отдельного соглашения",
+      "limitations": [
+        "Исследованы два структурных механизма, не словарь смысловых ролей",
+        "Наличие Collection.parts или номера сезона не доказывает прямое сюжетное продолжение"
+      ]
+    },
+    {
+      "id": "wikidata",
+      "name": "Wikidata",
+      "coverage": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie",
+        "game"
+      ],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://www.wikidata.org/wiki/Property:P155",
+        "https://www.wikidata.org/wiki/Property:P156",
+        "https://www.wikidata.org/wiki/Property:P144",
+        "https://www.wikidata.org/wiki/Property:P4969",
+        "https://www.wikidata.org/wiki/Wikidata:Licensing"
+      ],
+      "access": "Прочитаны страницы четырёх свойств, примеры и обратные свойства",
+      "useRestrictions": "Структурированные данные Wikidata распространяются как CC0; тексты других пространств и внешние материалы могут иметь иные лицензии",
+      "limitations": [
+        "Четыре свойства — выборка, не весь словарь",
+        "P144 существенно шире адаптации; алиасы свойства не являются отдельными точными видами связи",
+        "Конкретные игровые записи не проверялись"
+      ]
+    },
+    {
+      "id": "vndb",
+      "name": "VNDB",
+      "coverage": ["game: visual novels"],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://api.vndb.org/kana",
+        "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+        "https://vndb.org/d2",
+        "https://vndb.org/d17",
+        "https://api.vndb.org/kana/schema"
+      ],
+      "access": "Современная официальная Kana API documentation прочитана. d2/d17 закрыты robots; schema открылся без извлекаемого текста, shell-доступ не разрешил DNS. 10 терминов и обратные коды подтверждены историческим исходником автора 2016 года",
+      "useRestrictions": "Kana API бесплатен для некоммерческого использования, данные под отдельной Data License; актуальный текст лицензии не получен, право повторного использования не установлено",
+      "limitations": [
+        "Исторический словарь не выдан за текущую schema",
+        "Современные docs подтверждают relations.relation и relation_official, но не перечисляют значения",
+        "Из исторической семантики нельзя без проверки вывести современную нормализацию"
+      ]
+    },
+    {
+      "id": "shikimori",
+      "name": "Shikimori",
+      "coverage": ["animeSeries", "animeMovie"],
+      "accessedOn": "2026-10-26",
+      "urls": [
+        "https://shikimori.one/api/doc/1.0/animes/related",
+        "https://shikimori.one/api/doc/1.0/animes/related.html",
+        "https://github.com/shikimori/shikimori/blob/master/db/schema.rb"
+      ],
+      "access": "API reference недоступен инструменту. Поисковый индекс официального исходника подтверждает related_animes/related_mangas и строку relation_kind",
+      "useRestrictions": "Условия API и лицензия данных в этом исследовании не подтверждены; лицензия исходного кода не означает лицензию каталожных данных",
+      "limitations": [
+        "Подтверждена структура хранения, но ни один термин роли не извлечён; значения из сторонних wrapper не использованы"
+      ]
+    }
+  ],
+  "records": [
+    {
+      "id": "anilist:ADAPTATION",
+      "sourceId": "anilist",
+      "originalName": "ADAPTATION",
+      "sourceValueId": "ADAPTATION",
+      "semanticsRu": "Иная форма произведения",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "SOURCE",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": "v1 не использовать для определения source/adaptation без дополнительной проверки"
+    },
+    {
+      "id": "anilist:PREQUEL",
+      "sourceId": "anilist",
+      "originalName": "PREQUEL",
+      "sourceValueId": "PREQUEL",
+      "semanticsRu": "Более ранний выпуск",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "SEQUEL",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": "В справке указана относительная дата выхода, не внутреннее время сюжета"
+    },
+    {
+      "id": "anilist:SEQUEL",
+      "sourceId": "anilist",
+      "originalName": "SEQUEL",
+      "sourceValueId": "SEQUEL",
+      "semanticsRu": "Более поздний выпуск",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "PREQUEL",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": "В справке указана относительная дата выхода, не внутреннее время сюжета"
+    },
+    {
+      "id": "anilist:PARENT",
+      "sourceId": "anilist",
+      "originalName": "PARENT",
+      "sourceValueId": "PARENT",
+      "semanticsRu": "Основа побочной истории",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "SIDE_STORY",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:SIDE_STORY",
+      "sourceId": "anilist",
+      "originalName": "SIDE_STORY",
+      "sourceValueId": "SIDE_STORY",
+      "semanticsRu": "Побочная история",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "PARENT",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:CHARACTER",
+      "sourceId": "anilist",
+      "originalName": "CHARACTER",
+      "sourceValueId": "CHARACTER",
+      "semanticsRu": "Общие персонажи",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "CHARACTER",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:SUMMARY",
+      "sourceId": "anilist",
+      "originalName": "SUMMARY",
+      "sourceValueId": "SUMMARY",
+      "semanticsRu": "Краткий пересказ",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:ALTERNATIVE",
+      "sourceId": "anilist",
+      "originalName": "ALTERNATIVE",
+      "sourceValueId": "ALTERNATIVE",
+      "semanticsRu": "Альтернативная версия",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "ALTERNATIVE",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:SPIN_OFF",
+      "sourceId": "anilist",
+      "originalName": "SPIN_OFF",
+      "sourceValueId": "SPIN_OFF",
+      "semanticsRu": "Ответвление с иным фокусом",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:OTHER",
+      "sourceId": "anilist",
+      "originalName": "OTHER",
+      "sourceValueId": "OTHER",
+      "semanticsRu": "Неспецифицированная связь",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 1,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:SOURCE",
+      "sourceId": "anilist",
+      "originalName": "SOURCE",
+      "sourceValueId": "SOURCE",
+      "semanticsRu": "Материал адаптации",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "ADAPTATION",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 2,
+      "mappingCaution": null
+    },
+    {
+      "id": "anilist:COMPILATION",
+      "sourceId": "anilist",
+      "originalName": "COMPILATION",
+      "sourceValueId": "COMPILATION",
+      "semanticsRu": "Компиляция; описание отсутствует",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 2,
+      "mappingCaution": "Не выводить взаимность COMPILATION/CONTAINS только из названий"
+    },
+    {
+      "id": "anilist:CONTAINS",
+      "sourceId": "anilist",
+      "originalName": "CONTAINS",
+      "sourceValueId": "CONTAINS",
+      "semanticsRu": "Описание отсутствует",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 2,
+      "mappingCaution": "Не выводить взаимность COMPILATION/CONTAINS только из названий"
+    },
+    {
+      "id": "anilist:SAME_UNIVERSE",
+      "sourceId": "anilist",
+      "originalName": "SAME_UNIVERSE",
+      "sourceValueId": "SAME_UNIVERSE",
+      "semanticsRu": "Общая вселенная",
+      "direction": "Роль связанного node относительно запрошенного Media; соглашение интерпретации edge, не проверено на живом ответе",
+      "reverse": {
+        "term": "SAME_UNIVERSE",
+        "evidence": "semanticInferenceNotObservedReciprocalRecord"
+      },
+      "provenance": {
+        "url": "https://docs.anilist.co/reference/enum/mediarelation",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "indexedOfficialEnum"
+      },
+      "applicability": ["animeSeries", "animeMovie", "manga outside Item"],
+      "restrictionsInheritedFromSource": "anilist",
+      "version": 3,
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:edited into",
+      "sourceId": "imdb",
+      "originalName": "edited into",
+      "sourceValueId": null,
+      "semanticsRu": "Материал использован в другом монтаже",
+      "direction": "Субъект страницы edited into объект связи",
+      "reverse": {
+        "term": "edited from",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:edited from",
+      "sourceId": "imdb",
+      "originalName": "edited from",
+      "sourceValueId": null,
+      "semanticsRu": "Использован чужой монтажный материал",
+      "direction": "Субъект страницы edited from объект связи",
+      "reverse": {
+        "term": "edited into",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:featured in",
+      "sourceId": "imdb",
+      "originalName": "featured in",
+      "sourceValueId": null,
+      "semanticsRu": "Отрывок показан в другом произведении",
+      "direction": "Субъект страницы featured in объект связи",
+      "reverse": {
+        "term": "features",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:features",
+      "sourceId": "imdb",
+      "originalName": "features",
+      "sourceValueId": null,
+      "semanticsRu": "Показ чужих отрывков",
+      "direction": "Субъект страницы features объект связи",
+      "reverse": {
+        "term": "featured in",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:remade as",
+      "sourceId": "imdb",
+      "originalName": "remade as",
+      "sourceValueId": null,
+      "semanticsRu": "Основа ремейка",
+      "direction": "Субъект страницы remade as объект связи",
+      "reverse": {
+        "term": "remake of",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:remake of",
+      "sourceId": "imdb",
+      "originalName": "remake of",
+      "sourceValueId": null,
+      "semanticsRu": "Ремейк",
+      "direction": "Субъект страницы remake of объект связи",
+      "reverse": {
+        "term": "remade as",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:spin off",
+      "sourceId": "imdb",
+      "originalName": "spin off",
+      "sourceValueId": null,
+      "semanticsRu": "Основа ответвления",
+      "direction": "Субъект страницы spin off объект связи",
+      "reverse": {
+        "term": "spin off from",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:spin off from",
+      "sourceId": "imdb",
+      "originalName": "spin off from",
+      "sourceValueId": null,
+      "semanticsRu": "Ответвление",
+      "direction": "Субъект страницы spin off from объект связи",
+      "reverse": {
+        "term": "spin off",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:spoofed in",
+      "sourceId": "imdb",
+      "originalName": "spoofed in",
+      "sourceValueId": null,
+      "semanticsRu": "Объект пародирования",
+      "direction": "Субъект страницы spoofed in объект связи",
+      "reverse": {
+        "term": "spoofs",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:spoofs",
+      "sourceId": "imdb",
+      "originalName": "spoofs",
+      "sourceValueId": null,
+      "semanticsRu": "Пародирование",
+      "direction": "Субъект страницы spoofs объект связи",
+      "reverse": {
+        "term": "spoofed in",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:referenced in",
+      "sourceId": "imdb",
+      "originalName": "referenced in",
+      "sourceValueId": null,
+      "semanticsRu": "Объект отсылки",
+      "direction": "Субъект страницы referenced in объект связи",
+      "reverse": {
+        "term": "references",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:references",
+      "sourceId": "imdb",
+      "originalName": "references",
+      "sourceValueId": null,
+      "semanticsRu": "Отсылка",
+      "direction": "Субъект страницы references объект связи",
+      "reverse": {
+        "term": "referenced in",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "pairedSimpleConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "imdb:followed by",
+      "sourceId": "imdb",
+      "originalName": "followed by",
+      "sourceValueId": null,
+      "semanticsRu": "Наличие следующего выпуска",
+      "direction": "Субъект страницы followed by объект связи",
+      "reverse": {
+        "term": "follows",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "groupBasedComplexConnection",
+      "mappingCaution": "Порядок выхода; не гарантирует сюжетный сиквел или соседство нормализованных сезонов"
+    },
+    {
+      "id": "imdb:follows",
+      "sourceId": "imdb",
+      "originalName": "follows",
+      "sourceValueId": null,
+      "semanticsRu": "Следование предыдущему выпуску",
+      "direction": "Субъект страницы follows объект связи",
+      "reverse": {
+        "term": "followed by",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "groupBasedComplexConnection",
+      "mappingCaution": "Порядок выхода; не гарантирует сюжетный сиквел или соседство нормализованных сезонов"
+    },
+    {
+      "id": "imdb:version of",
+      "sourceId": "imdb",
+      "originalName": "version of",
+      "sourceValueId": null,
+      "semanticsRu": "Версия общего литературного источника",
+      "direction": "Субъект страницы version of объект связи",
+      "reverse": {
+        "term": "version of",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "groupBasedComplexConnection",
+      "mappingCaution": "Не равно прямой адаптации одного экранного произведения в другое"
+    },
+    {
+      "id": "imdb:alternate language version of",
+      "sourceId": "imdb",
+      "originalName": "alternate language version of",
+      "sourceValueId": null,
+      "semanticsRu": "Параллельно снятая языковая версия",
+      "direction": "Субъект страницы alternate language version of объект связи",
+      "reverse": {
+        "term": "alternate language version of",
+        "evidence": "explicitGuidePair"
+      },
+      "provenance": {
+        "url": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "imdb",
+      "relationStorage": "groupBasedComplexConnection",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:dlcs",
+      "sourceId": "igdb",
+      "originalName": "dlcs",
+      "sourceValueId": "dlcs",
+      "semanticsRu": "Дополнения",
+      "direction": "Игра → DLC",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 1,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:expansions",
+      "sourceId": "igdb",
+      "originalName": "expansions",
+      "sourceValueId": "expansions",
+      "semanticsRu": "Расширения",
+      "direction": "Игра → расширение",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 2,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:standalone_expansions",
+      "sourceId": "igdb",
+      "originalName": "standalone_expansions",
+      "sourceValueId": "standalone_expansions",
+      "semanticsRu": "Самостоятельные расширения",
+      "direction": "Игра → расширение",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 4,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:expanded_games",
+      "sourceId": "igdb",
+      "originalName": "expanded_games",
+      "sourceValueId": "expanded_games",
+      "semanticsRu": "Расширенные игры",
+      "direction": "Игра → расширенная игра",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 10,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:ports",
+      "sourceId": "igdb",
+      "originalName": "ports",
+      "sourceValueId": "ports",
+      "semanticsRu": "Порты",
+      "direction": "Игра → порт",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 11,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:remakes",
+      "sourceId": "igdb",
+      "originalName": "remakes",
+      "sourceValueId": "remakes",
+      "semanticsRu": "Ремейки",
+      "direction": "Игра → ремейк",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 8,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:remasters",
+      "sourceId": "igdb",
+      "originalName": "remasters",
+      "sourceValueId": "remasters",
+      "semanticsRu": "Ремастеры",
+      "direction": "Игра → ремастер",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 9,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:forks",
+      "sourceId": "igdb",
+      "originalName": "forks",
+      "sourceValueId": "forks",
+      "semanticsRu": "Ответвлённые игры",
+      "direction": "Игра → fork",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 12,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:bundles",
+      "sourceId": "igdb",
+      "originalName": "bundles",
+      "sourceValueId": "bundles",
+      "semanticsRu": "Комплекты",
+      "direction": "Игра → содержащий комплект",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": 3,
+      "legacyIdWarning": "ID deprecated category; не ID отношения и не подтверждение game_type ID",
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:parent_game",
+      "sourceId": "igdb",
+      "originalName": "parent_game",
+      "sourceValueId": "parent_game",
+      "semanticsRu": "Контекстный родитель",
+      "direction": "Дочерняя запись → основная игра/комплект",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": null,
+      "legacyIdWarning": null,
+      "mappingCaution": "Обратность устанавливается только после проверки типа дочерней записи"
+    },
+    {
+      "id": "igdb:version_parent",
+      "sourceId": "igdb",
+      "originalName": "version_parent",
+      "sourceValueId": "version_parent",
+      "semanticsRu": "Основная игра издания",
+      "direction": "Издание → основная игра",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": null,
+      "legacyIdWarning": null,
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:similar_games",
+      "sourceId": "igdb",
+      "originalName": "similar_games",
+      "sourceValueId": "similar_games",
+      "semanticsRu": "Похожие игры",
+      "direction": "Игра → похожие игры",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": null,
+      "legacyIdWarning": null,
+      "mappingCaution": "Не считать симметричной или сюжетной связью"
+    },
+    {
+      "id": "igdb:collections",
+      "sourceId": "igdb",
+      "originalName": "collections",
+      "sourceValueId": "collections",
+      "semanticsRu": "Игровые серии",
+      "direction": "Игра → collections",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": null,
+      "legacyIdWarning": null,
+      "mappingCaution": null
+    },
+    {
+      "id": "igdb:franchises",
+      "sourceId": "igdb",
+      "originalName": "franchises",
+      "sourceValueId": "franchises",
+      "semanticsRu": "Франшизы",
+      "direction": "Игра → franchises",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://api-docs.igdb.com/#game",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialDocumentation"
+      },
+      "applicability": ["game"],
+      "restrictionsInheritedFromSource": "igdb",
+      "legacyTargetCategoryId": null,
+      "legacyIdWarning": null,
+      "mappingCaution": null
+    },
+    {
+      "id": "wikidata:P155",
+      "sourceId": "wikidata",
+      "originalName": "follows",
+      "sourceValueId": "P155",
+      "semanticsRu": "Непосредственный предшественник",
+      "direction": "Субъект → предыдущий элемент",
+      "reverse": {
+        "term": "P156",
+        "evidence": "explicitInverseProperty"
+      },
+      "provenance": {
+        "url": "https://www.wikidata.org/wiki/Property:P155",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialPropertyPage"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie",
+        "game"
+      ],
+      "restrictionsInheritedFromSource": "wikidata",
+      "mappingCaution": "Не доказательство сюжетного продолжения"
+    },
+    {
+      "id": "wikidata:P156",
+      "sourceId": "wikidata",
+      "originalName": "followed by",
+      "sourceValueId": "P156",
+      "semanticsRu": "Непосредственный следующий элемент",
+      "direction": "Субъект → следующий элемент",
+      "reverse": {
+        "term": "P155",
+        "evidence": "explicitInverseProperty"
+      },
+      "provenance": {
+        "url": "https://www.wikidata.org/wiki/Property:P156",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialPropertyPage"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie",
+        "game"
+      ],
+      "restrictionsInheritedFromSource": "wikidata",
+      "mappingCaution": "Не доказательство сюжетного продолжения"
+    },
+    {
+      "id": "wikidata:P144",
+      "sourceId": "wikidata",
+      "originalName": "based on",
+      "sourceValueId": "P144",
+      "semanticsRu": "Происхождение от основы",
+      "direction": "Производное → основа",
+      "reverse": {
+        "term": "P4969",
+        "evidence": "explicitInverseProperty"
+      },
+      "provenance": {
+        "url": "https://www.wikidata.org/wiki/Property:P144",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialPropertyPage"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie",
+        "game"
+      ],
+      "restrictionsInheritedFromSource": "wikidata",
+      "mappingCaution": "Шире адаптации; нужна классификация фактического смысла"
+    },
+    {
+      "id": "wikidata:P4969",
+      "sourceId": "wikidata",
+      "originalName": "derivative work",
+      "sourceValueId": "P4969",
+      "semanticsRu": "Производное произведение",
+      "direction": "Основа → производное",
+      "reverse": {
+        "term": "P144",
+        "evidence": "explicitInverseProperty"
+      },
+      "provenance": {
+        "url": "https://www.wikidata.org/wiki/Property:P4969",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialPropertyPage"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie",
+        "game"
+      ],
+      "restrictionsInheritedFromSource": "wikidata",
+      "mappingCaution": "Шире адаптации; нужна классификация фактического смысла"
+    },
+    {
+      "id": "tmdb:parts",
+      "sourceId": "tmdb",
+      "originalName": "parts",
+      "sourceValueId": "parts",
+      "semanticsRu": "Состав коллекции",
+      "direction": "Коллекция → произведения",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://developer.themoviedb.org/reference/collection-details",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialEndpointSchema"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "tmdb",
+      "kind": "structuralMetadataNotSemanticRole",
+      "mappingCaution": "Не создавать Relation автоматически"
+    },
+    {
+      "id": "tmdb:season_number",
+      "sourceId": "tmdb",
+      "originalName": "season_number",
+      "sourceValueId": "season_number",
+      "semanticsRu": "Номер сезона",
+      "direction": "Сезон в контексте series_id",
+      "reverse": {
+        "term": null,
+        "evidence": "notEstablished"
+      },
+      "provenance": {
+        "url": "https://developer.themoviedb.org/reference/tv-season-details",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "officialEndpointSchema"
+      },
+      "applicability": [
+        "movie",
+        "series",
+        "animatedMovie",
+        "animatedSeries",
+        "animeSeries",
+        "animeMovie"
+      ],
+      "restrictionsInheritedFromSource": "tmdb",
+      "kind": "structuralMetadataNotSemanticRole",
+      "mappingCaution": "Не создавать Relation автоматически"
+    },
+    {
+      "id": "vndb:Sequel",
+      "sourceId": "vndb",
+      "originalName": "Sequel",
+      "sourceValueId": "seq",
+      "semanticsRu": "Продолжение",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Prequel",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "preq"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Prequel",
+      "sourceId": "vndb",
+      "originalName": "Prequel",
+      "sourceValueId": "preq",
+      "semanticsRu": "Предыстория; также обратный код продолжения",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Sequel",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "seq"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": "Автоматическая обратность seq/preq не доказывает, что предшествующая игра является созданным позднее сюжетным приквелом"
+    },
+    {
+      "id": "vndb:Same setting",
+      "sourceId": "vndb",
+      "originalName": "Same setting",
+      "sourceValueId": "set",
+      "semanticsRu": "Общий мир, другие персонажи",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Same setting",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "set"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": "Историческое определение уже общей вселенной: общий timeline, разные персонажи"
+    },
+    {
+      "id": "vndb:Alternative version",
+      "sourceId": "vndb",
+      "originalName": "Alternative version",
+      "sourceValueId": "alt",
+      "semanticsRu": "Иное изложение истории",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Alternative version",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "alt"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Shares characters",
+      "sourceId": "vndb",
+      "originalName": "Shares characters",
+      "sourceValueId": "char",
+      "semanticsRu": "Общие персонажи",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Shares characters",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "char"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Side story",
+      "sourceId": "vndb",
+      "originalName": "Side story",
+      "sourceValueId": "side",
+      "semanticsRu": "Побочная история",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Parent story",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "par"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Parent story",
+      "sourceId": "vndb",
+      "originalName": "Parent story",
+      "sourceValueId": "par",
+      "semanticsRu": "Основная история",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Side story",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "side"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Same series",
+      "sourceId": "vndb",
+      "originalName": "Same series",
+      "sourceValueId": "ser",
+      "semanticsRu": "Одна серия",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Same series",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "ser"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Fandisc",
+      "sourceId": "vndb",
+      "originalName": "Fandisc",
+      "sourceValueId": "fan",
+      "semanticsRu": "Фандиск",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Original game",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "orig"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    },
+    {
+      "id": "vndb:Original game",
+      "sourceId": "vndb",
+      "originalName": "Original game",
+      "sourceValueId": "orig",
+      "semanticsRu": "Основа фандиска",
+      "direction": "Исторический relation code; роль цели относительно исходного VN требует актуальной проверки",
+      "reverse": {
+        "term": "Fandisc",
+        "evidence": "explicitHistoricalReverseCode",
+        "sourceValueId": "fan"
+      },
+      "provenance": {
+        "url": "https://g.blicky.net/vndb.git/commit/data?h=2.22&id=110db705ecdfb5c89500ff8f24652bcd1e25fc45",
+        "accessedOn": "2026-10-26",
+        "evidenceKind": "historicalFirstPartySource"
+      },
+      "applicability": ["game: visual novels"],
+      "restrictionsInheritedFromSource": "vndb",
+      "validity": "historical2016NotCurrentValidated",
+      "semanticProvenanceUrl": "https://g.blicky.net/vndb.git/tree/data/docs/2?h=2.3&id=ce1e92a8431544a8cedc82c909ae389f61224bfb",
+      "mappingCaution": null
+    }
+  ],
+  "observedExamples": [
+    {
+      "sourceId": "imdb",
+      "provenanceUrl": "https://help.imdb.com/article/contribution/titles/movie-connections/GNUNL9W2FTZDGF4Y",
+      "subject": "Hot Fuzz (2007)",
+      "predicate": "features",
+      "object": "Point Break (1991)",
+      "evidenceKind": "exampleInOfficialGuide",
+      "externalItemIds": null
+    },
+    {
+      "sourceId": "wikidata",
+      "provenanceUrl": "https://www.wikidata.org/wiki/Property:P155",
+      "subject": "Star Wars: Episode V – The Empire Strikes Back",
+      "predicate": "P155",
+      "object": "Star Wars: Episode IV – A New Hope",
+      "evidenceKind": "exampleInPropertyPage",
+      "externalItemIds": null
+    }
+  ],
+  "unresolvedAccess": [
+    {
+      "sourceId": "shikimori",
+      "result": "Ни одного подтверждённого термина, не включён в records"
+    },
+    {
+      "sourceId": "vndb",
+      "result": "Современные значения schema не извлечены; исторические IDs явно помечены"
+    },
+    {
+      "sourceId": "anilist",
+      "result": "Данные индексированной официальной справки, не живая API-проверка"
+    }
+  ]
+}

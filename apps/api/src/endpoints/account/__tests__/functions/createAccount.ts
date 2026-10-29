@@ -1,7 +1,7 @@
 import { expect } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { getTestApplication } from "@test/setup/setupIntegration"
@@ -45,7 +45,7 @@ const createAccount = async (
   }
 
   const session = await connection
-    .collection<Session>("Session")
+    .collection<UserSession>("UserSession")
     .findOne({ user: user._id })
 
   if (session === null) {

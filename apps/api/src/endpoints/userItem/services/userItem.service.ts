@@ -1,4 +1,4 @@
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import {
@@ -39,7 +39,7 @@ import type { IValidateCompletionProps } from "../types/IValidateCompletionProps
 import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
 import type { QueryUserItemsBodyDto } from "../dto/body/queryUserItems.body"
 import type { UserItemSummaryResponseDto } from "../dto/response/userItemSummary.response"
-import { UserItemMetricsService } from "./userItemMetrics.service"
+import { UserItemStatsService } from "./userItemStats.service"
 
 @Injectable()
 class UserItemService {
@@ -49,9 +49,9 @@ class UserItemService {
     private readonly itemRepository: ItemRepository,
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
-    private readonly itemTagRepository: ItemTagRepository,
+    private readonly tagItemRepository: TagItemRepository,
     private readonly tasteProfileRecalculationService: UserTasteProfileRecalculationService,
-    private readonly userItemMetricsService: UserItemMetricsService,
+    private readonly userItemStatsService: UserItemStatsService,
   ) {}
 
   async query(
@@ -156,10 +156,10 @@ class UserItemService {
           },
           { session },
         )
-        await this.userItemMetricsService.update({
+        await this.userItemStatsService.update({
           itemId,
           previous: null,
-          next: this.userItemMetricsService.getState(created),
+          next: this.userItemStatsService.getState(created),
           session,
         })
 
@@ -230,9 +230,9 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      await this.userItemMetricsService.update({
+      await this.userItemStatsService.update({
         itemId: removed.item,
-        previous: this.userItemMetricsService.getState(removed),
+        previous: this.userItemStatsService.getState(removed),
         next: null,
         session,
       })
@@ -364,7 +364,7 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      const previous = this.userItemMetricsService.getState(userItem)
+      const previous = this.userItemStatsService.getState(userItem)
 
       await props.mutate(userItem, session)
       this.validateUserItem(userItem)
@@ -408,10 +408,10 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      await this.userItemMetricsService.update({
+      await this.userItemStatsService.update({
         itemId: updated.item,
         previous,
-        next: this.userItemMetricsService.getState(updated),
+        next: this.userItemStatsService.getState(updated),
         session,
       })
 
@@ -477,7 +477,7 @@ class UserItemService {
     }
 
     const isCompletionUnavailable =
-      await this.itemTagRepository.checkHasTagKeys(
+      await this.tagItemRepository.checkHasTagKeys(
         {
           itemId,
           group: isGame ? ETagGroup.HAS_DEFINED_END : ETagGroup.RELEASE_STATUS,

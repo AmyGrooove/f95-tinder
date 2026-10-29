@@ -1,7 +1,7 @@
 import type { PipelineStage, Types } from "mongoose"
 
-import { ItemRelationRole } from "@entities/itemRelationRole/schemas/itemRelationRole.schema"
 import { Relation } from "@entities/relation/schemas/relation.schema"
+import { ItemRelation } from "@entities/itemRelation/schemas/itemRelation.schema"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 
@@ -16,7 +16,7 @@ const createRecommendationRelationPipeline = (
 
       return {
         $lookup: {
-          from: Relation.name,
+          from: ItemRelation.name,
           localField: "_id",
           foreignField: `${candidateSide}.item`,
           let: { candidateId: "$_id" },
@@ -104,7 +104,7 @@ const createRecommendationRelationPipeline = (
             { $unwind: "$reaction" },
             {
               $lookup: {
-                from: ItemRelationRole.name,
+                from: Relation.name,
                 localField: "candidateRole",
                 foreignField: "_id",
                 pipeline: [{ $project: { _id: 0, bonusMultiplier: 1 } }],

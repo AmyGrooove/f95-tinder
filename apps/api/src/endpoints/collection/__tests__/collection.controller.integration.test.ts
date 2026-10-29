@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
 import type { Collection } from "@entities/collection/schemas/collection.schema"
-import type { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.schema"
+import type { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { getTestApplication } from "@test/setup/setupIntegration"
@@ -41,7 +41,7 @@ describe("CollectionController HTTP", () => {
         .collection<Collection>("Collection")
         .findOne({ _id: new Types.ObjectId(result.id) }),
     ).toMatchObject({ author: user._id, version: 0, deletedAt: null })
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       0,
     )
     expect(await connection.collection("UserItem").countDocuments()).toBe(0)
@@ -66,7 +66,7 @@ describe("CollectionController HTTP", () => {
     expect(collection.authorId).toBe(owner.user._id.toHexString())
     expect(collection).not.toHaveProperty("items")
     const memberships = await connection
-      .collection<CollectionItem>("CollectionItem")
+      .collection<ItemCollection>("ItemCollection")
       .find({ collectionId: new Types.ObjectId(collection.id) })
       .sort({ position: -1 })
       .toArray()
@@ -114,7 +114,7 @@ describe("CollectionController HTTP", () => {
     })
     expect(response.statusCode).toBe(400)
     expect(await connection.collection("Collection").countDocuments()).toBe(0)
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       0,
     )
   })
@@ -156,7 +156,7 @@ describe("CollectionController HTTP", () => {
       expect(response.statusCode).toBe(kind === "missingItem" ? 404 : 400)
       expect(await connection.collection("Collection").countDocuments()).toBe(1)
       expect(
-        await connection.collection("CollectionItem").countDocuments(),
+        await connection.collection("ItemCollection").countDocuments(),
       ).toBe(2)
     },
   )
@@ -205,7 +205,7 @@ describe("CollectionController HTTP", () => {
         .findOne({ _id: new Types.ObjectId(collection.id) }),
     ).toMatchObject({ version: 1, title: { ru: null, en: "Updated" } })
     const memberships = await connection
-      .collection<CollectionItem>("CollectionItem")
+      .collection<ItemCollection>("ItemCollection")
       .find({ collectionId: new Types.ObjectId(collection.id) })
       .toArray()
     expect(memberships).toHaveLength(1)
@@ -239,7 +239,7 @@ describe("CollectionController HTTP", () => {
     ).toEqual([newId, textId, secondGroupId])
     expect(
       await connection
-        .collection("CollectionItem")
+        .collection("ItemCollection")
         .findOne({ item: first._id }),
     ).toBeNull()
     expect(
@@ -298,7 +298,7 @@ describe("CollectionController HTTP", () => {
         .collection<Collection>("Collection")
         .findOne({ _id: new Types.ObjectId(collection.id) }),
     ).toMatchObject({ version: 0, title: { ru: "Подборка" } })
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       2,
     )
   })
@@ -428,7 +428,7 @@ describe("CollectionController HTTP", () => {
     })
     expect(response.statusCode).toBe(200)
     expect(
-      await connection.collection("CollectionItem").findOne({
+      await connection.collection("ItemCollection").findOne({
         collectionId: new Types.ObjectId(collection.id),
         item: first._id,
       }),
@@ -460,7 +460,7 @@ describe("CollectionController HTTP", () => {
         .collection<Collection>("Collection")
         .findOne({ _id: new Types.ObjectId(collection.id) }),
     ).toMatchObject({ version: 0, title: { ru: "Подборка" } })
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       2,
     )
   })
@@ -509,7 +509,7 @@ describe("CollectionController HTTP", () => {
         .collection<Collection>("Collection")
         .findOne({ _id: new Types.ObjectId(collection.id) }),
     ).toMatchObject({ deletedAt: expect.any(Date) })
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       2,
     )
     expect(await connection.collection("Item").countDocuments()).toBe(2)

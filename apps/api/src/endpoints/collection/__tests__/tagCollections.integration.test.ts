@@ -20,14 +20,14 @@ import { TagRepository } from "@entities/tag/services/tag.repository"
 import { ItemModule } from "@entities/item/item.module"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { ItemTagModule } from "@entities/itemTag/itemTag.module"
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemModule } from "@entities/tagItem/tagItem.module"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { CollectionModule } from "@entities/collection/collection.module"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
-import { CollectionItemModule } from "@entities/collectionItem/collectionItem.module"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionModule } from "@entities/itemCollection/itemCollection.module"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
@@ -42,16 +42,16 @@ import { getTestRedis } from "@test/setup/setupRedis"
 import { TagCollectionsInitializationService } from "../services/tagCollectionsInitialization.service"
 import { TagCollectionsSynchronizationService } from "../services/tagCollectionsSynchronization.service"
 import { SynchronizeTagCollectionsJobHandler } from "../handlers/synchronizeTagCollectionsJob.handler"
-import dictionary from "../../../../import/tags/tags.json"
+import dictionary from "../../../../import/tags/tags.json" with { type: "json" }
 
 describe("Tag collections MongoDB/BullMQ", () => {
   let moduleRef: TestingModule | undefined
   let queue: Queue
   let tags: TagRepository
   let items: ItemRepository
-  let assignments: ItemTagRepository
+  let assignments: TagItemRepository
   let collections: CollectionRepository
-  let memberships: CollectionItemRepository
+  let memberships: ItemCollectionRepository
   let transactions: MongoTransactionService
   let jobs: JobService
   let synchronization: TagCollectionsSynchronizationService
@@ -130,9 +130,9 @@ describe("Tag collections MongoDB/BullMQ", () => {
     for (const name of [
       "Tag",
       "Item",
-      "ItemTag",
+      "TagItem",
       "Collection",
-      "CollectionItem",
+      "ItemCollection",
     ]) {
       await getTestDatabase().connection.collection(name).deleteMany({})
     }
@@ -141,9 +141,9 @@ describe("Tag collections MongoDB/BullMQ", () => {
         DatabaseModule,
         TagModule,
         ItemModule,
-        ItemTagModule,
+        TagItemModule,
         CollectionModule,
-        CollectionItemModule,
+        ItemCollectionModule,
         JobsModule,
       ],
       providers: [
@@ -161,9 +161,9 @@ describe("Tag collections MongoDB/BullMQ", () => {
     queue = moduleRef.get<Queue>(getQueueToken(JOBS_QUEUE_NAME))
     tags = moduleRef.get(TagRepository)
     items = moduleRef.get(ItemRepository)
-    assignments = moduleRef.get(ItemTagRepository)
+    assignments = moduleRef.get(TagItemRepository)
     collections = moduleRef.get(CollectionRepository)
-    memberships = moduleRef.get(CollectionItemRepository)
+    memberships = moduleRef.get(ItemCollectionRepository)
     transactions = moduleRef.get(MongoTransactionService)
     jobs = moduleRef.get(JobService)
     synchronization = moduleRef.get(TagCollectionsSynchronizationService)
@@ -173,7 +173,7 @@ describe("Tag collections MongoDB/BullMQ", () => {
     await Promise.all([
       tags.initialize(),
       collections.initialize(),
-      ...["Item", "ItemTag", "CollectionItem"].map(async (name) => {
+      ...["Item", "TagItem", "ItemCollection"].map(async (name) => {
         await moduleRef
           ?.get<Connection>(getConnectionToken())
           .model(name)
@@ -187,7 +187,7 @@ describe("Tag collections MongoDB/BullMQ", () => {
     moduleRef = undefined
   })
 
-  it("создаёт по одной коллекции для всех тегов при повторном и конкурентном запуске без наполнения историческими ItemTag", async () => {
+  it("создаёт по одной коллекции для всех тегов при повторном и конкурентном запуске без наполнения историческими TagItem", async () => {
     const existing = await tags.write.create({
       key: "fantasy",
       name: { ru: "Сохранённое имя", en: null },
@@ -196,7 +196,7 @@ describe("Tag collections MongoDB/BullMQ", () => {
       key: "customTag",
       name: { ru: "Дополнительный", en: null },
     })
-    await getTestDatabase().connection.collection("ItemTag").insertOne({
+    await getTestDatabase().connection.collection("TagItem").insertOne({
       item: new Types.ObjectId(),
       tag: existing._id,
       relevanceScore: 0.7,

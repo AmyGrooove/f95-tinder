@@ -2,8 +2,8 @@ import { createHash } from "node:crypto"
 import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
-import { SessionRepository } from "@entities/session/services/session.repository"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
@@ -31,12 +31,12 @@ describe("AccountCredentialsController HTTP", () => {
         .collection("User")
         .findOne({ _id: account.user._id })
       const beforeSessions = await connection
-        .collection("Session")
+        .collection("UserSession")
         .find({ user: account.user._id })
         .sort({ _id: 1 })
         .toArray()
       expect(beforeSessions).toHaveLength(2)
-      const repository = app.get(SessionRepository)
+      const repository = app.get(UserSessionRepository)
       const remove = repository.deleteOthers.bind(repository)
       const failure = jest
         .spyOn(repository, "deleteOthers")
@@ -64,7 +64,7 @@ describe("AccountCredentialsController HTTP", () => {
       ).toEqual(beforeUser)
       expect(
         await connection
-          .collection("Session")
+          .collection("UserSession")
           .find({ user: account.user._id })
           .sort({ _id: 1 })
           .toArray(),
@@ -88,7 +88,7 @@ describe("AccountCredentialsController HTTP", () => {
     expect(otherLogin.statusCode).toBe(204)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({ user: user._id }),
     ).toBe(2)
 
@@ -122,7 +122,7 @@ describe("AccountCredentialsController HTTP", () => {
       false,
     )
     const sessions = await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .find({ user: user._id })
       .toArray()
     const refreshToken = response.cookies.find(
@@ -180,7 +180,7 @@ describe("AccountCredentialsController HTTP", () => {
     ).toMatchObject({ passwordHash: user.passwordHash })
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: session._id }),
     ).toMatchObject({ refreshTokenHash: session.refreshTokenHash })
   })
@@ -244,7 +244,7 @@ describe("AccountCredentialsController HTTP", () => {
         .digest("hex"),
     })
     const sessions = await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .find({ user: user._id })
       .toArray()
     expect(sessions).toHaveLength(1)
@@ -294,7 +294,7 @@ describe("AccountCredentialsController HTTP", () => {
     ).toMatchObject({ accessCodeHash: user.accessCodeHash })
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: session._id }),
     ).toMatchObject({ refreshTokenHash: session.refreshTokenHash })
   })

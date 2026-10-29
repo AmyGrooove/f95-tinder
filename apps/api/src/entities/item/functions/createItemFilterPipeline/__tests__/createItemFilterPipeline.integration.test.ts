@@ -98,7 +98,7 @@ describe("createItemFilterPipeline", () => {
     const ids = [new Types.ObjectId(), new Types.ObjectId()]
     await connection.collection("Item").insertMany(ids.map((_id) => ({ _id })))
     await connection.collection("Tag").insertMany(tags.map((_id) => ({ _id })))
-    await connection.collection("ItemTag").insertMany([
+    await connection.collection("TagItem").insertMany([
       { item: ids[0], tag: tags[0] },
       { item: ids[0], tag: tags[1] },
       { item: ids[1], tag: tags[0] },

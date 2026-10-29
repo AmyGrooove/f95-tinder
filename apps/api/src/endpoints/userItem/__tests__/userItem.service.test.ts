@@ -6,7 +6,7 @@ import type { ClientSession } from "mongoose"
 import type { AuthService } from "@endpoints/auth/services/auth.service"
 import type { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import type { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import type { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import type { UserRepository } from "@entities/user/services/user.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
@@ -17,7 +17,7 @@ import type { UserTasteProfileRecalculationService } from "@entities/userTastePr
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 
 import { UserItemService } from "../services/userItem.service"
-import { UserItemMetricsService } from "../services/userItemMetrics.service"
+import { UserItemStatsService } from "../services/userItemStats.service"
 
 describe("UserItemService", () => {
   const userId = new Types.ObjectId()
@@ -32,7 +32,7 @@ describe("UserItemService", () => {
   const deleteByFilter =
     jest.fn<UserItemRepository["write"]["deleteByFilter"]>()
   const create = jest.fn<UserItemRepository["write"]["create"]>()
-  const updateMetrics = jest.fn<UserItemMetricsService["update"]>()
+  const updateMetrics = jest.fn<UserItemStatsService["update"]>()
   const enqueueTaste =
     jest.fn<UserTasteProfileRecalculationService["enqueue"]>()
   const session = {} as ClientSession
@@ -64,14 +64,14 @@ describe("UserItemService", () => {
       write: { create, updateByFilter, deleteByFilter },
     } as unknown as UserItemRepository,
     { run } as unknown as MongoTransactionService,
-    {} as ItemTagRepository,
+    {} as TagItemRepository,
     {
       enqueue: enqueueTaste,
     } as unknown as UserTasteProfileRecalculationService,
     {
       update: updateMetrics,
-      getState: UserItemMetricsService.prototype.getState,
-    } as unknown as UserItemMetricsService,
+      getState: UserItemStatsService.prototype.getState,
+    } as unknown as UserItemStatsService,
   )
 
   beforeEach(() => {

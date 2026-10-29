@@ -19,8 +19,8 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { CollectionResponseDto } from "../dto/response/collection.response"
 import { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 import { CollectionFiltersResponseDto } from "../dto/response/collectionFilters.response"
-import { CollectionItemsBodyDto } from "../dto/body/collectionItems.body"
-import { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
+import { ItemCollectionsBodyDto } from "../dto/body/itemCollections.body"
+import { ItemCollectionsResponseDto } from "../dto/response/itemCollections.response"
 import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
 import { QueryCollectionsBodyDto } from "../dto/body/queryCollections.body"
@@ -100,7 +100,7 @@ class CollectionReadController {
     description: SWAGGER_DICTIONARY.collection.itemsDescription,
     response: {
       status: 200,
-      type: CollectionItemsResponseDto,
+      type: ItemCollectionsResponseDto,
       description: SWAGGER_DICTIONARY.collection.itemsResponse,
     },
     errors: [
@@ -111,7 +111,7 @@ class CollectionReadController {
   })
   getItems(
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() query: CollectionItemsBodyDto,
+    @Body() query: ItemCollectionsBodyDto,
   ) {
     return this.collectionContentService.getItems({ id, query })
   }

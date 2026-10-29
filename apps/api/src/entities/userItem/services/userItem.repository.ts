@@ -10,7 +10,7 @@ import { MongoAggregationRepository } from "@infrastructure/database/services/mo
 
 import { UserItem } from "../schemas/userItem.schema"
 import type { TCreateUserItem } from "../schemas/userItem.schema"
-import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { EUserItemStatus } from "../schemas/EUserItemStatus"
 
 @Injectable()
@@ -73,7 +73,7 @@ class UserItemRepository {
       },
       {
         $lookup: {
-          from: ItemTag.name,
+          from: TagItem.name,
           localField: "item",
           foreignField: "item",
           pipeline: [

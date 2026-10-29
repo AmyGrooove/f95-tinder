@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 import { RedisModule } from "@nestjs-redis/client"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
-import { SessionModule } from "@entities/session/session.module"
+import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserModule } from "@entities/user/user.module"
 import { SecurityModule } from "@infrastructure/security/security.module"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
@@ -23,7 +23,7 @@ import { AccountEmailService } from "./services/accountEmail.service"
   imports: [
     AuthModule,
     UserModule,
-    SessionModule,
+    UserSessionModule,
     SecurityModule,
     MailModule,
     LoggerModule,

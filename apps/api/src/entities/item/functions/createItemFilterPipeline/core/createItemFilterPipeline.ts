@@ -1,6 +1,6 @@
 import type { PipelineStage } from "mongoose"
 
-import { ItemTag } from "@entities/itemTag/schemas/itemTag.schema"
+import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isDate } from "@shared/functions/checks/isDate"
@@ -80,7 +80,7 @@ const createItemFilterPipeline = (
     pipeline.push(
       {
         $lookup: {
-          from: ItemTag.name,
+          from: TagItem.name,
           localField: "_id",
           foreignField: "item",
           pipeline: [

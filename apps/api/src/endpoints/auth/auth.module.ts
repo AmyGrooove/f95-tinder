@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { RedisModule } from "@nestjs-redis/client"
 
-import { SessionModule } from "@entities/session/session.module"
+import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserModule } from "@entities/user/user.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 import { SecurityModule } from "@infrastructure/security/security.module"
@@ -21,7 +21,7 @@ import { PasswordResetService } from "./services/passwordReset.service"
 @Module({
   imports: [
     UserModule,
-    SessionModule,
+    UserSessionModule,
     DatabaseModule,
     SecurityModule,
     InfrastructureConfigModule,

@@ -1,7 +1,7 @@
 import type { PipelineStage } from "mongoose"
 
-import { ItemMetric } from "@entities/itemMetric/schemas/itemMetric.schema"
-import { createItemRatingScoreExpression } from "@entities/itemMetric/functions/createItemRatingScoreExpression"
+import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
+import { createItemRatingScoreExpression } from "@entities/itemStats/functions/createItemRatingScoreExpression"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -17,7 +17,7 @@ const createRecommendationPipeline = (
     ...createRecommendationEligibilityPipeline(props),
     {
       $lookup: {
-        from: ItemMetric.name,
+        from: ItemStats.name,
         localField: "_id",
         foreignField: "item",
         pipeline: [{ $project: { _id: 0, ratingAverage: 1, ratingsCount: 1 } }],

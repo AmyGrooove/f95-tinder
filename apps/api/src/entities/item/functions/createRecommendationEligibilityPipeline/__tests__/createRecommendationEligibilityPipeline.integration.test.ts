@@ -111,21 +111,16 @@ describe("createRecommendationEligibilityPipeline", () => {
     },
   )
 
-  it("сопоставляет глобальный запрет по точной паре источника и внешнего ID", async () => {
+  it("сопоставляет глобальный запрет по ID произведения", async () => {
     const { connection } = getTestDatabase()
-    const source = new Types.ObjectId()
     const banned = new Types.ObjectId()
     const allowed = new Types.ObjectId()
     await connection
       .collection("Item")
       .insertMany([{ _id: banned }, { _id: allowed }])
-    await connection.collection("SourceItem").insertMany([
-      { item: banned, source, externalId: "same" },
-      { item: allowed, source: new Types.ObjectId(), externalId: "same" },
-    ])
     await connection
-      .collection("BannedItem")
-      .insertOne({ source, externalId: "same", countries: [] })
+      .collection("ItemBan")
+      .insertOne({ item: banned, countries: [] })
     const result = await connection
       .collection("Item")
       .aggregate(

@@ -7,7 +7,7 @@ import { mongo, Types } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/auth.service"
 
-import { SessionRepository } from "@entities/session/services/session.repository"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
@@ -25,7 +25,7 @@ import type { PasswordBodyDto } from "../dto/body/password.body"
 class AccountService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly sessionRepository: SessionRepository,
+    private readonly userSessionRepository: UserSessionRepository,
     private readonly authService: AuthService,
     private readonly transactionService: MongoTransactionService,
   ) {}
@@ -77,20 +77,21 @@ class AccountService {
         sessionId: payload.sessionId,
         role: updatedUser.role,
       })
-      const updatedSession = await this.sessionRepository.updateRefreshToken(
-        {
-          id: currentSessionId,
-          userId,
-          refreshToken: tokens.refreshToken,
-        },
-        { session },
-      )
+      const updatedSession =
+        await this.userSessionRepository.updateRefreshToken(
+          {
+            id: currentSessionId,
+            userId,
+            refreshToken: tokens.refreshToken,
+          },
+          { session },
+        )
 
       if (isNil(updatedSession)) {
         throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
       }
 
-      await this.sessionRepository.deleteOthers(
+      await this.userSessionRepository.deleteOthers(
         { userId, id: currentSessionId },
         { session },
       )

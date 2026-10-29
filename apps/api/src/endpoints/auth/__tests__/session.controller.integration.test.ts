@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto"
 import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import type { User } from "@entities/user/schemas/user.schema"
 import { EUserRole } from "@entities/user/schemas/EUserRole"
 import { ECountry } from "@entities/shared/schemas/ECountry"
@@ -16,8 +16,8 @@ import { createAccount } from "../../account/__tests__/functions/createAccount"
 
 describe("SessionController HTTP", () => {
   const addSession = async (
-    session: Session,
-    overrides: Partial<Session> = {},
+    session: UserSession,
+    overrides: Partial<UserSession> = {},
   ) => {
     const created = {
       ...session,
@@ -26,7 +26,7 @@ describe("SessionController HTTP", () => {
       ...overrides,
     }
     await getTestApplication()
-      .connection.collection<Session>("Session")
+      .connection.collection<UserSession>("UserSession")
       .insertOne(created)
 
     return created
@@ -39,7 +39,7 @@ describe("SessionController HTTP", () => {
     const createdAt = new Date("2026-01-01T00:00:00.000Z")
     const lastRefreshedAt = new Date("2026-01-02T00:00:00.000Z")
     await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .updateOne(
         { _id: account.session._id },
         { $set: { createdAt, userAgent: null } },
@@ -63,7 +63,7 @@ describe("SessionController HTTP", () => {
       expiresAt: new Date(Date.now() - 1000),
     })
     const before = await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .find({})
       .toArray()
     const response = await app.inject({
@@ -92,7 +92,10 @@ describe("SessionController HTTP", () => {
       })),
     )
     expect(
-      await connection.collection<Session>("Session").find({}).toArray(),
+      await connection
+        .collection<UserSession>("UserSession")
+        .find({})
+        .toArray(),
     ).toEqual(before)
     expect(response.body).not.toContain(other.session._id.toHexString())
   })
@@ -117,13 +120,13 @@ describe("SessionController HTTP", () => {
     expect(response.cookies).toEqual([])
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .find({ user: account.user._id })
         .toArray(),
     ).toEqual([account.session])
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: other.session._id }),
     ).toEqual(other.session)
     const repeated = await app.inject({
@@ -190,17 +193,17 @@ describe("SessionController HTTP", () => {
       }
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: target._id }),
       ).toBeNull()
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: preserved._id }),
       ).toEqual(preserved)
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: other.session._id }),
       ).toEqual(other.session)
       expect(
@@ -232,7 +235,7 @@ describe("SessionController HTTP", () => {
               )._id
             : new Types.ObjectId()
       const before = await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .find({})
         .toArray()
       const response = await app.inject({
@@ -244,7 +247,10 @@ describe("SessionController HTTP", () => {
       expect(response.statusCode).toBe(404)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").find({}).toArray(),
+        await connection
+          .collection<UserSession>("UserSession")
+          .find({})
+          .toArray(),
       ).toEqual(before)
     },
   )
@@ -264,7 +270,7 @@ describe("SessionController HTTP", () => {
       expect(response.cookies).toEqual([])
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: account.session._id }),
       ).toEqual(account.session)
     },
@@ -276,7 +282,7 @@ describe("SessionController HTTP", () => {
     const extra = await addSession(account.session)
     const oldRefresh =
       account.headers.cookie.match(/__Host-refreshToken=([^;]+)/)?.[1] ?? ""
-    const sessions = connection.collection<Session>("Session")
+    const sessions = connection.collection<UserSession>("UserSession")
     await sessions.updateOne(
       { _id: account.session._id },
       {
@@ -415,13 +421,15 @@ describe("SessionController HTTP", () => {
     ).toEqual([])
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: account.session._id }),
     ).toMatchObject({
       refreshTokenHash: createHash("sha256").update(refresh).digest("hex"),
     })
     expect(
-      await connection.collection<Session>("Session").countDocuments({}),
+      await connection
+        .collection<UserSession>("UserSession")
+        .countDocuments({}),
     ).toBe(1)
   })
 
@@ -446,7 +454,7 @@ describe("SessionController HTTP", () => {
       async (scenario) => {
         const { app, connection } = getTestApplication()
         const account = await createAccount()
-        const sessions = connection.collection<Session>("Session")
+        const sessions = connection.collection<UserSession>("UserSession")
         const isRefresh = method === "PATCH"
         const cookieName = isRefresh
           ? "__Host-refreshToken"
@@ -533,7 +541,7 @@ describe("SessionController HTTP", () => {
         ? `/auth/session/${extra._id.toHexString()}`
         : url
       const before = await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .find({})
         .toArray()
       const response = await app.inject({
@@ -545,7 +553,10 @@ describe("SessionController HTTP", () => {
       expect(response.statusCode).toBe(403)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").find({}).toArray(),
+        await connection
+          .collection<UserSession>("UserSession")
+          .find({})
+          .toArray(),
       ).toEqual(before)
     },
   )

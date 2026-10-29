@@ -6,8 +6,8 @@ import {
 import { isObjectIdOrHexString, mongo, Types } from "mongoose"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { SessionRepository } from "@entities/session/services/session.repository"
-import { getCountryByIp } from "@entities/session/functions/getCountryByIp"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
+import { getCountryByIp } from "@entities/userSession/functions/getCountryByIp"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
@@ -28,7 +28,7 @@ import type { ICreateAuthSessionProps } from "../types/ICreateAuthSessionProps"
 class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly sessionRepository: SessionRepository,
+    private readonly userSessionRepository: UserSessionRepository,
     private readonly transactionService: MongoTransactionService,
     private readonly jwtService: SecurityJwtService,
   ) {}
@@ -51,7 +51,7 @@ class AuthService {
   }
 
   getSession(payload: Pick<IAccessTokenPayload, "sub" | "sessionId">) {
-    return this.sessionRepository.findActive({
+    return this.userSessionRepository.findActive({
       id: new Types.ObjectId(payload.sessionId),
       userId: new Types.ObjectId(payload.sub),
     })
@@ -119,7 +119,7 @@ class AuthService {
   async logout(accessToken: unknown) {
     const payload = await this.verifyAccessToken(accessToken)
 
-    const session = await this.sessionRepository.deleteActive({
+    const session = await this.userSessionRepository.deleteActive({
       id: new Types.ObjectId(payload.sessionId),
       userId: new Types.ObjectId(payload.sub),
     })
@@ -152,16 +152,17 @@ class AuthService {
           sessionId: payload.sessionId,
           role: user.role,
         })
-      const currentSession = await this.sessionRepository.updateRefreshToken(
-        { id: currentSessionId, userId, refreshToken },
-        { session },
-      )
+      const currentSession =
+        await this.userSessionRepository.updateRefreshToken(
+          { id: currentSessionId, userId, refreshToken },
+          { session },
+        )
 
       if (isNil(currentSession)) {
         throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
       }
 
-      await this.sessionRepository.deleteOthers(
+      await this.userSessionRepository.deleteOthers(
         { userId, id: currentSessionId },
         { session },
       )
@@ -244,7 +245,7 @@ class AuthService {
       role,
     })
 
-    await this.sessionRepository.createNew(
+    await this.userSessionRepository.createNew(
       {
         id: sessionId,
         userId,

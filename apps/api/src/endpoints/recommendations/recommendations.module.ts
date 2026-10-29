@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 
 import { CollectionModule } from "@entities/collection/collection.module"
 import { ItemModule } from "@entities/item/item.module"
-import { SiteMetricModule } from "@entities/siteMetric/siteMetric.module"
+import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { UserTasteProfileModule } from "@entities/userTasteProfile/userTasteProfile.module"
 
 import { RecommendationsService } from "./services/recommendations.service"
@@ -11,7 +11,7 @@ import { RecommendationsService } from "./services/recommendations.service"
   imports: [
     CollectionModule,
     ItemModule,
-    SiteMetricModule,
+    SiteStatsModule,
     UserTasteProfileModule,
   ],
   providers: [RecommendationsService],

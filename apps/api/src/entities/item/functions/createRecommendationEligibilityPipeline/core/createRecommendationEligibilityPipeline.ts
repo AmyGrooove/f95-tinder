@@ -1,8 +1,7 @@
 import type { PipelineStage } from "mongoose"
 
-import { BannedItem } from "@entities/bannedItem/schemas/bannedItem.schema"
-import { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.schema"
-import { SourceItem } from "@entities/sourceItem/schemas/sourceItem.schema"
+import { ItemBan } from "@entities/itemBan/schemas/itemBan.schema"
+import { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { ECountry } from "@entities/shared/schemas/ECountry"
@@ -24,7 +23,7 @@ const createRecommendationEligibilityPipeline = (
     pipeline.push(
       {
         $lookup: {
-          from: CollectionItem.name,
+          from: ItemCollection.name,
           localField: "_id",
           foreignField: "item",
           pipeline: [
@@ -133,33 +132,18 @@ const createRecommendationEligibilityPipeline = (
   pipeline.push(
     {
       $lookup: {
-        from: SourceItem.name,
+        from: ItemBan.name,
         localField: "_id",
         foreignField: "item",
         pipeline: [
           {
-            $lookup: {
-              from: BannedItem.name,
-              localField: "source",
-              foreignField: "source",
-              let: { externalId: "$externalId" },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: { $eq: ["$externalId", "$$externalId"] },
-                    $or: [
-                      { countries: { $size: 0 } },
-                      { countries: props.country ?? ECountry.UNKNOWN },
-                    ],
-                  },
-                },
-                { $limit: 1 },
-                { $project: { _id: 1 } },
+            $match: {
+              $or: [
+                { countries: { $size: 0 } },
+                { countries: props.country ?? ECountry.UNKNOWN },
               ],
-              as: "ban",
             },
           },
-          { $match: { "ban.0": { $exists: true } } },
           { $limit: 1 },
           { $project: { _id: 1 } },
         ],

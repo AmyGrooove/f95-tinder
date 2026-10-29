@@ -7,7 +7,7 @@ import type { Tag, TCreateTag } from "@entities/tag/schemas/tag.schema"
 import type { TagRepository } from "@entities/tag/services/tag.repository"
 import type { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { TagCollectionsInitializationService } from "../services/tagCollectionsInitialization.service"
-import dictionary from "../../../../import/tags/tags.json"
+import dictionary from "../../../../import/tags/tags.json" with { type: "json" }
 
 describe("TagCollectionsInitializationService", () => {
   const model = new Mongoose().model<Tag>("InitializationTagUnit", TagSchema)

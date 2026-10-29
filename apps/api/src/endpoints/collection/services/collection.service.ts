@@ -9,7 +9,7 @@ import { Types } from "mongoose"
 import type { HydratedDocument } from "mongoose"
 
 import { ItemRepository } from "@entities/item/services/item.repository"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import type { Collection } from "@entities/collection/schemas/collection.schema"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
@@ -38,7 +38,7 @@ import type { QueryCollectionsResponseDto } from "../dto/response/queryCollectio
 class CollectionService {
   constructor(
     private readonly collectionRepository: CollectionRepository,
-    private readonly collectionItemRepository: CollectionItemRepository,
+    private readonly itemCollectionRepository: ItemCollectionRepository,
     private readonly itemRepository: ItemRepository,
     private readonly collectionAuthService: CollectionAuthService,
     private readonly transactionService: MongoTransactionService,
@@ -141,7 +141,7 @@ class CollectionService {
         )
 
         if (items.length > 0) {
-          await this.collectionItemRepository.createForCollection(
+          await this.itemCollectionRepository.createForCollection(
             { collectionId: created._id, items },
             { session: transactionSession },
           )
@@ -256,7 +256,7 @@ class CollectionService {
 
         if (removeItemIds.length > 0) {
           const memberships =
-            await this.collectionItemRepository.findByCollectionAndItems(
+            await this.itemCollectionRepository.findByCollectionAndItems(
               { collectionId: id, itemIds: removeItemIds },
               { session: transactionSession },
             )
@@ -300,14 +300,14 @@ class CollectionService {
         }
 
         if (items.length > 0) {
-          await this.collectionItemRepository.upsertForCollection(
+          await this.itemCollectionRepository.upsertForCollection(
             { collectionId: id, items },
             { session: transactionSession },
           )
         }
 
         if (removeItemIds.length > 0 || removedGroupIds.length > 0) {
-          await this.collectionItemRepository.removeForCollection(
+          await this.itemCollectionRepository.removeForCollection(
             {
               collectionId: id,
               itemIds: removeItemIds,

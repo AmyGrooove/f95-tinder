@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 
-import type { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import type { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import type { TagRepository } from "@entities/tag/services/tag.repository"
 import { TAG_GROUP_RULES } from "@entities/tag/static/TAG_GROUP_RULES"
@@ -23,7 +23,7 @@ describe("RecalculateTagWeightModifiersJobHandler", () => {
         ...args: Parameters<TagRepository["bulk"]["bulkWrite"]>
       ) => Promise<{ modifiedCount: number }>
     >()
-  const getUsageCounts = jest.fn<ItemTagRepository["getUsageCounts"]>()
+  const getUsageCounts = jest.fn<TagItemRepository["getUsageCounts"]>()
   const context = {
     id: "recalculation",
     attempt: 1,
@@ -32,7 +32,7 @@ describe("RecalculateTagWeightModifiersJobHandler", () => {
   } satisfies IJobContext
   const handler = new RecalculateTagWeightModifiersJobHandler(
     { read: { findMany }, bulk: { bulkWrite } } as unknown as TagRepository,
-    { getUsageCounts } as unknown as ItemTagRepository,
+    { getUsageCounts } as unknown as TagItemRepository,
   )
   const tagId = new Types.ObjectId()
 

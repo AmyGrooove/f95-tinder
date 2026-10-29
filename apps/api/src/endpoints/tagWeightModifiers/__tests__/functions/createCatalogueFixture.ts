@@ -59,25 +59,25 @@ const createCatalogueFixture = async (connection: Connection) => {
   })
   await connection.collection("Item").insertMany(items)
   const supports = items.flatMap((item, index) => {
-    const itemTags = index < 6 ? [common] : [audience, ungrouped]
+    const tagItems = index < 6 ? [common] : [audience, ungrouped]
 
     if (index === 0 || index === 6) {
-      itemTags.push(rare)
+      tagItems.push(rare)
     }
 
     if (index < 2 || index === 4 || index === 6) {
-      itemTags.push(mechanic)
+      tagItems.push(mechanic)
     }
 
     if (index === 0 || index === 4) {
-      itemTags.push(rareMechanic)
+      tagItems.push(rareMechanic)
     }
 
     if (index === 0) {
-      itemTags.push(duration)
+      tagItems.push(duration)
     }
 
-    return itemTags.map((tag) => {
+    return tagItems.map((tag) => {
       return {
         item: item._id,
         tag: tag._id,
@@ -90,7 +90,7 @@ const createCatalogueFixture = async (connection: Connection) => {
     tag: rare._id,
     relevanceScore: 1,
   })
-  await connection.collection("ItemTag").insertMany(supports)
+  await connection.collection("TagItem").insertMany(supports)
 
   return {
     tags,

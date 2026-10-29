@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { TagRepository } from "@entities/tag/services/tag.repository"
 import { TAG_GROUP_RULES } from "@entities/tag/static/TAG_GROUP_RULES"
@@ -15,7 +15,7 @@ import { RECALCULATE_TAG_WEIGHT_MODIFIERS_JOB } from "../static/RECALCULATE_TAG_
 class RecalculateTagWeightModifiersJobHandler implements IJobHandler<null> {
   constructor(
     private readonly tagRepository: TagRepository,
-    private readonly itemTagRepository: ItemTagRepository,
+    private readonly tagItemRepository: TagItemRepository,
   ) {}
 
   async handle(_payload: null, context: IJobContext) {
@@ -32,7 +32,7 @@ class RecalculateTagWeightModifiersJobHandler implements IJobHandler<null> {
 
       if (tags.length > 0) {
         const { itemCount, tagCounts } =
-          await this.itemTagRepository.getUsageCounts(
+          await this.tagItemRepository.getUsageCounts(
             tags.map((tag) => tag._id),
             TAG_GROUP_RULES[group].itemTypes,
           )

@@ -8,7 +8,7 @@ import type {
   QueryOptions,
 } from "mongoose"
 
-import { CollectionItem } from "@entities/collectionItem/schemas/collectionItem.schema"
+import { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
@@ -128,7 +128,7 @@ class CollectionRepository {
       pipeline.push(
         {
           $lookup: {
-            from: CollectionItem.name,
+            from: ItemCollection.name,
             let: { collectionId: "$_id" },
             pipeline: [
               {

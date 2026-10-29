@@ -6,7 +6,7 @@ import { isObjectIdOrHexString, Types } from "mongoose"
 import type { RedisClientType } from "redis"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { SessionRepository } from "@entities/session/services/session.repository"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
@@ -28,7 +28,7 @@ class PasswordResetService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly confirmationService: ConfirmationService,
-    private readonly sessionRepository: SessionRepository,
+    private readonly userSessionRepository: UserSessionRepository,
     private readonly transactionService: MongoTransactionService,
     private readonly mailService: MailService,
     private readonly configService: InfrastructureConfigService,
@@ -58,7 +58,7 @@ class PasswordResetService {
         )
       }
 
-      await this.sessionRepository.deleteByUser(userId, { session })
+      await this.userSessionRepository.deleteByUser(userId, { session })
     })
 
     requestContext.set("userId", pending.userId)

@@ -12,22 +12,20 @@ import { SearchEndpointModule } from "@endpoints/search/search.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
-import { CollectionItemModule } from "@entities/collectionItem/collectionItem.module"
+import { ItemCollectionModule } from "@entities/itemCollection/itemCollection.module"
 import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
-import { BannedItemModule } from "@entities/bannedItem/bannedItem.module"
+import { ItemBanModule } from "@entities/itemBan/itemBan.module"
+import { ItemRelationModule } from "@entities/itemRelation/itemRelation.module"
 import { RelationModule } from "@entities/relation/relation.module"
-import { ItemRelationRoleModule } from "@entities/itemRelationRole/itemRelationRole.module"
 import { TagModule } from "@entities/tag/tag.module"
-import { ItemTagModule } from "@entities/itemTag/itemTag.module"
+import { TagItemModule } from "@entities/tagItem/tagItem.module"
 import { FactModule } from "@entities/fact/fact.module"
-import { SourceModule } from "@entities/source/source.module"
-import { SourceItemModule } from "@entities/sourceItem/sourceItem.module"
-import { ItemMetricModule } from "@entities/itemMetric/itemMetric.module"
-import { SiteMetricModule } from "@entities/siteMetric/siteMetric.module"
+import { ItemStatsModule } from "@entities/itemStats/itemStats.module"
+import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserSettingsModule } from "@entities/userSettings/userSettings.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
-import { SessionModule } from "@entities/session/session.module"
+import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserTasteProfileModule } from "@entities/userTasteProfile/userTasteProfile.module"
 
 import { CacheModule } from "@infrastructure/cache/cache.module"
@@ -59,22 +57,20 @@ import { AppController } from "./controllers/app.controller"
     ItemEndpointModule,
     ItemModule,
     CollectionModule,
-    CollectionItemModule,
+    ItemCollectionModule,
     UserCollectionModule,
-    BannedItemModule,
+    ItemBanModule,
+    ItemRelationModule,
     RelationModule,
-    ItemRelationRoleModule,
     TagModule,
-    ItemTagModule,
+    TagItemModule,
     FactModule,
-    SourceModule,
-    SourceItemModule,
-    ItemMetricModule,
-    SiteMetricModule,
+    ItemStatsModule,
+    SiteStatsModule,
     UserModule,
     UserSettingsModule,
     UserItemModule,
-    SessionModule,
+    UserSessionModule,
     UserTasteProfileModule,
     TagWeightModifiersModule,
     RecommendationsModule,

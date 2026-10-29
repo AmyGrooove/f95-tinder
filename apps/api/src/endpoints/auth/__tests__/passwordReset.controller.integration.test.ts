@@ -3,8 +3,8 @@ import { createHash } from "node:crypto"
 import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
-import { SessionRepository } from "@entities/session/services/session.repository"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
+import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
@@ -79,7 +79,7 @@ describe("PasswordResetController HTTP", () => {
     ).toEqual(user)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: session._id }),
     ).toEqual(session)
   })
@@ -118,7 +118,9 @@ describe("PasswordResetController HTTP", () => {
           .findOne({ _id: account.user._id }),
       ).toEqual(before)
       expect(
-        await connection.collection<Session>("Session").countDocuments({}),
+        await connection
+          .collection<UserSession>("UserSession")
+          .countDocuments({}),
       ).toBe(1)
     },
   )
@@ -170,7 +172,7 @@ describe("PasswordResetController HTTP", () => {
     ).toEqual(user)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: session._id }),
     ).toEqual(session)
   })
@@ -188,7 +190,7 @@ describe("PasswordResetController HTTP", () => {
     expect(login.statusCode).toBe(204)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({ user: account.user._id }),
     ).toBe(2)
     const newPassword = " New-password-123 "
@@ -243,12 +245,12 @@ describe("PasswordResetController HTTP", () => {
     expect(await redis.exists(account.key)).toBe(0)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({ user: account.user._id }),
     ).toBe(0)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: other.session._id }),
     ).toEqual(other.session)
     for (const cookie of [
@@ -314,7 +316,7 @@ describe("PasswordResetController HTTP", () => {
     ).toEqual(account.user)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: account.session._id }),
     ).toEqual(account.session)
     expect(
@@ -393,7 +395,7 @@ describe("PasswordResetController HTTP", () => {
       ).toEqual(before)
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: account.session._id }),
       ).toEqual(account.session)
     },
@@ -403,7 +405,7 @@ describe("PasswordResetController HTTP", () => {
     const { app, connection, redis } = getTestApplication()
     const account = await requestReset()
     jest
-      .spyOn(app.get(SessionRepository), "deleteByUser")
+      .spyOn(app.get(UserSessionRepository), "deleteByUser")
       .mockRejectedValue(new Error("Delete failed"))
     jest
       .spyOn(app.get(LoggerService), "error")
@@ -428,7 +430,7 @@ describe("PasswordResetController HTTP", () => {
     ).toEqual(account.user)
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: account.session._id }),
     ).toEqual(account.session)
     expect(await redis.exists(account.key)).toBe(0)
@@ -560,7 +562,7 @@ describe("PasswordResetController HTTP", () => {
       ).toEqual(account.user)
       expect(
         await connection
-          .collection<Session>("Session")
+          .collection<UserSession>("UserSession")
           .findOne({ _id: account.session._id }),
       ).toEqual(account.session)
     },

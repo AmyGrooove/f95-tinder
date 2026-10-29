@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 
-import type { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import type { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import type { CollectionRepository } from "@entities/collection/services/collection.repository"
-import type { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import type { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { SynchronizeTagCollectionsJobHandler } from "../handlers/synchronizeTagCollectionsJob.handler"
 
@@ -30,12 +30,12 @@ describe("SynchronizeTagCollectionsJobHandler", () => {
     updateProgress: async () => {},
   } satisfies IJobContext
   const handler = new SynchronizeTagCollectionsJobHandler(
-    { read: { findMany: assignments } } as unknown as ItemTagRepository,
+    { read: { findMany: assignments } } as unknown as TagItemRepository,
     { read: { findMany: collections } } as unknown as CollectionRepository,
     {
       read: { findMany: memberships },
       write: { updateByFilter: update, deleteByFilter: remove },
-    } as unknown as CollectionItemRepository,
+    } as unknown as ItemCollectionRepository,
   )
 
   beforeEach(() => {

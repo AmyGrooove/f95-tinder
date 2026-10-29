@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import type { UserCollection } from "@entities/userCollection/schemas/userCollection.schema"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { getTestApplication } from "@test/setup/setupIntegration"
@@ -149,7 +149,7 @@ describe("CollectionUserController HTTP", () => {
       isHidden: false,
     })
     expect(await connection.collection("UserItem").countDocuments()).toBe(0)
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       2,
     )
   })
@@ -319,7 +319,7 @@ describe("CollectionUserController HTTP", () => {
           .statusCode,
       ).toBe(404)
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .updateOne(
           { _id: owner.session._id },
           { $set: { expiresAt: new Date(Date.now() - 1000) } },

@@ -14,7 +14,7 @@ import type { Queue } from "bullmq"
 import { Types } from "mongoose"
 
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { NonRetryableJobError } from "@infrastructure/jobs/errors/NonRetryableJobError"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
@@ -92,7 +92,7 @@ describe("TagWeightModifiersModule", () => {
 
   it("считает уникальные Items и поддержки тегов, исключая чужие типы, группы, удалённые записи и сирот", async () => {
     const fixture = await createCatalogueFixture(getTestDatabase().connection)
-    const repository = moduleRef?.get(ItemTagRepository)
+    const repository = moduleRef?.get(TagItemRepository)
     const genres = await repository?.getUsageCounts(
       [fixture.common._id, fixture.rare._id, fixture.unused._id],
       [EItemType.GAME, EItemType.MOVIE],
@@ -122,7 +122,7 @@ describe("TagWeightModifiersModule", () => {
 
   it("возвращает нулевые счётчики для пустых входов и отсутствующих поддержек", async () => {
     const fixture = await createCatalogueFixture(getTestDatabase().connection)
-    const repository = moduleRef?.get(ItemTagRepository)
+    const repository = moduleRef?.get(TagItemRepository)
 
     for (const [tags, types] of [
       [[], [EItemType.GAME]],
@@ -149,7 +149,7 @@ describe("TagWeightModifiersModule", () => {
     expect(await queue.getActiveCount()).toBe(0)
     const itemsBefore = await connection.collection("Item").find().toArray()
     const supportsBefore = await connection
-      .collection("ItemTag")
+      .collection("TagItem")
       .find()
       .toArray()
     const id = await scheduler.enqueueRecalculation()
@@ -199,7 +199,7 @@ describe("TagWeightModifiersModule", () => {
     expect(await connection.collection("Item").find().toArray()).toEqual(
       itemsBefore,
     )
-    expect(await connection.collection("ItemTag").find().toArray()).toEqual(
+    expect(await connection.collection("TagItem").find().toArray()).toEqual(
       supportsBefore,
     )
     const nextId = await scheduler.enqueueRecalculation()
@@ -222,7 +222,7 @@ describe("TagWeightModifiersModule", () => {
       .find()
       .sort({ _id: 1 })
       .toArray()
-    const repository = moduleRef?.get(ItemTagRepository)
+    const repository = moduleRef?.get(TagItemRepository)
     const handler = moduleRef?.get(RecalculateTagWeightModifiersJobHandler)
     if (repository === undefined || handler === undefined) {
       throw new Error("Тестовый модуль не запущен")

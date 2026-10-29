@@ -5,8 +5,8 @@ import { Types } from "mongoose"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { EItemRelationRoleGroup } from "@entities/itemRelationRole/schemas/EItemRelationRoleGroup"
-import type { TCreateRelationSide } from "@entities/relation/schemas/relationSide.schema"
+import { ERelationGroup } from "@entities/relation/schemas/ERelationGroup"
+import type { TCreateItemRelationSide } from "@entities/itemRelation/schemas/itemRelationSide.schema"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
@@ -59,7 +59,7 @@ describe("ItemController HTTP", () => {
     await connection.collection("Tag").insertOne(tag)
 
     if (props.item !== undefined) {
-      await connection.collection("ItemTag").insertOne({
+      await connection.collection("TagItem").insertOne({
         item: props.item,
         tag: tag._id,
         relevanceScore: props.relevanceScore ?? 1,
@@ -74,19 +74,17 @@ describe("ItemController HTTP", () => {
       _id: new Types.ObjectId(),
       key: props.key,
       name: props.name,
-      group: EItemRelationRoleGroup.VIDEO,
+      group: ERelationGroup.VIDEO,
       description: { ru: "Описание роли", en: null },
     }
-    await getTestApplication()
-      .connection.collection("ItemRelationRole")
-      .insertOne(role)
+    await getTestApplication().connection.collection("Relation").insertOne(role)
 
     return role
   }
 
   const createRelation = async (props: {
-    first: TCreateRelationSide
-    second: TCreateRelationSide
+    first: TCreateItemRelationSide
+    second: TCreateItemRelationSide
     id?: Types.ObjectId
   }) => {
     const relation = {
@@ -95,7 +93,7 @@ describe("ItemController HTTP", () => {
       second: props.second,
     }
     await getTestApplication()
-      .connection.collection("Relation")
+      .connection.collection("ItemRelation")
       .insertOne(relation)
 
     return relation
@@ -303,7 +301,7 @@ describe("ItemController HTTP", () => {
     const { app, connection } = getTestApplication()
     const item = await createItem()
     const tag = await createTag({ item: item._id, key: "tag" })
-    await connection.collection("ItemTag").insertOne({
+    await connection.collection("TagItem").insertOne({
       item: item._id,
       tag: new Types.ObjectId(),
       relevanceScore: 1,
@@ -857,7 +855,9 @@ describe("ItemController HTTP", () => {
       first: { item: item._id, role: role._id },
       second: { item: entry._id, role: role._id },
     }))
-    await connection.collection("Relation").insertMany([...relations].reverse())
+    await connection
+      .collection("ItemRelation")
+      .insertMany([...relations].reverse())
 
     const response = await app.inject({
       method: "GET",
@@ -924,7 +924,7 @@ describe("ItemController HTTP", () => {
       ],
     })
     await connection
-      .collection("ItemMetric")
+      .collection("ItemStats")
       .insertOne({ item: item._id, ratingAverage: 8, ratingsCount: 10 })
     await connection.collection("Collection").insertOne({
       _id: collectionId,
@@ -935,7 +935,7 @@ describe("ItemController HTTP", () => {
       deletedAt: null,
     })
     await connection
-      .collection("CollectionItem")
+      .collection("ItemCollection")
       .insertOne({ collectionId, item: item._id, groupId, position: 0 })
     await connection.collection("UserCollection").insertOne({
       user: userId,
@@ -952,18 +952,18 @@ describe("ItemController HTTP", () => {
     })
     const names = [
       "Item",
-      "ItemTag",
+      "TagItem",
       "Tag",
+      "ItemRelation",
       "Relation",
-      "ItemRelationRole",
       "UserItem",
-      "ItemMetric",
+      "ItemStats",
       "Collection",
-      "CollectionItem",
+      "ItemCollection",
       "UserCollection",
       "SourceItem",
       "User",
-      "Session",
+      "UserSession",
     ]
     const before = await Promise.all(
       names.map(async (name) =>
@@ -1141,7 +1141,7 @@ describe("ItemController HTTP", () => {
     expect(document.paths["/items/{id}"].get?.security).toBeUndefined()
     expect(document.components?.schemas).toHaveProperty(
       "ItemRelationResponseDto.properties.role.allOf.0.$ref",
-      "#/components/schemas/ItemRelationRoleResponseDto",
+      "#/components/schemas/RelationResponseDto",
     )
     expect(document.components?.schemas).toHaveProperty(
       "ItemResponseDto.properties.title.$ref",

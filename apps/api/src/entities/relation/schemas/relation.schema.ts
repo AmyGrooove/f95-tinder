@@ -1,38 +1,48 @@
+import { ERelationGroup } from "./ERelationGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
-import type { TCreateRelationSide } from "./relationSide.schema"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import type { RelationSide } from "./relationSide.schema"
-import { RelationSideSchema } from "./relationSide.schema"
+import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
+import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
+import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "Relation" })
 class Relation extends MongoEntity {
-  @Prop({ type: RelationSideSchema, required: true })
-  first: RelationSide
+  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
+  key: string
 
-  @Prop({ type: RelationSideSchema, required: true })
-  second: RelationSide
+  @Prop({
+    type: String,
+    enum: Object.values(ERelationGroup),
+    default: null,
+  })
+  group: ERelationGroup | null
+
+  @Prop({ type: LanguageTextSchema, required: true })
+  name: LanguageText
+
+  @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
+  description: LanguageText
+
+  @Prop({
+    type: Number,
+    required: true,
+    default: 1,
+    min: 1,
+    validate: isFiniteNumber,
+  })
+  bonusMultiplier: number
 }
 
 type TCreateRelation = TCreateEntity<
   Relation,
-  never,
-  {
-    first: TCreateRelationSide
-    second: TCreateRelationSide
-  }
+  "description" | "group" | "bonusMultiplier"
 >
 
 const RelationSchema = SchemaFactory.createForClass(Relation)
 
-RelationSchema.index(
-  { "first.item": 1, "first.role": 1 },
-  { name: "relationFirstLookup" },
-)
-RelationSchema.index(
-  { "second.item": 1, "second.role": 1 },
-  { name: "relationSecondLookup" },
-)
+RelationSchema.index({ key: 1 }, { name: "relationKeyUnique", unique: true })
 
 export { Relation, RelationSchema }
 export type { TCreateRelation }

@@ -175,7 +175,7 @@ describe("ItemController", () => {
       title: expect.any(Object),
       media: expect.any(Object),
     })
-    expect(schemas).toHaveProperty("ItemTagResponseDto.properties", {
+    expect(schemas).toHaveProperty("TagItemResponseDto.properties", {
       id: expect.any(Object),
       key: expect.any(Object),
       group: expect.any(Object),
@@ -219,7 +219,7 @@ describe("ItemController", () => {
       item: expect.any(Object),
       role: expect.any(Object),
     })
-    expect(schemas).toHaveProperty("ItemRelationRoleResponseDto.properties", {
+    expect(schemas).toHaveProperty("RelationResponseDto.properties", {
       id: expect.any(Object),
       key: expect.any(Object),
       name: expect.any(Object),

@@ -21,7 +21,7 @@ class ItemSummaryResponseDto {
   media: MediaResponseDto[]
 }
 
-class ItemTagResponseDto {
+class TagItemResponseDto {
   @ApiProperty({ type: String })
   id: string
 
@@ -62,7 +62,7 @@ class ItemGameResponseDto {
   fullCompletionDuration: number | null
 }
 
-class ItemRelationRoleResponseDto {
+class RelationResponseDto {
   @ApiProperty({ type: String })
   id: string
 
@@ -81,10 +81,10 @@ class ItemRelationResponseDto {
   item: ItemSummaryResponseDto
 
   @ApiProperty({
-    type: ItemRelationRoleResponseDto,
+    type: RelationResponseDto,
     description: SWAGGER_DICTIONARY.item.relatedRole,
   })
-  role: ItemRelationRoleResponseDto
+  role: RelationResponseDto
 }
 
 class ItemResponseDto extends ItemSummaryResponseDto {
@@ -95,10 +95,10 @@ class ItemResponseDto extends ItemSummaryResponseDto {
   aliases: string[]
 
   @ApiProperty({
-    type: [ItemTagResponseDto],
+    type: [TagItemResponseDto],
     description: SWAGGER_DICTIONARY.item.tagsOrder,
   })
-  tags: ItemTagResponseDto[]
+  tags: TagItemResponseDto[]
 
   @ApiProperty({ type: String, format: "date-time", nullable: true })
   releaseDate: string | null

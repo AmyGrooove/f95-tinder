@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { MongooseModule } from "@nestjs/mongoose"
 
-import { ItemTagModule } from "@entities/itemTag/itemTag.module"
+import { TagItemModule } from "@entities/tagItem/tagItem.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
@@ -16,7 +16,7 @@ import { RecalculateUserTasteProfileJobHandler } from "./handlers/recalculateUse
 
 @Module({
   imports: [
-    ItemTagModule,
+    TagItemModule,
     UserModule,
     UserItemModule,
     JobsModule,

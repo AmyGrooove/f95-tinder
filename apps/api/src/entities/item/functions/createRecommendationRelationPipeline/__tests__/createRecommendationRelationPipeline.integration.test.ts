@@ -30,7 +30,7 @@ describe("createRecommendationRelationPipeline", () => {
       await connection
         .collection("Item")
         .insertMany([{ _id: candidate }, { _id: source }])
-      await connection.collection("ItemRelationRole").insertMany([
+      await connection.collection("Relation").insertMany([
         { _id: role, bonusMultiplier: 2 },
         { _id: sourceRole, bonusMultiplier: 10 },
       ])
@@ -38,7 +38,7 @@ describe("createRecommendationRelationPipeline", () => {
         { item: candidate, role },
         { item: source, role: sourceRole },
       ]
-      await connection.collection("Relation").insertOne({
+      await connection.collection("ItemRelation").insertOne({
         first: sides[isFirst ? 0 : 1],
         second: sides[isFirst ? 1 : 0],
       })

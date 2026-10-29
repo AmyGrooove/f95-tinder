@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import { createAccount } from "./functions/createAccount"
@@ -68,7 +68,7 @@ describe("AccountController HTTP", () => {
       const { app, connection } = getTestApplication()
       const { session, headers } = await createAccount()
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .updateOne(
           { _id: session._id },
           { $set: { expiresAt: new Date(Date.now() - 1000) } },

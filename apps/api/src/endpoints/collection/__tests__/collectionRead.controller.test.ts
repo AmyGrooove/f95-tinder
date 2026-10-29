@@ -347,7 +347,7 @@ describe("CollectionReadController", () => {
       expect(path).not.toHaveProperty("get")
       expect(path).toHaveProperty(
         "query.requestBody.content.application/json.schema.$ref",
-        "#/components/schemas/CollectionItemsBodyDto",
+        "#/components/schemas/ItemCollectionsBodyDto",
       )
     })
   })

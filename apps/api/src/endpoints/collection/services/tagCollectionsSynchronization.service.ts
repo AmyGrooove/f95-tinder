@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common"
 import type { Types } from "mongoose"
 
-import { ItemTagEventsService } from "@entities/itemTag/services/itemTagEvents.service"
+import { TagItemEventsService } from "@entities/tagItem/services/tagItemEvents.service"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 
 import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "../static/SYNCHRONIZE_TAG_COLLECTIONS_JOB"
@@ -13,7 +13,7 @@ class TagCollectionsSynchronizationService
   private unsubscribe?: () => void
 
   constructor(
-    private readonly events: ItemTagEventsService,
+    private readonly events: TagItemEventsService,
     private readonly jobs: JobService,
   ) {}
 

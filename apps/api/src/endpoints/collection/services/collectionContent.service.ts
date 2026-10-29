@@ -9,13 +9,13 @@ import { Types } from "mongoose"
 import { isISO8601 } from "class-validator"
 
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
-import type { TCollectionFieldOptions } from "@entities/collectionItem/types/TCollectionFieldOptions"
-import type { TCollectionFieldFilter } from "@entities/collectionItem/types/TCollectionFieldFilter"
-import type { ICollectionItemCard } from "@entities/collectionItem/types/ICollectionItemCard"
+import type { TCollectionFieldOptions } from "@entities/itemCollection/types/TCollectionFieldOptions"
+import type { TCollectionFieldFilter } from "@entities/itemCollection/types/TCollectionFieldFilter"
+import type { IItemCollectionCard } from "@entities/itemCollection/types/IItemCollectionCard"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isDate } from "@shared/functions/checks/isDate"
@@ -28,23 +28,23 @@ import { createPaginatedResult } from "@shared/functions/pagination/createPagina
 import type { CollectionFiltersResponseDto } from "../dto/response/collectionFilters.response"
 import { ECollectionMode } from "../types/ECollectionMode"
 import { ECollectionSort } from "../types/ECollectionSort"
-import type { IGetCollectionItemsRequestProps } from "../types/IGetCollectionItemsRequestProps"
+import type { IGetItemCollectionsRequestProps } from "../types/IGetItemCollectionsRequestProps"
 import type { CollectionFieldFilterQueryDto } from "../dto/query/collectionFieldFilter.query"
-import type { CollectionItemResponseDto } from "../dto/response/collectionItem.response"
-import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
+import type { ItemCollectionResponseDto } from "../dto/response/itemCollection.response"
+import type { ItemCollectionsResponseDto } from "../dto/response/itemCollections.response"
 import { createCollectionDisplayBlocks } from "../functions/createCollectionDisplayBlocks"
 
 @Injectable()
 class CollectionContentService {
   constructor(
     private readonly collectionRepository: CollectionRepository,
-    private readonly collectionItemRepository: CollectionItemRepository,
+    private readonly itemCollectionRepository: ItemCollectionRepository,
   ) {}
 
   async getFilters(id: Types.ObjectId): Promise<CollectionFiltersResponseDto> {
     const { collection, groupIds } = await this.getContentContext(id)
 
-    const options = await this.collectionItemRepository.getFilterOptions({
+    const options = await this.itemCollectionRepository.getFilterOptions({
       collectionId: id,
       groupIds,
     })
@@ -76,7 +76,7 @@ class CollectionContentService {
   async getItems({
     id,
     query,
-  }: IGetCollectionItemsRequestProps): Promise<CollectionItemsResponseDto> {
+  }: IGetItemCollectionsRequestProps): Promise<ItemCollectionsResponseDto> {
     const { page, limit } = normalizePagination(query, 20)
 
     if (!Number.isSafeInteger((page - 1) * limit)) {
@@ -105,7 +105,7 @@ class CollectionContentService {
 
     const fields = this.prepareFieldFilters(query.fields)
     const groupCounts =
-      await this.collectionItemRepository.countAvailableItemsByGroup({
+      await this.itemCollectionRepository.countAvailableItemsByGroup({
         collectionId: id,
         groupIds,
       })
@@ -125,7 +125,7 @@ class CollectionContentService {
     const direction =
       query.direction ??
       (query.sort === ECollectionSort.RELEVANCE_SCORE ? "desc" : "asc")
-    const result = await this.collectionItemRepository.readContentPage({
+    const result = await this.itemCollectionRepository.readContentPage({
       collectionId: id,
       groupIds,
       groupId,
@@ -286,7 +286,7 @@ class CollectionContentService {
     return date
   }
 
-  private mapItem(card: ICollectionItemCard): CollectionItemResponseDto {
+  private mapItem(card: IItemCollectionCard): ItemCollectionResponseDto {
     return {
       id: card.item._id.toHexString(),
       type: card.item.type,

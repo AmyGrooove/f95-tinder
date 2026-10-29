@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import type { Types } from "mongoose"
 
 import type { EItemType } from "@entities/item/schemas/EItemType"
-import { ItemTagRepository } from "@entities/itemTag/services/itemTag.repository"
+import { TagItemRepository } from "@entities/tagItem/services/tagItem.repository"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { TAG_GROUP_RULES } from "@entities/tag/static/TAG_GROUP_RULES"
 import { UserRepository } from "@entities/user/services/user.repository"
@@ -24,7 +24,7 @@ class UserTasteProfileRecalculationService {
     private readonly jobService: JobService,
     private readonly userRepository: UserRepository,
     private readonly userItemRepository: UserItemRepository,
-    private readonly itemTagRepository: ItemTagRepository,
+    private readonly tagItemRepository: TagItemRepository,
     private readonly userTasteProfileRepository: UserTasteProfileRepository,
   ) {}
 
@@ -53,7 +53,7 @@ class UserTasteProfileRecalculationService {
       return { calculatedTags: 0 }
     }
 
-    const affectedTags = await this.itemTagRepository.read.findMany(
+    const affectedTags = await this.tagItemRepository.read.findMany(
       { item: itemId },
       { tag: 1 },
     )
@@ -106,33 +106,33 @@ class UserTasteProfileRecalculationService {
       (group) => TAG_GROUP_RULES[group].isUsedForTaste,
     )
 
-    const itemTags =
+    const tagItems =
       userItems.length === 0
         ? []
-        : await this.itemTagRepository.getTasteTags({
+        : await this.tagItemRepository.getTasteTags({
             itemIds: userItems.map((userItem) => userItem.item),
             groups,
             tagIds,
           })
     const preferencesByTag = new Map<string, ITasteTagAccumulator>()
 
-    for (const itemTag of itemTags) {
+    for (const tagItem of tagItems) {
       const itemTypes: readonly EItemType[] =
-        TAG_GROUP_RULES[itemTag.group].itemTypes
-      const contribution = contributionsByItem.get(String(itemTag.item))
+        TAG_GROUP_RULES[tagItem.group].itemTypes
+      const contribution = contributionsByItem.get(String(tagItem.item))
 
-      if (isUndefined(contribution) || !itemTypes.includes(itemTag.itemType)) {
+      if (isUndefined(contribution) || !itemTypes.includes(tagItem.itemType)) {
         continue
       }
 
-      const tagId = String(itemTag.tag)
+      const tagId = String(tagItem.tag)
       const preference = preferencesByTag.get(tagId) ?? {
-        tag: itemTag.tag,
+        tag: tagItem.tag,
         total: 0,
         count: 0,
       }
 
-      preference.total += contribution * itemTag.relevanceScore
+      preference.total += contribution * tagItem.relevanceScore
       preference.count += 1
       preferencesByTag.set(tagId, preference)
     }

@@ -2,16 +2,16 @@ import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
-import { CollectionItemRepository } from "@entities/collectionItem/services/collectionItem.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import { EItemField } from "@entities/item/schemas/EItemField"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import { createCollection } from "./functions/createCollection"
 import type { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
-import type { CollectionItemsResponseDto } from "../dto/response/collectionItems.response"
+import type { ItemCollectionsResponseDto } from "../dto/response/itemCollections.response"
 
 describe("CollectionReadController HTTP", () => {
   describe("QUERY /collections", () => {
@@ -51,7 +51,7 @@ describe("CollectionReadController HTTP", () => {
       const [first, second, franchise, userFranchise, tag, feature, deleted] =
         collections
       await connection.collection("Collection").insertMany(collections)
-      await connection.collection("CollectionItem").insertMany(
+      await connection.collection("ItemCollection").insertMany(
         [
           { collection: first, itemIds: [firstItemId] },
           { collection: second, itemIds: [secondItemId] },
@@ -449,7 +449,7 @@ describe("CollectionReadController HTTP", () => {
       })
       const names = [
         "Collection",
-        "CollectionItem",
+        "ItemCollection",
         "UserCollection",
         "UserItem",
       ]
@@ -547,7 +547,7 @@ describe("CollectionReadController HTTP", () => {
           deletedAt: null,
         })),
       )
-      await connection.collection("CollectionItem").insertMany(
+      await connection.collection("ItemCollection").insertMany(
         itemIds.map((item, index) => ({
           _id: new Types.ObjectId(
             membershipIds[index].toString(16).padStart(24, "0"),
@@ -582,7 +582,7 @@ describe("CollectionReadController HTTP", () => {
         } as unknown as Parameters<typeof app.inject>[0])
 
         expect(response.statusCode).toBe(200)
-        const result = response.json<CollectionItemsResponseDto>()
+        const result = response.json<ItemCollectionsResponseDto>()
         expect(result.total).toBe(6)
         expect(result.items.map((item) => item.id)).toEqual(
           order.map((index) => itemIds[index].toHexString()),
@@ -608,7 +608,7 @@ describe("CollectionReadController HTTP", () => {
         } as unknown as Parameters<typeof app.inject>[0])
 
         expect(response.statusCode).toBe(200)
-        const result = response.json<CollectionItemsResponseDto>()
+        const result = response.json<ItemCollectionsResponseDto>()
         expect(result).toMatchObject({ total: 6, pages: 3, page: index + 1 })
         expect(result.items.map((item) => item.id)).toEqual(
           expected.map((itemIndex) => itemIds[itemIndex].toHexString()),
@@ -632,7 +632,7 @@ describe("CollectionReadController HTTP", () => {
         } as unknown as Parameters<typeof app.inject>[0])
 
         expect(response.statusCode).toBe(200)
-        const result = response.json<CollectionItemsResponseDto>()
+        const result = response.json<ItemCollectionsResponseDto>()
         expect(result.items.map((item) => item.id)).toEqual(
           order.map((index) => itemIds[index].toHexString()),
         )
@@ -657,7 +657,7 @@ describe("CollectionReadController HTTP", () => {
       } as unknown as Parameters<typeof app.inject>[0])
 
       expect(response.statusCode).toBe(200)
-      const result = response.json<CollectionItemsResponseDto>()
+      const result = response.json<ItemCollectionsResponseDto>()
       expect(result).toMatchObject({ total: 4, pages: 2 })
       expect(result.items.map((item) => item.id)).toEqual([
         itemIds[2].toHexString(),
@@ -687,7 +687,7 @@ describe("CollectionReadController HTTP", () => {
     it("обновляет сохранённую значимость, сохраняет её при пропуске поля и сбрасывает через null", async () => {
       const { app, connection } = getTestApplication()
       const { collectionId, groupIds, itemIds } = await createRelevanceFixture()
-      const repository = app.get(CollectionItemRepository)
+      const repository = app.get(ItemCollectionRepository)
       const item = { item: itemIds[0], groupId: groupIds[0], position: 0 }
 
       for (const [changes, expected] of [
@@ -700,7 +700,7 @@ describe("CollectionReadController HTTP", () => {
           items: [{ ...item, ...changes }],
         })
 
-        const saved = await connection.collection("CollectionItem").findOne({
+        const saved = await connection.collection("ItemCollection").findOne({
           collectionId,
           item: itemIds[0],
         })
@@ -878,7 +878,7 @@ describe("CollectionReadController HTTP", () => {
     } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({ items: [], total: 0 })
-    expect(await connection.collection("CollectionItem").countDocuments()).toBe(
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
       2,
     )
   })
@@ -1014,7 +1014,7 @@ describe("CollectionReadController HTTP", () => {
     expect(invalid.statusCode).toBe(200)
     expect(invalid.json()).toEqual(guest.json())
     await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .updateOne(
         { _id: owner.session._id },
         { $set: { expiresAt: new Date(Date.now() - 1000) } },
@@ -1027,7 +1027,9 @@ describe("CollectionReadController HTTP", () => {
     } as unknown as Parameters<typeof app.inject>[0])
     expect(expired.statusCode).toBe(200)
     expect(expired.json()).toEqual(guest.json())
-    await connection.collection("Session").deleteOne({ _id: owner.session._id })
+    await connection
+      .collection("UserSession")
+      .deleteOne({ _id: owner.session._id })
     const revoked = await app.inject({
       method: "QUERY",
       url,
@@ -1046,7 +1048,7 @@ describe("CollectionReadController HTTP", () => {
       { _id: tagA, key: "alpha", group: "genre", name: { ru: "А", en: "A" } },
       { _id: tagB, key: "beta", group: "genre", name: { ru: "Б", en: "B" } },
     ])
-    await connection.collection("ItemTag").insertMany([
+    await connection.collection("TagItem").insertMany([
       { item: first._id, tag: tagA },
       { item: second._id, tag: tagB },
     ])
@@ -1130,7 +1132,7 @@ describe("CollectionReadController HTTP", () => {
       group: "releaseStatus",
       name: { ru: "Выходит", en: "Ongoing" },
     })
-    await connection.collection("ItemTag").insertOne({
+    await connection.collection("TagItem").insertOne({
       item: second._id,
       tag: statusTagId,
     })
@@ -1340,7 +1342,7 @@ describe("CollectionReadController HTTP", () => {
     async (query, indexes) => {
       const { app, connection } = getTestApplication()
       const { collection, first, second, owner } = await createCollection()
-      await connection.collection("ItemMetric").insertMany([
+      await connection.collection("ItemStats").insertMany([
         { item: first._id, ratingAverage: 7.5 },
         { item: second._id, ratingAverage: 8.25 },
         { item: new Types.ObjectId(), ratingAverage: 9 },
@@ -1403,11 +1405,11 @@ describe("CollectionReadController HTTP", () => {
       const { app, connection } = getTestApplication()
       const { collection, first, second, owner } = await createCollection()
       await connection
-        .collection("ItemMetric")
+        .collection("ItemStats")
         .insertOne({ item: second._id, ratingAverage: 8 })
       if (average === null) {
         await connection
-          .collection("ItemMetric")
+          .collection("ItemStats")
           .insertOne({ item: first._id, ratingAverage: null })
       }
       await connection.collection("UserItem").insertOne({
@@ -1456,7 +1458,7 @@ describe("CollectionReadController HTTP", () => {
     const { app, connection } = getTestApplication()
     const { collection, first, second, secondGroupId } =
       await createCollection()
-    await connection.collection("ItemMetric").insertMany([
+    await connection.collection("ItemStats").insertMany([
       { item: first._id, ratingAverage: 7.5 },
       { item: second._id, ratingAverage: 8.25 },
     ])

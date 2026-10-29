@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { describe, expect, it } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Session } from "@entities/session/schemas/session.schema"
+import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
 import { JWT_ACCESS_EXPIRATION } from "@infrastructure/security/static/JWT_ACCESS_EXPIRATION"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
@@ -84,7 +84,7 @@ describe("AuthController HTTP", () => {
       sessionId: access.sessionId,
     })
     const session = await connection
-      .collection<Session>("Session")
+      .collection<UserSession>("UserSession")
       .findOne({ user: user?._id })
     expect(session?._id.toHexString()).toBe(access.sessionId)
     expect(session).toMatchObject({
@@ -165,7 +165,7 @@ describe("AuthController HTTP", () => {
         session: { country: expectedCountry },
       })
       const session = await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({})
       expect(session?.country).toBe(expectedCountry)
     },
@@ -195,7 +195,7 @@ describe("AuthController HTTP", () => {
       expect(response.headers["cache-control"]).toBe("no-store")
       expectAuthCookies(response.cookies)
       const sessions = await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .find({ user: account.user._id })
         .toArray()
       expect(sessions).toHaveLength(2)
@@ -263,7 +263,9 @@ describe("AuthController HTTP", () => {
       expect(response.statusCode).toBe(401)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").countDocuments({}),
+        await connection
+          .collection<UserSession>("UserSession")
+          .countDocuments({}),
       ).toBe(1)
     },
   )
@@ -288,7 +290,9 @@ describe("AuthController HTTP", () => {
       expect(response.statusCode).toBe(401)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").countDocuments({}),
+        await connection
+          .collection<UserSession>("UserSession")
+          .countDocuments({}),
       ).toBe(1)
     },
   )
@@ -342,7 +346,9 @@ describe("AuthController HTTP", () => {
       expect(response.statusCode).toBe(400)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").countDocuments({}),
+        await connection
+          .collection<UserSession>("UserSession")
+          .countDocuments({}),
       ).toBe(0)
     },
   )
@@ -383,12 +389,12 @@ describe("AuthController HTTP", () => {
     }
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .findOne({ _id: account.session._id }),
     ).toBeNull()
     expect(
       await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({ user: account.user._id }),
     ).toBe(1)
     for (const [method, url] of [
@@ -440,7 +446,7 @@ describe("AuthController HTTP", () => {
     async (scenario) => {
       const { app, connection } = getTestApplication()
       const account = await createAccount()
-      const sessions = connection.collection<Session>("Session")
+      const sessions = connection.collection<UserSession>("UserSession")
       if (scenario === "missing") {
         await sessions.deleteOne({ _id: account.session._id })
       } else {
@@ -485,7 +491,9 @@ describe("AuthController HTTP", () => {
     expect(response.cookies).toEqual([])
     expect(await connection.collection<User>("User").countDocuments({})).toBe(0)
     expect(
-      await connection.collection<Session>("Session").countDocuments({}),
+      await connection
+        .collection<UserSession>("UserSession")
+        .countDocuments({}),
     ).toBe(0)
   })
 
@@ -520,7 +528,7 @@ describe("AuthController HTTP", () => {
         ).toBe(status)
       }
       const before = await connection
-        .collection<Session>("Session")
+        .collection<UserSession>("UserSession")
         .countDocuments({})
       const response = await app.inject({
         method: "POST",
@@ -531,7 +539,9 @@ describe("AuthController HTTP", () => {
       expect(response.statusCode).toBe(429)
       expect(response.cookies).toEqual([])
       expect(
-        await connection.collection<Session>("Session").countDocuments({}),
+        await connection
+          .collection<UserSession>("UserSession")
+          .countDocuments({}),
       ).toBe(before)
     },
   )

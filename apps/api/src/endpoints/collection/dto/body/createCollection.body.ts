@@ -15,7 +15,7 @@ import { MediaBodyDto } from "@entities/shared/dto/body/media.body"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { CreateBlockBodyDto } from "./createBlock.body"
-import { CreateCollectionItemBodyDto } from "./createCollectionItem.body"
+import { CreateItemCollectionBodyDto } from "./createItemCollection.body"
 
 class CreateCollectionBodyDto {
   @ApiProperty({ type: LanguageTextBodyDto })
@@ -56,13 +56,13 @@ class CreateCollectionBodyDto {
   @Type(() => CreateBlockBodyDto)
   blocks?: CreateBlockBodyDto[]
 
-  @ApiPropertyOptional({ type: [CreateCollectionItemBodyDto] })
+  @ApiPropertyOptional({ type: [CreateItemCollectionBodyDto] })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
-  @Type(() => CreateCollectionItemBodyDto)
-  items?: CreateCollectionItemBodyDto[]
+  @Type(() => CreateItemCollectionBodyDto)
+  items?: CreateItemCollectionBodyDto[]
 }
 
 export { CreateCollectionBodyDto }

@@ -38,7 +38,7 @@ describe("createRecommendationTastePipeline", () => {
       { _id: tags[0], group: ETagGroup.GENRE, weightModifier: 2, parents: [] },
       { _id: tags[1], group: ETagGroup.STYLE, weightModifier: 1, parents: [] },
     ])
-    await connection.collection("ItemTag").insertMany([
+    await connection.collection("TagItem").insertMany([
       { item, tag: tags[0], relevanceScore: 0.5 },
       { item, tag: tags[1], relevanceScore: 1 },
     ])
@@ -70,7 +70,7 @@ describe("createRecommendationTastePipeline", () => {
         parents: index === 1 ? [tags[0]] : [],
       })),
     )
-    await connection.collection("ItemTag").insertMany(
+    await connection.collection("TagItem").insertMany(
       tags.map((tag, index) => ({
         item,
         tag,

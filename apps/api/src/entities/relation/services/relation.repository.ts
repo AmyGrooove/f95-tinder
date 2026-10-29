@@ -31,7 +31,8 @@ class RelationRepository {
   readonly aggregation: MongoAggregationRepository<HydratedDocument<Relation>>
 
   constructor(
-    @InjectModel(Relation.name) model: Model<HydratedDocument<Relation>>,
+    @InjectModel(Relation.name)
+    model: Model<HydratedDocument<Relation>>,
   ) {
     this.read = new MongoReadRepository<Relation, HydratedDocument<Relation>>(
       model,
