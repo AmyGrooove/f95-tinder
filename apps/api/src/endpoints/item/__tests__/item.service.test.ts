@@ -353,13 +353,13 @@ describe("ItemService", () => {
 
   it("возвращает 404 при отсутствии доступного произведения", async () => {
     repository.findDetailsById.mockResolvedValue(null)
+    const result = service.getById(item._id)
 
-    await expect(service.getById(item._id)).rejects.toBeInstanceOf(
-      NotFoundException,
-    )
-    await expect(service.getById(item._id)).rejects.toMatchObject({
+    await expect(result).rejects.toBeInstanceOf(NotFoundException)
+    await expect(result).rejects.toMatchObject({
       message: DICTIONARY.item.notFound,
     })
+    expect(repository.findDetailsById).toHaveBeenCalledTimes(1)
   })
 
   it("сохраняет ошибку репозитория вместо подмены пустым ответом или 404", async () => {

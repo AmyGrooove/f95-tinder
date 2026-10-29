@@ -88,23 +88,16 @@ describe("ItemCollectionsBodyDto", () => {
     },
   )
 
-  it.each(["ratingMin", "ratingMax"])(
-    "отклоняет неверные значения %s",
-    async (field) => {
-      for (const value of [
-        "",
-        "0",
-        "10.1",
-        "NaN",
-        "Infinity",
-        "bad",
-        ["7", "8"],
-      ]) {
-        const dto = plainToInstance(ItemCollectionsBodyDto, { [field]: value })
-        expect(await validate(dto)).toEqual([
-          expect.objectContaining({ property: field }),
-        ])
-      }
-    },
-  )
+  describe.each(["ratingMin", "ratingMax"])("%s", (field) => {
+    it.each(
+      ["", "0", "10.1", "NaN", "Infinity", "bad", ["7", "8"]].map((value) => ({
+        value,
+      })),
+    )("отклоняет неверное значение $value", async ({ value }) => {
+      const dto = plainToInstance(ItemCollectionsBodyDto, { [field]: value })
+      expect(await validate(dto)).toEqual([
+        expect.objectContaining({ property: field }),
+      ])
+    })
+  })
 })

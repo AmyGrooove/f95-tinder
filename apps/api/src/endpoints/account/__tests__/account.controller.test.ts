@@ -1,11 +1,11 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import {
   BadRequestException,
   ConflictException,
   UnauthorizedException,
   ValidationPipe,
 } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 
 import { EUserRole } from "@entities/user/schemas/EUserRole"
 import { ECountry } from "@entities/shared/schemas/ECountry"
@@ -16,6 +16,13 @@ import { DisplayNameBodyDto } from "../dto/body/displayName.body"
 import { UsernameBodyDto } from "../dto/body/username.body"
 
 describe("AccountController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   it.each([
     { field: "username", value: "a".repeat(32), isValid: true },
     { field: "username", value: `  ${"A".repeat(32)}  `, isValid: true },
@@ -58,7 +65,7 @@ describe("AccountController", () => {
       updateUsername: jest.fn<AccountService["updateUsername"]>(),
       whoami: jest.fn<AccountService["whoami"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [AccountController],
       providers: [{ provide: AccountService, useValue: service }],
     }).compile()

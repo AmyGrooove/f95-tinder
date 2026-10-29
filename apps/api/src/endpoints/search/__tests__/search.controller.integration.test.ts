@@ -9,6 +9,7 @@ import {
   describe,
   expect,
   it,
+  jest,
 } from "@jest/globals"
 import type { FastifyInstance } from "fastify"
 import { Meilisearch } from "meilisearch"
@@ -788,9 +789,14 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     { search: "x", collections: { types: ["bad"] } },
     { search: "x", users: { sort: "rating" } },
   ])("отклоняет некорректный запрос без запуска поиска: %j", async (body) => {
+    const search = application.app.get(SearchService)
+    const searchIndex = jest.spyOn(search, "search")
+    const iterateMatches = jest.spyOn(search, "iterateMatches")
     const response = await query(body)
     expect(response.statusCode).toBe(400)
     expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
+    expect(searchIndex).not.toHaveBeenCalled()
+    expect(iterateMatches).not.toHaveBeenCalled()
   })
 
   it("сохраняет CORS для QUERY и блокирует посторонний Origin", async () => {

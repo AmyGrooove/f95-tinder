@@ -12,6 +12,7 @@ import { Types } from "mongoose"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
+import type { User } from "@entities/user/schemas/user.schema"
 import { CacheService } from "@infrastructure/cache/services/cache.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
@@ -37,7 +38,16 @@ describe("SyncSearchJobHandler", () => {
     read: { findMany: jest.fn<ItemRepository["read"]["findMany"]>() },
   }
   const users = {
-    read: { findMany: jest.fn<UserRepository["read"]["findMany"]>() },
+    read: {
+      findMany:
+        jest.fn<
+          (
+            ...args: Parameters<UserRepository["read"]["findMany"]>
+          ) => Promise<
+            Pick<User, "_id" | "username" | "displayName" | "avatarUrl">[]
+          >
+        >(),
+    },
   }
   const collections = {
     read: { findMany: jest.fn<CollectionRepository["read"]["findMany"]>() },
@@ -134,7 +144,7 @@ describe("SyncSearchJobHandler", () => {
     ])
   })
 
-  it.each(["settings", "read", "cleanup", "delete"])(
+  it.each(["settings", "read", "upsert", "cleanup", "delete"])(
     "сохраняет прежнюю отметку и исходную ошибку при сбое %s",
     async (phase) => {
       const error = new Error("search failed")
@@ -142,6 +152,16 @@ describe("SyncSearchJobHandler", () => {
         search.ensureIndex.mockRejectedValueOnce(error)
       } else if (phase === "read") {
         items.readSearchIndexBatch.mockRejectedValueOnce(error)
+      } else if (phase === "upsert") {
+        users.read.findMany.mockResolvedValueOnce([
+          {
+            _id: new Types.ObjectId(),
+            username: "username",
+            displayName: "Имя",
+            avatarUrl: null,
+          },
+        ])
+        search.upsert.mockRejectedValueOnce(error)
       } else if (phase === "cleanup") {
         search.readDocumentIds.mockRejectedValueOnce(error)
       } else {

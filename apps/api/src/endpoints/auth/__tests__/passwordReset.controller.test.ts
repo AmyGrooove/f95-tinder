@@ -1,6 +1,6 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import { BadRequestException } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
 
@@ -8,6 +8,13 @@ import { PasswordResetController } from "../controllers/passwordReset.controller
 import { PasswordResetService } from "../services/passwordReset.service"
 
 describe("PasswordResetController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createController = async () => {
     const service = {
       requestReset: jest.fn<PasswordResetService["requestReset"]>(),
@@ -16,7 +23,7 @@ describe("PasswordResetController", () => {
     const cookies = {
       clearAuthCookies: jest.fn<SecurityCookieService["clearAuthCookies"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [PasswordResetController],
       providers: [
         { provide: PasswordResetService, useValue: service },

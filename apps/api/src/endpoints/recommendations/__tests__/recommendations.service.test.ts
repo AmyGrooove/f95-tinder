@@ -194,6 +194,8 @@ describe("RecommendationsService", () => {
     },
     ...[
       { ratingMin: 0 },
+      { ratingMin: 11 },
+      { ratingMax: 0 },
       { ratingMax: 11 },
       { ratingMin: NaN },
       { ratingMax: Infinity },
@@ -204,6 +206,9 @@ describe("RecommendationsService", () => {
     })),
     ...[
       { field: EItemField.DURATION },
+      { field: "unknown" as EItemField, min: 0 },
+      { field: "toString" as EItemField, min: 0 },
+      { field: "__proto__" as EItemField, min: 0 },
       { field: EItemField.DURATION, min: 100, max: 10 },
       { field: EItemField.DURATION, min: NaN },
       { field: EItemField.DURATION, max: Infinity },
@@ -233,6 +238,7 @@ describe("RecommendationsService", () => {
   )
 
   it.each([
+    { ratingMin: 1, ratingMax: 10 },
     { fields: [{ field: EItemField.DURATION, min: 0 }] },
     {
       fields: [{ field: EItemField.RELEASE_DATE, max: new Date("2026-01-01") }],
@@ -267,6 +273,18 @@ describe("RecommendationsService", () => {
     )
   })
 
+  it("не снимает ограничение подборки без групп", async () => {
+    findCollection.mockResolvedValue({
+      blocks: [{ id: textId, type: ECollectionBlockType.TEXT }],
+    })
+
+    await service.find({ userId, filter: { collectionId } })
+
+    expect(readRecommendations).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionGroupIds: [] }),
+    )
+  })
+
   it.each([new Types.ObjectId(), textId])(
     "отклоняет чужую группу и текстовый блок: %s",
     async (invalidGroup) => {
@@ -287,6 +305,18 @@ describe("RecommendationsService", () => {
     await expect(
       service.find({ userId, filter: { collectionId } }),
     ).rejects.toBeInstanceOf(NotFoundException)
+    expect(readRecommendations).not.toHaveBeenCalled()
+  })
+
+  it("передаёт ошибку чтения подборки до чтения профиля и кандидатов", async () => {
+    const error = new Error("Collection unavailable")
+    findCollection.mockRejectedValue(error)
+
+    await expect(
+      service.find({ userId, filter: { collectionId } }),
+    ).rejects.toBe(error)
+    expect(findProfile).not.toHaveBeenCalled()
+    expect(readRatingBaseline).not.toHaveBeenCalled()
     expect(readRecommendations).not.toHaveBeenCalled()
   })
 

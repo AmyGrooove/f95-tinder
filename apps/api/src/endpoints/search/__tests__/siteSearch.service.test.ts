@@ -17,6 +17,9 @@ import { ItemRepository } from "@entities/item/services/item.repository"
 import { UserRepository } from "@entities/user/services/user.repository"
 import { CollectionRepository } from "@entities/collection/services/collection.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
+import type { Collection } from "@entities/collection/schemas/collection.schema"
+import type { User } from "@entities/user/schemas/user.schema"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { CacheService } from "@infrastructure/cache/services/cache.service"
@@ -41,10 +44,28 @@ describe("SiteSearchService", () => {
     },
   }
   const users = {
-    read: { findMany: jest.fn<UserRepository["read"]["findMany"]>() },
+    read: {
+      findMany:
+        jest.fn<
+          (
+            ...args: Parameters<UserRepository["read"]["findMany"]>
+          ) => Promise<
+            Pick<User, "_id" | "username" | "displayName" | "avatarUrl">[]
+          >
+        >(),
+    },
   }
   const collections = {
-    read: { findMany: jest.fn<CollectionRepository["read"]["findMany"]>() },
+    read: {
+      findMany:
+        jest.fn<
+          (
+            ...args: Parameters<CollectionRepository["read"]["findMany"]>
+          ) => Promise<
+            Pick<Collection, "_id" | "type" | "title" | "media" | "author">[]
+          >
+        >(),
+    },
   }
   let service: SiteSearchService
   let module: TestingModule
@@ -110,6 +131,83 @@ describe("SiteSearchService", () => {
       expect.objectContaining({ sort: ["updatedAt:desc", "id:asc"] }),
     )
     expect(search.iterateMatches).not.toHaveBeenCalled()
+  })
+
+  it("сохраняет порядок поиска и пропускает отсутствующие карточки во всех группах без раскрытия полей хранения", async () => {
+    const first = new Types.ObjectId("000000000000000000000001")
+    const missing = new Types.ObjectId("000000000000000000000002")
+    const last = new Types.ObjectId("000000000000000000000003")
+    search.search.mockResolvedValue({
+      hits: [first, missing, last].map((id) => ({ id: String(id) })),
+      estimatedTotalHits: 3,
+      query: "orbit",
+      offset: 0,
+      limit: 10,
+      processingTimeMs: 0,
+    })
+    items.read.findMany.mockResolvedValue(
+      [last, first].map((_id) => ({
+        _id,
+        type: EItemType.MOVIE,
+        title: { ru: "Актуальное название", en: null },
+        media: [],
+        secret: "internal",
+      })),
+    )
+    users.read.findMany.mockResolvedValue(
+      [last, first].map((_id) => ({
+        _id,
+        username: "username",
+        displayName: "Имя",
+        avatarUrl: null,
+        passwordHash: "internal",
+      })),
+    )
+    collections.read.findMany.mockResolvedValue(
+      [last, first].map((_id) => ({
+        _id,
+        type: ECollectionType.CUSTOM,
+        title: { ru: "Подборка", en: null },
+        media: [],
+        author: _id.equals(first) ? first : null,
+        secret: "internal",
+      })),
+    )
+
+    const result = await service.search(
+      Object.assign(new SearchBodyDto(), { search: "orbit" }),
+    )
+
+    expect(result).toEqual({
+      items: {
+        hits: [first, last].map((id) => ({
+          id: String(id),
+          type: "movie",
+          title: { ru: "Актуальное название", en: null },
+          media: [],
+        })),
+        estimatedTotalHits: 3,
+      },
+      users: {
+        hits: [first, last].map((id) => ({
+          id: String(id),
+          username: "username",
+          displayName: "Имя",
+          avatarUrl: null,
+        })),
+        estimatedTotalHits: 3,
+      },
+      collections: {
+        hits: [first, last].map((id) => ({
+          id: String(id),
+          type: "custom",
+          title: { ru: "Подборка", en: null },
+          media: [],
+          authorId: id.equals(first) ? String(first) : null,
+        })),
+        estimatedTotalHits: 3,
+      },
+    })
   })
 
   it("обходит кандидатов за пределами maxTotalHits при обратной релевантности и разрешает равенство по ID", async () => {

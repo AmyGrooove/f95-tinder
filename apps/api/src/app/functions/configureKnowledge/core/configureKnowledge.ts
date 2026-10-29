@@ -68,7 +68,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
     })
 
     knowledge.register(fastifyStatic, {
-      root: resolve("node_modules/docsify/lib"),
+      root: resolve("node_modules/docsify/dist"),
       prefix: "/knowledge/vendor/",
       decorateReply: false,
       index: false,

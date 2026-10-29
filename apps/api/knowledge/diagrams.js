@@ -131,13 +131,13 @@ const renderKnowledgeDiagrams = async () => {
 
 window.$docsify.markdown = {
   renderer: {
-    code(code, lang) {
+    code({ text, lang }) {
       if (lang !== "mermaid") {
         return this.origin.code.apply(this, arguments)
       }
 
       const source = document.createElement("code")
-      source.textContent = code.replace(/@DOCSIFY_QM@/g, "`")
+      source.textContent = text.replace(/@DOCSIFY_QM@/g, "`")
 
       return `<figure class="knowledge-diagram">
         <figcaption class="diagram-header">

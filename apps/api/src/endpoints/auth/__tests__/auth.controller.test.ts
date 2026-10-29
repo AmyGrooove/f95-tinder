@@ -1,9 +1,9 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 
 import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
 
@@ -11,6 +11,13 @@ import { AuthController } from "../controllers/auth.controller"
 import { AuthService } from "../services/auth.service"
 
 describe("AuthController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createController = async () => {
     const service = {
       login: jest.fn<AuthService["login"]>(),
@@ -22,7 +29,7 @@ describe("AuthController", () => {
       setAuthCookies: jest.fn<SecurityCookieService["setAuthCookies"]>(),
       clearAuthCookies: jest.fn<SecurityCookieService["clearAuthCookies"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: service },

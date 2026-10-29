@@ -1,6 +1,6 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import { BadRequestException } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
@@ -13,6 +13,13 @@ import { CollectionContentService } from "../services/collectionContent.service"
 import { ECollectionSort } from "../types/ECollectionSort"
 
 describe("CollectionContentService", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createService = async (type = ECollectionType.CUSTOM) => {
     const id = new Types.ObjectId()
     const groupId = new Types.ObjectId()
@@ -56,7 +63,7 @@ describe("CollectionContentService", () => {
       ],
       total: 1,
     })
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       providers: [
         CollectionContentService,
         { provide: CollectionRepository, useValue: collection },

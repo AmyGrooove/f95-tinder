@@ -938,8 +938,12 @@ describe("RecommendationsService MongoDB", () => {
   it("для нового пользователя разрешает равенство сглаженным рейтингом и затем ID", async () => {
     const unrated = await seedItem()
     const singleVote = await seedItem()
-    const manyVotes = await seedItem()
-    const sameScore = await seedItem()
+    const sameScore = await seedItem({
+      id: new Types.ObjectId("000000000000000000000002"),
+    })
+    const manyVotes = await seedItem({
+      id: new Types.ObjectId("000000000000000000000001"),
+    })
     await getTestDatabase()
       .connection.collection("ItemStats")
       .insertMany([
@@ -961,6 +965,67 @@ describe("RecommendationsService MongoDB", () => {
       result.items.map((item) => item._id),
     )
   })
+
+  it.each(["asc", "desc"] as const)(
+    "ставит включённые исключения после доступных кандидатов до пагинации и сохраняет жёсткие ограничения: %s",
+    async (direction) => {
+      const liked = await seedTag()
+      const disliked = await seedTag()
+      await setProfile([
+        { tag: liked, explicitWeight: 1 },
+        { tag: disliked, explicitWeight: -1 },
+      ])
+      const eligible = await seedItem()
+      const blocked = await seedItem()
+      const banned = await seedItem()
+      const skipped = await seedItem()
+      const planned = await seedItem()
+      const explicitlyExcluded = await seedItem()
+      await seedItem({ deletedAt: new Date() })
+      await seedItem({ type: EItemType.MOVIE })
+      await assignTags(eligible, [{ tag: disliked }])
+      await assignTags(blocked, [{ tag: liked }])
+      await assignTags(banned, [{ tag: liked, relevanceScore: 0.8 }])
+      await assignTags(skipped, [{ tag: liked, relevanceScore: 0.6 }])
+      await react({ item: blocked, status: EUserItemStatus.BLOCKED })
+      await react({ item: skipped, status: EUserItemStatus.SKIPPED })
+      await react({ item: planned, status: EUserItemStatus.PLANNED })
+      await getTestDatabase()
+        .connection.collection("ItemBan")
+        .insertOne({ item: banned, countries: [] })
+      const props: Omit<IFindRecommendationsProps, "userId"> = {
+        direction,
+        filter: { types: [EItemType.GAME] },
+        library: { exclude: [EUserItemStatus.PLANNED] },
+        excludeItemIds: [explicitlyExcluded],
+      }
+      expect((await find(props)).items.map((item) => item._id)).toEqual([
+        eligible,
+      ])
+
+      const first = await find({
+        ...props,
+        isIncludingExcluded: true,
+        pagination: { page: 1, limit: 2 },
+      })
+      const second = await find({
+        ...props,
+        isIncludingExcluded: true,
+        pagination: { page: 2, limit: 2 },
+      })
+
+      expect([...first.items, ...second.items].map((item) => item._id)).toEqual(
+        direction === "desc"
+          ? [eligible, blocked, banned, skipped]
+          : [eligible, skipped, banned, blocked],
+      )
+      expect(first).toMatchObject({ total: 4, pages: 2, isNextPage: true })
+      expect(second).toMatchObject({ total: 4, pages: 2, isNextPage: false })
+      for (const item of [...first.items, ...second.items]) {
+        expect(item).not.toHaveProperty("isRecommendationExcluded")
+      }
+    },
+  )
 
   it("использует сохранённую среднюю SiteStats без обхода пользовательских оценок", async () => {
     const candidate = await seedItem()

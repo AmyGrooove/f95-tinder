@@ -1,22 +1,29 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import {
   BadRequestException,
   ConflictException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 
 import { AccountSetupController } from "../controllers/accountSetup.controller"
 import { AccountSetupService } from "../services/accountSetup.service"
 
 describe("AccountSetupController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createController = async () => {
     const service = {
       confirmSetup: jest.fn<AccountSetupService["confirmSetup"]>(),
       requestSetup: jest.fn<AccountSetupService["requestSetup"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [AccountSetupController],
       providers: [{ provide: AccountSetupService, useValue: service }],
     }).compile()

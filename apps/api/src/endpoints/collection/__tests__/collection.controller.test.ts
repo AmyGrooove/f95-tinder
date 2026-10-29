@@ -1,10 +1,10 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import {
   ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
@@ -13,13 +13,20 @@ import { CollectionController } from "../controllers/collection.controller"
 import { CollectionService } from "../services/collection.service"
 
 describe("CollectionController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createController = async () => {
     const service = {
       create: jest.fn<CollectionService["create"]>(),
       update: jest.fn<CollectionService["update"]>(),
       remove: jest.fn<CollectionService["remove"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [CollectionController],
       providers: [{ provide: CollectionService, useValue: service }],
     }).compile()

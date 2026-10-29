@@ -1,6 +1,6 @@
-import { describe, expect, it, jest } from "@jest/globals"
+import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import { NotFoundException, UnauthorizedException } from "@nestjs/common"
-import { Test } from "@nestjs/testing"
+import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
@@ -10,6 +10,13 @@ import { SessionController } from "../controllers/session.controller"
 import { SessionService } from "../services/session.service"
 
 describe("SessionController", () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   const createController = async () => {
     const service = {
       getSessions: jest.fn<SessionService["getSessions"]>(),
@@ -21,7 +28,7 @@ describe("SessionController", () => {
       setAuthCookies: jest.fn<SecurityCookieService["setAuthCookies"]>(),
       clearAuthCookies: jest.fn<SecurityCookieService["clearAuthCookies"]>(),
     }
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       controllers: [SessionController],
       providers: [
         { provide: SessionService, useValue: service },

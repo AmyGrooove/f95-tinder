@@ -4,6 +4,54 @@ import { createTestApplication } from "@test/functions/createTestApplication"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 describe("TestApplication", () => {
+  it("изолирует данные, Redis и письма при сбросе и закрытии другого приложения", async () => {
+    const first = getTestApplication()
+    const second = await createTestApplication()
+    const message = {
+      to: "user@example.test",
+      subject: "Изоляция",
+      text: "Тестовое письмо",
+    }
+
+    try {
+      await first.connection
+        .collection("test_isolation")
+        .insertOne({ value: "first" })
+      await second.connection
+        .collection("test_isolation")
+        .insertOne({ value: "second" })
+      await first.redis.set("test:isolation", "first")
+      await second.redis.set("test:isolation", "second")
+      await first.mail.send(message)
+      await second.mail.send(message)
+
+      expect(first.connection.name).not.toBe(second.connection.name)
+      expect(await first.redis.get("test:isolation")).toBe("first")
+      expect(await second.redis.get("test:isolation")).toBe("second")
+
+      await second.reset()
+
+      expect(
+        await second.connection.collection("test_isolation").countDocuments(),
+      ).toBe(0)
+      expect(await second.redis.get("test:isolation")).toBeNull()
+      expect(second.mail.messages).toStrictEqual([])
+
+      await second.close()
+      await expect(second.close()).resolves.toBeUndefined()
+
+      expect(
+        await first.connection
+          .collection("test_isolation")
+          .findOne({}, { projection: { _id: 0 } }),
+      ).toStrictEqual({ value: "first" })
+      expect(await first.redis.get("test:isolation")).toBe("first")
+      expect(first.mail.messages).toStrictEqual([message])
+    } finally {
+      await second.close()
+    }
+  }, 300_000)
+
   it("запускается без импорта словаря тегов и автоматических коллекций", async () => {
     const environment = await createTestApplication()
 

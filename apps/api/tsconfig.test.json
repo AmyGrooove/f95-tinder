@@ -7,11 +7,11 @@
     "noEmit": true,
     "esModuleInterop": true,
     "paths": {
-      "@entities/*": ["entities/*"],
-      "@endpoints/*": ["endpoints/*"],
-      "@infrastructure/*": ["infrastructure/*"],
-      "@shared/*": ["shared/*"],
-      "@test/*": ["tests/*"]
+      "@entities/*": ["./src/entities/*"],
+      "@endpoints/*": ["./src/endpoints/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@test/*": ["./src/tests/*"]
     }
   },
   "include": ["src/**/*.ts"],

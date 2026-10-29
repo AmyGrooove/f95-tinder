@@ -247,6 +247,79 @@ describe("SearchService Meilisearch", () => {
     ).toEqual(["cosmos", "foundation"])
   })
 
+  it("проверяет существование индекса без его создания", async () => {
+    await expect(service.hasIndex(indexName)).resolves.toBe(false)
+    await seed()
+    await expect(service.hasIndex(indexName)).resolves.toBe(true)
+    expect((await service.search(indexName, "")).estimatedTotalHits).toBe(3)
+  })
+
+  it("обходит все совпадения за пределами поискового лимита с фильтром и оценкой релевантности", async () => {
+    await service.ensureIndex(
+      indexName,
+      {
+        ...options,
+        filterableAttributes: ["id", "genre"],
+        pagination: { maxTotalHits: 2 },
+      },
+      true,
+    )
+    await service.upsert(
+      indexName,
+      [
+        ...documents,
+        { id: "dune-2", title: "Dune Messiah", genre: "fiction", year: 1969 },
+        {
+          id: "dune-3",
+          title: "Children of Dune",
+          genre: "fiction",
+          year: 1976,
+        },
+        {
+          id: "dune-science",
+          title: "Dune Science",
+          genre: "science",
+          year: 2026,
+        },
+      ],
+      true,
+    )
+    const matches = []
+
+    for await (const batch of service.iterateMatches({
+      index: indexName,
+      query: "Dune",
+      filter: ["genre = fiction"],
+      batchSize: 2,
+    })) {
+      matches.push(...batch)
+    }
+
+    expect(matches.map(({ id }) => id).sort()).toStrictEqual([
+      "dune",
+      "dune-2",
+      "dune-3",
+    ])
+    for (const match of matches) {
+      expect(match).toStrictEqual({
+        id: expect.any(String),
+        _rankingScore: expect.any(Number),
+      })
+      expect(match._rankingScore).toBeGreaterThan(0)
+      expect(match._rankingScore).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it("удаляет несколько выбранных документов и сохраняет остальные", async () => {
+    await seed()
+
+    await service.deleteMany(indexName, ["dune", "cosmos", "missing"])
+
+    expect((await service.search(indexName, "")).hits).toStrictEqual([
+      { id: "foundation", title: "Foundation", genre: "fiction", year: 1951 },
+    ])
+  })
+
   it("позволяет удалить отсутствующий документ", async () => {
     await seed()
 

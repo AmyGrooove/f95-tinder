@@ -11,6 +11,11 @@ const eslintConfig = defineConfig([
   ...nextTypeScript,
   prettier,
   {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+    },
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { amy },
     languageOptions: {
@@ -58,6 +63,9 @@ const eslintConfig = defineConfig([
         },
       ],
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
@@ -125,6 +133,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     '.next/**',
     'build/**',
+    'coverage/**',
     'dist/**',
     'next-env.d.ts',
     'node_modules/**',
