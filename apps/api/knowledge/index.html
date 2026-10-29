@@ -11,133 +11,139 @@
     <title>База знаний · Bisky</title>
     <link rel="stylesheet" href="/knowledge/knowledge.css" />
     <script defer src="/knowledge/knowledge.js"></script>
+    <script defer src="/knowledge/diagrams.js"></script>
     <script defer src="/knowledge/vendor/docsify.min.js"></script>
     <script defer src="/knowledge/vendor/plugins/search.min.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">К содержимому</a>
     <template id="knowledge-home">
-      <div class="page-breadcrumb">Bisky <span>/</span> Документация</div>
-      <section class="knowledge-hero" aria-labelledby="home-title">
-        <span class="eyebrow">СПРАВОЧНИК ПРОЕКТА</span>
-        <h1 id="home-title">Всё о Bisky.<br /><span>В одном месте.</span></h1>
-        <p>
-          Как устроен проект, что хранится в коллекциях и по каким правилам
-          работает приложение.
-        </p>
-        <div class="hero-actions">
-          <a class="primary-action" href="#/api/readme"
-            >Устройство API<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt=""
-          /></a>
-          <a class="secondary-action" href="#/api/entities"
-            >Коллекции MongoDB</a
-          >
-        </div>
-      </section>
-      <div class="section-heading">
-        <h2>Разделы базы знаний</h2>
-        <span>От общей картины к деталям</span>
+      <div class="knowledge-home">
+        <header class="home-header">
+          <span class="home-eyebrow">Bisky / Документация</span>
+          <h1 id="home-title">База знаний</h1>
+          <p>Как устроен проект, работают запросы и связаны данные.</p>
+        </header>
+
+        <nav class="home-start" aria-label="С чего начать">
+          <a class="home-card home-card--featured" href="#/api/endpoints">
+            <div class="home-card-top">
+              <img
+                class="home-card-icon"
+                src="/knowledge/icons/layers.svg"
+                alt=""
+              />
+              <img
+                class="home-card-arrow"
+                src="/knowledge/icons/arrow-up-right.svg"
+                alt=""
+              />
+            </div>
+            <h2>Эндпоинты API</h2>
+            <p>
+              Все маршруты, доступ и простые схемы: от запроса до фоновых задач.
+            </p>
+          </a>
+          <a class="home-card" href="#/api/entities">
+            <div class="home-card-top">
+              <img
+                class="home-card-icon"
+                src="/knowledge/icons/database.svg"
+                alt=""
+              />
+              <img
+                class="home-card-arrow"
+                src="/knowledge/icons/arrow-up-right.svg"
+                alt=""
+              />
+            </div>
+            <h2>Сущности и связи</h2>
+            <p>Что хранится в MongoDB и как данные связаны между собой.</p>
+          </a>
+          <a class="home-card" href="#/api/readme">
+            <div class="home-card-top">
+              <img
+                class="home-card-icon"
+                src="/knowledge/icons/code-xml.svg"
+                alt=""
+              />
+              <img
+                class="home-card-arrow"
+                src="/knowledge/icons/arrow-up-right.svg"
+                alt=""
+              />
+            </div>
+            <h2>Устройство API</h2>
+            <p>Реализованные возможности, контракты и границы модулей.</p>
+          </a>
+        </nav>
+
+        <section class="home-articles" aria-labelledby="articles-title">
+          <div class="home-section-heading">
+            <h2 id="articles-title">Основные статьи</h2>
+            <a href="#/readme">Все документы</a>
+          </div>
+          <div class="home-article-groups">
+            <div>
+              <h3>Контракты API</h3>
+              <ul class="home-article-list">
+                <li>
+                  <a href="#/api/accountAndAuthSpec"
+                    >Аккаунт и авторизация<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+                <li>
+                  <a href="#/api/librarySpec"
+                    >Личная библиотека<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+                <li>
+                  <a href="#/api/collectionsSpec"
+                    >Подборки<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3>Продукт и планы</h3>
+              <ul class="home-article-list">
+                <li>
+                  <a href="#/product/foundations"
+                    >Основы проекта<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+                <li>
+                  <a href="#/product/foundations/recommendations"
+                    >Как устроены рекомендации<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+                <li>
+                  <a href="#/api/pages/readme"
+                    >Что реализовано и что осталось<img
+                      src="/knowledge/icons/arrow-up-right.svg"
+                      alt=""
+                  /></a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <footer class="home-footer">
+          <p>API — реализация. Продукт — требования и планы.</p>
+          <a href="#/legacyBiskyV3/readme">Архив Bisky v3</a>
+        </footer>
       </div>
-      <div class="knowledge-grid">
-        <a class="knowledge-card" href="#/api/entities"
-          ><img src="/knowledge/icons/database.svg" alt="" /><span
-            class="card-category"
-            >ДАННЫЕ</span
-          >
-          <h3>Коллекции MongoDB</h3>
-          <p>Сущности, поля, связи и ограничения модели данных.</p>
-          <span class="card-link"
-            >Изучить структуру<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-        <a class="knowledge-card" href="#/api/readme"
-          ><img src="/knowledge/icons/code-xml.svg" alt="" /><span
-            class="card-category"
-            >БЭКЕНД</span
-          >
-          <h3>API и контракты</h3>
-          <p>Операции, авторизация, библиотека и пользовательские подборки.</p>
-          <span class="card-link"
-            >Открыть документацию<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-        <a class="knowledge-card" href="#/product/readme"
-          ><img src="/knowledge/icons/layers.svg" alt="" /><span
-            class="card-category"
-            >ПРОДУКТ</span
-          >
-          <h3>Как работает Bisky</h3>
-          <p>Идея продукта, страницы, сценарии и границы MVP.</p>
-          <span class="card-link"
-            >Посмотреть требования<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-        <a class="knowledge-card" href="#/sources/kodik/readme"
-          ><img src="/knowledge/icons/plug.svg" alt="" /><span
-            class="card-category"
-            >ИНТЕГРАЦИИ</span
-          >
-          <h3>Источники данных</h3>
-          <p>Kodik: поля источника и сопоставление с моделью проекта.</p>
-          <span class="card-link"
-            >Разобраться с импортом<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-        <a class="knowledge-card" href="#/research/recommendationSystem"
-          ><img src="/knowledge/icons/telescope.svg" alt="" /><span
-            class="card-category"
-            >ИССЛЕДОВАНИЯ</span
-          >
-          <h3>Рекомендации</h3>
-          <p>Подходы к подбору контента и проверке качества рекомендаций.</p>
-          <span class="card-link"
-            >Прочитать исследование<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-        <a class="knowledge-card" href="#/legacyBiskyV3/readme"
-          ><img src="/knowledge/icons/archive.svg" alt="" /><span
-            class="card-category"
-            >АРХИВ</span
-          >
-          <h3>Референсы Bisky v3</h3>
-          <p>Макеты, старые сценарии и материалы предыдущей версии.</p>
-          <span class="card-link"
-            >Открыть архив<img
-              src="/knowledge/icons/arrow-up-right.svg"
-              alt="" /></span
-        ></a>
-      </div>
-      <section class="quick-access" aria-labelledby="quick-title">
-        <div class="section-heading"><h2 id="quick-title">Под рукой</h2></div>
-        <div class="quick-links">
-          <a href="#/api/accountAndAuthSpec">Аккаунт и авторизация</a
-          ><a href="#/api/librarySpec">Личная библиотека</a
-          ><a href="#/api/collectionsSpec">Подборки</a
-          ><a href="#/product/pages/readme">Карта страниц</a>
-        </div>
-      </section>
-      <aside class="reading-note">
-        <img src="/knowledge/icons/book-open.svg" alt="" />
-        <div>
-          <strong>Реализация, планы и история</strong>
-          <p>
-            API описывает реализованные возможности, продукт — требования и
-            планы, архив — предыдущую версию. Статус конкретной возможности
-            уточняй в её документе.
-          </p>
-        </div>
-      </aside>
-      <footer class="knowledge-footer">
-        <span class="brand">Bisky</span><span>База знаний проекта</span
-        ><a href="#/readme">Все документы</a>
-      </footer>
     </template>
     <div id="app" role="status">Загружаем базу знаний…</div>
     <noscript

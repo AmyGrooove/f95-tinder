@@ -1,5 +1,7 @@
 # Поиск и каталог: покрытие API
 
+[Каталог эндпоинтов](../endpoints.md) · [Схема запроса](../requestFlows/catalog.md#search)
+
 [Индекс покрытия](readme.md) · [Требования страницы](../../product/pages/search.md) · [Общие операции](shared.md)
 
 ## Текущее покрытие

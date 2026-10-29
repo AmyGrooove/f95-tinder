@@ -2,7 +2,15 @@
 
 Документация
 
+- <a href="#/api/endpoints" data-nosearch>Эндпоинты API</a>
+- [Вход и сессии: схемы](/api/requestFlows/auth.md)
+- [Аккаунт: схемы](/api/requestFlows/account.md)
+- [Каталог и поиск: схемы](/api/requestFlows/catalog.md)
+- [Библиотека: схемы](/api/requestFlows/userItems.md)
+- [Подборки: схемы](/api/requestFlows/collections.md)
+- [Служебные маршруты: схемы](/api/requestFlows/service.md)
 - [Устройство API](/api/readme.md)
+- [Как проходят запросы](/api/requestFlows/readme.md)
 - [Коллекции MongoDB](/api/entities.md)
 - [Аккаунт и авторизация](/api/accountAndAuthSpec.md)
 - [Личная библиотека](/api/librarySpec.md)

@@ -18,7 +18,7 @@ window.$docsify = {
     placeholder: "Найти в документации…",
     noData: "Ничего не найдено",
     depth: 3,
-    namespace: "bisky-knowledge",
+    namespace: "bisky-knowledge-endpoints",
   },
   plugins: [
     (hook, vm) => {

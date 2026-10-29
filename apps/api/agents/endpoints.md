@@ -2,6 +2,14 @@
 
 Read when changing HTTP use cases under `src/endpoints`. The [API overview](../docs/api/readme.md) explains implemented behavior; the linked specifications own detailed route contracts. Verify facts against production code before changes.
 
+## Request flow diagrams
+
+The human-facing [endpoint catalog](../docs/api/endpoints.md) lists all 40 connected product operations and four AppController/HealthController routes. Individual operation flows live in [docs/api/requestFlows](../docs/api/requestFlows/readme.md), grouped into auth, account, catalog, userItems, collections and service pages, and render in `/knowledge/`. Each operation has a stable anchor, example, diagram, consistency/error notes and source references. Follow the guide, update the catalog and link each area page from [the knowledge sidebar](../knowledge/sidebar.md) for navigation and search.
+
+Maintain an existing diagram in the same change whenever its endpoint's access checks, branches, called services, entity reads/writes, transaction boundaries, events, jobs, external calls or HTTP-response timing change. Changes to shared/background handlers require checking diagrams that reference those handlers. Adding, renaming or removing a route also requires updating the catalog, route counts, headings and links. Internal refactoring that preserves the depicted behavior needs no redraw. Verify controller/module wiring, actual call sites and job/event handlers; an import graph is not an execution trace. Keep simple action labels and entity names in the diagram, and source links and implementation details below it. Show only real events, distinguish awaited enqueueing from background execution, and document failures that can happen after a committed transaction. Do not present planned operations or static inspection as observed runtime behavior.
+
+Use Mermaid `flowchart TD` blocks with `accTitle`/`accDescr`, the guide's shapes and shared semantic classes; do not duplicate palette definitions or per-diagram configuration. Verify rendering and navigation in knowledge when possible, and explicitly report a browser-verification limit otherwise. Read [runtime context](runtime.md) when changing the renderer, local assets or palette.
+
 ## Ownership and composition
 
 [AppModule](../src/app/app.module.ts) imports six product HTTP endpoint modules, with 40 product routes in total, and directly registers AppController for the status page and background routes. Controllers own HTTP bindings and DTO boundaries; endpoint services own authentication, business validation, transactions and response mapping. Entity modules export model-specific repositories. Import the owning module and reuse its repository instead of creating another persistence client. See [data access](data-access.md) for generic repositories and transaction semantics, [security](security.md) for cookies and session validation, and [runtime](runtime.md) for global HTTP setup.

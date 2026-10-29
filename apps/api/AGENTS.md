@@ -20,4 +20,4 @@ This package is `@bisky/api`, a NestJS application using Fastify, TypeScript and
 - Do not inspect, run or change tests or Storybook without explicit authorization. Do not expose environment secrets.
 - Use existing infrastructure services before adding another client or mechanism. Import the owning module where its providers are needed.
 - Run package commands from `apps/api`. Available scripts are listed in [package.json](package.json); `type-check` is static verification, while `lint:fix` and `format` mutate files broadly.
-- Update affected context when its documented contracts change. Keep detailed facts in the routed documents below, rather than expanding this entrypoint.
+- Update affected context when its documented contracts change. Maintain the endpoint catalog and affected request-flow diagrams together with endpoint and shared background-handler changes; see [diagram maintenance](agents/endpoints.md#request-flow-diagrams). Keep detailed facts in the routed documents below, rather than expanding this entrypoint.

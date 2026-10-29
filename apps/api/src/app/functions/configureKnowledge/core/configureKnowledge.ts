@@ -77,6 +77,20 @@ const configureKnowledge = (app: NestFastifyApplication) => {
         return ["/docsify.min.js", "/plugins/search.min.js"].includes(pathName)
       },
     })
+
+    knowledge.register(fastifyStatic, {
+      root: resolve("node_modules/mermaid/dist"),
+      prefix: "/knowledge/vendor/mermaid/",
+      decorateReply: false,
+      index: false,
+      dotfiles: "deny",
+      allowedPath: (pathName) => {
+        return (
+          pathName === "/mermaid.esm.min.mjs" ||
+          /^\/chunks\/mermaid\.esm\.min\/[\w.-]+\.mjs$/.test(pathName)
+        )
+      },
+    })
   })
 }
 
