@@ -27,7 +27,6 @@ import { SiteMetricModule } from "@entities/siteMetric/siteMetric.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserSettingsModule } from "@entities/userSettings/userSettings.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
-import { UserSourceAccountModule } from "@entities/userSourceAccount/userSourceAccount.module"
 import { SessionModule } from "@entities/session/session.module"
 import { UserTasteProfileModule } from "@entities/userTasteProfile/userTasteProfile.module"
 
@@ -75,7 +74,6 @@ import { AppController } from "./controllers/app.controller"
     UserModule,
     UserSettingsModule,
     UserItemModule,
-    UserSourceAccountModule,
     SessionModule,
     UserTasteProfileModule,
     TagWeightModifiersModule,
