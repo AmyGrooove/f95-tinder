@@ -115,9 +115,9 @@ Tag использует TAG_GROUP_RULES при документной вали�
 
 ## Поля Item и теги вместо Feature
 
-Общие поля: releaseDate (точная дата первого выпуска) и ageRestriction (EAgeRestriction). Полнометражное видео использует movie.duration. Сезоны используют series.episodeCount, releasedEpisodeCount, episodeDuration и nextEpisodeAt. Игры используют game.mainStoryDuration и fullCompletionDuration; время в минутах, без DLC.
+Общие поля: releaseDate (точная дата первого выпуска) и ageRestriction (EAgeRestriction). Полнометражное видео использует movie.duration. Сезоны используют series.episodeCount, releasedEpisodeCount, episodeDuration, lastReleasedEpisodeAt и nextEpisodeAt. Игры используют game.mainStoryDuration и fullCompletionDuration; время в минутах, без DLC.
 
-releaseDate, ageRestriction и блоки movie/series/game имеют default null. Поля внутри существующего блока необязательны без defaults. releaseYear и seasonNumber как поля Item отсутствуют; год может храниться тегом без точной даты, номер сезона не входит в текущий набор.
+releaseDate, ageRestriction и блоки movie/series/game имеют default null. Счётчики, длительности и nextEpisodeAt внутри существующего блока необязательны без defaults. lastReleasedEpisodeAt хранит дату последней уже вышедшей серии сезона или null, с default null; при создании поле можно не указывать. releaseYear и seasonNumber как поля Item отсутствуют; год может храниться тегом без точной даты, номер сезона не входит в текущий набор.
 
 releaseStatus и hasDefinedEnd представлены тегами, ESRB/PEGI сводятся к общей группе ageRestriction по отдельно согласуемым правилам. Стабильные ключи диапазонов и фиксированных значений определены в TAG_GROUP_RULES; согласованное наполнение хранится в групповых JSON с указанными выше расхождениями. Программно используемые ключи ограничений библиотеки именуются ETagKey.
 

@@ -359,6 +359,7 @@ describe("ItemController HTTP", () => {
         episodeCount: 12,
         releasedEpisodeCount: 0,
         episodeDuration: 24.5,
+        lastReleasedEpisodeAt: new Date("2026-10-24T12:30:00+03:00"),
         nextEpisodeAt: new Date("2026-10-25T12:30:00+03:00"),
       },
       game: null,
@@ -400,7 +401,11 @@ describe("ItemController HTTP", () => {
         series:
           series === null
             ? null
-            : { ...series, nextEpisodeAt: "2026-10-25T09:30:00.000Z" },
+            : {
+                ...series,
+                lastReleasedEpisodeAt: "2026-10-24T09:30:00.000Z",
+                nextEpisodeAt: "2026-10-25T09:30:00.000Z",
+              },
         game,
       })
       expect(response.json()).not.toHaveProperty("features")
@@ -418,7 +423,7 @@ describe("ItemController HTTP", () => {
     {
       type: EItemType.SERIES,
       movie: null,
-      series: {},
+      series: { lastReleasedEpisodeAt: null },
       game: null,
       expected: {
         movie: null,
@@ -426,6 +431,7 @@ describe("ItemController HTTP", () => {
           episodeCount: null,
           releasedEpisodeCount: null,
           episodeDuration: null,
+          lastReleasedEpisodeAt: null,
           nextEpisodeAt: null,
         },
         game: null,
@@ -445,7 +451,7 @@ describe("ItemController HTTP", () => {
     {
       type: EItemType.SERIES,
       movie: null,
-      series: { releasedEpisodeCount: 0 },
+      series: { releasedEpisodeCount: 0, lastReleasedEpisodeAt: null },
       game: null,
       expected: {
         movie: null,
@@ -453,6 +459,7 @@ describe("ItemController HTTP", () => {
           episodeCount: null,
           releasedEpisodeCount: 0,
           episodeDuration: null,
+          lastReleasedEpisodeAt: null,
           nextEpisodeAt: null,
         },
         game: null,

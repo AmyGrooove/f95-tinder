@@ -1,15 +1,17 @@
+import type { IPagePaginationResult } from "../../../types/IPaginationResult"
+import type { TPageSize } from "../../../types/TPageSize"
+
 const createPaginatedResult = <T>(
   items: T[],
   total: number,
   page: number,
-  limit: number,
-) => {
+  limit: TPageSize,
+): IPagePaginationResult<T> => {
   const pages = Math.ceil(total / limit)
 
   return {
     items,
     page,
-    limit,
     total,
     pages,
     isNextPage: page < pages,

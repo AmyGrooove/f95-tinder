@@ -12,8 +12,8 @@ import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINIT
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStats.repository"
 import { UserTasteProfileRepository } from "@entities/userTasteProfile/services/userTasteProfile.repository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
+import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isDate } from "@shared/functions/checks/isDate"
@@ -32,7 +32,7 @@ class RecommendationsService {
   ) {}
 
   async find(props: IFindRecommendationsProps) {
-    const { page, limit } = normalizePagination(props.pagination, 20)
+    const { page, limit } = normalizePagination(props.pagination)
 
     if (!Number.isSafeInteger((page - 1) * limit)) {
       throw new BadRequestException(

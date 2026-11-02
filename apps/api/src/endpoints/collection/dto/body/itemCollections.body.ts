@@ -19,6 +19,8 @@ import {
   ValidateNested,
 } from "class-validator"
 
+import type { IPagePagination } from "@infrastructure/database/types/IPaginationInput"
+import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -27,7 +29,7 @@ import { ECollectionMode } from "../../types/ECollectionMode"
 import { ECollectionSort } from "../../types/ECollectionSort"
 import { CollectionFieldFilterQueryDto } from "../query/collectionFieldFilter.query"
 
-class ItemCollectionsBodyDto {
+class ItemCollectionsBodyDto implements IPagePagination {
   @ApiPropertyOptional({
     type: String,
     pattern: "^[a-fA-F0-9]{24}$",
@@ -128,13 +130,12 @@ class ItemCollectionsBodyDto {
   @Max(Number.MAX_SAFE_INTEGER)
   page?: number
 
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 60, default: 20 })
+  @ApiPropertyOptional({ type: Number, enum: [10, 20, 50], default: 50 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  @Max(60)
-  limit?: number
+  @IsIn([10, 20, 50])
+  limit?: TPageSize
 }
 
 export { ItemCollectionsBodyDto }

@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from "@nestjs/swagger"
 
-import type { IPaginatedResult } from "@infrastructure/database/types/IPaginatedResult"
+import type { IPagePaginationResult } from "@infrastructure/database/types/IPaginationResult"
 
 import { ECollectionMode } from "../../types/ECollectionMode"
 import { ItemCollectionResponseDto } from "./itemCollection.response"
@@ -11,15 +11,12 @@ import { CollectionDisplayTextResponseDto } from "./collectionDisplayText.respon
   CollectionDisplayGroupResponseDto,
   CollectionDisplayTextResponseDto,
 )
-class ItemCollectionsResponseDto implements IPaginatedResult<ItemCollectionResponseDto> {
+class ItemCollectionsResponseDto implements IPagePaginationResult<ItemCollectionResponseDto> {
   @ApiProperty({ type: [ItemCollectionResponseDto] })
   items: ItemCollectionResponseDto[]
 
   @ApiProperty({ type: Number, minimum: 1 })
   page: number
-
-  @ApiProperty({ type: Number, minimum: 1, maximum: 100 })
-  limit: number
 
   @ApiProperty({ type: Number, minimum: 0 })
   total: number

@@ -10,12 +10,13 @@ const createCollectionDisplayBlocks = ({
   blocks,
   groupCounts,
   page,
+  limit,
   isFiltered,
 }: ICreateCollectionDisplayBlocksProps): ItemCollectionsResponseDto["displayBlocks"] => {
   const counts = new Map(
     groupCounts.map((group) => [group.groupId.toHexString(), group.total]),
   )
-  const start = (page.page - 1) * page.limit
+  const start = (page.page - 1) * limit
   const end = start + page.items.length
   const displayBlocks: ItemCollectionsResponseDto["displayBlocks"] = []
   let offset = 0

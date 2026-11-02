@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import { Transform, Type } from "class-transformer"
 import {
   IsInt,
+  IsIn,
   IsString,
   Length,
   Max,
@@ -11,6 +12,8 @@ import {
   ValidateNested,
 } from "class-validator"
 
+import type { IPagePagination } from "@infrastructure/database/types/IPaginationInput"
+import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -20,7 +23,7 @@ import {
   SearchCollectionsBodyDto,
 } from "./searchOptions.body"
 
-class SearchBodyDto {
+class SearchBodyDto implements IPagePagination {
   @ApiPropertyOptional({ type: SearchItemsBodyDto })
   @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @Type(() => SearchItemsBodyDto)
@@ -69,15 +72,13 @@ class SearchBodyDto {
 
   @ApiPropertyOptional({
     type: Number,
-    minimum: 1,
-    maximum: 50,
-    default: 10,
+    enum: [10, 20, 50],
+    default: 50,
     description: SWAGGER_DICTIONARY.search.limit,
   })
   @IsInt()
-  @Min(1)
-  @Max(50)
-  limit: number = 10
+  @IsIn([10, 20, 50])
+  limit: TPageSize = 50
 }
 
 export { SearchBodyDto }

@@ -34,11 +34,11 @@
 | releaseDate        | Точная дата первого выпуска в ISO 8601 или null                                                                                                  |
 | ageRestriction     | 0, 6, 12, 16, 18 или null                                                                                                                        |
 | movie              | {duration} или null; длительность в минутах                                                                                                      |
-| series             | {episodeCount,releasedEpisodeCount,episodeDuration,nextEpisodeAt} или null; дата в ISO 8601                                                      |
+| series             | {episodeCount,releasedEpisodeCount,episodeDuration,lastReleasedEpisodeAt,nextEpisodeAt} или null; даты в ISO 8601                                                      |
 | game               | {mainStoryDuration,fullCompletionDuration} или null; время в минутах                                                                             |
 | relations          | Массив `{item: {id, type, title, media}, role: {id, key, name}}` по ID связи возрастанию                                                         |
 
-Характеристики возвращаются из полей Item; features в ответе больше нет. Внутри существующего блока неизвестные поля возвращаются как null. Категории, включая releaseStatus и hasDefinedEnd, возвращаются обычными тегами. Диапазонные теги не заменяют точные числовые поля; их наполнение и синхронизация с Item остаются отдельной задачей.
+Характеристики возвращаются из полей Item; features в ответе больше нет. Внутри существующего блока неизвестные поля возвращаются как null. series.lastReleasedEpisodeAt — дата последней уже вышедшей серии сезона в ISO 8601 или null; releaseDate остаётся датой первого выпуска. Категории, включая releaseStatus и hasDefinedEnd, возвращаются обычными тегами. Диапазонные теги не заменяют точные числовые поля; их наполнение и синхронизация с Item остаются отдельной задачей.
 
 Связи загружаются с обеих сторон ItemRelation. В ответ попадает противоположная сторона: роль связанного произведения относительно открытого. Для каждого языка name сначала берётся из roleNameOverride этой стороны, при null/отсутствии — из стандартного имени роли, затем null. Возвращаются все прямые связи без пагинации и рекурсии; отсутствующие и удалённые связанные Item пропускаются. Привязки к отсутствующим Tag или Relation также не попадают в ответ.
 

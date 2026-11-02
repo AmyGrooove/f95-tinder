@@ -1,3 +1,5 @@
+import type { TPageSize } from "@infrastructure/database/types/TPageSize"
+
 import type { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { Types } from "mongoose"
 
@@ -10,7 +12,7 @@ interface IReadItemCollectionsProps extends ICollectionContentSelectionProps {
   direction: 1 | -1
   language: ELanguage
   page: number
-  limit: number
+  limit: TPageSize
   tags: Types.ObjectId[]
   excludeTags: Types.ObjectId[]
   fields: TCollectionFieldFilter[]

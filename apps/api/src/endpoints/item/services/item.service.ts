@@ -47,6 +47,8 @@ class ItemService {
             episodeCount: item.series.episodeCount ?? null,
             releasedEpisodeCount: item.series.releasedEpisodeCount ?? null,
             episodeDuration: item.series.episodeDuration ?? null,
+            lastReleasedEpisodeAt:
+              item.series.lastReleasedEpisodeAt?.toISOString() ?? null,
             nextEpisodeAt: item.series.nextEpisodeAt?.toISOString() ?? null,
           },
       game: isNil(item.game)

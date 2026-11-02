@@ -89,7 +89,11 @@ describe("ItemService", () => {
       externalLinks: ["https://source.example/item"],
       features: ["internal"],
       movie: { duration: 120, secret: "internal" },
-      series: { episodeCount: 12, secret: "internal" },
+      series: {
+        episodeCount: 12,
+        lastReleasedEpisodeAt: null,
+        secret: "internal",
+      },
       game: { mainStoryDuration: 60, secret: "internal" },
       media: [
         {
@@ -175,6 +179,7 @@ describe("ItemService", () => {
         episodeCount: 12,
         releasedEpisodeCount: 0,
         episodeDuration: 24.5,
+        lastReleasedEpisodeAt: new Date("2026-10-24T12:30:00+03:00"),
         nextEpisodeAt: new Date("2026-10-25T12:30:00+03:00"),
       },
     })),
@@ -204,7 +209,11 @@ describe("ItemService", () => {
       expect(result.movie).toEqual(field === "movie" ? value : null)
       expect(result.series).toEqual(
         field === "series"
-          ? { ...value, nextEpisodeAt: "2026-10-25T09:30:00.000Z" }
+          ? {
+              ...value,
+              lastReleasedEpisodeAt: "2026-10-24T09:30:00.000Z",
+              nextEpisodeAt: "2026-10-25T09:30:00.000Z",
+            }
           : null,
       )
       expect(result.game).toEqual(field === "game" ? value : null)
@@ -214,7 +223,7 @@ describe("ItemService", () => {
 
   it("возвращает null для неизвестных полей внутри существующих блоков", async () => {
     item.movie = {}
-    item.series = {}
+    item.series = { lastReleasedEpisodeAt: null }
     item.game = {}
 
     const result = await service.getById(item._id)
@@ -224,6 +233,7 @@ describe("ItemService", () => {
       episodeCount: null,
       releasedEpisodeCount: null,
       episodeDuration: null,
+      lastReleasedEpisodeAt: null,
       nextEpisodeAt: null,
     })
     expect(result.game).toEqual({
@@ -233,7 +243,7 @@ describe("ItemService", () => {
   })
 
   it("сохраняет известные значения частично заполненных блоков", async () => {
-    item.series = { releasedEpisodeCount: 0 }
+    item.series = { releasedEpisodeCount: 0, lastReleasedEpisodeAt: null }
     item.game = { fullCompletionDuration: 300 }
 
     const result = await service.getById(item._id)
@@ -242,6 +252,7 @@ describe("ItemService", () => {
       episodeCount: null,
       releasedEpisodeCount: 0,
       episodeDuration: null,
+      lastReleasedEpisodeAt: null,
       nextEpisodeAt: null,
     })
     expect(result.game).toEqual({

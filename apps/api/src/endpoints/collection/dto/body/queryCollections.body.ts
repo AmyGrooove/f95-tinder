@@ -6,6 +6,7 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsIn,
   IsMongoId,
   Max,
   Min,
@@ -13,11 +14,13 @@ import {
 } from "class-validator"
 
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
+import type { IPagePagination } from "@infrastructure/database/types/IPaginationInput"
+import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-class QueryCollectionsBodyDto {
+class QueryCollectionsBodyDto implements IPagePagination {
   @ApiPropertyOptional({
     type: [String],
     minItems: 1,
@@ -50,12 +53,11 @@ class QueryCollectionsBodyDto {
   @Max(Number.MAX_SAFE_INTEGER)
   page?: number
 
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 60, default: 20 })
+  @ApiPropertyOptional({ type: Number, enum: [10, 20, 50], default: 50 })
   @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsInt()
-  @Min(1)
-  @Max(60)
-  limit?: number
+  @IsIn([10, 20, 50])
+  limit?: TPageSize
 }
 
 export { QueryCollectionsBodyDto }

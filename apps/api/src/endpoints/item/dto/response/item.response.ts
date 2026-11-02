@@ -51,6 +51,9 @@ class ItemSeriesResponseDto {
   episodeDuration: number | null
 
   @ApiProperty({ type: String, format: "date-time", nullable: true })
+  lastReleasedEpisodeAt: string | null
+
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   nextEpisodeAt: string | null
 }
 

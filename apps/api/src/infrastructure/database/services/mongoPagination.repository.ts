@@ -1,9 +1,10 @@
 import type { ProjectionType, QueryFilter, QueryOptions } from "mongoose"
 
 import { isNil } from "@shared/functions/checks/isNil"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
-import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import type { IPaginatedResult } from "../types/IPaginatedResult"
+import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
+import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
+import type { IPagePagination } from "../types/IPaginationInput"
+import type { IPagePaginationResult } from "../types/IPaginationResult"
 
 import { MongoCoreRepository } from "./mongoCore.repository"
 import { isString } from "@shared/functions/checks/isString"
@@ -16,9 +17,9 @@ class MongoPaginationRepository<
     filter: QueryFilter<TSchema>,
     projection?: ProjectionType<TSchema>,
     options?: QueryOptions<TSchema>,
-    pagination?: { page?: number; limit?: number },
-  ): Promise<IPaginatedResult<TDocument>> {
-    const { page, limit } = normalizePagination(pagination, 20)
+    pagination?: IPagePagination,
+  ): Promise<IPagePaginationResult<TDocument>> {
+    const { page, limit } = normalizePagination(pagination)
     const skip = (page - 1) * limit
     const query = this.model
       .find(

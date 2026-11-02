@@ -1,3 +1,5 @@
+import type { TPageSize } from "@infrastructure/database/types/TPageSize"
+
 import type { Types } from "mongoose"
 import type { ECountry } from "@entities/shared/schemas/ECountry"
 
@@ -12,7 +14,7 @@ interface IReadRecommendationsProps {
   siteRatingAverage: number | null
   now: Date
   page: number
-  limit: number
+  limit: TPageSize
 
   filter?: IRecommendationFilter
   country?: ECountry

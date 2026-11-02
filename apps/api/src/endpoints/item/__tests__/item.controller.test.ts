@@ -189,6 +189,7 @@ describe("ItemController", () => {
       episodeCount: { type: ["number", "null"] },
       releasedEpisodeCount: { type: ["number", "null"] },
       episodeDuration: { type: ["number", "null"] },
+      lastReleasedEpisodeAt: { type: ["string", "null"], format: "date-time" },
       nextEpisodeAt: { type: ["string", "null"], format: "date-time" },
     })
     expect(schemas).toHaveProperty("ItemGameResponseDto.properties", {

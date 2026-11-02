@@ -22,8 +22,8 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
+import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 
 import type { CollectionResponseDto } from "../dto/response/collection.response"
 import type { CreateCollectionBodyDto } from "../dto/body/createCollection.body"
@@ -47,7 +47,7 @@ class CollectionService {
   async query(
     body: QueryCollectionsBodyDto,
   ): Promise<QueryCollectionsResponseDto> {
-    const { page, limit } = normalizePagination(body, 20)
+    const { page, limit } = normalizePagination(body)
 
     if (!Number.isSafeInteger((page - 1) * limit)) {
       throw new BadRequestException(DICTIONARY.collection.invalidPagination)

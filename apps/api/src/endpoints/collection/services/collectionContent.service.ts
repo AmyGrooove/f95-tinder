@@ -22,8 +22,8 @@ import { isDate } from "@shared/functions/checks/isDate"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isString } from "@shared/functions/checks/isString"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { normalizePagination } from "@shared/functions/pagination/normalizePagination"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
+import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 
 import type { CollectionFiltersResponseDto } from "../dto/response/collectionFilters.response"
 import { ECollectionMode } from "../types/ECollectionMode"
@@ -77,7 +77,7 @@ class CollectionContentService {
     id,
     query,
   }: IGetItemCollectionsRequestProps): Promise<ItemCollectionsResponseDto> {
-    const { page, limit } = normalizePagination(query, 20)
+    const { page, limit } = normalizePagination(query)
 
     if (!Number.isSafeInteger((page - 1) * limit)) {
       throw new BadRequestException(DICTIONARY.collection.invalidPagination)
@@ -170,6 +170,7 @@ class CollectionContentService {
               blocks: collection.blocks,
               groupCounts,
               page: response,
+              limit,
               isFiltered,
             }),
     }

@@ -58,9 +58,9 @@ TagItem связывает произведение с тегом. Его `relev
 
 ### Точные поля Item и теги
 
-Feature и ItemFeature удалены из production-кода. Общие releaseDate и ageRestriction находятся в Item; nullable-блок movie содержит duration, series — episodeCount, releasedEpisodeCount, episodeDuration и nextEpisodeAt, game — mainStoryDuration и fullCompletionDuration. Типы movie/animatedMovie/animeMovie используют блок movie, три сериальных типа — series, игры — game. Документная валидация запрещает несовместимые блоки и releasedEpisodeCount выше известного episodeCount.
+Feature и ItemFeature удалены из production-кода. Общие releaseDate и ageRestriction находятся в Item; nullable-блок movie содержит duration, series — episodeCount, releasedEpisodeCount, episodeDuration, lastReleasedEpisodeAt и nextEpisodeAt, game — mainStoryDuration и fullCompletionDuration. Типы movie/animatedMovie/animeMovie используют блок movie, три сериальных типа — series, игры — game. Документная валидация запрещает несовместимые блоки и releasedEpisodeCount выше известного episodeCount.
 
-Оценки времени игры относятся к базовой игре без DLC. Неизвестные поля внутри блока отсутствуют, а неизвестные или неприменимые блоки равны null. Нулевое releasedEpisodeCount — известный факт, а не неизвестное значение. Счётчики относятся к отдельному сезону и не описывают личный прогресс.
+Оценки времени игры относятся к базовой игре без DLC. Неизвестные счётчики, длительности и nextEpisodeAt внутри блока отсутствуют, а неизвестные или неприменимые блоки равны null. Нулевое releasedEpisodeCount — известный факт, а не неизвестное значение. Счётчики относятся к отдельному сезону и не описывают личный прогресс. series.lastReleasedEpisodeAt хранит дату последней уже вышедшей серии сезона или null и имеет default null; releaseDate остаётся датой первого выпуска сезона.
 
 Категории и диапазоны представлены Tag/TagItem. Состояние выпуска использует releaseStatus: announced, ongoing, released, cancelled. Конечность игры — hasDefinedEnd: true или false, без значения по умолчанию. Год может быть известен без даты и представлен releaseYear. Возраст нормализуется в строковый EAgeRestriction: "0", "6", "12", "16", "18", "18++"; преобразование исходных рейтингов требует отдельного согласования.
 

@@ -334,25 +334,34 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
   }>([
     {
       field: EItemField.EPISODE_COUNT,
-      values: { series: { episodeCount: 12 } },
+      values: { series: { episodeCount: 12, lastReleasedEpisodeAt: null } },
       min: 12,
       max: 12,
     },
     {
       field: EItemField.RELEASED_EPISODE_COUNT,
-      values: { series: { releasedEpisodeCount: 0 } },
+      values: {
+        series: { releasedEpisodeCount: 0, lastReleasedEpisodeAt: null },
+      },
       min: 0,
       max: 0,
     },
     {
       field: EItemField.EPISODE_DURATION,
-      values: { series: { episodeDuration: 24.5 } },
+      values: {
+        series: { episodeDuration: 24.5, lastReleasedEpisodeAt: null },
+      },
       min: 24.5,
       max: 24.5,
     },
     {
       field: EItemField.NEXT_EPISODE_AT,
-      values: { series: { nextEpisodeAt: new Date("2026-10-28T09:00:00Z") } },
+      values: {
+        series: {
+          nextEpisodeAt: new Date("2026-10-28T09:00:00Z"),
+          lastReleasedEpisodeAt: null,
+        },
+      },
       min: "2026-10-28T12:00:00+03:00",
       max: "2026-10-28T09:00:00Z",
     },
