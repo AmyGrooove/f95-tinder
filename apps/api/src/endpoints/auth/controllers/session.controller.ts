@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import {
   Controller,
   Cookies,
@@ -90,7 +91,7 @@ class SessionController {
     name: "sessionId",
     description: SWAGGER_DICTIONARY.auth.dto.sessionParams.sessionId,
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "AuthController_deleteSession",

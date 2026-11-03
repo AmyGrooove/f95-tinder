@@ -1,15 +1,16 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ERelationGroup } from "./ERelationGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
-import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
+
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
 @Schema({ collection: "Relation" })
 class Relation extends MongoEntity {
-  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
+  @Prop({ type: String, required: true, match: REGEX.CAMEL_CASE })
   key: string
 
   @Prop({

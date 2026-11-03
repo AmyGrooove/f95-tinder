@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { createAppConfiguration } from "../functions/createAppConfiguration"
 import { createRedisConfiguration } from "../functions/createRedisConfiguration"
 import { getEnvironmentUrl } from "../functions/getEnvironmentUrl"
@@ -14,11 +15,7 @@ const createInfrastructureConfiguration = () => {
     throw new Error(CONFIG_ERROR_MESSAGES.JWT_SECRET_LENGTH)
   }
 
-  if (
-    !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(
-      mailDomain,
-    )
-  ) {
+  if (!REGEX.MAIL_DOMAIN.test(mailDomain)) {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_MAIL_DOMAIN)
   }
 

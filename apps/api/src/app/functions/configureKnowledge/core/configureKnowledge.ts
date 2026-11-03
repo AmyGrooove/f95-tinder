@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { resolve } from "node:path"
 import { createHash, timingSafeEqual } from "node:crypto"
 import fastifyStatic from "@fastify/static"
@@ -32,7 +33,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
       }
 
       const credentials = request.headers.authorization?.match(
-        /^Basic ([A-Za-z0-9+/]+={0,2})$/i,
+        REGEX.BASIC_AUTHORIZATION,
       )?.[1]
       const providedHash = createHash("sha256")
         .update(credentials ?? "")
@@ -87,7 +88,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
       allowedPath: (pathName) => {
         return (
           pathName === "/mermaid.esm.min.mjs" ||
-          /^\/chunks\/mermaid\.esm\.min\/[\w.-]+\.mjs$/.test(pathName)
+          REGEX.MERMAID_CHUNK_PATH.test(pathName)
         )
       },
     })

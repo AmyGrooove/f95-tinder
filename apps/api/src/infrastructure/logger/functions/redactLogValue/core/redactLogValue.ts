@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
@@ -30,11 +31,11 @@ const redactLogValue = (
 
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => {
-      const normalizedKey = key.replace(/[_-]/g, "").toLowerCase()
+      const normalizedKey = key
+        .replace(REGEX.LOG_KEY_SEPARATORS, "")
+        .toLowerCase()
 
-      if (
-        /password|token|authorization|cookie|secret|apikey/.test(normalizedKey)
-      ) {
+      if (REGEX.SENSITIVE_LOG_KEY.test(normalizedKey)) {
         return [key, "[REDACTED]"]
       }
 

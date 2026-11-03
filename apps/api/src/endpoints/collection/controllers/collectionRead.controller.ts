@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import {
   Body,
   Controller,
@@ -65,7 +66,7 @@ class CollectionReadController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "CollectionController_getById",
@@ -92,7 +93,7 @@ class CollectionReadController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "CollectionReadController_getItems",
@@ -122,7 +123,7 @@ class CollectionReadController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "CollectionReadController_getFilters",

@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
 import {
@@ -270,10 +271,7 @@ class CollectionContentService {
     if (
       !isString(value) ||
       !isISO8601(value, { strict: true, strictSeparator: true }) ||
-      !(
-        /^\d{4}-\d{2}-\d{2}$/.test(value) ||
-        /(?:Z|[+-]\d{2}:\d{2})$/.test(value)
-      )
+      !(REGEX.ISO_DATE.test(value) || REGEX.ISO_TIMEZONE_SUFFIX.test(value))
     ) {
       throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
     }

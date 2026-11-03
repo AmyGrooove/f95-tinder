@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty } from "@nestjs/swagger"
 import { IsByteLength, IsString, Matches, MinLength } from "class-validator"
 
@@ -9,10 +10,10 @@ class ConfirmPasswordResetBodyDto extends PasswordResetBodyDto {
     description: SWAGGER_DICTIONARY.auth.dto.confirmPasswordResetBody.code,
     minLength: 6,
     maxLength: 6,
-    pattern: "^[0-9]{6}$",
+    pattern: REGEX.CONFIRMATION_CODE.source,
   })
   @IsString()
-  @Matches(/^[0-9]{6}$/)
+  @Matches(REGEX.CONFIRMATION_CODE)
   code: string
 
   @ApiProperty({

@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { getRequiredEnvironmentValue } from "../../getRequiredEnvironmentValue"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
@@ -57,15 +58,11 @@ const createAppConfiguration = () => {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_PORT)
   }
 
-  if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(name)) {
+  if (!REGEX.APP_NAME.test(name)) {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_APP_NAME)
   }
 
-  if (
-    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(
-      version,
-    )
-  ) {
+  if (!REGEX.SEMANTIC_VERSION.test(version)) {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_APP_VERSION)
   }
 

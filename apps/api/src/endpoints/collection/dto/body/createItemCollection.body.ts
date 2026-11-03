@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import {
   IsInt,
@@ -11,11 +12,11 @@ import {
 import { isNil } from "@shared/functions/checks/isNil"
 
 class CreateItemCollectionBodyDto {
-  @ApiProperty({ type: String, pattern: "^[a-fA-F0-9]{24}$" })
+  @ApiProperty({ type: String, pattern: REGEX.MONGO_OBJECT_ID.source })
   @IsMongoId()
   itemId: string
 
-  @ApiProperty({ type: String, pattern: "^[a-fA-F0-9]{24}$" })
+  @ApiProperty({ type: String, pattern: REGEX.MONGO_OBJECT_ID.source })
   @IsMongoId()
   groupId: string
 

@@ -3,7 +3,7 @@ import { HttpException } from "@nestjs/common"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
-import { ERROR_MESSAGES } from "@shared/static/ERROR_MESSAGES"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 import { getExplicitStructuredResponse } from "../functions/getExplicitStructuredResponse"
 import { getHttpExceptionMessage } from "../functions/getHttpExceptionMessage"
@@ -18,7 +18,7 @@ const createStructuredResponse = (
   if (!(exception instanceof HttpException)) {
     return {
       code: ERROR_CODES.INTERNAL_ERROR,
-      message: ERROR_MESSAGES.INTERNAL_ERROR,
+      message: DICTIONARY.errors.INTERNAL_ERROR,
       details: null,
     }
   }
@@ -35,7 +35,7 @@ const createStructuredResponse = (
     if ("message" in exceptionResponse && isArray(exceptionResponse.message)) {
       return {
         code: ERROR_CODES.BAD_REQUEST,
-        message: ERROR_MESSAGES.VALIDATION_ERROR,
+        message: DICTIONARY.errors.VALIDATION_ERROR,
         details: { errors: exceptionResponse.message },
       }
     }

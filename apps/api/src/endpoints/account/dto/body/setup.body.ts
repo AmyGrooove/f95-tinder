@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty } from "@nestjs/swagger"
 import { Transform } from "class-transformer"
 import {
@@ -40,10 +41,10 @@ class SetupBodyDto {
     description: SWAGGER_DICTIONARY.account.dto.setupBody.accessCode,
     minLength: 32,
     maxLength: 32,
-    pattern: "^[A-Za-z0-9_-]{32}$",
+    pattern: REGEX.ACCESS_CODE.source,
   })
   @IsString()
-  @Matches(/^[A-Za-z0-9_-]{32}$/)
+  @Matches(REGEX.ACCESS_CODE)
   accessCode: string
 }
 

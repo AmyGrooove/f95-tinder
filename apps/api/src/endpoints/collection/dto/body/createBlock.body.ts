@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import { Type } from "class-transformer"
 import {
@@ -18,7 +19,7 @@ class CreateBlockBodyDto {
   @IsEnum(ECollectionBlockType)
   type: ECollectionBlockType
 
-  @ApiPropertyOptional({ type: String, pattern: "^[a-fA-F0-9]{24}$" })
+  @ApiPropertyOptional({ type: String, pattern: REGEX.MONGO_OBJECT_ID.source })
   @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsMongoId()
   id?: string

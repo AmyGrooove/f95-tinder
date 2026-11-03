@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { Readable } from "node:stream"
 
 import { Inject, Injectable, ServiceUnavailableException } from "@nestjs/common"
@@ -264,7 +265,7 @@ class StorageService implements OnModuleInit {
       })
       .join("/")
 
-    return `${publicUrl.replace(/\/$/, "")}/${encodedPath}`
+    return `${publicUrl.replace(REGEX.TRAILING_SLASH, "")}/${encodedPath}`
   }
 
   private isObjectNotFound(error: unknown) {

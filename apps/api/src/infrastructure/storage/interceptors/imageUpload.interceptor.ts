@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { randomUUID } from "node:crypto"
 
 import {
@@ -98,7 +99,7 @@ class ImageUploadInterceptor implements NestInterceptor {
       processingOptions,
     )
     const processedUpload = await this.storageService.upload(
-      `${metadata.options.path.replace(/\/+$/, "")}/${randomUUID()}.webp`,
+      `${metadata.options.path.replace(REGEX.TRAILING_SLASHES, "")}/${randomUUID()}.webp`,
       output,
       "image/webp",
     )

@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import {
   CanActivate,
   ExecutionContext,
@@ -23,7 +24,7 @@ class AccessTokenGuard implements CanActivate {
 
     if (
       isNil(authorizationHeader) ||
-      !/^Bearer [^\s]+$/i.test(authorizationHeader)
+      !REGEX.BEARER_AUTHORIZATION.test(authorizationHeader)
     ) {
       throw new UnauthorizedException(DICTIONARY.security.accessTokenRequired)
     }

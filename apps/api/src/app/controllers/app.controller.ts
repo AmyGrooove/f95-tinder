@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { randomUUID } from "node:crypto"
 
 import { HealthService } from "@infrastructure/health/services/health.service"
@@ -33,9 +34,7 @@ class AppController {
       header: (name: string, value: string) => void
     },
   ) {
-    const previousIndex = cookie?.match(
-      /(?:^|;\s*)biskyBackground=(\d+)(?:;|$)/,
-    )?.[1]
+    const previousIndex = cookie?.match(REGEX.BACKGROUND_COOKIE)?.[1]
     const previousBackground = isUndefined(previousIndex)
       ? undefined
       : BACKGROUNDS[Number(previousIndex)]

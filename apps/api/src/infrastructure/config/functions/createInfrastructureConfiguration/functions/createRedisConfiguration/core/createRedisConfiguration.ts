@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { getEnvironmentUrl } from "../../getEnvironmentUrl"
 
 import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
@@ -6,7 +7,7 @@ const createRedisConfiguration = () => {
   const url = getEnvironmentUrl("REDIS_URL", ["redis:", "rediss:"])
   const databaseValue = url.pathname.slice(1)
 
-  if (databaseValue !== "" && !/^\d+$/.test(databaseValue)) {
+  if (databaseValue !== "" && !REGEX.DIGITS.test(databaseValue)) {
     throw new Error(CONFIG_ERROR_MESSAGES.REDIS_DATABASE)
   }
 

@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty } from "@nestjs/swagger"
 import { IsString, Matches } from "class-validator"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
@@ -7,10 +8,10 @@ class ConfirmSetupBodyDto {
     description: SWAGGER_DICTIONARY.account.dto.confirmSetupBody.code,
     minLength: 6,
     maxLength: 6,
-    pattern: "^[0-9]{6}$",
+    pattern: REGEX.CONFIRMATION_CODE.source,
   })
   @IsString()
-  @Matches(/^[0-9]{6}$/)
+  @Matches(REGEX.CONFIRMATION_CODE)
   code: string
 }
 

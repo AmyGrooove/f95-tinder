@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
@@ -7,7 +8,6 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { EUserRole } from "./EUserRole"
 import type { LinkedAccount } from "./linkedAccount.schema"
 import { LinkedAccountSchema } from "./linkedAccount.schema"
-import { USERNAME_REGEX } from "../static/USERNAME_REGEX"
 
 @Schema({ collection: "User" })
 class User extends MongoEntity {
@@ -25,7 +25,7 @@ class User extends MongoEntity {
     required: true,
     trim: true,
     lowercase: true,
-    match: USERNAME_REGEX,
+    match: REGEX.USERNAME,
   })
   username: string
 

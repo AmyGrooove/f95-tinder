@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { Controller, Get, Header, HttpCode, Param } from "@nestjs/common"
 import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
@@ -20,7 +21,7 @@ class ItemController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "ItemController_getById",

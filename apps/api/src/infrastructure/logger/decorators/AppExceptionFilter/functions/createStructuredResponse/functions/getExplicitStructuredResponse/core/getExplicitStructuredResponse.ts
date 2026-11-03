@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
@@ -23,7 +24,7 @@ const getExplicitStructuredResponse = (
   const knownCode = Object.values(ERROR_CODES).find((value) => value === code)
   const errorCode: TErrorCode | undefined =
     knownCode ??
-    (/^HTTP_\d+$/.test(code) ? (code as `HTTP_${number}`) : undefined)
+    (REGEX.HTTP_ERROR_CODE.test(code) ? (code as `HTTP_${number}`) : undefined)
 
   if (isNil(errorCode)) {
     return undefined

@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import {
   Body,
   Controller,
@@ -127,7 +128,7 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "UserItemController_update",
@@ -154,7 +155,7 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "UserItemController_remove",
@@ -179,7 +180,7 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "UserItemController_createAttempt",
@@ -206,12 +207,12 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiParam({
     name: "attemptId",
     type: String,
-    schema: { type: "string", pattern: "^[a-fA-F0-9]{24}$" },
+    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "UserItemController_updateAttempt",

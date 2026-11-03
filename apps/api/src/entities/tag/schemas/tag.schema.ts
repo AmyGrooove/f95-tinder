@@ -1,10 +1,11 @@
+import { REGEX } from "@shared/static/REGEX"
 import { checkIsTagKeyAllowed } from "../functions/checkIsTagKeyAllowed"
 import { checkIsNonEmptyStringArray } from "@entities/shared/functions/checks/checkIsNonEmptyStringArray"
 import { ETagGroup } from "./ETagGroup"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { CAMEL_CASE_REGEX } from "@shared/static/CAMEL_CASE_REGEX"
+
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import type { Embedding } from "@entities/shared/schemas/embedding.schema"
@@ -18,7 +19,7 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 @Schema({ collection: "Tag" })
 class Tag extends MongoEntity {
-  @Prop({ type: String, required: true, match: CAMEL_CASE_REGEX })
+  @Prop({ type: String, required: true, match: REGEX.CAMEL_CASE })
   key: string
 
   @Prop({ type: String, enum: Object.values(ETagGroup), default: null })

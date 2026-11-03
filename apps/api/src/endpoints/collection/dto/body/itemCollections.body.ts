@@ -1,3 +1,4 @@
+import { REGEX } from "@shared/static/REGEX"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ApiPropertyOptional } from "@nestjs/swagger"
 import { Transform, Type } from "class-transformer"
@@ -32,7 +33,7 @@ import { CollectionFieldFilterQueryDto } from "../query/collectionFieldFilter.qu
 class ItemCollectionsBodyDto implements IPagePagination {
   @ApiPropertyOptional({
     type: String,
-    pattern: "^[a-fA-F0-9]{24}$",
+    pattern: REGEX.MONGO_OBJECT_ID.source,
     description: SWAGGER_DICTIONARY.collection.filterGroup,
   })
   @IsOptional()
