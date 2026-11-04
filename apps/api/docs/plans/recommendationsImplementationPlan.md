@@ -128,11 +128,7 @@ interface IValueFilter<TValue> {
 
 ```typescript
 type TLibraryStatus =
-  | "planned"
-  | "inProgress"
-  | "onHold"
-  | "completed"
-  | "dropped"
+  "planned" | "inProgress" | "onHold" | "completed" | "dropped"
 
 interface IRecommendationLibraryFilter {
   library?: IValueFilter<TLibraryStatus | "outside">

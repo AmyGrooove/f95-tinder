@@ -1,6 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
+import type { TPageSize } from "../types/TPageSize"
+
 import { MongoPaginationRepository } from "../services/mongoPagination.repository"
 import { createRepositoryFixture } from "./functions/createRepositoryFixture"
 
@@ -34,6 +36,11 @@ describe("MongoPaginationRepository", () => {
         score: 3,
         group: "second",
       },
+      ...Array.from({ length: 8 }, (_, index) => ({
+        _id: new Types.ObjectId((index + 5).toString(16).padStart(24, "0")),
+        key: `extra-${index + 1}`,
+        score: 0,
+      })),
     ])
   })
 
@@ -42,18 +49,17 @@ describe("MongoPaginationRepository", () => {
       {},
       undefined,
       undefined,
-      { page: 2, limit: 2 },
+      { page: 2, limit: 10 },
     )
 
     expect(result).toMatchObject({
       page: 2,
-      limit: 2,
-      total: 4,
+      total: 12,
       pages: 2,
       isNextPage: false,
       isPreviousPage: true,
     })
-    expect(result.items.map(({ key }) => key)).toEqual(["two", "one"])
+    expect(result.items.map(({ key }) => key)).toEqual(["extra-2", "extra-1"])
   })
 
   it("считает total по фильтру независимо от размера страницы и применяет projection", async () => {
@@ -61,24 +67,35 @@ describe("MongoPaginationRepository", () => {
       { group: "first" },
       { key: 1, _id: 0 },
       { lean: true },
-      { limit: 1 },
+      { limit: 10 },
     )
 
     expect(result).toMatchObject({
-      total: 3,
-      pages: 3,
+      total: 11,
+      pages: 2,
       isNextPage: true,
       isPreviousPage: false,
     })
-    expect(result.items).toEqual([{ key: "three" }])
+    expect(result.items).toEqual([
+      { key: "three" },
+      { key: "two" },
+      { key: "one" },
+      ...Array.from({ length: 7 }, (_, index) => ({
+        key: `extra-${8 - index}`,
+      })),
+    ])
   })
 
   it.each([undefined, {}, "", "   "])(
     "использует defaultSort при пустой сортировке %p",
     async (sort) => {
-      const result = await fixture.pagination.findManyPaginated({}, undefined, {
-        sort,
-      })
+      const result = await fixture.pagination.findManyPaginated(
+        { score: { $gt: 0 } },
+        undefined,
+        {
+          sort,
+        },
+      )
 
       expect(result.items.map(({ key }) => key)).toEqual([
         "four",
@@ -86,7 +103,7 @@ describe("MongoPaginationRepository", () => {
         "two",
         "one",
       ])
-      expect(result).toMatchObject({ page: 1, limit: 20 })
+      expect(result).toMatchObject({ page: 1, pages: 1 })
     },
   )
 
@@ -97,9 +114,13 @@ describe("MongoPaginationRepository", () => {
   ])(
     "учитывает пользовательскую сортировку %p и добавляет _id",
     async (sort) => {
-      const result = await fixture.pagination.findManyPaginated({}, undefined, {
-        sort,
-      })
+      const result = await fixture.pagination.findManyPaginated(
+        { score: { $gt: 0 } },
+        undefined,
+        {
+          sort,
+        },
+      )
 
       expect(result.items.map(({ key }) => key)).toEqual([
         "one",
@@ -111,9 +132,13 @@ describe("MongoPaginationRepository", () => {
   )
 
   it("сохраняет явно заданное направление _id", async () => {
-    const result = await fixture.pagination.findManyPaginated({}, undefined, {
-      sort: { score: 1, _id: 1 },
-    })
+    const result = await fixture.pagination.findManyPaginated(
+      { score: { $gt: 0 } },
+      undefined,
+      {
+        sort: { score: 1, _id: 1 },
+      },
+    )
 
     expect(result.items.map(({ key }) => key)).toEqual([
       "one",
@@ -125,7 +150,7 @@ describe("MongoPaginationRepository", () => {
 
   it("сортирует по _id при отсутствии defaultSort", async () => {
     const repository = new MongoPaginationRepository(fixture.model)
-    const result = await repository.findManyPaginated({})
+    const result = await repository.findManyPaginated({ score: { $gt: 0 } })
 
     expect(result.items.map(({ key }) => key)).toEqual([
       "four",
@@ -140,12 +165,12 @@ describe("MongoPaginationRepository", () => {
       {},
       undefined,
       undefined,
-      { page: 10, limit: 2 },
+      { page: 10, limit: 10 },
     )
 
     expect(result).toMatchObject({
       items: [],
-      total: 4,
+      total: 12,
       pages: 2,
       page: 10,
       isNextPage: false,
@@ -162,18 +187,18 @@ describe("MongoPaginationRepository", () => {
     })
   })
 
-  it("нормализует некорректные и ограничивает слишком большие параметры", async () => {
+  it("нормализует страницу и использует стандартный размер для неподдерживаемых значений", async () => {
     expect(
       await fixture.pagination.findManyPaginated({}, undefined, undefined, {
         page: -2,
-        limit: 0,
+        limit: 0 as TPageSize,
       }),
-    ).toMatchObject({ page: 1, limit: 1 })
+    ).toMatchObject({ page: 1, total: 12, pages: 1, items: expect.any(Array) })
     expect(
       await fixture.pagination.findManyPaginated({}, undefined, undefined, {
         page: 2.9,
-        limit: 1000,
+        limit: 1000 as TPageSize,
       }),
-    ).toMatchObject({ page: 2, limit: 100 })
+    ).toMatchObject({ page: 2, total: 12, pages: 1, items: [] })
   })
 })

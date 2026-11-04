@@ -54,7 +54,7 @@ describe("MongoTransactionService MongoDB", () => {
         {},
         undefined,
         { session },
-        { limit: 1 },
+        { limit: 10 },
       )
       expect(page.total).toBe(3)
       expect(page.items[0]).toMatchObject({ key: "three" })

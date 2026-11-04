@@ -27,28 +27,28 @@ const COLLECTION_DISPLAY_BLOCKS_PROPS: ICreateCollectionDisplayBlocksProps = {
       type === ECollectionBlockType.TEXT ? { ru: "Текст", en: "Text" } : null,
   })),
   groupCounts: [
-    { groupId: new Types.ObjectId("000000000000000000000002"), total: 3 },
-    { groupId: new Types.ObjectId("000000000000000000000006"), total: 2 },
+    { groupId: new Types.ObjectId("000000000000000000000002"), total: 15 },
+    { groupId: new Types.ObjectId("000000000000000000000006"), total: 10 },
   ],
   page: {
-    items: [2, 2, 2, 6, 6].map((group, index) => ({
+    items: Array.from({ length: 25 }, (_, index) => ({
       id: `item-${index + 1}`,
       type: EItemType.MOVIE,
       title: { ru: "Фильм", en: null },
       media: [],
       membership: {
-        groupId: group.toString().padStart(24, "0"),
+        groupId: (index < 15 ? 2 : 6).toString().padStart(24, "0"),
         position: index,
         note: null,
       },
     })),
     page: 1,
-    limit: 5,
-    total: 5,
+    total: 25,
     pages: 1,
     isNextPage: false,
     isPreviousPage: false,
   },
+  limit: 50,
   isFiltered: false,
 }
 

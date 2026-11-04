@@ -26,6 +26,8 @@ import { CollectionReadController } from "../controllers/collectionRead.controll
 import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
 import { ECollectionMode } from "../types/ECollectionMode"
+import type { ItemCollectionsBodyDto } from "../dto/body/itemCollections.body"
+import type { QueryCollectionsBodyDto } from "../dto/body/queryCollections.body"
 import { CollectionFiltersQueryDto } from "../dto/query/collectionFilters.query"
 
 describe("CollectionReadController", () => {
@@ -95,34 +97,36 @@ describe("CollectionReadController", () => {
         ),
         type: ECollectionType.FRANCHISE,
         page: 2,
-        limit: 60,
+        limit: 50,
       },
-    ])("принимает публичное JSON-тело %j", async (payload) => {
-      const result = {
-        items: [],
-        page: 1,
-        limit: 20,
-        total: 0,
-        pages: 0,
-        isNextPage: false,
-        isPreviousPage: false,
-      }
-      context.service.query.mockResolvedValue(result)
+    ] satisfies QueryCollectionsBodyDto[])(
+      "принимает публичное JSON-тело %j",
+      async (payload) => {
+        const result = {
+          items: [],
+          page: 1,
+          total: 0,
+          pages: 0,
+          isNextPage: false,
+          isPreviousPage: false,
+        }
+        context.service.query.mockResolvedValue(result)
 
-      const response = await app.inject({
-        method: "QUERY",
-        url: "/collections",
-        headers: { cookie: "__Host-accessToken=invalid" },
-        payload,
-      } as unknown as Parameters<typeof app.inject>[0])
+        const response = await app.inject({
+          method: "QUERY",
+          url: "/collections",
+          headers: { cookie: "__Host-accessToken=invalid" },
+          payload,
+        } as unknown as Parameters<typeof app.inject>[0])
 
-      expect(response.statusCode).toBe(200)
-      expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.headers["accept-query"]).toBe("application/json")
-      expect(response.json()).toEqual(result)
-      expect(context.service.query).toHaveBeenCalledTimes(1)
-      expect(context.service.query).toHaveBeenCalledWith(payload)
-    })
+        expect(response.statusCode).toBe(200)
+        expect(response.headers["cache-control"]).toBe("no-store")
+        expect(response.headers["accept-query"]).toBe("application/json")
+        expect(response.json()).toEqual(result)
+        expect(context.service.query).toHaveBeenCalledTimes(1)
+        expect(context.service.query).toHaveBeenCalledWith(payload)
+      },
+    )
 
     it.each([
       undefined,
@@ -246,7 +250,7 @@ describe("CollectionReadController", () => {
     afterAll(async () => app?.close())
 
     it("читает JSON-тело QUERY и передаёт фильтры сервису без изменений", async () => {
-      const payload = {
+      const payload: ItemCollectionsBodyDto = {
         page: 2,
         limit: 10,
         query: " Alpha ",
@@ -257,7 +261,6 @@ describe("CollectionReadController", () => {
       const result = {
         items: [],
         page: 2,
-        limit: 10,
         total: 0,
         pages: 0,
         isNextPage: false,
@@ -284,7 +287,6 @@ describe("CollectionReadController", () => {
       context.content.getItems.mockResolvedValue({
         items: [],
         page: 1,
-        limit: 20,
         total: 0,
         pages: 0,
         isNextPage: false,
@@ -374,11 +376,15 @@ describe("CollectionReadController", () => {
 
   it("передаёт id и публичные фильтры для страницы произведений", async () => {
     const { controller, content, id } = await createController()
-    const query = { page: 2, limit: 1, ratingMin: 7.5, ratingMax: 9 }
+    const query: ItemCollectionsBodyDto = {
+      page: 2,
+      limit: 10,
+      ratingMin: 7.5,
+      ratingMax: 9,
+    }
     const result = {
       items: [],
       page: 2,
-      limit: 1,
       total: 0,
       pages: 0,
       isNextPage: false,

@@ -95,7 +95,6 @@ describe("CollectionReadController HTTP", () => {
       expect(response.json()).toEqual({
         items: [],
         page: 1,
-        limit: 20,
         total: 0,
         pages: 0,
         isNextPage: false,
@@ -119,7 +118,6 @@ describe("CollectionReadController HTTP", () => {
       const result = response.json<QueryCollectionsResponseDto>()
       expect(result).toMatchObject({
         page: 1,
-        limit: 20,
         total: 6,
         pages: 1,
         isNextPage: false,
@@ -159,16 +157,19 @@ describe("CollectionReadController HTTP", () => {
             secondItemId.toHexString(),
           ],
           type: "custom",
-          limit: 1,
+          limit: 10,
         },
       } as unknown as Parameters<typeof app.inject>[0])
 
       expect(response.statusCode).toBe(200)
       expect(response.json()).toMatchObject({
         total: 2,
-        pages: 2,
-        isNextPage: true,
-        items: [{ id: second._id.toHexString() }],
+        pages: 1,
+        isNextPage: false,
+        items: [
+          { id: second._id.toHexString() },
+          { id: first._id.toHexString() },
+        ],
       })
 
       const all = await app.inject({
@@ -245,25 +246,29 @@ describe("CollectionReadController HTTP", () => {
           { $set: { createdAt: new Date("2026-10-26T00:00:00.000Z") } },
         )
 
-      for (const [page, id] of [
-        [1, first._id],
-        [2, second._id],
+      const additional = Array.from({ length: 9 }, () => ({
+        ...second,
+        _id: new Types.ObjectId(),
+      }))
+      await connection.collection("Collection").insertMany(additional)
+      for (const [page, records] of [
+        [1, [first, ...additional.toReversed()]],
+        [2, [second]],
       ] as const) {
         const response = await app.inject({
           method: "QUERY",
           url: "/collections",
-          payload: { type: "custom", page, limit: 1 },
+          payload: { type: "custom", page, limit: 10 },
         } as unknown as Parameters<typeof app.inject>[0])
 
         expect(response.statusCode).toBe(200)
         expect(response.json()).toMatchObject({
           page,
-          limit: 1,
-          total: 2,
+          total: 11,
           pages: 2,
           isNextPage: page === 1,
           isPreviousPage: page === 2,
-          items: [{ id: id.toHexString() }],
+          items: records.map((record) => ({ id: record._id.toHexString() })),
         })
       }
     })
@@ -274,16 +279,15 @@ describe("CollectionReadController HTTP", () => {
       const response = await app.inject({
         method: "QUERY",
         url: "/collections",
-        payload: { type: "custom", page: 3, limit: 1 },
+        payload: { type: "custom", page: 3, limit: 10 },
       } as unknown as Parameters<typeof app.inject>[0])
 
       expect(response.statusCode).toBe(200)
       expect(response.json()).toEqual({
         items: [],
         page: 3,
-        limit: 1,
         total: 2,
-        pages: 2,
+        pages: 1,
         isNextPage: false,
         isPreviousPage: true,
       })
@@ -302,7 +306,6 @@ describe("CollectionReadController HTTP", () => {
       expect(response.json()).toEqual({
         items: [],
         page: 1,
-        limit: 20,
         total: 0,
         pages: 0,
         isNextPage: false,
@@ -335,7 +338,7 @@ describe("CollectionReadController HTTP", () => {
       }
     })
 
-    it("возвращает все 60 карточек и принимает 60 уникальных Item ID без усечения", async () => {
+    it("возвращает 60 карточек по страницам и принимает 60 уникальных Item ID без усечения", async () => {
       const { app, connection } = getTestApplication()
       const { first, firstItemId } = await createQueryFixture()
       await connection.collection("Collection").insertMany(
@@ -351,17 +354,36 @@ describe("CollectionReadController HTTP", () => {
       const all = await app.inject({
         method: "QUERY",
         url: "/collections",
-        payload: { type: "custom", limit: 60 },
+        payload: { type: "custom", limit: 50 },
       } as unknown as Parameters<typeof app.inject>[0])
       expect(all.statusCode).toBe(200)
       expect(all.json()).toMatchObject({
-        limit: 60,
         total: 60,
-        pages: 1,
+        pages: 2,
+        isNextPage: true,
+      })
+      expect(all.json<QueryCollectionsResponseDto>().items).toHaveLength(50)
+
+      const next = await app.inject({
+        method: "QUERY",
+        url: "/collections",
+        payload: { type: "custom", limit: 50, page: 2 },
+      } as unknown as Parameters<typeof app.inject>[0])
+      expect(next.statusCode).toBe(200)
+      expect(next.json()).toMatchObject({
+        total: 60,
+        pages: 2,
         isNextPage: false,
       })
-      expect(all.json<QueryCollectionsResponseDto>().items).toHaveLength(60)
-
+      expect(next.json<QueryCollectionsResponseDto>().items).toHaveLength(10)
+      expect(
+        new Set(
+          [
+            ...all.json<QueryCollectionsResponseDto>().items,
+            ...next.json<QueryCollectionsResponseDto>().items,
+          ].map((item) => item.id),
+        ).size,
+      ).toBe(60)
       const defaultPage = await app.inject({
         method: "QUERY",
         url: "/collections",
@@ -370,14 +392,13 @@ describe("CollectionReadController HTTP", () => {
       expect(defaultPage.statusCode).toBe(200)
       expect(defaultPage.json()).toMatchObject({
         page: 1,
-        limit: 20,
         total: 60,
-        pages: 3,
+        pages: 2,
         isNextPage: true,
       })
       expect(
         defaultPage.json<QueryCollectionsResponseDto>().items,
-      ).toHaveLength(20)
+      ).toHaveLength(50)
 
       const filtered = await app.inject({
         method: "QUERY",
@@ -522,11 +543,17 @@ describe("CollectionReadController HTTP", () => {
   })
 
   describe("сортировка по значимости тега", () => {
-    const createRelevanceFixture = async (type = ECollectionType.TAG) => {
+    const createRelevanceFixture = async (
+      type = ECollectionType.TAG,
+      copies = 1,
+    ) => {
       const { connection } = getTestApplication()
       const collectionId = new Types.ObjectId()
       const groupIds = [new Types.ObjectId(), new Types.ObjectId()]
-      const itemIds = Array.from({ length: 6 }, () => new Types.ObjectId())
+      const itemIds = Array.from(
+        { length: 6 * copies },
+        () => new Types.ObjectId(),
+      )
       const scores = [0.2, 0.8, 0.8, 1, null, undefined]
       const membershipIds = [6, 2, 1, 4, 3, 5]
 
@@ -550,16 +577,27 @@ describe("CollectionReadController HTTP", () => {
       await connection.collection("ItemCollection").insertMany(
         itemIds.map((item, index) => ({
           _id: new Types.ObjectId(
-            membershipIds[index].toString(16).padStart(24, "0"),
+            (
+              membershipIds[Math.floor(index / copies)] * copies +
+              (index % copies)
+            )
+              .toString(16)
+              .padStart(24, "0"),
           ),
           collectionId,
           item,
-          groupId: groupIds[index === 3 || index === 5 ? 1 : 0],
+          groupId:
+            groupIds[
+              Math.floor(index / copies) === 3 ||
+              Math.floor(index / copies) === 5
+                ? 1
+                : 0
+            ],
           position: index,
           note: null,
-          ...(scores[index] === undefined
+          ...(scores[Math.floor(index / copies)] === undefined
             ? {}
-            : { relevanceScore: scores[index] }),
+            : { relevanceScore: scores[Math.floor(index / copies)] }),
         })),
       )
 
@@ -592,7 +630,10 @@ describe("CollectionReadController HTTP", () => {
 
     it("сортирует до пагинации без пропусков и повторов на соседних страницах", async () => {
       const { app } = getTestApplication()
-      const { collectionId, itemIds } = await createRelevanceFixture()
+      const { collectionId, itemIds } = await createRelevanceFixture(
+        ECollectionType.TAG,
+        5,
+      )
       const expectedPages = [[3, 2], [1, 0], [4, 5], []]
 
       for (const [index, expected] of expectedPages.entries()) {
@@ -603,15 +644,19 @@ describe("CollectionReadController HTTP", () => {
             sort: "relevanceScore",
             mode: "flat",
             page: index + 1,
-            limit: 2,
+            limit: 10,
           },
         } as unknown as Parameters<typeof app.inject>[0])
 
         expect(response.statusCode).toBe(200)
         const result = response.json<ItemCollectionsResponseDto>()
-        expect(result).toMatchObject({ total: 6, pages: 3, page: index + 1 })
+        expect(result).toMatchObject({ total: 30, pages: 3, page: index + 1 })
         expect(result.items.map((item) => item.id)).toEqual(
-          expected.map((itemIndex) => itemIds[itemIndex].toHexString()),
+          expected.flatMap((itemIndex) =>
+            Array.from({ length: 5 }, (_, copy) =>
+              itemIds[itemIndex * 5 + copy].toHexString(),
+            ),
+          ),
         )
       }
     })
@@ -644,7 +689,10 @@ describe("CollectionReadController HTTP", () => {
 
     it("применяет фильтр группы до сортировки, подсчёта и пагинации", async () => {
       const { app } = getTestApplication()
-      const { collectionId, groupIds, itemIds } = await createRelevanceFixture()
+      const { collectionId, groupIds, itemIds } = await createRelevanceFixture(
+        ECollectionType.TAG,
+        5,
+      )
       const response = await app.inject({
         method: "QUERY",
         url: `/collections/${collectionId}/items`,
@@ -652,17 +700,20 @@ describe("CollectionReadController HTTP", () => {
           sort: "relevanceScore",
           groupId: groupIds[0].toHexString(),
           mode: "flat",
-          limit: 2,
+          limit: 10,
         },
       } as unknown as Parameters<typeof app.inject>[0])
 
       expect(response.statusCode).toBe(200)
       const result = response.json<ItemCollectionsResponseDto>()
-      expect(result).toMatchObject({ total: 4, pages: 2 })
-      expect(result.items.map((item) => item.id)).toEqual([
-        itemIds[2].toHexString(),
-        itemIds[1].toHexString(),
-      ])
+      expect(result).toMatchObject({ total: 20, pages: 2 })
+      expect(result.items.map((item) => item.id)).toEqual(
+        [2, 1].flatMap((index) =>
+          Array.from({ length: 5 }, (_, copy) =>
+            itemIds[index * 5 + copy].toHexString(),
+          ),
+        ),
+      )
     })
 
     it.each([
@@ -709,17 +760,16 @@ describe("CollectionReadController HTTP", () => {
     })
   })
 
-  it("принимает максимальный размер страницы 60 без изменения total", async () => {
+  it("принимает максимальный размер страницы 50 без изменения total", async () => {
     const { app } = getTestApplication()
     const { collection } = await createCollection()
     const response = await app.inject({
       method: "QUERY",
       url: "/collections/" + collection.id + "/items",
-      payload: { limit: 60, mode: "flat" },
+      payload: { limit: 50, mode: "flat" },
     } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({
-      limit: 60,
       page: 1,
       pages: 1,
       total: 2,
@@ -743,12 +793,26 @@ describe("CollectionReadController HTTP", () => {
   })
 
   it("возвращает плоскую страницу в порядке подборки без личных полей гостя", async () => {
-    const { app } = getTestApplication()
+    const { app, connection } = getTestApplication()
     const { collection, first, second, firstGroupId } = await createCollection()
+    const additional = Array.from({ length: 9 }, () => ({
+      ...first.toObject(),
+      _id: new Types.ObjectId(),
+    }))
+    await connection.collection("Item").insertMany(additional)
+    await connection.collection("ItemCollection").insertMany(
+      additional.map((item, index) => ({
+        collectionId: new Types.ObjectId(collection.id),
+        groupId: new Types.ObjectId(firstGroupId),
+        item: item._id,
+        position: index + 2,
+        note: null,
+      })),
+    )
     const response = await app.inject({
       method: "QUERY",
       url: `/collections/${collection.id}/items`,
-      payload: { mode: "flat", limit: 1 },
+      payload: { mode: "flat", limit: 10 },
     } as unknown as Parameters<typeof app.inject>[0])
     expect(response.statusCode).toBe(200)
     expect(response.headers["cache-control"]).toBe("no-store")
@@ -761,10 +825,20 @@ describe("CollectionReadController HTTP", () => {
           media: [],
           membership: { groupId: firstGroupId, position: 1, note: "Заметка" },
         },
+        ...additional.map((item, index) => ({
+          id: item._id.toHexString(),
+          type: "movie",
+          title: { ru: "Альфа", en: "Alpha" },
+          media: [],
+          membership: {
+            groupId: firstGroupId,
+            position: index + 2,
+            note: null,
+          },
+        })),
       ],
       page: 1,
-      limit: 1,
-      total: 2,
+      total: 11,
       pages: 2,
       isNextPage: true,
       isPreviousPage: false,
@@ -774,13 +848,13 @@ describe("CollectionReadController HTTP", () => {
     const next = await app.inject({
       method: "QUERY",
       url: `/collections/${collection.id}/items`,
-      payload: { mode: "flat", limit: 1, page: 2 },
+      payload: { mode: "flat", limit: 10, page: 2 },
     } as unknown as Parameters<typeof app.inject>[0])
     expect(next.statusCode).toBe(200)
     expect(next.json()).toMatchObject({
       items: [{ id: second._id.toHexString() }],
       page: 2,
-      total: 2,
+      total: 11,
       isNextPage: false,
       isPreviousPage: true,
     })
@@ -822,7 +896,8 @@ describe("CollectionReadController HTTP", () => {
 
   it("фильтрует группу и текст поиска, сортирует по названию и возвращает пустую страницу", async () => {
     const { app } = getTestApplication()
-    const { collection, second, secondGroupId } = await createCollection()
+    const { collection, first, second, secondGroupId } =
+      await createCollection()
     const base = `/collections/${collection.id}/items`
     const grouped = await app.inject({
       method: "QUERY",
@@ -842,13 +917,16 @@ describe("CollectionReadController HTTP", () => {
         language: "en",
         direction: "desc",
         mode: "flat",
-        limit: 1,
+        limit: 10,
       },
     } as unknown as Parameters<typeof app.inject>[0])
     expect(sorted.statusCode).toBe(200)
     expect(sorted.json()).toMatchObject({
       total: 2,
-      items: [{ id: second._id.toHexString() }],
+      items: [
+        { id: second._id.toHexString() },
+        { id: first._id.toHexString() },
+      ],
     })
     const empty = await app.inject({
       method: "QUERY",
@@ -1456,14 +1534,33 @@ describe("CollectionReadController HTTP", () => {
 
   it("считает total и страницы после фильтра общей оценки и совмещает его с поиском и группой", async () => {
     const { app, connection } = getTestApplication()
-    const { collection, first, second, secondGroupId } =
+    const { collection, first, second, firstGroupId, secondGroupId } =
       await createCollection()
     await connection.collection("ItemStats").insertMany([
       { item: first._id, ratingAverage: 7.5 },
       { item: second._id, ratingAverage: 8.25 },
     ])
+    const additional = Array.from({ length: 9 }, () => ({
+      ...first.toObject(),
+      _id: new Types.ObjectId(),
+    }))
+    await connection.collection("Item").insertMany(additional)
+    await connection.collection("ItemCollection").insertMany(
+      additional.map((item, index) => ({
+        collectionId: new Types.ObjectId(collection.id),
+        groupId: new Types.ObjectId(firstGroupId),
+        item: item._id,
+        position: index + 2,
+        note: null,
+      })),
+    )
+    await connection
+      .collection("ItemStats")
+      .insertMany(
+        additional.map((item) => ({ item: item._id, ratingAverage: 7.5 })),
+      )
     const base = "/collections/" + collection.id + "/items"
-    const payload = { mode: "flat", ratingMin: 7.5, ratingMax: 8.25, limit: 1 }
+    const payload = { mode: "flat", ratingMin: 7.5, ratingMax: 8.25, limit: 10 }
     const secondPage = await app.inject({
       method: "QUERY",
       url: base,
@@ -1471,7 +1568,7 @@ describe("CollectionReadController HTTP", () => {
     } as unknown as Parameters<typeof app.inject>[0])
     expect(secondPage.statusCode).toBe(200)
     expect(secondPage.json()).toMatchObject({
-      total: 2,
+      total: 11,
       pages: 2,
       page: 2,
       isPreviousPage: true,
@@ -1490,7 +1587,7 @@ describe("CollectionReadController HTTP", () => {
       items: [{ id: second._id.toHexString() }],
     })
     const narrowedBase = "/collections/" + collection.id + "/items"
-    const narrowedPayload = { mode: "flat", ratingMin: 8, limit: 1 }
+    const narrowedPayload = { mode: "flat", ratingMin: 8, limit: 10 }
     const narrowed = await app.inject({
       method: "QUERY",
       url: narrowedBase,
@@ -1518,7 +1615,11 @@ describe("CollectionReadController HTTP", () => {
       payload: { ...payload, page: 3 },
     } as unknown as Parameters<typeof app.inject>[0])
     expect(pastLastPage.statusCode).toBe(200)
-    expect(pastLastPage.json()).toMatchObject({ total: 2, pages: 2, items: [] })
+    expect(pastLastPage.json()).toMatchObject({
+      total: 11,
+      pages: 2,
+      items: [],
+    })
   })
 
   it.each([

@@ -18,9 +18,9 @@ describe("ItemSchema", () => {
       expected: null,
     },
     {
-      name: "default null при отсутствии входного значения",
+      name: "отсутствующим полем при отсутствии входного значения",
       series: {},
-      expected: null,
+      expected: undefined,
     },
   ])(
     "формирует документ с $name для даты последнего эпизода",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals"
 
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
-import { createPaginatedResult } from "@shared/functions/pagination/createPaginatedResult"
+import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 
 import { createCollectionDisplayBlocks } from "../core/createCollectionDisplayBlocks"
 import { COLLECTION_DISPLAY_BLOCKS_PROPS } from "./static/COLLECTION_DISPLAY_BLOCKS_PROPS"
@@ -28,20 +28,20 @@ describe("createCollectionDisplayBlocks", () => {
         id: "000000000000000000000003",
         type: "text",
         content: { ru: "Текст", en: "Text" },
-        beforeItemId: "item-4",
+        beforeItemId: "item-16",
       },
       {
         id: "000000000000000000000005",
         type: "text",
         content: { ru: "Текст", en: "Text" },
-        beforeItemId: "item-4",
+        beforeItemId: "item-16",
       },
       {
         id: "000000000000000000000006",
         type: "group",
         title: { ru: "Группа", en: "Group" },
         description: { ru: "Описание", en: null },
-        beforeItemId: "item-4",
+        beforeItemId: "item-16",
       },
       {
         id: "000000000000000000000007",
@@ -56,22 +56,23 @@ describe("createCollectionDisplayBlocks", () => {
     { page: 1, start: 0, ids: [1, 2], anchors: ["item-1", "item-1"] },
     {
       page: 2,
-      start: 2,
+      start: 10,
       ids: [2, 3, 5, 6],
-      anchors: ["item-3", "item-4", "item-4", "item-4"],
+      anchors: ["item-11", "item-16", "item-16", "item-16"],
     },
-    { page: 3, start: 4, ids: [6, 7], anchors: ["item-5", null] },
-    { page: 4, start: 6, ids: [], anchors: [] },
+    { page: 3, start: 20, ids: [6, 7], anchors: ["item-21", null] },
+    { page: 4, start: 30, ids: [], anchors: [] },
   ])(
     "выбирает блоки страницы $page и повторяет заголовки при продолжении группы",
     ({ page, start, ids, anchors }) => {
       const result = createCollectionDisplayBlocks({
         ...COLLECTION_DISPLAY_BLOCKS_PROPS,
+        limit: 10,
         page: createPaginatedResult(
-          COLLECTION_DISPLAY_BLOCKS_PROPS.page.items.slice(start, start + 2),
-          5,
+          COLLECTION_DISPLAY_BLOCKS_PROPS.page.items.slice(start, start + 10),
+          25,
           page,
-          2,
+          10,
         ),
       })
 
@@ -83,23 +84,30 @@ describe("createCollectionDisplayBlocks", () => {
   )
 
   it("переносит текст на следующую страницу при точном совпадении с её началом", () => {
-    const first = createCollectionDisplayBlocks({
+    const props = {
       ...COLLECTION_DISPLAY_BLOCKS_PROPS,
-      page: createPaginatedResult(
-        COLLECTION_DISPLAY_BLOCKS_PROPS.page.items.slice(0, 3),
-        5,
-        1,
-        3,
+      groupCounts: COLLECTION_DISPLAY_BLOCKS_PROPS.groupCounts.map(
+        (group, index) => ({ ...group, total: index === 0 ? 20 : 10 }),
       ),
+    }
+    const items = Array.from({ length: 30 }, (_, index) => ({
+      ...COLLECTION_DISPLAY_BLOCKS_PROPS.page.items[0],
+      id: `item-${index + 1}`,
+      membership: {
+        groupId: (index < 20 ? 2 : 6).toString().padStart(24, "0"),
+        position: index,
+        note: null,
+      },
+    }))
+    const first = createCollectionDisplayBlocks({
+      ...props,
+      limit: 20,
+      page: createPaginatedResult(items.slice(0, 20), 30, 1, 20),
     })
     const second = createCollectionDisplayBlocks({
-      ...COLLECTION_DISPLAY_BLOCKS_PROPS,
-      page: createPaginatedResult(
-        COLLECTION_DISPLAY_BLOCKS_PROPS.page.items.slice(3),
-        5,
-        2,
-        3,
-      ),
+      ...props,
+      limit: 20,
+      page: createPaginatedResult(items.slice(20), 30, 2, 20),
     })
 
     expect(first.map((block) => block.id)).toEqual([
@@ -107,9 +115,9 @@ describe("createCollectionDisplayBlocks", () => {
       "000000000000000000000002",
     ])
     expect(second.map((block) => [block.id, block.beforeItemId])).toEqual([
-      ["000000000000000000000003", "item-4"],
-      ["000000000000000000000005", "item-4"],
-      ["000000000000000000000006", "item-4"],
+      ["000000000000000000000003", "item-21"],
+      ["000000000000000000000005", "item-21"],
+      ["000000000000000000000006", "item-21"],
       ["000000000000000000000007", null],
     ])
   })
@@ -133,7 +141,7 @@ describe("createCollectionDisplayBlocks", () => {
         type: "group",
         title: { ru: "Группа", en: "Group" },
         description: { ru: "Описание", en: null },
-        beforeItemId: "item-4",
+        beforeItemId: "item-16",
       },
     ])
   })
@@ -148,7 +156,7 @@ describe("createCollectionDisplayBlocks", () => {
       const result = createCollectionDisplayBlocks({
         ...COLLECTION_DISPLAY_BLOCKS_PROPS,
         groupCounts: [],
-        page: createPaginatedResult([], 0, page, 2),
+        page: createPaginatedResult([], 0, page, 10),
         isFiltered,
       })
 

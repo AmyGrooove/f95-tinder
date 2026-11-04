@@ -16,11 +16,19 @@ describe("createItemCollectionsPipeline", () => {
       const { connection } = getTestDatabase()
       const collectionId = new Types.ObjectId()
       const groupId = new Types.ObjectId()
-      const ids = Array.from({ length: 3 }, () => new Types.ObjectId())
+      const ids = Array.from({ length: 12 }, () => new Types.ObjectId())
       await connection.collection("Item").insertMany([
         { _id: ids[0], title: { ru: "Б", en: "B" }, media: [] },
         { _id: ids[1], title: { ru: " ", en: "A" }, media: [] },
         { _id: ids[2], title: { ru: "В", en: "C" }, media: [] },
+        ...ids.slice(3).map((_id, index) => ({
+          _id,
+          title: {
+            ru: String.fromCharCode(1043 + index),
+            en: String.fromCharCode(68 + index),
+          },
+          media: [],
+        })),
       ])
       await connection.collection("ItemCollection").insertMany(
         ids.map((item, index) => ({
@@ -40,7 +48,7 @@ describe("createItemCollectionsPipeline", () => {
         direction: -1,
         language: ELanguage.RUSSIAN,
         page: 1,
-        limit: 2,
+        limit: 10,
         tags: [],
         excludeTags: [],
         fields: [],
@@ -50,16 +58,13 @@ describe("createItemCollectionsPipeline", () => {
         .aggregate(createItemCollectionsPipeline(props))
         .toArray()
       const expected =
-        sort === "collection" ? [ids[0], ids[1]] : [ids[2], ids[1]]
-      if (sort === "title") {
-        expected[1] = ids[0]
-      }
+        sort === "collection" ? ids.slice(0, 10) : ids.slice(2).reverse()
       expect(
         result.items.map(
           ({ item }: { item: { _id: Types.ObjectId } }) => item._id,
         ),
       ).toEqual(expected)
-      expect(result.count).toEqual([{ total: 3 }])
+      expect(result.count).toEqual([{ total: 12 }])
       expect(result.items[0]).toEqual(
         expect.objectContaining({ note: "Заметка", groupId }),
       )
@@ -68,7 +73,7 @@ describe("createItemCollectionsPipeline", () => {
         .collection("ItemCollection")
         .aggregate(createItemCollectionsPipeline({ ...props, page: 3 }))
         .toArray()
-      expect(page).toEqual({ items: [], count: [{ total: 3 }] })
+      expect(page).toEqual({ items: [], count: [{ total: 12 }] })
     },
   )
 

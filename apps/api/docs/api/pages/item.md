@@ -34,7 +34,7 @@
 | releaseDate        | Точная дата первого выпуска в ISO 8601 или null                                                                                                  |
 | ageRestriction     | 0, 6, 12, 16, 18 или null                                                                                                                        |
 | movie              | {duration} или null; длительность в минутах                                                                                                      |
-| series             | {episodeCount,releasedEpisodeCount,episodeDuration,lastReleasedEpisodeAt,nextEpisodeAt} или null; даты в ISO 8601                                                      |
+| series             | {episodeCount,releasedEpisodeCount,episodeDuration,lastReleasedEpisodeAt,nextEpisodeAt} или null; даты в ISO 8601                                |
 | game               | {mainStoryDuration,fullCompletionDuration} или null; время в минутах                                                                             |
 | relations          | Массив `{item: {id, type, title, media}, role: {id, key, name}}` по ID связи возрастанию                                                         |
 

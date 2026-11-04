@@ -95,7 +95,7 @@ describe("RecommendationsService", () => {
         siteRatingAverage: 5.5,
         now: expect.any(Date),
         page: 1,
-        limit: 20,
+        limit: 50,
       }),
     )
     expect(findProfile).toHaveBeenCalledWith({ user: userId })
@@ -104,7 +104,6 @@ describe("RecommendationsService", () => {
       items: [],
       total: 0,
       page: 1,
-      limit: 20,
       pages: 0,
       isNextPage: false,
       isPreviousPage: false,
@@ -141,7 +140,7 @@ describe("RecommendationsService", () => {
       candidateItemIds: [new Types.ObjectId()],
       isIncludingExcluded: true,
       direction: "asc",
-      pagination: { page: 2.9, limit: 1000 },
+      pagination: { page: 2.9, limit: 50 },
     }
 
     const result = await service.find(props)
@@ -159,15 +158,14 @@ describe("RecommendationsService", () => {
         isIncludingExcluded: true,
         direction: "asc",
         page: 2,
-        limit: 100,
+        limit: 50,
       }),
     )
     expect(result).toEqual({
       items: [item],
       total: 250,
       page: 2,
-      limit: 100,
-      pages: 3,
+      pages: 5,
       isNextPage: true,
       isPreviousPage: true,
     })
@@ -189,7 +187,7 @@ describe("RecommendationsService", () => {
       message: DICTIONARY.recommendations.collectionRequired,
     },
     {
-      pagination: { page: Number.MAX_SAFE_INTEGER, limit: 100 },
+      pagination: { page: Number.MAX_SAFE_INTEGER, limit: 50 as const },
       message: DICTIONARY.recommendations.invalidPagination,
     },
     ...[

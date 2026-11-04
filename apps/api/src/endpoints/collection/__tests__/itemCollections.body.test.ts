@@ -34,8 +34,8 @@ describe("ItemCollectionsBodyDto", () => {
     },
   )
 
-  it.each([1, 20, 60])(
-    "принимает размер страницы %i в допустимом диапазоне",
+  it.each([10, 20, 50])(
+    "принимает разрешённый размер страницы %i",
     async (limit) => {
       const dto = plainToInstance(ItemCollectionsBodyDto, { limit })
       expect(await validate(dto)).toEqual([])
@@ -43,7 +43,7 @@ describe("ItemCollectionsBodyDto", () => {
     },
   )
 
-  it.each([0, 60.5, 61, 100])(
+  it.each([0, 1, 60, 60.5, 61, 100])(
     "отклоняет недопустимый размер страницы %i",
     async (limit) => {
       const dto = plainToInstance(ItemCollectionsBodyDto, { limit })

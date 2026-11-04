@@ -4,6 +4,8 @@ import { Types } from "mongoose"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { getTestDatabase } from "@test/setup/setupDatabase"
 
+import type { IReadRecommendationsProps } from "../../../types/IReadRecommendationsProps"
+
 import { createRecommendationPipeline } from "../core/createRecommendationPipeline"
 
 describe("createRecommendationPipeline", () => {
@@ -12,7 +14,7 @@ describe("createRecommendationPipeline", () => {
     async (direction) => {
       const { connection } = getTestDatabase()
       const userId = new Types.ObjectId()
-      const ids = Array.from({ length: 3 }, () => new Types.ObjectId())
+      const ids = Array.from({ length: 11 }, () => new Types.ObjectId())
       await connection
         .collection("Item")
         .insertMany(
@@ -27,23 +29,27 @@ describe("createRecommendationPipeline", () => {
         item: ids[2],
         status: EUserItemStatus.PLANNED,
       })
-      const props = {
+      const props: IReadRecommendationsProps = {
         userId,
         now: new Date(),
         preferences: [],
         siteRatingAverage: 5,
         page: 1,
-        limit: 2,
+        limit: 10,
         direction,
       }
       const [result] = await connection
         .collection("Item")
         .aggregate(createRecommendationPipeline(props))
         .toArray()
-      expect(result.count).toEqual([{ total: 3 }])
+      expect(result.count).toEqual([{ total: 11 }])
       expect(
         result.items.map(({ _id }: { _id: Types.ObjectId }) => _id),
-      ).toEqual(direction === "desc" ? [ids[2], ids[0]] : [ids[0], ids[1]])
+      ).toEqual(
+        direction === "desc"
+          ? [ids[2], ids[0], ids[1], ...ids.slice(3, 10)]
+          : [ids[0], ids[1], ...ids.slice(3)],
+      )
       const planned = direction === "desc" ? result.items[0] : undefined
       if (planned !== undefined) {
         expect(planned.finalScore).toBe(1.2)
@@ -53,7 +59,7 @@ describe("createRecommendationPipeline", () => {
         .collection("Item")
         .aggregate(createRecommendationPipeline({ ...props, page: 3 }))
         .toArray()
-      expect(emptyPage).toEqual({ items: [], count: [{ total: 3 }] })
+      expect(emptyPage).toEqual({ items: [], count: [{ total: 11 }] })
     },
   )
 

@@ -292,10 +292,30 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
           .slice(0, 6)
           .map((item) => ({ item: item._id, ratingAverage: 7.5 })),
       )
+    const additional = await Promise.all(
+      Array.from({ length: 9 }, () =>
+        seedItem({
+          movie: { duration: 90 },
+          releaseDate: new Date("2020-01-01"),
+        }),
+      ),
+    )
+    await application.connection
+      .collection("TagItem")
+      .insertMany(
+        additional.flatMap((item) =>
+          tags.map((tag) => ({ item: item._id, tag, relevanceScore: 1 })),
+        ),
+      )
+    await application.connection
+      .collection("ItemStats")
+      .insertMany(
+        additional.map((item) => ({ item: item._id, ratingAverage: 7.5 })),
+      )
     await synchronize()
     const body = {
       search: "Орбита",
-      limit: 1,
+      limit: 10,
       items: {
         types: ["movie"],
         tagIds: tags.map((tag) => String(tag).toUpperCase()),
@@ -310,18 +330,17 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       },
     }
     for (const [page, expected] of [
-      [1, candidates[0]],
-      [2, candidates[1]],
-      [3, undefined],
+      [1, [candidates[0], ...additional]],
+      [2, [candidates[1]]],
+      [3, []],
     ] as const) {
       const response = await query({ ...body, page })
       expect(response.statusCode).toBe(200)
       expect(response.json<SearchResponseDto>().items).toMatchObject({
-        hits:
-          expected === undefined
-            ? []
-            : [expect.objectContaining({ id: String(expected._id) })],
-        estimatedTotalHits: 2,
+        hits: expected.map((item) =>
+          expect.objectContaining({ id: String(item._id) }),
+        ),
+        estimatedTotalHits: 11,
       })
     }
   })
@@ -605,8 +624,8 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     await synchronize()
     const response = await query({
       search: "Orbit",
-      page: 251,
-      limit: 2,
+      page: 51,
+      limit: 10,
       items: { direction: "asc" },
       users: { direction: "asc" },
       collections: { direction: "asc" },

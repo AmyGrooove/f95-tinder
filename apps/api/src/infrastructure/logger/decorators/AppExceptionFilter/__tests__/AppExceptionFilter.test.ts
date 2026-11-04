@@ -5,7 +5,6 @@ import { Test } from "@nestjs/testing"
 
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { ERROR_MESSAGES } from "@shared/static/ERROR_MESSAGES"
 
 import { AppExceptionFilter } from "../index"
 
@@ -69,7 +68,7 @@ describe("AppExceptionFilter", () => {
     expect(response.send).toHaveBeenCalledWith({
       error: {
         code: "BAD_REQUEST",
-        message: ERROR_MESSAGES.VALIDATION_ERROR,
+        message: DICTIONARY.errors.VALIDATION_ERROR,
         details: { errors },
         requestId: "req-1",
       },
@@ -222,7 +221,7 @@ describe("AppExceptionFilter", () => {
       expect(response.send).toHaveBeenCalledWith({
         error: {
           code: "INTERNAL_ERROR",
-          message: ERROR_MESSAGES.INTERNAL_ERROR,
+          message: DICTIONARY.errors.INTERNAL_ERROR,
           details: null,
           requestId: "req-server",
         },

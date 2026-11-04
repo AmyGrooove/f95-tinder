@@ -243,7 +243,6 @@ describe("RecommendationsService MongoDB", () => {
       items: [],
       total: 0,
       page: 1,
-      limit: 20,
       pages: 0,
       isNextPage: false,
       isPreviousPage: false,
@@ -834,29 +833,33 @@ describe("RecommendationsService MongoDB", () => {
     ])
     const negative = await seedItem()
     const neutral = await seedItem()
+    const neutrals = [neutral]
+    for (let index = 0; index < 8; index += 1) {
+      neutrals.push(await seedItem())
+    }
     const positive = await seedItem()
     await assignTags(negative, [{ tag: disliked }])
     await assignTags(positive, [{ tag: liked }])
-    const first = await find({ pagination: { page: 1, limit: 2 } })
-    const second = await find({ pagination: { page: 2, limit: 2 } })
-    const pastEnd = await find({ pagination: { page: 3, limit: 2 } })
-    expect(first.items.map((item) => item._id)).toEqual([positive, neutral])
+    const first = await find({ pagination: { page: 1, limit: 10 } })
+    const second = await find({ pagination: { page: 2, limit: 10 } })
+    const pastEnd = await find({ pagination: { page: 3, limit: 10 } })
+    expect(first.items.map((item) => item._id)).toEqual([positive, ...neutrals])
     expect(second.items.map((item) => item._id)).toEqual([negative])
     expect(first).toMatchObject({
-      total: 3,
+      total: 11,
       pages: 2,
       isNextPage: true,
       isPreviousPage: false,
     })
     expect(second).toMatchObject({
-      total: 3,
+      total: 11,
       pages: 2,
       isNextPage: false,
       isPreviousPage: true,
     })
     expect(pastEnd).toMatchObject({
       items: [],
-      total: 3,
+      total: 11,
       pages: 2,
       isNextPage: false,
       isPreviousPage: true,
@@ -879,7 +882,7 @@ describe("RecommendationsService MongoDB", () => {
     expect(result.total).toBe(1)
     expect(result.items.map((item) => item._id)).toEqual([first])
     expect(
-      (await find({ ...props, pagination: { page: 2, limit: 1 } })).items,
+      (await find({ ...props, pagination: { page: 2, limit: 10 } })).items,
     ).toEqual([])
     expect(await find({ candidateItemIds: [] })).toMatchObject({
       items: [],
@@ -927,11 +930,15 @@ describe("RecommendationsService MongoDB", () => {
       lowerRated,
       positive,
     ])
+    for (let index = 0; index < 8; index += 1) {
+      const filler = await seedItem()
+      await assignTags(filler, [{ tag: disliked }])
+    }
     const page = await find({
       direction: "asc",
-      pagination: { page: 2, limit: 2 },
+      pagination: { page: 2, limit: 10 },
     })
-    expect(page.total).toBe(4)
+    expect(page.total).toBe(12)
     expect(page.items.map((item) => item._id)).toEqual([lowerRated, positive])
   })
 
@@ -1003,24 +1010,30 @@ describe("RecommendationsService MongoDB", () => {
         eligible,
       ])
 
+      const additionalEligible = []
+      for (let index = 0; index < 9; index += 1) {
+        const item = await seedItem()
+        await assignTags(item, [{ tag: disliked }])
+        additionalEligible.push(item)
+      }
       const first = await find({
         ...props,
         isIncludingExcluded: true,
-        pagination: { page: 1, limit: 2 },
+        pagination: { page: 1, limit: 10 },
       })
       const second = await find({
         ...props,
         isIncludingExcluded: true,
-        pagination: { page: 2, limit: 2 },
+        pagination: { page: 2, limit: 10 },
       })
 
       expect([...first.items, ...second.items].map((item) => item._id)).toEqual(
         direction === "desc"
-          ? [eligible, blocked, banned, skipped]
-          : [eligible, skipped, banned, blocked],
+          ? [eligible, ...additionalEligible, blocked, banned, skipped]
+          : [eligible, ...additionalEligible, skipped, banned, blocked],
       )
-      expect(first).toMatchObject({ total: 4, pages: 2, isNextPage: true })
-      expect(second).toMatchObject({ total: 4, pages: 2, isNextPage: false })
+      expect(first).toMatchObject({ total: 13, pages: 2, isNextPage: true })
+      expect(second).toMatchObject({ total: 13, pages: 2, isNextPage: false })
       for (const item of [...first.items, ...second.items]) {
         expect(item).not.toHaveProperty("isRecommendationExcluded")
       }
