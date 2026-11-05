@@ -100,7 +100,7 @@
 
 ## Границы каталога
 
-Состав установлен по AppModule, зарегистрированным контроллерам и их фактическим вызовам: шесть продуктовых HTTP-модулей, AppController и HealthController. RecommendationsModule и TagWeightModifiersModule не добавляют HTTP-маршрутов. Автоматические HEAD для GET и CORS OPTIONS не считаются самостоятельными продуктовыми операциями.
+Состав установлен по AppModule, зарегистрированным контроллерам и их фактическим вызовам: шесть продуктовых HTTP-модулей, AppController и HealthController. Старая подсистема рекомендаций и её фоновые задачи удалены. Автоматические HEAD для GET и CORS OPTIONS не считаются самостоятельными продуктовыми операциями.
 
 [Knowledge](/knowledge/) и [Swagger](/docs) — интерфейсы документации со статическими ресурсами; отдельные файлы, vendor chunks и Swagger assets не являются карточками сценариев. Knowledge требует своего Basic Auth.
 

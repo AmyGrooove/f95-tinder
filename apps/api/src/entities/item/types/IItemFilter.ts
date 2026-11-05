@@ -3,7 +3,7 @@ import type { Types } from "mongoose"
 import type { EItemType } from "../schemas/EItemType"
 import type { EItemField } from "../schemas/EItemField"
 
-interface IRecommendationFilter {
+interface IItemFilter {
   types?: readonly EItemType[]
   collectionId?: Types.ObjectId
   groupId?: Types.ObjectId
@@ -17,4 +17,4 @@ interface IRecommendationFilter {
   ratingMax?: number
 }
 
-export type { IRecommendationFilter }
+export type { IItemFilter }

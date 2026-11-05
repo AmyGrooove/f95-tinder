@@ -10,7 +10,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Жанры; совпадающие названия с разным смыслом остаются отдельными понятиями",
@@ -19,7 +18,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Поджанры со связями с родительскими жанрами; родители не назначаются автоматически и не учитываются как независимые подтверждения вкуса",
@@ -28,7 +26,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Темы, мотивы и содержательные признаки, кроме игровых механик",
@@ -37,7 +34,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description: "Форматы произведений без дублирования Item.type",
   },
@@ -45,7 +41,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description: "Атмосфера, темп, стиль повествования и визуальные техники",
   },
@@ -53,7 +48,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     description:
       "Целевая аудитория; не заменяет возрастные ограничения и не выводится из них",
@@ -62,7 +56,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     description:
       "Страны производства, кроме регионов, городов и вымышленных стран",
@@ -71,7 +64,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     description: "Только языки оригинала, без языков перевода",
   },
@@ -79,7 +71,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     description:
       "Доступные игровые платформы, кроме магазинов и устройств пользователя; порты используют общий Item",
@@ -92,7 +83,6 @@ const TAG_GROUP_RULES = {
       EItemType.ANIME_MOVIE,
     ],
     cardinality: "one",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Длительность фильма по точному положительному значению в минутах",
@@ -117,7 +107,6 @@ const TAG_GROUP_RULES = {
       EItemType.ANIME_SERIES,
     ],
     cardinality: "one",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Ориентировочная длительность обычной серии по положительному значению в минутах",
@@ -141,7 +130,6 @@ const TAG_GROUP_RULES = {
       EItemType.ANIME_SERIES,
     ],
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     description:
       "Общее количество серий сезона по положительному целому значению",
@@ -161,7 +149,6 @@ const TAG_GROUP_RULES = {
     kind: "range",
     itemTypes: [EItemType.GAME],
     cardinality: "one",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Оценка времени прохождения основной истории базовой игры в минутах, без DLC",
@@ -183,7 +170,6 @@ const TAG_GROUP_RULES = {
     kind: "range",
     itemTypes: [EItemType.GAME],
     cardinality: "one",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description:
       "Оценка времени полного прохождения базовой игры в минутах, включая необязательный контент, но без DLC",
@@ -205,7 +191,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     values: ["shortGame", "longGame"],
     description:
@@ -215,7 +200,6 @@ const TAG_GROUP_RULES = {
     kind: "enum",
     itemTypes: Object.values(EItemType),
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     values: [
       { key: ETagKey.RELEASE_STATUS_ANNOUNCED, value: "announced" },
@@ -230,7 +214,6 @@ const TAG_GROUP_RULES = {
     kind: "enum",
     itemTypes: [EItemType.GAME],
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     values: [
       { key: "hasDefinedEndTrue", value: true },
@@ -242,7 +225,6 @@ const TAG_GROUP_RULES = {
     kind: "enum",
     itemTypes: Object.values(EItemType),
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     values: Object.values(EAgeRestriction).map((value) => ({
       key:
@@ -259,7 +241,6 @@ const TAG_GROUP_RULES = {
     kind: "integer",
     itemTypes: Object.values(EItemType),
     cardinality: "one",
-    isUsedForTaste: false,
     isApprovalRequired: true,
     min: 1,
     max: 9999,
@@ -278,7 +259,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     values: [
       "singlePlayer",
@@ -295,7 +275,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     description: "Игровые действия и системы, отдельно от сюжетных тем",
   },
@@ -303,7 +282,6 @@ const TAG_GROUP_RULES = {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
-    isUsedForTaste: true,
     isApprovalRequired: true,
     values: [
       "firstPerson",

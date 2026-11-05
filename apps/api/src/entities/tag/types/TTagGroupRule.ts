@@ -4,7 +4,6 @@ import type { EUnit } from "@entities/shared/schemas/EUnit"
 interface ITagGroupRuleBase {
   itemTypes: readonly EItemType[]
   cardinality: "one" | "many"
-  isUsedForTaste: boolean
   isApprovalRequired: true
   description: string
 }

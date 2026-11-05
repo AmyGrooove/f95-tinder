@@ -4,7 +4,6 @@ import type { Model } from "mongoose"
 
 import { ESiteStatsKey } from "../schemas/ESiteStatsKey"
 import { SiteRatingsStats } from "../schemas/siteRatingsStats.schema"
-import { DEFAULT_SITE_RATING_AVERAGE } from "../static/DEFAULT_SITE_RATING_AVERAGE"
 import type { IUpdateSiteRatingsStatsProps } from "../types/IUpdateSiteRatingsStatsProps"
 
 @Injectable()
@@ -13,16 +12,6 @@ class SiteRatingsStatsRepository {
     @InjectModel(SiteRatingsStats.name)
     private readonly ratingsModel: Model<SiteRatingsStats>,
   ) {}
-
-  async readRatingBaseline() {
-    const metric = await this.ratingsModel
-      .findOne({ key: ESiteStatsKey.RATINGS })
-      .select({ average: 1 })
-      .lean()
-      .exec()
-
-    return { average: metric?.average ?? DEFAULT_SITE_RATING_AVERAGE }
-  }
 
   async applyChanges(props: IUpdateSiteRatingsStatsProps) {
     const metric = await this.ratingsModel

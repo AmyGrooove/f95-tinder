@@ -1,9 +1,9 @@
 import type { Types } from "mongoose"
 
-import type { IRecommendationFilter } from "../../../types/IRecommendationFilter"
+import type { IItemFilter } from "../../../types/IItemFilter"
 
 interface ICreateItemFilterPipelineProps {
-  filter?: IRecommendationFilter
+  filter?: IItemFilter
   candidateItemIds?: readonly Types.ObjectId[]
   excludeItemIds?: readonly Types.ObjectId[]
 }

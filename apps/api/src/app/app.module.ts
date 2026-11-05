@@ -6,8 +6,6 @@ import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { ItemEndpointModule } from "@endpoints/item/item.module"
-import { TagWeightModifiersModule } from "@endpoints/tagWeightModifiers/tagWeightModifiers.module"
-import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 
 import { ItemModule } from "@entities/item/item.module"
@@ -26,7 +24,6 @@ import { UserModule } from "@entities/user/user.module"
 import { UserSettingsModule } from "@entities/userSettings/userSettings.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserSessionModule } from "@entities/userSession/userSession.module"
-import { UserTasteProfileModule } from "@entities/userTasteProfile/userTasteProfile.module"
 
 import { CacheModule } from "@infrastructure/cache/cache.module"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
@@ -71,9 +68,6 @@ import { AppController } from "./controllers/app.controller"
     UserSettingsModule,
     UserItemModule,
     UserSessionModule,
-    UserTasteProfileModule,
-    TagWeightModifiersModule,
-    RecommendationsModule,
     SearchEndpointModule,
   ],
   controllers: [AppController],

@@ -13,7 +13,6 @@ import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemSchema } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItemRepository } from "@entities/userItem/services/userItem.repository"
-import type { UserTasteProfileRecalculationService } from "@entities/userTasteProfile/services/userTasteProfileRecalculation.service"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 
 import { UserItemService } from "../services/userItem.service"
@@ -33,8 +32,6 @@ describe("UserItemService", () => {
     jest.fn<UserItemRepository["write"]["deleteByFilter"]>()
   const create = jest.fn<UserItemRepository["write"]["create"]>()
   const updateMetrics = jest.fn<UserItemStatsService["update"]>()
-  const enqueueTaste =
-    jest.fn<UserTasteProfileRecalculationService["enqueue"]>()
   const session = {} as ClientSession
   let isCommitted = false
   let entry = new UserItemModel()
@@ -45,6 +42,7 @@ describe("UserItemService", () => {
       return result
     },
   )
+
   const service = new UserItemService(
     {
       verifyAccessToken: async () => ({ sub: String(userId) }),
@@ -65,9 +63,6 @@ describe("UserItemService", () => {
     } as unknown as UserItemRepository,
     { run } as unknown as MongoTransactionService,
     {} as TagItemRepository,
-    {
-      enqueue: enqueueTaste,
-    } as unknown as UserTasteProfileRecalculationService,
     {
       update: updateMetrics,
       getState: UserItemStatsService.prototype.getState,
@@ -96,12 +91,11 @@ describe("UserItemService", () => {
     )
     updateByFilter.mockReset().mockImplementation(async () => entry)
     deleteByFilter.mockReset().mockResolvedValue(entry)
-    enqueueTaste.mockReset().mockResolvedValue("taste-job")
     updateMetrics.mockReset().mockResolvedValue(undefined)
   })
 
   it.each([10, null])(
-    "обновляет оценку на %s и метрики до commit, а вкус после commit",
+    "обновляет оценку на %s и метрики до commit",
     async (rating) => {
       updateMetrics.mockImplementation(async (props) => {
         expect(isCommitted).toBe(false)
@@ -112,17 +106,12 @@ describe("UserItemService", () => {
           session,
         })
       })
-      enqueueTaste.mockImplementation(async () => {
-        expect(isCommitted).toBe(true)
-        return "queued"
-      })
       const response = await service.update("token", {
         id: entry._id,
         body: { rating },
       })
       expect(response.rating).toBe(rating)
       expect(updateMetrics).toHaveBeenCalledTimes(1)
-      expect(enqueueTaste).toHaveBeenCalledWith(userId, itemId)
       expect(updateByFilter.mock.calls[0][2]).toEqual({ session })
     },
   )
@@ -145,7 +134,6 @@ describe("UserItemService", () => {
         }),
       )
       expect(run).toHaveBeenCalledTimes(1)
-      expect(enqueueTaste).toHaveBeenCalledTimes(1)
     },
   )
 
@@ -160,7 +148,6 @@ describe("UserItemService", () => {
           next: expect.objectContaining({ isFavorite }),
         }),
       )
-      expect(enqueueTaste).toHaveBeenCalledTimes(1)
     },
   )
 
@@ -169,17 +156,13 @@ describe("UserItemService", () => {
     { rating: 8 },
     { isFavorite: false },
     { status: EUserItemStatus.BLOCKED },
-  ])(
-    "не ставит taste-задачу без изменения вкусовых сигналов %j",
-    async (body) => {
-      await service.update("token", { id: entry._id, body })
-      expect(updateMetrics).toHaveBeenCalledTimes(1)
-      expect(enqueueTaste).not.toHaveBeenCalled()
-    },
-  )
+  ])("обновляет метрики при изменении записи %j", async (body) => {
+    await service.update("token", { id: entry._id, body })
+    expect(updateMetrics).toHaveBeenCalledTimes(1)
+  })
 
   it.each(["create", "update"] as const)(
-    "передаёт все завершённые попытки при %s без изменения вкуса",
+    "передаёт все завершённые попытки при %s",
     async (operation) => {
       entry.status = EUserItemStatus.IN_PROGRESS
       entry.attempts = Array.from({ length: 4 }, () => ({
@@ -210,11 +193,10 @@ describe("UserItemService", () => {
           }),
         }),
       )
-      expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
 
-  it("учитывает первую завершённую попытку через смену статуса без taste-задачи", async () => {
+  it("учитывает первую завершённую попытку через смену статуса", async () => {
     entry.rating = null
     await service.update("token", {
       id: entry._id,
@@ -228,7 +210,6 @@ describe("UserItemService", () => {
         }),
       }),
     )
-    expect(enqueueTaste).not.toHaveBeenCalled()
   })
 
   it("удаляет запись и вычитает её вклад в той же session", async () => {
@@ -245,7 +226,6 @@ describe("UserItemService", () => {
         session,
       }),
     )
-    expect(enqueueTaste).toHaveBeenCalledTimes(1)
   })
 
   it("не обновляет метрики при удалении отсутствующей записи", async () => {
@@ -254,7 +234,6 @@ describe("UserItemService", () => {
       NotFoundException,
     )
     expect(updateMetrics).not.toHaveBeenCalled()
-    expect(enqueueTaste).not.toHaveBeenCalled()
   })
 
   it("не записывает метрики при недопустимом переходе в skipped", async () => {
@@ -270,7 +249,7 @@ describe("UserItemService", () => {
   })
 
   it.each(["userItem", "metrics", "commit"])(
-    "передаёт ошибку %s без taste-задачи",
+    "передаёт ошибку %s",
     async (stage) => {
       const error = new Error("Транзакция не сохранена")
       if (stage === "userItem") {
@@ -287,7 +266,6 @@ describe("UserItemService", () => {
         service.update("token", { id: entry._id, body: { rating: 10 } }),
       ).rejects.toBe(error)
       expect(isCommitted).toBe(false)
-      expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
 
@@ -299,7 +277,6 @@ describe("UserItemService", () => {
       )
       await service.update("token", { id: entry._id, body: { rating: 9 } })
       expect(run).toHaveBeenCalledTimes(2)
-      expect(enqueueTaste).toHaveBeenCalledTimes(1)
     },
   )
 
@@ -316,7 +293,6 @@ describe("UserItemService", () => {
       service.update("token", { id: entry._id, body: { rating: 9 } }),
     ).rejects.toBe(error)
     expect(run).toHaveBeenCalledTimes(3)
-    expect(enqueueTaste).not.toHaveBeenCalled()
   })
 
   it("не повторяет конфликт уникальности UserItem и возвращает 409", async () => {
@@ -334,15 +310,5 @@ describe("UserItemService", () => {
     ).rejects.toBeInstanceOf(ConflictException)
     expect(run).toHaveBeenCalledTimes(1)
     expect(updateMetrics).not.toHaveBeenCalled()
-  })
-
-  it("сохраняет метрики до ошибки очереди вкуса после commit", async () => {
-    const error = new Error("Очередь недоступна")
-    enqueueTaste.mockRejectedValueOnce(error)
-    await expect(
-      service.update("token", { id: entry._id, body: { rating: 10 } }),
-    ).rejects.toBe(error)
-    expect(isCommitted).toBe(true)
-    expect(updateMetrics).toHaveBeenCalledTimes(1)
   })
 })

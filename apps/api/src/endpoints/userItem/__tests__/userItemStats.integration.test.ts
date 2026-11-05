@@ -7,7 +7,6 @@ import { ItemRepository } from "@entities/item/services/item.repository"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStats.repository"
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStats.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import { UserTasteProfileRecalculationService } from "@entities/userTasteProfile/services/userTasteProfileRecalculation.service"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
@@ -123,11 +122,6 @@ describe("UserItemStats MongoDB HTTP", () => {
       ratingDistribution: zeroDistribution,
     })
     expect(await readSite()).toMatchObject({ sum: 0, count: 0, average: null })
-    expect(
-      await getTestApplication()
-        .app.get(SiteRatingsStatsRepository)
-        .readRatingBaseline(),
-    ).toEqual({ average: 5.5 })
   })
 
   it("учитывает все десять оценок, а общую среднюю взвешивает по количеству", async () => {
@@ -285,10 +279,6 @@ describe("UserItemStats MongoDB HTTP", () => {
         .findOne({ _id: new Types.ObjectId(owner.entry.id) })
       const beforeItem = await readItem(target._id)
       const beforeSite = await readSite()
-      const taste = jest.spyOn(
-        app.get(UserTasteProfileRecalculationService),
-        "enqueue",
-      )
       if (operation === "create") {
         jest
           .spyOn(app.get(ItemStatsRepository), "applyChanges")
@@ -337,7 +327,6 @@ describe("UserItemStats MongoDB HTTP", () => {
       }
       expect(await readItem(target._id)).toEqual(beforeItem)
       expect(await readSite()).toEqual(beforeSite)
-      expect(taste).not.toHaveBeenCalled()
     },
   )
 

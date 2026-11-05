@@ -15,7 +15,6 @@ import { AuthService } from "@endpoints/auth/services/auth.service"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { UserRepository } from "@entities/user/services/user.repository"
-import { UserTasteProfileRecalculationService } from "@entities/userTasteProfile/services/userTasteProfileRecalculation.service"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { ItemAttempt } from "@entities/userItem/schemas/itemAttempt.schema"
@@ -50,7 +49,6 @@ class UserItemService {
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
     private readonly tagItemRepository: TagItemRepository,
-    private readonly tasteProfileRecalculationService: UserTasteProfileRecalculationService,
     private readonly userItemStatsService: UserItemStatsService,
   ) {}
 
@@ -166,8 +164,6 @@ class UserItemService {
         return created
       })
 
-      await this.tasteProfileRecalculationService.enqueue(userId, itemId)
-
       return this.mapResponse(userItem)
     } catch (error) {
       if (
@@ -220,7 +216,7 @@ class UserItemService {
 
   async remove(accessToken: unknown, id: Types.ObjectId) {
     const userId = await this.authenticate(accessToken)
-    const userItem = await this.runMutation(async (session) => {
+    await this.runMutation(async (session) => {
       const removed = await this.userItemRepository.write.deleteByFilter(
         { _id: id, user: userId },
         { session },
@@ -236,11 +232,7 @@ class UserItemService {
         next: null,
         session,
       })
-
-      return removed
     })
-
-    await this.tasteProfileRecalculationService.enqueue(userId, userItem.item)
   }
 
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
@@ -415,22 +407,10 @@ class UserItemService {
         session,
       })
 
-      return {
-        response: this.mapResponse(updated),
-        itemId: updated.item,
-        isTasteChanged:
-          previous.rating !== updated.rating ||
-          previous.isFavorite !== updated.isFavorite ||
-          (previous.status === EUserItemStatus.SKIPPED) !==
-            (updated.status === EUserItemStatus.SKIPPED),
-      }
+      return this.mapResponse(updated)
     })
 
-    if (result.isTasteChanged) {
-      await this.tasteProfileRecalculationService.enqueue(userId, result.itemId)
-    }
-
-    return result.response
+    return result
   }
 
   private async runMutation<TResult>(

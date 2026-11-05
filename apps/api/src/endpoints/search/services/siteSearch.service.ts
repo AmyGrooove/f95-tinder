@@ -15,7 +15,7 @@ import { CollectionRepository } from "@entities/collection/services/collection.r
 import type { Item } from "@entities/item/schemas/item.schema"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
-import type { IRecommendationFilter } from "@entities/item/types/IRecommendationFilter"
+import type { IItemFilter } from "@entities/item/types/IItemFilter"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cache.service"
@@ -303,7 +303,7 @@ class SiteSearchService {
     })
   }
 
-  private createItemFilters(filter: IRecommendationFilter) {
+  private createItemFilters(filter: IItemFilter) {
     const expressions: string[] = [
       ...(!isUndefined(filter.ratingMin) || !isUndefined(filter.ratingMax)
         ? ["rating IS NOT NULL"]
@@ -342,9 +342,7 @@ class SiteSearchService {
     return expressions
   }
 
-  private prepareItemFilter(
-    options?: SearchItemsBodyDto,
-  ): IRecommendationFilter {
+  private prepareItemFilter(options?: SearchItemsBodyDto): IItemFilter {
     const { ratingMin, ratingMax, fields = [] } = options ?? {}
 
     if (

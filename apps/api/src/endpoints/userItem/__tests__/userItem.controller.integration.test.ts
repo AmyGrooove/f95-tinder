@@ -16,7 +16,6 @@ import type { UserSession } from "@entities/userSession/schemas/userSession.sche
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
-import { UserTasteProfileRecalculationService } from "@entities/userTasteProfile/services/userTasteProfileRecalculation.service"
 import { getTestApplication } from "@test/setup/setupIntegration"
 
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
@@ -25,32 +24,13 @@ describe("UserItemController HTTP", () => {
   it.each(["create", "skip", "block"] as const)(
     "обновляет метрики в транзакции создания %s",
     async (operation) => {
-      const { app, connection } = getTestApplication()
+      const { app } = getTestApplication()
       const account = await createAccount()
       const item = await createItem()
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
       )
-      const enqueue = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockImplementation(async (userId, itemId) => {
-          expect(itemId).toEqual(item._id)
-          expect(userId).toEqual(account.user._id)
-          expect(
-            await connection
-              .collection("UserItem")
-              .findOne({ user: userId, item: item._id }),
-          ).toMatchObject({
-            status:
-              operation === "create"
-                ? EUserItemStatus.PLANNED
-                : operation === "skip"
-                  ? EUserItemStatus.SKIPPED
-                  : EUserItemStatus.BLOCKED,
-          })
-          return "queued"
-        })
       const response = await app.inject({
         method: "POST",
         url: operation === "create" ? "/userItems" : `/userItems/${operation}`,
@@ -61,7 +41,16 @@ describe("UserItemController HTTP", () => {
             : { itemId: String(item._id) },
       })
       expect(response.statusCode).toBe(201)
-      expect(enqueue).toHaveBeenCalledTimes(1)
+      expect(
+        await readEntry(response.json<UserItemResponseDto>().id),
+      ).toMatchObject({
+        status:
+          operation === "create"
+            ? EUserItemStatus.PLANNED
+            : operation === "skip"
+              ? EUserItemStatus.SKIPPED
+              : EUserItemStatus.BLOCKED,
+      })
       expect(applyItemStats).toHaveBeenCalledTimes(
         operation === "create" ? 1 : 0,
       )
@@ -77,22 +66,6 @@ describe("UserItemController HTTP", () => {
         app.get(ItemStatsRepository),
         "applyChanges",
       )
-      const enqueue = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockImplementation(async (userId, itemId) => {
-          expect(itemId).toEqual(owner.item._id)
-          expect(userId).toEqual(owner.user._id)
-          const committed = await readEntry(owner.entry.id)
-          if (operation === "update") {
-            expect(committed.rating).toBe(9)
-          } else if (operation === "createAttempt") {
-            expect(committed.attempts).toHaveLength(2)
-            expect(committed.attempts.at(-1)?.isCompleted).toBe(true)
-          } else {
-            expect(committed.attempts[0]?.isCompleted).toBe(true)
-          }
-          return "queued"
-        })
       const response = await app.inject({
         method: operation === "createAttempt" ? "POST" : "PATCH",
         url:
@@ -107,19 +80,27 @@ describe("UserItemController HTTP", () => {
       expect(response.statusCode).toBe(
         operation === "createAttempt" ? 201 : 200,
       )
-      expect(enqueue).toHaveBeenCalledTimes(operation === "update" ? 1 : 0)
+      const committed = await readEntry(owner.entry.id)
+      if (operation === "update") {
+        expect(committed.rating).toBe(9)
+      } else if (operation === "createAttempt") {
+        expect(committed.attempts).toHaveLength(2)
+        expect(committed.attempts.at(-1)?.isCompleted).toBe(true)
+      } else {
+        expect(committed.attempts[0]?.isCompleted).toBe(true)
+      }
       expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
 
   it.each([
-    { field: "isFavorite", value: true, isTasteChanged: true },
-    { field: "isFavorite", value: false, isTasteChanged: true },
-    { field: "status", value: EUserItemStatus.ON_HOLD, isTasteChanged: false },
-    { field: "status", value: EUserItemStatus.BLOCKED, isTasteChanged: false },
+    { field: "isFavorite", value: true },
+    { field: "isFavorite", value: false },
+    { field: "status", value: EUserItemStatus.ON_HOLD },
+    { field: "status", value: EUserItemStatus.BLOCKED },
   ])(
     "пересчитывает метрики после изменения $field на $value",
-    async ({ field, value, isTasteChanged }) => {
+    async ({ field, value }) => {
       const { app } = getTestApplication()
       const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
       if (value === false) {
@@ -131,9 +112,6 @@ describe("UserItemController HTTP", () => {
         })
         expect(seeded.statusCode).toBe(200)
       }
-      const enqueueTaste = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockResolvedValue("taste-job")
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
@@ -148,7 +126,6 @@ describe("UserItemController HTTP", () => {
 
       expect(response.statusCode).toBe(200)
       expect(applyItemStats).toHaveBeenCalledTimes(1)
-      expect(enqueueTaste).toHaveBeenCalledTimes(isTasteChanged ? 1 : 0)
     },
   )
 
@@ -178,9 +155,6 @@ describe("UserItemController HTTP", () => {
         expect(seeded.statusCode).toBe(201)
       }
       const record = await readEntry(owner.entry.id)
-      const enqueueTaste = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockResolvedValue("taste-job")
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
@@ -197,7 +171,6 @@ describe("UserItemController HTTP", () => {
 
       expect(response.statusCode).toBe(operation === "create" ? 201 : 200)
       expect(applyItemStats).toHaveBeenCalledTimes(1)
-      expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
 
@@ -211,9 +184,6 @@ describe("UserItemController HTTP", () => {
     async (payload) => {
       const { app } = getTestApplication()
       const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
-      const enqueueTaste = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockResolvedValue("taste-job")
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
@@ -230,7 +200,6 @@ describe("UserItemController HTTP", () => {
 
       expect(response.statusCode).toBe(200)
       expect(applyItemStats).not.toHaveBeenCalled()
-      expect(enqueueTaste).not.toHaveBeenCalled()
     },
   )
 
@@ -239,9 +208,6 @@ describe("UserItemController HTTP", () => {
     async (operation) => {
       const { app } = getTestApplication()
       const owner = await createEntry(EUserItemStatus.IN_PROGRESS)
-      const enqueueTaste = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockResolvedValue("taste-job")
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
@@ -269,7 +235,6 @@ describe("UserItemController HTTP", () => {
       expect(response.statusCode).toBe(
         operation === "unfinishedAttempt" ? 201 : 200,
       )
-      expect(enqueueTaste).not.toHaveBeenCalled()
       expect(applyItemStats).not.toHaveBeenCalled()
       const saved = await readEntry(owner.entry.id)
       if (operation === "note") {
@@ -288,7 +253,7 @@ describe("UserItemController HTTP", () => {
   it.each([null, 8])(
     "вычитает метрики при удалении записи с оценкой %s",
     async (rating) => {
-      const { app, connection } = getTestApplication()
+      const { app } = getTestApplication()
       const owner = await createEntry()
       const seeded = await app.inject({
         method: "PATCH",
@@ -301,25 +266,12 @@ describe("UserItemController HTTP", () => {
         app.get(ItemStatsRepository),
         "applyChanges",
       )
-      const enqueue = jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockImplementation(async (userId, itemId) => {
-          expect(itemId).toEqual(owner.item._id)
-          expect(userId).toEqual(owner.user._id)
-          expect(
-            await connection
-              .collection("UserItem")
-              .countDocuments({ _id: new Types.ObjectId(owner.entry.id) }),
-          ).toBe(0)
-          return "queued"
-        })
       const response = await app.inject({
         method: "DELETE",
         url: `/userItems/${owner.entry.id}`,
         headers: owner.headers,
       })
       expect(response.statusCode).toBe(204)
-      expect(enqueue).toHaveBeenCalledTimes(1)
       expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
@@ -331,9 +283,6 @@ describe("UserItemController HTTP", () => {
       app.get(ItemStatsRepository),
       "applyChanges",
     )
-    const enqueue = jest
-      .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-      .mockResolvedValue("queued")
     const duplicate = await app.inject({
       method: "POST",
       url: "/userItems",
@@ -364,7 +313,6 @@ describe("UserItemController HTTP", () => {
       payload: { progress: 1 },
     })
     expect(attempt.statusCode).toBe(409)
-    expect(enqueue).not.toHaveBeenCalled()
     expect(applyItemStats).not.toHaveBeenCalled()
     expect(await readEntry(owner.entry.id)).toMatchObject({
       status: EUserItemStatus.PLANNED,
@@ -372,40 +320,6 @@ describe("UserItemController HTTP", () => {
       attempts: [],
     })
   })
-
-  it.each(["create", "update"] as const)(
-    "передаёт ошибку очереди после сохранённой операции %s",
-    async (operation) => {
-      const { app, connection } = getTestApplication()
-      const owner = await createEntry()
-      const item = await createItem()
-      jest
-        .spyOn(app.get(UserTasteProfileRecalculationService), "enqueue")
-        .mockRejectedValue(new Error("Redis unavailable"))
-      const response = await app.inject({
-        method: operation === "create" ? "POST" : "PATCH",
-        url:
-          operation === "create"
-            ? "/userItems"
-            : `/userItems/${owner.entry.id}`,
-        headers: owner.headers,
-        payload:
-          operation === "create"
-            ? { itemId: String(item._id), status: EUserItemStatus.PLANNED }
-            : { rating: 9 },
-      })
-      expect(response.statusCode).toBe(500)
-      if (operation === "create") {
-        expect(
-          await connection
-            .collection("UserItem")
-            .findOne({ user: owner.user._id, item: item._id }),
-        ).toMatchObject({ status: EUserItemStatus.PLANNED })
-      } else {
-        expect((await readEntry(owner.entry.id)).rating).toBe(9)
-      }
-    },
-  )
 
   it.each([61, 100])(
     "отклоняет QUERY с %i ID без чтения и изменения личных записей",
