@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 
-import { InfrastructureConfigService } from "./services/config.service"
+import { InfrastructureConfigService } from "./services/configService"
 import { INFRASTRUCTURE_CONFIGURATION } from "./static/INFRASTRUCTURE_CONFIGURATION"
 
 @Module({

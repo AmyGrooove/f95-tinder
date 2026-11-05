@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals"
 import { Mongoose, Schema } from "mongoose"
 
 import { createDatabaseOptions } from "../core/createDatabaseOptions"
-import type { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import type { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
 describe("createDatabaseOptions", () => {
   it("берёт URI из конфигурации и регистрирует плагины на соединении", async () => {

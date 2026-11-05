@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import type { TInfrastructureConfiguration } from "@infrastructure/config/types/TInfrastructureConfiguration"
+import type { TInfrastructureConfiguration } from "@infrastructure/config/services/configService"
 
 const createTestConfiguration = (mongoUri: string, redisUrl: string) => {
   const redis = new URL(redisUrl)

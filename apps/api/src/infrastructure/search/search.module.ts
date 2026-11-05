@@ -2,10 +2,10 @@ import { Module } from "@nestjs/common"
 import { Meilisearch } from "meilisearch"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
-import { SearchService } from "./services/search.service"
-import { SearchHealthService } from "./services/searchHealth.service"
+import { SearchService } from "@infrastructure/search/services/searchService"
+import { SearchHealthService } from "@infrastructure/search/services/searchHealthService"
 import { SEARCH_CLIENT } from "./static/SEARCH_CLIENT"
 
 @Module({

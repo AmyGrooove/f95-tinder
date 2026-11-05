@@ -3,7 +3,7 @@ import multipart from "@fastify/multipart"
 import { ValidationPipe, VersioningType } from "@nestjs/common"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 const configureApplication = async (app: NestFastifyApplication) => {

@@ -3,12 +3,12 @@ import { Module } from "@nestjs/common"
 import { DiscoveryModule } from "@nestjs/core"
 
 import { InfrastructureConfigModule } from "../config/config.module"
-import { InfrastructureConfigService } from "../config/services/config.service"
+import { InfrastructureConfigService } from "../config/services/configService"
 import { LoggerModule } from "../logger/logger.module"
-import { JobsHealthService } from "./services/jobsHealth.service"
-import { JobProcessorService } from "./services/jobProcessor.service"
-import { JobRegistryService } from "./services/jobRegistry.service"
-import { JobService } from "./services/job.service"
+import { JobsHealthService } from "@infrastructure/jobs/services/jobsHealthService"
+import { JobProcessorService } from "@infrastructure/jobs/services/jobProcessorService"
+import { JobRegistryService } from "@infrastructure/jobs/services/jobRegistryService"
+import { JobService } from "@infrastructure/jobs/services/jobService"
 import { JOBS_QUEUE_NAME } from "./static/JOBS_QUEUE_NAME"
 
 @Module({

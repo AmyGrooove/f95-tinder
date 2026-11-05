@@ -2,8 +2,8 @@ import { Injectable, type OnApplicationBootstrap } from "@nestjs/common"
 import { Cron } from "@nestjs/schedule"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { JobService } from "@infrastructure/jobs/services/job.service"
-import { LoggerService } from "@infrastructure/logger/services/logger.service"
+import { JobService } from "@infrastructure/jobs/services/jobService"
+import { LoggerService } from "@infrastructure/logger/services/loggerService"
 
 import { SYNC_SEARCH_JOB } from "../static/SYNC_SEARCH_JOB"
 

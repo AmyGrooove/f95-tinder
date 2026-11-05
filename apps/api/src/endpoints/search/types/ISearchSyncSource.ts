@@ -1,6 +1,6 @@
 import type { Types } from "mongoose"
 
-import type { ISearchIndexOptions } from "@infrastructure/search/types/ISearchIndexOptions"
+import type { ISearchIndexOptions } from "@infrastructure/search/services/searchService"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 
 import type { TSiteSearchDocument } from "./ISiteSearchDocument"

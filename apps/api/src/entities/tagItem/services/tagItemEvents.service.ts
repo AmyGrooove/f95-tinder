@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import type { ClientSession, Types } from "mongoose"
 
-import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
+import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 
 @Injectable()
 class TagItemEventsService {

@@ -32,7 +32,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-Прямой путь: [ItemController.getById](../../../../src/endpoints/item/controllers/item.controller.ts) → [ItemService.getById](../../../../src/endpoints/item/services/item.service.ts) → [ItemRepository.findDetailsById](../../../../src/entities/item/services/item.repository.ts) → MongoAggregationRepository. Формат ID проверяет [MongoObjectIdHandler](../../../../src/infrastructure/database/services/handlers/mongoObjectId.handler.ts). [Контракт карточки](../pages/item.md), [response DTO](../../../../src/endpoints/item/dto/response/item.response.ts).
+Прямой путь: [ItemController.getById](../../../../src/endpoints/item/controllers/item.controller.ts) → [ItemService.getById](../../../../src/endpoints/item/services/item.service.ts) → [ItemRepository.findDetailsById](../../../../src/entities/item/services/item.repository.ts) → MongoAggregationRepository. Формат ID проверяет [MongoObjectIdHandler](../../../../src/infrastructure/database/services/mongoObjectIdHandler/core/mongoObjectId.handler.ts). [Контракт карточки](../pages/item.md), [response DTO](../../../../src/endpoints/item/dto/response/item.response.ts).
 
 </details>
 
@@ -65,7 +65,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/interceptors/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/dto/body/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/item.repository.ts), [User](../../../../src/entities/user/services/user.repository.ts), [Collection](../../../../src/entities/collection/services/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
+[SearchController.search](../../../../src/endpoints/search/controllers/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/interceptors/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/dto/body/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/item.repository.ts), [User](../../../../src/entities/user/services/user.repository.ts), [Collection](../../../../src/entities/collection/services/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
 
 </details>
 

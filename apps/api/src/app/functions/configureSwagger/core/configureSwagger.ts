@@ -1,7 +1,7 @@
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
 const configureSwagger = (app: NestFastifyApplication) => {
   const appConfiguration = app.get(InfrastructureConfigService).app

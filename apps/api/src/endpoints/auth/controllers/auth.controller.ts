@@ -12,7 +12,7 @@ import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 import { Throttle } from "@nestjs/throttler"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
-import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 import { RegisterResponseDto } from "../dto/response/register.response"

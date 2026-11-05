@@ -111,6 +111,7 @@ const fileObjects = createRule(
       "ClassDeclaration, FunctionDeclaration"(node) {
         if (
           filename.includes("/core/") &&
+          !stem.includes(".") &&
           node.parent.type === "Program" &&
           node.id &&
           node.id.name !== stem

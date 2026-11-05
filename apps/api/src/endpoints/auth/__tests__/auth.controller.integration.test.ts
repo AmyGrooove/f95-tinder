@@ -4,7 +4,7 @@ import { describe, expect, it } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
-import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
+import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
 import { JWT_ACCESS_EXPIRATION } from "@infrastructure/security/static/JWT_ACCESS_EXPIRATION"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"

@@ -4,7 +4,7 @@ import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
-import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 import { SessionController } from "../controllers/session.controller"
 import { SessionService } from "../services/session.service"

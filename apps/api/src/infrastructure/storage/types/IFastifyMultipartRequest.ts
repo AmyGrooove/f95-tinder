@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify"
 
-import type { IStorageUploadResult } from "./IStorageUploadResult"
+import type { IStorageUploadResult } from "@infrastructure/storage/services/storageService"
 
 interface IFastifyMultipartRequest extends FastifyRequest {
   body: Record<string, unknown>

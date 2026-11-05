@@ -2,7 +2,7 @@ import { Controller, Get } from "@nestjs/common"
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger"
 import { HealthCheck } from "@nestjs/terminus"
 
-import { HealthService } from "../services/health.service"
+import { HealthService } from "../services/healthService"
 import { SWAGGER_DICTIONARY } from "@shared/static/SWAGGER_DICTIONARY"
 
 @ApiTags(SWAGGER_DICTIONARY.health.tag)

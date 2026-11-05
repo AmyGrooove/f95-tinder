@@ -116,7 +116,7 @@ flowchart TD
 
 MongoDB-транзакции нет. MailService напрямую ожидает JobService, без промежуточного события. 429 — cooldown или лимит 5/мин. Ошибка enqueue даёт 503 после условного удаления именно своего pending/cooldown; ошибка cleanup только логируется, данные Redis могут сохраниться до TTL. Успешная постановка не гарантирует доставку письма; HTTP выполнения [общей почтовой джобы](auth.md#mail-job) не ждёт.
 
-**Технические подробности:** [AccountSetupController.requestSetup](../../../../src/endpoints/account/controllers/accountSetup.controller.ts) → [AccountSetupService.requestSetup/getSetupUserId](../../../../src/endpoints/account/services/accountSetup.service.ts) → UserRepository, Redis.eval, MailService.send. [DTO](../../../../src/endpoints/account/dto/body/setup.body.ts), [ACCOUNT_CONFIRMATION](../../../../src/endpoints/account/static/ACCOUNT_CONFIRMATION.ts), [MailService](../../../../src/infrastructure/mail/services/mail.service.ts).
+**Технические подробности:** [AccountSetupController.requestSetup](../../../../src/endpoints/account/controllers/accountSetup.controller.ts) → [AccountSetupService.requestSetup/getSetupUserId](../../../../src/endpoints/account/services/accountSetup.service.ts) → UserRepository, Redis.eval, MailService.send. [DTO](../../../../src/endpoints/account/dto/body/setup.body.ts), [ACCOUNT_CONFIRMATION](../../../../src/endpoints/account/static/ACCOUNT_CONFIRMATION.ts), [MailService](../../../../src/infrastructure/mail/services/mailService/core/mail.service.ts).
 
 <a id="confirm-setup"></a>
 

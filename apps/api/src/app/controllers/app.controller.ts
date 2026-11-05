@@ -1,7 +1,7 @@
 import { REGEX } from "@shared/static/REGEX"
 import { randomUUID } from "node:crypto"
 
-import { HealthService } from "@infrastructure/health/services/health.service"
+import { HealthService } from "@infrastructure/health/services/healthService"
 import {
   BadGatewayException,
   Controller,

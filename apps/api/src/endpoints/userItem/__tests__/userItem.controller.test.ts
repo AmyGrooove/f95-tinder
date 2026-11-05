@@ -24,7 +24,7 @@ import type { FastifyInstance } from "fastify"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
-import { LoggerService } from "@infrastructure/logger/services/logger.service"
+import { LoggerService } from "@infrastructure/logger/services/loggerService"
 
 import { UserItemController } from "../controllers/userItem.controller"
 import type { UserItemResponseDto } from "../dto/response/userItem.response"

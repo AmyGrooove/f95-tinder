@@ -18,9 +18,12 @@ import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINIT
 import type { IItemFilter } from "@entities/item/types/IItemFilter"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { CacheService } from "@infrastructure/cache/services/cache.service"
-import { SearchService } from "@infrastructure/search/services/search.service"
-import type { ISearchDocument } from "@infrastructure/search/types/ISearchDocument"
+import { CacheService } from "@infrastructure/cache/services/cacheService"
+import { SearchService } from "@infrastructure/search/services/searchService"
+import type {
+  ISearchDocument,
+  ISearchMatch,
+} from "@infrastructure/search/services/searchService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isDate } from "@shared/functions/checks/isDate"
@@ -32,7 +35,6 @@ import type { SearchItemsBodyDto } from "../dto/body/searchOptions.body"
 import type { SearchResponseDto } from "../dto/response/search.response"
 import { SEARCH_ITEM_FIELDS } from "../static/SEARCH_ITEM_FIELDS"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
-import type { ISearchMatch } from "@infrastructure/search/types/ISearchMatch"
 import { SEARCH_SETTINGS } from "../static/SEARCH_SETTINGS"
 import type { IFindSearchItemsProps } from "../types/IFindSearchItemsProps"
 

@@ -13,7 +13,7 @@ import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemSchema } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItemRepository } from "@entities/userItem/services/userItem.repository"
-import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
+import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 
 import { UserItemService } from "../services/userItem.service"
 import { UserItemStatsService } from "../services/userItemStats.service"

@@ -3,11 +3,11 @@ import type { HydratedDocument, Model } from "mongoose"
 
 import { getTestDatabase } from "../setup/setupDatabase"
 
-import { MongoAggregationRepository } from "../../services/mongoAggregation.repository"
-import { MongoBulkRepository } from "../../services/mongoBulk.repository"
-import { MongoPaginationRepository } from "../../services/mongoPagination.repository"
-import { MongoReadRepository } from "../../services/mongoRead.repository"
-import { MongoWriteRepository } from "../../services/mongoWrite.repository"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
+import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
+import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
 
 interface IRepositoryRecord {
   key: string

@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto"
 
-import type { MailService } from "@infrastructure/mail/services/mail.service"
-import type { IMailDeliveryResult } from "@infrastructure/mail/types/IMailDeliveryResult"
-import type { ISendMailOptions } from "@infrastructure/mail/types/ISendMailOptions"
+import type {
+  MailService,
+  IMailDeliveryResult,
+  ISendMailOptions,
+} from "@infrastructure/mail/services/mailService"
 
 class TestMailService implements Pick<MailService, "send"> {
   readonly messages: ISendMailOptions[] = []

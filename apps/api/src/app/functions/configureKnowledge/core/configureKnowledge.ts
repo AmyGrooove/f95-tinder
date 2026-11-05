@@ -5,7 +5,7 @@ import fastifyStatic from "@fastify/static"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 import type { FastifyInstance } from "fastify"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 const configureKnowledge = (app: NestFastifyApplication) => {

@@ -1,0 +1,86 @@
+import { Injectable } from "@nestjs/common"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isString } from "@shared/functions/checks/isString"
+import { requestContext } from "@shared/functions/context/requestContext"
+
+import { normalizeError } from "../functions/normalizeError"
+import { redactLogValue } from "../functions/redactLogValue"
+import type { ILoggerMetadata } from "../types/ILoggerMetadata"
+import type { ILogRecord } from "../types/ILogRecord"
+import type { TLogLevel } from "../types/TLogLevel"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
+
+@Injectable()
+class LoggerService {
+  constructor(
+    private readonly infrastructureConfigService: InfrastructureConfigService,
+  ) {}
+
+  info(message: string, metadata?: ILoggerMetadata) {
+    this.write("info", message, undefined, metadata)
+  }
+
+  warn(message: string, metadata?: ILoggerMetadata) {
+    this.write("warn", message, undefined, metadata)
+  }
+
+  error(message: string, error?: unknown, metadata?: ILoggerMetadata) {
+    this.write("error", message, error, metadata)
+  }
+
+  private write(
+    level: TLogLevel,
+    message: string,
+    error: unknown,
+    metadata?: ILoggerMetadata,
+  ) {
+    const { context, data, jobId, requestId } = metadata ?? {}
+    const currentRequest = requestContext.getAll()
+    const {
+      requestId: currentRequestId,
+      method,
+      path,
+      ...additionalContext
+    } = currentRequest ?? {}
+
+    const record: ILogRecord = {
+      _timestamp: new Date().toISOString(),
+      level,
+      service: this.infrastructureConfigService.app.name,
+      environment: this.infrastructureConfigService.app.environment ?? "",
+      message,
+      context,
+      requestId: currentRequestId ?? requestId,
+      method: isString(method) ? method : undefined,
+      path: isString(path) ? path : undefined,
+      requestContext:
+        Object.keys(additionalContext).length > 0
+          ? additionalContext
+          : undefined,
+      jobId,
+      metadata: data,
+      error: isNil(error) ? undefined : normalizeError(error),
+    }
+
+    let output: string
+
+    try {
+      output = JSON.stringify(redactLogValue(record))
+    } catch {
+      process.stderr.write(DICTIONARY.logger.serializationFailedRecord)
+
+      return
+    }
+
+    if (level === "error") {
+      process.stderr.write(`${output}\n`)
+
+      return
+    }
+
+    process.stdout.write(`${output}\n`)
+  }
+}
+
+export { LoggerService }

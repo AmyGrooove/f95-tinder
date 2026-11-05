@@ -38,7 +38,7 @@ const NAMING_CONVENTION = [
 
 const EXTERNAL_BOOLEAN_PROPERTIES = [
   {
-    file: "src/infrastructure/database/services/mongoBulk.repository.ts",
+    file: "src/infrastructure/database/services/mongoBulkRepository/core/mongoBulk.repository.ts",
     properties: ["rawResult", "lean"],
   },
   {

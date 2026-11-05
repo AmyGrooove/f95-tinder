@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, jest } from "@jest/globals"
 import { BadRequestException } from "@nestjs/common"
 import { Test, type TestingModule } from "@nestjs/testing"
 
-import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 import { PasswordResetController } from "../controllers/passwordReset.controller"
 import { PasswordResetService } from "../services/passwordReset.service"

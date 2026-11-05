@@ -16,7 +16,7 @@ import { infrastructureConfiguration } from "@infrastructure/config/config.modul
 import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 
 import { CacheModule } from "../../../cache.module"
-import { CacheService } from "../../../services/cache.service"
+import { CacheService } from "../../../services/cacheService"
 import { CacheEndpoint } from "../index"
 
 describe("CacheEndpoint HTTP", () => {

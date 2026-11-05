@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common"
 import type { Types } from "mongoose"
 
 import { TagItemEventsService } from "@entities/tagItem/services/tagItemEvents.service"
-import { JobService } from "@infrastructure/jobs/services/job.service"
+import { JobService } from "@infrastructure/jobs/services/jobService"
 
 import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "../static/SYNCHRONIZE_TAG_COLLECTIONS_JOB"
 

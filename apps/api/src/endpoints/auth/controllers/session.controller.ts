@@ -14,8 +14,8 @@ import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
-import { MongoObjectIdHandler } from "@infrastructure/database/services/handlers/mongoObjectId.handler"
-import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
+import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 import { SessionResponseDto } from "../dto/response/session.response"
 import { SessionService } from "../services/session.service"

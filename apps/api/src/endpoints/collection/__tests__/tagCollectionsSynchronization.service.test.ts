@@ -3,8 +3,8 @@ import { Types } from "mongoose"
 import type { Connection } from "mongoose"
 
 import { TagItemEventsService } from "@entities/tagItem/services/tagItemEvents.service"
-import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
-import type { JobService } from "@infrastructure/jobs/services/job.service"
+import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
+import type { JobService } from "@infrastructure/jobs/services/jobService"
 import { TagCollectionsSynchronizationService } from "../services/tagCollectionsSynchronization.service"
 
 describe("TagCollectionsSynchronizationService", () => {

@@ -19,7 +19,7 @@ import type {
 } from "@entities/collection/schemas/collectionBlock.schema"
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
-import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
+import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"

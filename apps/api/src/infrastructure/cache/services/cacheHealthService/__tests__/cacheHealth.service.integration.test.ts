@@ -1,0 +1,72 @@
+import { afterAll, beforeAll, describe, expect, it, jest } from "@jest/globals"
+import { Test } from "@nestjs/testing"
+import type { TestingModule } from "@nestjs/testing"
+
+import { infrastructureConfiguration } from "@infrastructure/config/config.module"
+import { getTestRedis } from "../../../__tests__/setup/setupRedis"
+
+import { CacheModule } from "../../../cache.module"
+import { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CacheHealthService } from "../core/cacheHealth.service"
+
+describe("CacheHealthService Redis", () => {
+  let moduleRef: TestingModule | undefined
+  let service: CacheService
+  let health: CacheHealthService
+
+  beforeAll(async () => {
+    const { configuration } = getTestRedis()
+    moduleRef = await Test.createTestingModule({ imports: [CacheModule] })
+      .overrideProvider(infrastructureConfiguration.KEY)
+      .useValue({ app: configuration.app, redis: configuration.redis })
+      .compile()
+    service = moduleRef.get(CacheService)
+    health = moduleRef.get(CacheHealthService)
+    await moduleRef.init()
+  })
+
+  afterAll(async () => {
+    await moduleRef?.close()
+  })
+
+  describe("CacheHealthService", () => {
+    it("успешно проверяет Redis и удаляет временный ключ", async () => {
+      await expect(health.healthCheck()).resolves.toBe(true)
+
+      expect(await getTestRedis().redis.dbSize()).toBe(0)
+    })
+
+    it("сохраняет существующие значения при проверке Redis", async () => {
+      await service.set("existing", { value: 42 })
+
+      await expect(health.healthCheck()).resolves.toBe(true)
+      await expect(service.get("existing")).resolves.toStrictEqual({
+        value: 42,
+      })
+      expect(await getTestRedis().redis.dbSize()).toBe(1)
+    })
+
+    it("проверяет Redis при инициализации Nest-модуля и удаляет временный ключ", async () => {
+      const { configuration, redis } = getTestRedis()
+      const startupModule = await Test.createTestingModule({
+        imports: [CacheModule],
+      })
+        .overrideProvider(infrastructureConfiguration.KEY)
+        .useValue({ app: configuration.app, redis: configuration.redis })
+        .compile()
+
+      try {
+        const healthCheck = jest.spyOn(
+          startupModule.get(CacheHealthService),
+          "healthCheck",
+        )
+
+        await expect(startupModule.init()).resolves.toBe(startupModule)
+        expect(healthCheck).toHaveBeenCalledTimes(1)
+        expect(await redis.dbSize()).toBe(0)
+      } finally {
+        await startupModule.close()
+      }
+    })
+  })
+})

@@ -3,7 +3,7 @@ import { InjectModel } from "@nestjs/mongoose"
 import { isObjectIdOrHexString, Types } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
-import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
+import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isNil } from "@shared/functions/checks/isNil"
 import { TagItem } from "../schemas/tagItem.schema"

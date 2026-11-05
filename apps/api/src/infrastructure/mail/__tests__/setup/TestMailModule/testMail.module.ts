@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common"
 
-import { MailService } from "@infrastructure/mail/services/mail.service"
+import { MailService } from "@infrastructure/mail/services/mailService"
 
 import { TestMailService } from "./testMail.service"
 

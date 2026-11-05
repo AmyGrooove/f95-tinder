@@ -3,10 +3,10 @@ import { Module } from "@nestjs/common"
 import { createKeyv } from "@keyv/redis"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
-import { CacheHealthService } from "./services/cacheHealth.service"
-import { CacheService } from "./services/cache.service"
+import { CacheHealthService } from "./services/cacheHealthService"
+import { CacheService } from "./services/cacheService"
 
 @Module({
   imports: [

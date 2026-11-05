@@ -1,6 +1,6 @@
 import type { Connection } from "mongoose"
 
-import type { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import type { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
 import { applyTimestampsPlugin } from "../../applyTimestampsPlugin"
 import { applyToJsonPlugin } from "../../applyToJsonPlugin"

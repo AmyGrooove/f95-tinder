@@ -7,8 +7,8 @@ import {
   jest,
 } from "@jest/globals"
 import { Test, type TestingModule } from "@nestjs/testing"
-import { JobService } from "@infrastructure/jobs/services/job.service"
-import { LoggerService } from "@infrastructure/logger/services/logger.service"
+import { JobService } from "@infrastructure/jobs/services/jobService"
+import { LoggerService } from "@infrastructure/logger/services/loggerService"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 import { SearchSyncSchedulerService } from "../services/searchSyncScheduler.service"

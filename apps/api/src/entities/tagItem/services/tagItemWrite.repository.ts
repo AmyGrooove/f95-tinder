@@ -1,7 +1,7 @@
 import { Types } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
-import { MongoWriteRepository } from "@infrastructure/database/services/mongoWrite.repository"
+import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
 import type { TagItem, TCreateTagItem } from "../schemas/tagItem.schema"
 import type { TagItemMutationService } from "./tagItemMutation.service"
 

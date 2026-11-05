@@ -3,7 +3,7 @@ import { BadRequestException, HttpException } from "@nestjs/common"
 import { ExecutionContextHost } from "@nestjs/core/helpers/execution-context-host"
 import { Test } from "@nestjs/testing"
 
-import { LoggerService } from "@infrastructure/logger/services/logger.service"
+import { LoggerService } from "@infrastructure/logger/services/loggerService"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 import { AppExceptionFilter } from "../index"

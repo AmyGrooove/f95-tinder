@@ -26,7 +26,7 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 
 [HttpModule](../src/infrastructure/http/http.module.ts) is imported by AppModule and configures `@nestjs/http-client` application-wide defaults: a 10-second timeout per attempt and disabled retries. It does not register a client; consumers register clients through `HttpClientModule.register()` or `registerAsync()`. Existing direct `fetch` calls are unaffected.
 
-[InfrastructureConfigModule](../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. It skips `.env` loading when `NODE_ENV=test`; the test application overrides the configuration namespace with isolated container addresses and test values. Consumers use [InfrastructureConfigService](../src/infrastructure/config/services/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search`, `mail` and `sources`. The derived [configuration type](../src/infrastructure/config/types/TInfrastructureConfiguration.ts) follows the factory return type.
+[InfrastructureConfigModule](../src/infrastructure/config/config.module.ts) loads a global, cached Nest configuration namespace. It skips `.env` loading when `NODE_ENV=test`; the test application overrides the configuration namespace with isolated container addresses and test values. Consumers use [InfrastructureConfigService](../src/infrastructure/config/services/configService/core/config.service.ts), whose sections are `app`, `database`, `redis`, `jwt`, `storage`, `search`, `mail` and `sources`. The derived [configuration type](../src/infrastructure/config/services/configService/types/TInfrastructureConfiguration.ts) follows the factory return type.
 
 [createInfrastructureConfiguration](../src/infrastructure/config/functions/createInfrastructureConfiguration/core/createInfrastructureConfiguration.ts) and its nested helpers define the current environment contract:
 
@@ -48,9 +48,9 @@ All listed variables except `NODE_ENV` and the knowledge credentials are require
 
 ## Health and initialization
 
-[HealthController](../src/infrastructure/health/controllers/health.controller.ts) exposes `GET /health` and `GET /health/live`. Liveness returns `{ status: "ok" }` without checking dependencies. [HealthService](../src/infrastructure/health/services/health.service.ts) checks database, cache, jobs, mail, scheduler, search and storage through Terminus. Each check races a 1,500 ms timeout; errors or timeout produce a down indicator. This race does not cancel the underlying dependency operation.
+[HealthController](../src/infrastructure/health/controllers/health.controller.ts) exposes `GET /health` and `GET /health/live`. Liveness returns `{ status: "ok" }` without checking dependencies. [HealthService](../src/infrastructure/health/services/healthService/core/health.service.ts) checks database, cache, jobs, mail, scheduler, search and storage through Terminus. Each check races a 1,500 ms timeout; errors or timeout produce a down indicator. This race does not cancel the underlying dependency operation.
 
-Storage checks/initializes its bucket during module initialization; search rejects application bootstrap if Meilisearch is unavailable. [SchedulerHealthService](../src/infrastructure/scheduler/services/schedulerHealth.service.ts) records a ten-minute cron heartbeat and measures elapsed time from startup until the first heartbeat. It is not a distributed scheduling lock.
+Storage checks/initializes its bucket during module initialization; search rejects application bootstrap if Meilisearch is unavailable. [SchedulerHealthService](../src/infrastructure/scheduler/services/schedulerHealthService/core/schedulerHealth.service.ts) records a ten-minute cron heartbeat and measures elapsed time from startup until the first heartbeat. It is not a distributed scheduling lock.
 
 Successful aggregate health responses contain `status`, `error` and `details`; the redundant Terminus `info` field is omitted. Failures still propagate through the existing exception filter.
 

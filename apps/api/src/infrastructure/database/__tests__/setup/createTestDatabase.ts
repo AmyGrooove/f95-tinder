@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { createConnection } from "mongoose"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { createDatabaseOptions } from "@infrastructure/database/functions/createDatabaseOptions"
 import { createTestConfiguration } from "@infrastructure/config/__tests__/setup/createTestConfiguration"
 

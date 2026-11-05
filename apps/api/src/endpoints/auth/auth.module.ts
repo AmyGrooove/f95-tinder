@@ -6,7 +6,7 @@ import { UserModule } from "@entities/user/user.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 import { SecurityModule } from "@infrastructure/security/security.module"
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { MailModule } from "@infrastructure/mail/mail.module"
 

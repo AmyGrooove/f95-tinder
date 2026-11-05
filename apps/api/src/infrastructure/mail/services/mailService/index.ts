@@ -1,0 +1,5 @@
+export { MailService } from "./core/mail.service"
+export type { ISendMailOptions } from "./types/ISendMailOptions"
+export type { IMailAttachment } from "./types/IMailAttachment"
+export type { IMailDeliveryResult } from "./types/IMailDeliveryResult"
+export type { TMailSender } from "./types/TMailSender"

@@ -17,7 +17,7 @@ import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
-import { JobProcessorService } from "@infrastructure/jobs/services/jobProcessor.service"
+import { JobProcessorService } from "@infrastructure/jobs/services/jobProcessorService"
 import { MailModule } from "@infrastructure/mail/mail.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 

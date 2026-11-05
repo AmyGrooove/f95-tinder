@@ -5,7 +5,7 @@ import { RedisModule, RedisToken } from "@nestjs-redis/client"
 import { RedisThrottlerStorage } from "@nestjs-redis/throttler-storage"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
 import { THROTTLE_DEFAULTS } from "./static/THROTTLE_DEFAULTS"
 

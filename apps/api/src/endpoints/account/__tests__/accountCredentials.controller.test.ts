@@ -3,7 +3,7 @@ import { ConflictException, UnauthorizedException } from "@nestjs/common"
 import { Test, type TestingModule } from "@nestjs/testing"
 
 import { AuthService } from "@endpoints/auth/services/auth.service"
-import { SecurityCookieService } from "@infrastructure/security/services/cookie.service"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 import { AccountCredentialsController } from "../controllers/accountCredentials.controller"
 import { AccountService } from "../services/account.service"

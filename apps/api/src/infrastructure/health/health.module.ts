@@ -10,7 +10,7 @@ import { SearchModule } from "@infrastructure/search/search.module"
 import { StorageModule } from "@infrastructure/storage/storage.module"
 
 import { HealthController } from "./controllers/health.controller"
-import { HealthService } from "./services/health.service"
+import { HealthService } from "./services/healthService"
 
 @Module({
   imports: [

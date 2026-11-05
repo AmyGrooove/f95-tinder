@@ -6,7 +6,7 @@ import type {
   QueryFilter,
 } from "mongoose"
 
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulk.repository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import type { TagItem, TCreateTagItem } from "../schemas/tagItem.schema"
 import type { TagItemMutationService } from "./tagItemMutation.service"
 

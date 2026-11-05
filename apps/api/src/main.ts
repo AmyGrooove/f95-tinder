@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core"
 import { FastifyAdapter } from "@nestjs/platform-fastify"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
 
-import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
+import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
 import { AppModule } from "./app/app.module"
 import { configureApplication } from "./app/functions/configureApplication"

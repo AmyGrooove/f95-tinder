@@ -4,9 +4,9 @@ import type { AggregateOptions, HydratedDocument, Model } from "mongoose"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import type { ICheckTagItemKeysProps } from "../types/ICheckTagItemKeysProps"
 
-import { MongoReadRepository } from "@infrastructure/database/services/mongoRead.repository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPagination.repository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregation.repository"
+import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
 import { TagItem } from "../schemas/tagItem.schema"
 import { TagItemWriteRepository } from "./tagItemWrite.repository"

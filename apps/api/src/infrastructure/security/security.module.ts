@@ -3,10 +3,10 @@ import { JwtModule } from "@nestjs/jwt"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 
-import { AccessTokenGuard } from "./guards/accessToken.guard"
-import { RolesGuard } from "./guards/roles.guard"
-import { SecurityJwtService } from "./services/jwt.service"
-import { SecurityCookieService } from "./services/cookie.service"
+import { AccessTokenGuard } from "./services/accessTokenGuard"
+import { RolesGuard } from "./services/rolesGuard"
+import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
+import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 @Module({
   imports: [InfrastructureConfigModule, JwtModule.register({})],

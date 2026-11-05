@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 
 import { InfrastructureConfigModule } from "@infrastructure/config/config.module"
 
-import { LoggerService } from "./services/logger.service"
+import { LoggerService } from "./services/loggerService"
 
 @Module({
   imports: [InfrastructureConfigModule],

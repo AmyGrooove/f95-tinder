@@ -15,7 +15,7 @@ import {
 import { Test } from "@nestjs/testing"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
-import { HealthService } from "@infrastructure/health/services/health.service"
+import { HealthService } from "@infrastructure/health/services/healthService"
 
 import { AppController } from "../controllers/app.controller"
 import { BACKGROUNDS } from "../static/BACKGROUNDS"
