@@ -5,7 +5,7 @@ import type { TagItemRepository } from "@entities/tagItem/services/tagItem.repos
 import type { CollectionRepository } from "@entities/collection/services/collection.repository"
 import type { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollection.repository"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
-import { SynchronizeTagCollectionsJobHandler } from "../handlers/synchronizeTagCollectionsJob.handler"
+import { SynchronizeTagCollectionsJobHandler } from "../services/handlers/synchronizeTagCollectionsJob.handler"
 
 describe("SynchronizeTagCollectionsJobHandler", () => {
   const item = new Types.ObjectId()

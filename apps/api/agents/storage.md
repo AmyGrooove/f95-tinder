@@ -10,7 +10,7 @@ Public APIs are `upload`, `download`, `delete`, `deleteMany`, `isExists`, `presi
 
 ## Multipart pipeline
 
-Use [ImageUpload(field, options)](../src/infrastructure/storage/decorators/ImageUpload/core/ImageUpload.ts) with an explicit object path and [UploadedImage](../src/infrastructure/storage/decorators/UploadedImage/core/UploadedImage.ts) to obtain processed metadata. The former applies [ImageUploadInterceptor](../src/infrastructure/storage/interceptors/imageUpload.interceptor.ts); ensure the consuming module can resolve the relevant providers.
+Use [ImageUpload(field, options)](../src/infrastructure/storage/decorators/ImageUpload/core/ImageUpload.ts) with an explicit object path and [UploadedImage](../src/infrastructure/storage/decorators/UploadedImage/core/UploadedImage.ts) to obtain processed metadata. The former applies [ImageUploadInterceptor](../src/infrastructure/storage/services/interceptors/imageUpload.interceptor.ts); ensure the consuming module can resolve the relevant providers.
 
 The interceptor requires exactly one file under the selected field, reads it with a byte limit, normalizes multipart text fields and processes the image before the controller runs. Defaults are 5 MiB, width/height 4,000 and 16,000,000 pixels. Bootstrap multipart limits remain an additional boundary.
 

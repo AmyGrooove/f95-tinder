@@ -24,7 +24,7 @@ flowchart TD
 
 Тело обязательно должно быть объектом, `{}` допустим. page по умолчанию 1, limit 50, допустимые размеры 10/20/50; limit отсутствует в ответе; небезопасное целочисленное смещение — 400. itemIds — опционально 1–60 уникальных ObjectId: подходит подборка, содержащая **хотя бы один** из них. Item отдельно не читается и его удалённость в этом фильтре не проверяется. type=franchise дополнительно ограничивает author=null. Сортировка createdAt/id по убыванию, страница и total — одна агрегация с facet. Пустая выборка — 200. Нет транзакции и записей; HTTP ждёт агрегацию.
 
-**Технические подробности:** [CollectionReadController.query](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts) → [CollectionQueryBodyInterceptor](../../../../src/endpoints/collection/interceptors/collectionQueryBody.interceptor.ts) → [CollectionService.query](../../../../src/endpoints/collection/services/collection.service.ts) → [CollectionRepository.querySummaries](../../../../src/entities/collection/services/collection.repository.ts). [DTO](../../../../src/endpoints/collection/dto/body/queryCollections.body.ts).
+**Технические подробности:** [CollectionReadController.query](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts) → [CollectionQueryBodyInterceptor](../../../../src/endpoints/collection/services/interceptors/collectionQueryBody.interceptor.ts) → [CollectionService.query](../../../../src/endpoints/collection/services/collection.service.ts) → [CollectionRepository.querySummaries](../../../../src/entities/collection/services/collection.repository.ts). [DTO](../../../../src/endpoints/collection/dto/body/queryCollections.body.ts).
 
 <a id="get"></a>
 

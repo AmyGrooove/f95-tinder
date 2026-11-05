@@ -20,7 +20,7 @@ import { CollectionContentService } from "./services/collectionContent.service"
 import { CollectionAuthService } from "./services/collectionAuth.service"
 import { TagCollectionsInitializationService } from "./services/tagCollectionsInitialization.service"
 import { TagCollectionsSynchronizationService } from "./services/tagCollectionsSynchronization.service"
-import { SynchronizeTagCollectionsJobHandler } from "./handlers/synchronizeTagCollectionsJob.handler"
+import { SynchronizeTagCollectionsJobHandler } from "./services/handlers/synchronizeTagCollectionsJob.handler"
 
 @Module({
   imports: [

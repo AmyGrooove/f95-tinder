@@ -270,7 +270,7 @@ flowchart TD
 
 **Ошибки и ответ:** неправильный id — 400; нет авторизации — 401; чужая, отсутствующая или истёкшая целевая сессия — одинаковый 404; общие 403/429. Транзакции между предварительной проверкой и удалением нет. HTTP ждёт удаления; фона нет, потеря ответа не восстанавливает запись.
 
-**Исходники:** [SessionController.deleteSession](../../../../src/endpoints/auth/controllers/session.controller.ts), [SessionService.deleteSession](../../../../src/endpoints/auth/services/session.service.ts), [MongoObjectIdHandler](../../../../src/infrastructure/database/handlers/mongoObjectId.handler.ts), [UserSessionRepository.deleteActive](../../../../src/entities/userSession/services/userSession.repository.ts).
+**Исходники:** [SessionController.deleteSession](../../../../src/endpoints/auth/controllers/session.controller.ts), [SessionService.deleteSession](../../../../src/endpoints/auth/services/session.service.ts), [MongoObjectIdHandler](../../../../src/infrastructure/database/services/handlers/mongoObjectId.handler.ts), [UserSessionRepository.deleteActive](../../../../src/entities/userSession/services/userSession.repository.ts).
 
 <a id="refresh-session"></a>
 
@@ -314,4 +314,4 @@ flowchart TD
 
 `SendMailJobHandler.handle` использует ключ идемпотентности `mail.send:<queueJobId>`; ошибки провайдера или отсутствие delivery id завершают попытку ошибкой. Определение джобы задаёт повторы через 1, 5 и 30 секунд, всего до 4 попыток; отмена и unrecoverable-ошибки обрабатываются процессором отдельно. Воркер может начать работу до или после HTTP-ответа; подтверждение фактического получения письма пользователем здесь не отслеживается. При успехе результат джобы — `{id: providerDeliveryId, status:"sent"}`. Событий и MongoDB-записей в обработчике нет.
 
-**Исходники:** [MailService.send](../../../../src/infrastructure/mail/services/mail.service.ts), [JobService.add](../../../../src/infrastructure/jobs/services/job.service.ts), [SEND_MAIL_JOB](../../../../src/infrastructure/mail/static/SEND_MAIL_JOB.ts), [SendMailJobHandler.handle](../../../../src/infrastructure/mail/handlers/sendMailJob.handler.ts), [JobProcessorService](../../../../src/infrastructure/jobs/services/jobProcessor.service.ts).
+**Исходники:** [MailService.send](../../../../src/infrastructure/mail/services/mail.service.ts), [JobService.add](../../../../src/infrastructure/jobs/services/job.service.ts), [SEND_MAIL_JOB](../../../../src/infrastructure/mail/static/SEND_MAIL_JOB.ts), [SendMailJobHandler.handle](../../../../src/infrastructure/mail/services/handlers/sendMailJob.handler.ts), [JobProcessorService](../../../../src/infrastructure/jobs/services/jobProcessor.service.ts).

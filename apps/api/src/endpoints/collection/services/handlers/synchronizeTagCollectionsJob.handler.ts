@@ -11,7 +11,7 @@ import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "../static/SYNCHRONIZE_TAG_COLLECTIONS_JOB"
+import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "../../static/SYNCHRONIZE_TAG_COLLECTIONS_JOB"
 
 @Injectable()
 @JobHandler(SYNCHRONIZE_TAG_COLLECTIONS_JOB)

@@ -6,7 +6,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import { ImageUploadInterceptor } from "./interceptors/imageUpload.interceptor"
+import { ImageUploadInterceptor } from "./services/interceptors/imageUpload.interceptor"
 import { ImageProcessingService } from "./services/imageProcessing.service"
 import { StorageHealthService } from "./services/storageHealth.service"
 import { StorageService } from "./services/storage.service"

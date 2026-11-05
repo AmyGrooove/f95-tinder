@@ -41,7 +41,7 @@ import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupD
 import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 import { TagCollectionsInitializationService } from "../services/tagCollectionsInitialization.service"
 import { TagCollectionsSynchronizationService } from "../services/tagCollectionsSynchronization.service"
-import { SynchronizeTagCollectionsJobHandler } from "../handlers/synchronizeTagCollectionsJob.handler"
+import { SynchronizeTagCollectionsJobHandler } from "../services/handlers/synchronizeTagCollectionsJob.handler"
 import dictionary from "../../../../public/import/tags/tags.json" with { type: "json" }
 
 describe("Tag collections MongoDB/BullMQ", () => {

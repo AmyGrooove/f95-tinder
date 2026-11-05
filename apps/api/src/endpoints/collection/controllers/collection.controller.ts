@@ -13,7 +13,7 @@ import {
 import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
-import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
+import { MongoObjectIdHandler } from "@infrastructure/database/services/handlers/mongoObjectId.handler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 

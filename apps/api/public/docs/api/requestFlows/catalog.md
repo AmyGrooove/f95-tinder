@@ -32,7 +32,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-Прямой путь: [ItemController.getById](../../../../src/endpoints/item/controllers/item.controller.ts) → [ItemService.getById](../../../../src/endpoints/item/services/item.service.ts) → [ItemRepository.findDetailsById](../../../../src/entities/item/services/item.repository.ts) → MongoAggregationRepository. Формат ID проверяет [MongoObjectIdHandler](../../../../src/infrastructure/database/handlers/mongoObjectId.handler.ts). [Контракт карточки](../pages/item.md), [response DTO](../../../../src/endpoints/item/dto/response/item.response.ts).
+Прямой путь: [ItemController.getById](../../../../src/endpoints/item/controllers/item.controller.ts) → [ItemService.getById](../../../../src/endpoints/item/services/item.service.ts) → [ItemRepository.findDetailsById](../../../../src/entities/item/services/item.repository.ts) → MongoAggregationRepository. Формат ID проверяет [MongoObjectIdHandler](../../../../src/infrastructure/database/services/handlers/mongoObjectId.handler.ts). [Контракт карточки](../pages/item.md), [response DTO](../../../../src/endpoints/item/dto/response/item.response.ts).
 
 </details>
 
@@ -65,7 +65,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/interceptors/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/dto/body/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/item.repository.ts), [User](../../../../src/entities/user/services/user.repository.ts), [Collection](../../../../src/entities/collection/services/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
+[SearchController.search](../../../../src/endpoints/search/controllers/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/interceptors/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/dto/body/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/item.repository.ts), [User](../../../../src/entities/user/services/user.repository.ts), [Collection](../../../../src/entities/collection/services/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
 
 </details>
 
@@ -88,4 +88,4 @@ flowchart TD
 
 Item индексируется полным проходом; User/Collection после первого полного прохода выбираются по updatedAt с перекрытием в минуту. Воркер создаёт/настраивает отсутствующие индексы и удаляет записи, которых больше нет в MongoDB. Начальная готовность появляется лишь после успешного обхода всех трёх источников. При последующих сбоях прежняя отметка может оставаться, а индекс — частично обновлённым; это не атомарная замена всех результатов. MongoDB не изменяется, событий нет.
 
-**Исходники:** [SearchSyncSchedulerService.enqueue](../../../../src/endpoints/search/services/searchSyncScheduler.service.ts), [SYNC_SEARCH_JOB](../../../../src/endpoints/search/static/SYNC_SEARCH_JOB.ts), [SyncSearchJobHandler.handle/synchronize/createSources](../../../../src/endpoints/search/handlers/syncSearchJob.handler.ts), [ItemRepository.readSearchIndexBatch](../../../../src/entities/item/services/item.repository.ts).
+**Исходники:** [SearchSyncSchedulerService.enqueue](../../../../src/endpoints/search/services/searchSyncScheduler.service.ts), [SYNC_SEARCH_JOB](../../../../src/endpoints/search/static/SYNC_SEARCH_JOB.ts), [SyncSearchJobHandler.handle/synchronize/createSources](../../../../src/endpoints/search/services/handlers/syncSearchJob.handler.ts), [ItemRepository.readSearchIndexBatch](../../../../src/entities/item/services/item.repository.ts).

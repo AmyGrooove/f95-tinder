@@ -15,13 +15,13 @@ import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import { SEARCH_ITEM_FIELDS } from "../static/SEARCH_ITEM_FIELDS"
-import { SEARCH_SETTINGS } from "../static/SEARCH_SETTINGS"
-import { SYNC_SEARCH_JOB } from "../static/SYNC_SEARCH_JOB"
+import { SEARCH_ITEM_FIELDS } from "../../static/SEARCH_ITEM_FIELDS"
+import { SEARCH_SETTINGS } from "../../static/SEARCH_SETTINGS"
+import { SYNC_SEARCH_JOB } from "../../static/SYNC_SEARCH_JOB"
 import type {
   ISearchSyncSource,
   ISynchronizeSearchProps,
-} from "../types/ISearchSyncSource"
+} from "../../types/ISearchSyncSource"
 
 @Injectable()
 @JobHandler(SYNC_SEARCH_JOB)

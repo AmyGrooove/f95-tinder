@@ -16,7 +16,7 @@ import { firstValueFrom, of, throwError } from "rxjs"
 
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
-import { ImageUploadInterceptor } from "../interceptors/imageUpload.interceptor"
+import { ImageUploadInterceptor } from "../services/interceptors/imageUpload.interceptor"
 import { ImageProcessingService } from "../services/imageProcessing.service"
 import { StorageService } from "../services/storage.service"
 import { DEFAULT_IMAGE_QUALITY } from "../static/DEFAULT_IMAGE_QUALITY"

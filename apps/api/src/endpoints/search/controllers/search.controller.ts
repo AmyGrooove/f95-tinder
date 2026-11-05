@@ -12,7 +12,7 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 
 import { SearchBodyDto } from "../dto/body/search.body"
-import { SearchBodyInterceptor } from "../interceptors/searchBody.interceptor"
+import { SearchBodyInterceptor } from "../services/interceptors/searchBody.interceptor"
 import { SearchResponseDto } from "../dto/response/search.response"
 import { SiteSearchService } from "../services/siteSearch.service"
 

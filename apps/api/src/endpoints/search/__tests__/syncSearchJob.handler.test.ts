@@ -17,7 +17,7 @@ import { CacheService } from "@infrastructure/cache/services/cache.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 
-import { SyncSearchJobHandler } from "../handlers/syncSearchJob.handler"
+import { SyncSearchJobHandler } from "../services/handlers/syncSearchJob.handler"
 import { SEARCH_SETTINGS } from "../static/SEARCH_SETTINGS"
 
 describe("SyncSearchJobHandler", () => {

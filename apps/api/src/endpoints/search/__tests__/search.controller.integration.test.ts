@@ -23,7 +23,7 @@ import { CacheService } from "@infrastructure/cache/services/cache.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
 import { createTestApplication } from "@app/__tests__/setup/createTestApplication"
 
-import { SyncSearchJobHandler } from "../handlers/syncSearchJob.handler"
+import { SyncSearchJobHandler } from "../services/handlers/syncSearchJob.handler"
 import { SEARCH_SETTINGS } from "../static/SEARCH_SETTINGS"
 import type { SearchResponseDto } from "../dto/response/search.response"
 

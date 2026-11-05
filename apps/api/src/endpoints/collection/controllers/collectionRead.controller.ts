@@ -13,7 +13,7 @@ import {
 import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
-import { MongoObjectIdHandler } from "@infrastructure/database/handlers/mongoObjectId.handler"
+import { MongoObjectIdHandler } from "@infrastructure/database/services/handlers/mongoObjectId.handler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
@@ -26,7 +26,7 @@ import { CollectionService } from "../services/collection.service"
 import { CollectionContentService } from "../services/collectionContent.service"
 import { QueryCollectionsBodyDto } from "../dto/body/queryCollections.body"
 import { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"
-import { CollectionQueryBodyInterceptor } from "../interceptors/collectionQueryBody.interceptor"
+import { CollectionQueryBodyInterceptor } from "../services/interceptors/collectionQueryBody.interceptor"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.collections)
 @Controller("collections")

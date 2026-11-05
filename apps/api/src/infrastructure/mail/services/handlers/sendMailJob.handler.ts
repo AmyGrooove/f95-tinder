@@ -7,10 +7,10 @@ import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-import { MAIL_CLIENT } from "../static/MAIL_CLIENT"
-import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"
-import { MAIL_SENDERS } from "../static/MAIL_SENDERS"
-import type { ISendMailJobPayload } from "../types/ISendMailJobPayload"
+import { MAIL_CLIENT } from "../../static/MAIL_CLIENT"
+import { SEND_MAIL_JOB } from "../../static/SEND_MAIL_JOB"
+import { MAIL_SENDERS } from "../../static/MAIL_SENDERS"
+import type { ISendMailJobPayload } from "../../types/ISendMailJobPayload"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()

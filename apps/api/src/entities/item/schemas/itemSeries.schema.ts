@@ -1,5 +1,4 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -21,8 +20,6 @@ class ItemSeries {
   nextEpisodeAt?: Date
 }
 
-type TCreateItemSeries = TCreateEntity<ItemSeries, "lastReleasedEpisodeAt">
-
 const ItemSeriesSchema = SchemaFactory.createForClass(ItemSeries)
 
 ItemSeriesSchema.pre("validate", function () {
@@ -39,4 +36,3 @@ ItemSeriesSchema.pre("validate", function () {
 })
 
 export { ItemSeries, ItemSeriesSchema }
-export type { TCreateItemSeries }

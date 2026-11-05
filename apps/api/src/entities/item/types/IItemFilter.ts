@@ -5,8 +5,6 @@ import type { EItemField } from "../schemas/EItemField"
 
 interface IItemFilter {
   types?: readonly EItemType[]
-  collectionId?: Types.ObjectId
-  groupId?: Types.ObjectId
   tagIds?: readonly Types.ObjectId[]
   fields?: readonly {
     field: EItemField

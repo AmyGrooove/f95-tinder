@@ -1,6 +1,6 @@
 import { applyDecorators, SetMetadata, UseInterceptors } from "@nestjs/common"
 
-import { ImageUploadInterceptor } from "../../../interceptors/imageUpload.interceptor"
+import { ImageUploadInterceptor } from "../../../services/interceptors/imageUpload.interceptor"
 import { IMAGE_UPLOAD_METADATA_KEY } from "../../../static/IMAGE_UPLOAD_METADATA_KEY"
 import type { IImageUploadOptions } from "../../../types/IImageUploadOptions"
 
