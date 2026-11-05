@@ -49,8 +49,6 @@ CollectionContentService checks collection/group availability, validates numeric
 
 Public QUERY /collections/:id/items accepts cursor and limit and returns nextCursor (string or false) and blocks. Cards are nested in group blocks. The cursor is scoped to the collection ID and version and follows group order, position, and membership ID. PATCH /collections/:id/user updates only supplied reaction fields. Author-only PUT /collections/:id/poster accepts multipart file and saves a WebP in collections/<id>/poster/. POST /collections accepts JSON without media. PATCH /collections/:id uses separate blocks and items changes with add, update, move, and remove arrays. The service resolves anchors and persists collection metadata and membership in one version-checked transaction.
 
-
-
 Reaction reads return false/null/false without inserting absent records. Reaction writes update only the requested field by verified user/collection IDs, using defaults for the first insert. Concurrent first-insert duplicate-key races retry without upsert. A non-null rating of one's own collection returns 409; clearing it is allowed. Hiding does not restrict direct reads. Text search and site-collection administration are outside the current module.
 
 ## Persistence boundaries

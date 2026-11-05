@@ -26,12 +26,10 @@ describe("CollectionController HTTP", () => {
       secondGroupId,
       textId,
     } = await createCollection()
-    const added = await app
-      .get(ItemRepository)
-      .write.create({
-        type: EItemType.MOVIE,
-        title: { ru: "Новый фильм", en: null },
-      })
+    const added = await app.get(ItemRepository).write.create({
+      type: EItemType.MOVIE,
+      title: { ru: "Новый фильм", en: null },
+    })
     const groupId = new Types.ObjectId().toHexString()
     const url = "/collections/" + collection.id
     const response = await app.inject({
@@ -625,7 +623,7 @@ describe("CollectionController HTTP", () => {
 
   it.each([null, "   "])("явно очищает заметку значением %j", async (note) => {
     const { app, connection } = getTestApplication()
-    const { collection, owner, first, firstGroupId } = await createCollection()
+    const { collection, owner, first } = await createCollection()
     const response = await app.inject({
       method: "PATCH",
       url: `/collections/${collection.id}`,

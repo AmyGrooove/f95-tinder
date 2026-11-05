@@ -395,7 +395,7 @@ Figma ID сопоставлены по уникальному исходному
 
 ## Список аниме (hover) — 4161:14407
 
-[PNG](screenshots/desktop/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA%20%D0%B0%D0%BD%D0%B8%D0%BC%D0%B5%20(hover).png) · [Архивный Figma](https://www.figma.com/design/2wTWhzXTr81bOYt5Zio7Ez/Bisky_v3?node-id=4161-14407) · 1440 × 1248. Проверено по новому desktop-экспорту.
+[PNG](<screenshots/desktop/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA%20%D0%B0%D0%BD%D0%B8%D0%BC%D0%B5%20(hover).png>) · [Архивный Figma](https://www.figma.com/design/2wTWhzXTr81bOYt5Zio7Ez/Bisky_v3?node-id=4161-14407) · 1440 × 1248. Проверено по новому desktop-экспорту.
 
 - **Назначение:** Произведения в списках пользователя.
 - **Наблюдение / данные:** Первая карточка затемнена; внизу развёрнуто длинное название, сверху слева розовая кнопка с вертикальным многоточием, рейтинг остаётся. Панель списка сохранена.

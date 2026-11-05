@@ -19,4 +19,4 @@
 
 - [x] Создать отдельный `apps/api/src/infrastructure/database/types/IValueFilter.ts` с общим `interface IValueFilter<TValue>` и необязательными полями `allOf`, `anyOf`, `noneOf` типа `readonly TValue[]`.
 - [x] Тип не должен зависеть от Item, Tag, UserItem или рекомендательного модуля. Доменный потребитель определяет значения и способ получения набора, к которому применяются условия.
-[Открытая задача по применению фильтра](../todos/apiImprovementsTodo.md)
+      [Открытая задача по применению фильтра](../todos/apiImprovementsTodo.md)

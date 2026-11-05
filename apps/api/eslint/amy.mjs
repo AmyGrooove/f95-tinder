@@ -55,6 +55,17 @@ const fileObjects = createRule(
     const isStatic = filename.includes("/static/") && stem !== "index"
     const declarations = []
 
+    const matchesStem = (declaration) => {
+      const name = declaration.id?.name
+
+      return (
+        name === stem ||
+        (declaration.type === "ClassDeclaration" &&
+          name &&
+          `${name[0].toLowerCase()}${name.slice(1)}` === stem)
+      )
+    }
+
     return {
       VariableDeclarator(node) {
         if (
@@ -89,7 +100,7 @@ const fileObjects = createRule(
           !stem.includes(".") &&
           stem !== "index"
         ) {
-          const primaryNames = node.body.flatMap((statement) => {
+          const hasPrimaryObject = node.body.some((statement) => {
             const declaration =
               statement.type === "ExportNamedDeclaration" ||
               statement.type === "ExportDefaultDeclaration"
@@ -97,13 +108,13 @@ const fileObjects = createRule(
                 : statement
 
             if (declaration?.type === "VariableDeclaration") {
-              return declaration.declarations.map((item) => item.id.name)
+              return declaration.declarations.some(matchesStem)
             }
 
-            return declaration?.id?.name ?? []
+            return declaration && matchesStem(declaration)
           })
 
-          if (!primaryNames.includes(stem)) {
+          if (!hasPrimaryObject) {
             context.report({ node, messageId: "filename" })
           }
         }
@@ -114,7 +125,7 @@ const fileObjects = createRule(
           !stem.includes(".") &&
           node.parent.type === "Program" &&
           node.id &&
-          node.id.name !== stem
+          !matchesStem(node)
         ) {
           context.report({ node: node.id, messageId: "filename" })
         }

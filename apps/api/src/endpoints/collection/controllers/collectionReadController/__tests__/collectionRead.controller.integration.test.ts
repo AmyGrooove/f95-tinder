@@ -113,12 +113,10 @@ describe("CollectionReadController HTTP", () => {
     const { collection, firstGroupId, first, second } = await createCollection()
     const extra = []
     for (let index = 0; index < 10; index += 1) {
-      const item = await app
-        .get(ItemRepository)
-        .write.create({
-          type: EItemType.MOVIE,
-          title: { ru: "Фильм " + index, en: null },
-        })
+      const item = await app.get(ItemRepository).write.create({
+        type: EItemType.MOVIE,
+        title: { ru: "Фильм " + index, en: null },
+      })
       extra.push(item._id)
       await connection.collection("ItemCollection").insertOne({
         collectionId: new Types.ObjectId(collection.id),

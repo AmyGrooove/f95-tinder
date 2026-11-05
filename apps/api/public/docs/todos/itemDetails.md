@@ -6,26 +6,26 @@
 
 Успешный ответ `200` содержит объект без обёртки.
 
-| Поле | Формат |
-| --- | --- |
-| `id`, `type` | Строковый ID и тип Item |
-| `title`, `description` | `{ru, en}`, каждый перевод — строка или `null` |
-| `aliases` | Массив строк |
-| `media` | Массив `{src, type, language}` |
-| `tags` | Массив `{id, key, group, name}` |
-| `relations` | Массив `{item: {id, type, title, media}, role: {id, key, name}}` |
-| `releaseDate` | Дата первого выпуска или `null` |
-| `ageRestriction` | `0`, `6`, `12`, `16`, `18` или `null` |
-| `movie` | `{duration}` или `null` |
-| `series` | `{episodeCount, releasedEpisodeCount, episodeDuration, lastReleasedEpisodeAt, nextEpisodeAt}` или `null` |
-| `game` | `{mainStoryDuration, fullCompletionDuration}` или `null` |
+| Поле                   | Формат                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `id`, `type`           | Строковый ID и тип Item                                                                                  |
+| `title`, `description` | `{ru, en}`, каждый перевод — строка или `null`                                                           |
+| `aliases`              | Массив строк                                                                                             |
+| `media`                | Массив `{src, type, language}`                                                                           |
+| `tags`                 | Массив `{id, key, group, name}`                                                                          |
+| `relations`            | Массив `{item: {id, type, title, media}, role: {id, key, name}}`                                         |
+| `releaseDate`          | Дата первого выпуска или `null`                                                                          |
+| `ageRestriction`       | `0`, `6`, `12`, `16`, `18` или `null`                                                                    |
+| `movie`                | `{duration}` или `null`                                                                                  |
+| `series`               | `{episodeCount, releasedEpisodeCount, episodeDuration, lastReleasedEpisodeAt, nextEpisodeAt}` или `null` |
+| `game`                 | `{mainStoryDuration, fullCompletionDuration}` или `null`                                                 |
 
 Даты передаются в ISO 8601. `lastReleasedEpisodeAt` — дата последней вышедшей серии. Внутри блоков неизвестные характеристики возвращаются как `null`. Длительности указаны в минутах. Пустые массивы возвращаются как `[]`. Названия тегов и ролей локализованы через `{ru, en}`. Поля `media.language` и `tags.group` допускают `null`.
 
 Ответ включает прямые теги и прямые связи в обоих направлениях. Для роли используется имя со стороны связанного произведения, с приоритетом локализованного переопределения над именем роли. Отсутствующие и удалённые связанные произведения пропускаются. Связи возвращаются без рекурсии и пагинации.
 
-| Код | Условие |
-| --- | --- |
-| `400` | Некорректный ObjectId |
+| Код   | Условие                                |
+| ----- | -------------------------------------- |
+| `400` | Некорректный ObjectId                  |
 | `404` | Item отсутствует или помечен удалённым |
-| `429` | Превышен лимит запросов |
+| `429` | Превышен лимит запросов                |

@@ -2,15 +2,15 @@
 
 All source paths below belong to `apps/api`. This map describes inspected production code; it does not establish service availability or runtime verification.
 
-| Read when changing                                                                           | Context                                 |
-| -------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Read when changing                                                              | Context                                 |
+| ------------------------------------------------------------------------------- | --------------------------------------- |
 | HTTP use cases, account flows, library mutations, collection behavior or search | [Endpoint routes](endpoints.md)         |
-| Startup, module wiring, configuration, CORS, health, build commands                          | [Runtime and configuration](runtime.md) |
-| MongoDB entities, queries, transactions, pagination, cache or search                         | [Data access](data-access.md)           |
-| JWTs, authenticated request context, roles or throttling                                     | [Security](security.md)                 |
-| Queue definitions, handlers, retries, cancellation or mail delivery                          | [Jobs and mail](jobs-and-mail.md)       |
-| S3 objects, bucket initialization or multipart image uploads                                 | [Storage and images](storage.md)        |
-| Logs, HTTP errors or shared request context                                                  | [Observability](observability.md)       |
+| Startup, module wiring, configuration, CORS, health, build commands             | [Runtime and configuration](runtime.md) |
+| MongoDB entities, queries, transactions, pagination, cache or search            | [Data access](data-access.md)           |
+| JWTs, authenticated request context, roles or throttling                        | [Security](security.md)                 |
+| Queue definitions, handlers, retries, cancellation or mail delivery             | [Jobs and mail](jobs-and-mail.md)       |
+| S3 objects, bucket initialization or multipart image uploads                    | [Storage and images](storage.md)        |
+| Logs, HTTP errors or shared request context                                     | [Observability](observability.md)       |
 
 ## Composition and reuse
 

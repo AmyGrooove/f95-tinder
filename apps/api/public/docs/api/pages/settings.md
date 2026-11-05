@@ -21,7 +21,7 @@
 | `DELETE /auth/session/others`     | Завершение остальных сессий                          |
 | `DELETE /auth/session/:sessionId` | Завершение выбранной сессии                          |
 | `PATCH /auth/session/refresh`     | Обновление токенов текущей сессии                    |
-| `POST /auth/register`             | Регистрация и открытие сессии                 |
+| `POST /auth/register`             | Регистрация и открытие сессии                        |
 | `POST /auth/login/code`           | Вход по секретному коду до настройки пароля          |
 | `POST /auth/login`                | Вход по логину и паролю                              |
 | `POST /auth/logout`               | Выход из текущей сессии                              |

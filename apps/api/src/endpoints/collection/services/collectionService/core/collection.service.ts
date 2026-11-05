@@ -168,7 +168,7 @@ class CollectionService {
             operations.update,
             operations.move,
             operations.remove,
-          ].some((entries) => !!entries?.length),
+          ].some((entries) => (entries?.length ?? 0) > 0),
       )
 
     if (!isChangeProvided) {

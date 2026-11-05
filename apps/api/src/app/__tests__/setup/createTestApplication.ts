@@ -88,13 +88,18 @@ const createTestApplication = async (search?: {
         }
         if (
           command instanceof PutObjectCommand &&
-          command.input.Key &&
+          typeof command.input.Key === "string" &&
+          command.input.Key.length > 0 &&
           Buffer.isBuffer(command.input.Body)
         ) {
           objects.set(command.input.Key, command.input.Body.length)
           return {}
         }
-        if (command instanceof HeadObjectCommand && command.input.Key) {
+        if (
+          command instanceof HeadObjectCommand &&
+          typeof command.input.Key === "string" &&
+          command.input.Key.length > 0
+        ) {
           const size = objects.get(command.input.Key)
           if (size === undefined) {
             throw new S3ServiceException({
@@ -105,7 +110,11 @@ const createTestApplication = async (search?: {
           }
           return { ContentLength: size }
         }
-        if (command instanceof DeleteObjectCommand && command.input.Key) {
+        if (
+          command instanceof DeleteObjectCommand &&
+          typeof command.input.Key === "string" &&
+          command.input.Key.length > 0
+        ) {
           objects.delete(command.input.Key)
           return {}
         }
