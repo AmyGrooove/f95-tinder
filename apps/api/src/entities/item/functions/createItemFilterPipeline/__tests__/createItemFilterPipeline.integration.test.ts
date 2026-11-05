@@ -4,6 +4,7 @@ import { Types } from "mongoose"
 import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupDatabase"
 
 import { EItemField } from "../../../schemas/EItemField"
+import { EItemFieldValueType } from "../../../schemas/EItemFieldValueType"
 import { EItemType } from "../../../schemas/EItemType"
 import { createItemFilterPipeline } from "../core/createItemFilterPipeline"
 
@@ -77,13 +78,24 @@ describe("createItemFilterPipeline", () => {
         createItemFilterPipeline({
           filter: {
             fields: [
-              { field: EItemField.DURATION, min: 90, max: 90 },
+              {
+                field: EItemField.DURATION,
+                valueType: EItemFieldValueType.NUMBER,
+                min: 90,
+                max: 90,
+              },
               {
                 field: EItemField.RELEASE_DATE,
+                valueType: EItemFieldValueType.DATE,
                 min: new Date("2020-01-01"),
                 max: new Date("2020-01-01"),
               },
-              { field: EItemField.AGE_RESTRICTION, min: 18, max: 18 },
+              {
+                field: EItemField.AGE_RESTRICTION,
+                valueType: EItemFieldValueType.NUMBER,
+                min: 18,
+                max: 18,
+              },
             ],
           },
         }),

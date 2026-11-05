@@ -3,7 +3,7 @@ import { Types } from "mongoose"
 
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { ItemRepository } from "@entities/item/services/item.repository"
+import { ItemRepository } from "@entities/item/services/itemRepository"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 

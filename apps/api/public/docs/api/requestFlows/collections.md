@@ -24,7 +24,7 @@ flowchart TD
 
 Тело обязательно должно быть объектом, `{}` допустим. page по умолчанию 1, limit 50, допустимые размеры 10/20/50; limit отсутствует в ответе; небезопасное целочисленное смещение — 400. itemIds — опционально 1–60 уникальных ObjectId: подходит подборка, содержащая **хотя бы один** из них. Item отдельно не читается и его удалённость в этом фильтре не проверяется. type=franchise дополнительно ограничивает author=null. Сортировка createdAt/id по убыванию, страница и total — одна агрегация с facet. Пустая выборка — 200. Нет транзакции и записей; HTTP ждёт агрегацию.
 
-**Технические подробности:** [CollectionReadController.query](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts) → [CollectionQueryBodyInterceptor](../../../../src/endpoints/collection/services/interceptors/collectionQueryBody.interceptor.ts) → [CollectionService.query](../../../../src/endpoints/collection/services/collection.service.ts) → [CollectionRepository.querySummaries](../../../../src/entities/collection/services/collection.repository.ts). [DTO](../../../../src/endpoints/collection/dto/body/queryCollections.body.ts).
+**Технические подробности:** [CollectionReadController.query](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts) → [CollectionQueryBodyInterceptor](../../../../src/endpoints/collection/services/collectionQueryBodyInterceptor/core/collectionQueryBody.interceptor.ts) → [CollectionService.query](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) → [CollectionRepository.querySummaries](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). [DTO](../../../../src/endpoints/collection/dto/body/queryCollections.body.ts).
 
 <a id="get"></a>
 
@@ -43,7 +43,7 @@ flowchart TD
 
 Одна выборка Collection без транзакции, Items/реакции/пользователь не читаются. Отсутствующая и soft-deleted подборка дают одинаковый 404. Даты — ISO, языковые значения и nullable поля отображаются явно. HTTP ждёт чтения и маппинга, записей нет.
 
-**Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/dto/response/collection.response.ts).
+**Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/dto/response/collection.response.ts).
 
 <a id="items"></a>
 
@@ -68,7 +68,7 @@ page от 1, limit 10/20/50 (по умолчанию 50); limit отсутств
 
 Нет Collection — 404; чужая группа, недоступный mode/sort, неправильные диапазоны, повторяющиеся/неизвестные поля и невалидные даты — 400. Контекст, счётчики групп и страница читаются отдельными агрегациями без общей транзакции/snapshot: при параллельном редактировании возможны расхождения. UserCollection/UserItem не читаются. HTTP ждёт все чтения и сборку, записей нет.
 
-**Технические подробности:** CollectionReadController.getItems → [CollectionContentService.getItems/getContentContext/prepareFieldFilters](../../../../src/endpoints/collection/services/collectionContent.service.ts) → [CollectionRepository.findNotDeletedById](../../../../src/entities/collection/services/collection.repository.ts), [ItemCollectionRepository.countAvailableItemsByGroup/readContentPage](../../../../src/entities/itemCollection/services/itemCollection.repository.ts) → [createItemCollectionsPipeline](../../../../src/entities/itemCollection/functions/createItemCollectionsPipeline/core/createItemCollectionsPipeline.ts). [DTO](../../../../src/endpoints/collection/dto/body/itemCollections.body.ts), [display blocks](../../../../src/endpoints/collection/functions/createCollectionDisplayBlocks/index.ts).
+**Технические подробности:** CollectionReadController.getItems → [CollectionContentService.getItems/getContentContext/prepareFieldFilters](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts) → [CollectionRepository.findNotDeletedById](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.countAvailableItemsByGroup/readContentPage](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts) → [createItemCollectionsPipeline](../../../../src/entities/itemCollection/services/itemCollectionRepository/functions/createItemCollectionsPipeline/core/createItemCollectionsPipeline.ts). [DTO](../../../../src/endpoints/collection/dto/body/itemCollections.body.ts), [display blocks](../../../../src/endpoints/collection/services/collectionContentService/functions/createCollectionDisplayBlocks/index.ts).
 
 <a id="filters"></a>
 
@@ -89,7 +89,7 @@ flowchart TD
 
 Только неудалённые Item в существующих группах Collection. Диапазоны берутся из характеристик Item, теги — из TagItem/Tag; режим grouped доступен по тем же условиям, что выше. Справочник не зависит от выбранных клиентом фильтров и не принимает groupId или другие query-поля (400). Нет подборки — 404; пустая подборка возвращает пустые варианты и flat. ItemStats/UserItem не читаются. Транзакции нет; HTTP ждёт контекст и агрегацию, записей нет.
 
-**Технические подробности:** CollectionReadController.getFilters → CollectionContentService.getFilters/getContentContext → ItemCollectionRepository.getFilterOptions. [Контроллер](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionContent.service.ts), [репозиторий](../../../../src/entities/itemCollection/services/itemCollection.repository.ts), [query DTO](../../../../src/endpoints/collection/dto/query/collectionFilters.query.ts).
+**Технические подробности:** CollectionReadController.getFilters → CollectionContentService.getFilters/getContentContext → ItemCollectionRepository.getFilterOptions. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts), [репозиторий](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), [query DTO](../../../../src/endpoints/collection/dto/query/collectionFilters.query.ts).
 
 <a id="create"></a>
 
@@ -113,7 +113,7 @@ flowchart TD
 
 Название должно быть заполнено хотя бы на одном языке. Проверяются уникальные ID блоков/Item, корректность group/text и принадлежность каждого item.groupId итоговой группе. Нет добавляемого Item или он удалён — 404; структура/дубли/пустое название — 400. Collection и весь состав создаются/откатываются вместе; при пустом составе Item/ItemCollection не затрагиваются. После commit выполняется только отображение ответа, enqueue/events нет. Потерянный ответ не откатывает создание.
 
-**Технические подробности:** [CollectionController.create](../../../../src/endpoints/collection/controllers/collection.controller.ts) → [CollectionService.create/prepareBlock](../../../../src/endpoints/collection/services/collection.service.ts) → CollectionAuthService.authenticate → MongoTransactionService.run → ItemRepository.findNotDeletedByIds, CollectionRepository.write.create, ItemCollectionRepository.createForCollection. [DTO](../../../../src/endpoints/collection/dto/body/createCollection.body.ts).
+**Технические подробности:** [CollectionController.create](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts) → [CollectionService.create/prepareBlock](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) → CollectionAuthService.authenticate → MongoTransactionService.run → ItemRepository.findNotDeletedByIds, CollectionRepository.write.create, ItemCollectionRepository.createForCollection. [DTO](../../../../src/endpoints/collection/dto/body/createCollection.body.ts).
 
 <a id="update"></a>
 
@@ -138,7 +138,7 @@ flowchart TD
 
 Чужая, автоматическая (author=null), отсутствующая или удалённая Collection — одинаковый 404. Устаревшая версия или предел Number.MAX_SAFE_INTEGER — 409. Проверяются итоговый порядок блоков, уникальность, отсутствие конфликтующих добавлений/удалений, доступные группы, наличие удаляемых memberships и неудалённые добавляемые Item. Невалидная структура/пустое изменение — 400; нет Item — 404. Удаление группы удаляет связанные ItemCollection, кроме перенесённых в сохранённые группы. Все чтения/записи состава и условная запись версии используют одну session; сбой откатывает их вместе. HTTP ждёт commit, очередей и postcommit-вызовов нет.
 
-**Технические подробности:** CollectionController.update → CollectionService.update/prepareUpdatedBlocks → [CollectionRepository.updateVersioned](../../../../src/entities/collection/services/collection.repository.ts), [ItemCollectionRepository.findByCollectionAndItems/upsertForCollection/removeForCollection](../../../../src/entities/itemCollection/services/itemCollection.repository.ts), ItemRepository.findNotDeletedByIds. [Сервис](../../../../src/endpoints/collection/services/collection.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/updateCollection.body.ts).
+**Технические подробности:** CollectionController.update → CollectionService.update/prepareUpdatedBlocks → [CollectionRepository.updateVersioned](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.findByCollectionAndItems/upsertForCollection/removeForCollection](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), ItemRepository.findNotDeletedByIds. [Сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/updateCollection.body.ts).
 
 <a id="remove"></a>
 
@@ -157,7 +157,7 @@ flowchart TD
 
 Один atomic update без отдельной MongoDB-транзакции, без version в запросе. Чужая, автоматическая, уже удалённая или отсутствующая подборка — 404. ItemCollection/UserCollection физически остаются; каскадной очистки нет, публичные чтения проверяют deletedAt. HTTP ждёт update, ошибка доставки ответа не отменяет soft delete. Фоновые удаления не запускаются.
 
-**Технические подробности:** CollectionController.remove → CollectionService.remove → CollectionRepository.softDeleteByAuthor (id+author+deletedAt=null). [Контроллер](../../../../src/endpoints/collection/controllers/collection.controller.ts), [сервис](../../../../src/endpoints/collection/services/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collection.repository.ts).
+**Технические подробности:** CollectionController.remove → CollectionService.remove → CollectionRepository.softDeleteByAuthor (id+author+deletedAt=null). [Контроллер](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts).
 
 <a id="user"></a>
 
@@ -177,7 +177,7 @@ flowchart TD
 
 Нет Collection — 404; нет UserCollection — успешный ответ с false/null/false, без создания записи. Проверка Collection и чтение реакции раздельные, общей транзакции/snapshot нет. HTTP ждёт оба чтения; записи и фон отсутствуют.
 
-**Технические подробности:** [CollectionUserController.getUser](../../../../src/endpoints/collection/controllers/collectionUser.controller.ts) → [CollectionUserService.getUser/mapResponse](../../../../src/endpoints/collection/services/collectionUser.service.ts) → CollectionRepository.checkIsNotDeleted, [UserCollectionRepository.findByUserAndCollection](../../../../src/entities/userCollection/services/userCollection.repository.ts).
+**Технические подробности:** [CollectionUserController.getUser](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts) → [CollectionUserService.getUser/mapResponse](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts) → CollectionRepository.checkIsNotDeleted, [UserCollectionRepository.findByUserAndCollection](../../../../src/entities/userCollection/services/userCollectionRepository/core/userCollection.repository.ts).
 
 <a id="favorite"></a>
 
@@ -197,7 +197,7 @@ flowchart TD
 
 Нет Collection — 404. Допустимо и для своей подборки. Остальные поля существующей реакции сохраняются, при первом upsert получают defaults. Запись атомарна по user+collectionId, но предварительная проверка Collection не включена в транзакцию: одновременное удаление подборки не откатывает реакцию. HTTP ждёт upsert и маппинг; ни статистика Item/Site, ни очереди не вызываются. Ошибка ответа после записи её не отменяет.
 
-**Технические подробности:** CollectionUserController.updateFavorite → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById → UserCollectionRepository.upsertReaction. При гонке создания уникальный конфликт повторяется обычным update. [Сервис](../../../../src/endpoints/collection/services/collectionUser.service.ts), [репозиторий](../../../../src/entities/userCollection/services/userCollection.repository.ts), [DTO](../../../../src/endpoints/collection/dto/body/favorite.body.ts).
+**Технические подробности:** CollectionUserController.updateFavorite → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById → UserCollectionRepository.upsertReaction. При гонке создания уникальный конфликт повторяется обычным update. [Сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [репозиторий](../../../../src/entities/userCollection/services/userCollectionRepository/core/userCollection.repository.ts), [DTO](../../../../src/endpoints/collection/dto/body/favorite.body.ts).
 
 <a id="rating"></a>
 
@@ -218,7 +218,7 @@ flowchart TD
 
 Ненулевая оценка своей подборки — 409; `rating:null` допускается и очищает оценку. Отсутствующая/удалённая Collection — 404, неверный диапазон/нецелое/отсутствующее rating — 400. Остальные реакции сохраняются. Предварительное чтение и atomic upsert без общей транзакции, с теми же границами гонки, что у favorite. ItemStats/SiteStats не затрагиваются — это оценка Collection, а не Item. HTTP ждёт upsert, фона нет.
 
-**Технические подробности:** CollectionUserController.updateRating → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/rating.body.ts).
+**Технические подробности:** CollectionUserController.updateRating → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/rating.body.ts).
 
 <a id="hidden"></a>
 
@@ -238,4 +238,4 @@ flowchart TD
 
 Флаг не удаляет Collection и не делает её приватной, не меняет состав и реакции других пользователей. Публичные QUERY /collections и QUERY /search не используют этот личный флаг. Нет Collection — 404. Atomic upsert без общей транзакции с предварительной проверкой; другие поля реакции сохраняются. HTTP ждёт запись, фон/внешние обращения отсутствуют.
 
-**Технические подробности:** CollectionUserController.updateHidden → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/hidden.body.ts), [проверка доступа](../../../../src/endpoints/collection/services/collectionAuth.service.ts).
+**Технические подробности:** CollectionUserController.updateHidden → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/hidden.body.ts), [проверка доступа](../../../../src/endpoints/collection/services/collectionAuthService/core/collectionAuth.service.ts).

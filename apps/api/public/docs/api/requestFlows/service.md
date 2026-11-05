@@ -22,7 +22,7 @@ flowchart TD
 
 **Данные и границы:** выполняется та же [проверка зависимостей](service.md#health), что у GET /health, включая временную запись Redis. HTTP-ошибка готовности перехватывается и становится статусами внутри HTML; неожиданная ошибка продолжает распространяться. MongoDB-транзакции, событий и очередей нет. В HTML есть загрузка `/background`: это отдельный последующий запрос браузера, его завершения GET / не ждёт.
 
-**Технические подробности:** [AppController.getHomePage](../../../../src/app/controllers/app.controller.ts) → HealthService.checkHealth → шаблоны [HOME_PAGE_HTML](../../../../src/app/static/HOME_PAGE_HTML.ts) и [SERVICE_HEALTH_HTML](../../../../src/app/static/SERVICE_HEALTH_HTML.ts). Маршрут исключён из Swagger.
+**Технические подробности:** [AppController.getHomePage](../../../../src/app/controllers/appController/core/app.controller.ts) → HealthService.checkHealth → шаблоны [HOME_PAGE_HTML](../../../../src/app/controllers/appController/static/HOME_PAGE_HTML.ts) и [SERVICE_HEALTH_HTML](../../../../src/app/controllers/appController/static/SERVICE_HEALTH_HTML.ts). Маршрут исключён из Swagger.
 
 <a id="background"></a>
 
@@ -43,7 +43,7 @@ flowchart TD
 
 **Проверки и границы:** URL не берётся из пользовательского ввода. Если cookie указывает на существующий фон, он исключается из следующего выбора. Запрос ждёт fetch и чтение всего arrayBuffer; фона в смысле очередей здесь нет. User/UserSession, MongoDB и Redis не читаются и не меняются. Транзакций и событий нет. Cookie — HttpOnly, SameSite=Lax, session, Path=/background. Ошибочный upstream статус или Content-Type даёт 502; сетевые ошибки fetch отдельно не преобразуются этим контроллером. Ошибка чтения тела также может произойти до отправки ответа.
 
-**Исходники:** [AppController.getBackground](../../../../src/app/controllers/app.controller.ts), [getRandomBackground](../../../../src/app/functions/getRandomBackground/index.ts), [фиксированный список BACKGROUNDS](../../../../src/app/static/BACKGROUNDS.ts). Маршрут исключён из Swagger.
+**Исходники:** [AppController.getBackground](../../../../src/app/controllers/appController/core/app.controller.ts), [getRandomBackground](../../../../src/app/controllers/appController/functions/getRandomBackground/index.ts), [фиксированный список BACKGROUNDS](../../../../src/app/controllers/appController/static/BACKGROUNDS.ts). Маршрут исключён из Swagger.
 
 <a id="health"></a>
 

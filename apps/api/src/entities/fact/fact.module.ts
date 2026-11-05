@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 import { MongooseModule } from "@nestjs/mongoose"
 
 import { Fact, FactSchema } from "./schemas/fact.schema"
-import { FactRepository } from "./services/fact.repository"
+import { FactRepository } from "@entities/fact/services/factRepository"
 
 @Module({
   imports: [

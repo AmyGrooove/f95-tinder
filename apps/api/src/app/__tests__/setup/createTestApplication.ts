@@ -9,7 +9,7 @@ import { RedisToken } from "@nestjs-redis/client"
 
 import { AccountModule } from "@endpoints/account/account.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
-import { TagCollectionsInitializationService } from "@endpoints/collection/services/tagCollectionsInitialization.service"
+import { TagCollectionsInitializationService } from "@endpoints/collection/services/tagCollectionsInitializationService"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { ItemEndpointModule } from "@endpoints/item/item.module"

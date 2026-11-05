@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 import { MongooseModule } from "@nestjs/mongoose"
 
 import { Collection, CollectionSchema } from "./schemas/collection.schema"
-import { CollectionRepository } from "./services/collection.repository"
+import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 
 @Module({
   imports: [

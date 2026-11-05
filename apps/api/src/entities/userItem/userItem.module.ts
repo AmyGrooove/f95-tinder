@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common"
 import { MongooseModule } from "@nestjs/mongoose"
 
 import { UserItem, UserItemSchema } from "./schemas/userItem.schema"
-import { UserItemRepository } from "./services/userItem.repository"
+import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 
 @Module({
   imports: [

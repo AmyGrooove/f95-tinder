@@ -12,7 +12,7 @@
 | `QUERY /collections/:id/items` | Постраничная загрузка состава с groupId, position и note включений                                  |
 | `DELETE /collections/:id`      | Мягкое удаление своей коллекции                                                                     |
 
-Код: [CollectionController](../../../../src/endpoints/collection/controllers/collection.controller.ts), [CollectionService](../../../../src/endpoints/collection/services/collection.service.ts) и [CollectionContentService](../../../../src/endpoints/collection/services/collectionContent.service.ts).
+Код: [CollectionController](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts), [CollectionService](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) и [CollectionContentService](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts).
 
 PATCH принимает изменения (`upsertBlocks`, `removeBlockIds`, `blockOrder`, `upsertItems`, `removeItemIds`), поэтому не требует отправлять весь постранично загруженный состав. Проверяются автор, ссылки на группы и дубли; устаревшая version даёт 409. При удалении группы удаляются её включения, без автоматического переноса. Состав и UserItem независимы. Чтение метаданных после записи не заменяет перечитывание изменённого состава.
 

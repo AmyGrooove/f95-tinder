@@ -32,7 +32,7 @@
 | Подбор с фильтрами                     | Строгая допустимость по фильтрам, качество внутри них             | Фильтры применяются при retrieval и повторно перед ответом; редкий фильтр может потребовать расширить бюджет |
 | Персональная сортировка всего каталога | Глобальный порядок, точный total, произвольные страницы           | Ограниченный candidate pool не эквивалентен этому контракту                                                  |
 
-Сейчас [RecommendationsService.find](../../../src/endpoints/recommendations/services/recommendations.service.ts) — внутренний сервис, экспортируемый модулем без HTTP-контроллера. Поиск production-потребителей не обнаружил HTTP-вызовов рекомендаций. [Публичный поиск](../../../src/endpoints/search/services/siteSearch.service.ts) использует Meilisearch и MongoDB hydration, без персонального recommendation scorer. Историческое время другого поискового пути здесь не используется.
+Сейчас [RecommendationsService.find](../../../src/endpoints/recommendations/services/recommendations.service.ts) — внутренний сервис, экспортируемый модулем без HTTP-контроллера. Поиск production-потребителей не обнаружил HTTP-вызовов рекомендаций. [Публичный поиск](../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts) использует Meilisearch и MongoDB hydration, без персонального recommendation scorer. Историческое время другого поискового пути здесь не используется.
 
 `find` принимает typed `userId`, `filter`, `country`, library include/only/exclude, excludeItemIds, candidateItemIds, isIncludingExcluded, direction и pagination. Читает профиль и сохранённый средний рейтинг сайта, затем передаёт расчёт ItemRepository. Страница по умолчанию 1, limit 20, максимум 100. Caller отвечает за доступ к указанной collection. При `candidateItemIds=[]` результат пуст; при отсутствии поля ранжируется весь подходящий каталог. Total точен относительно входного множества, а не любого внешнего каталога.
 
@@ -55,7 +55,7 @@ find(user,filters)
   → scores → полный sort → facet(items,total)
 ```
 
-Точки входа: [UserItemService](../../../src/endpoints/userItem/services/userItem.service.ts), [UserItemStatsService](../../../src/endpoints/userItem/services/userItemStats.service.ts), [пересчёт вкуса](../../../src/entities/userTasteProfile/services/userTasteProfileRecalculation.service.ts), [публикация профиля](../../../src/entities/userTasteProfile/services/userTasteProfile.repository.ts), [ItemRepository](../../../src/entities/item/services/item.repository.ts).
+Точки входа: [UserItemService](../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [UserItemStatsService](../../../src/endpoints/userItem/services/userItemStatsService/core/userItemStats.service.ts), [пересчёт вкуса](../../../src/entities/userTasteProfile/services/userTasteProfileRecalculation.service.ts), [публикация профиля](../../../src/entities/userTasteProfile/services/userTasteProfile.repository.ts), [ItemRepository](../../../src/entities/item/services/itemRepository/core/item.repository.ts).
 
 ### 2.3. Фактические формулы
 

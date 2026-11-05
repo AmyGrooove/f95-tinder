@@ -35,7 +35,7 @@ import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { ThrottlingModule } from "@infrastructure/throttling/throttling.module"
 
-import { AppController } from "./controllers/app.controller"
+import { AppController } from "./controllers/appController"
 
 @Module({
   imports: [

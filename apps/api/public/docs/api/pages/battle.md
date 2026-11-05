@@ -12,7 +12,7 @@
 | «Победитель остаётся», итог            | Нет отдельного контракта инструмента | Механика может выполняться на клиенте; необходимость серверных шагов и сохранения не выбрана                                            |
 | Сохранение относительных предпочтений  | Уточнить                             | Сценарий записи сравнений для рекомендаций ещё не определён                                                                             |
 
-Код источника коллекции: [CollectionReadController](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts), [CollectionContentService](../../../../src/endpoints/collection/services/collectionContent.service.ts).
+Код источника коллекции: [CollectionReadController](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [CollectionContentService](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts).
 
 ## Осталось
 

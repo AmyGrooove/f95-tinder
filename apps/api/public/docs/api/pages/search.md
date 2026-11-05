@@ -16,7 +16,7 @@
 
 ## Реализованный общий поиск
 
-[SearchController](../../../../src/endpoints/search/controllers/search.controller.ts) и [SiteSearchService](../../../../src/endpoints/search/services/siteSearch.service.ts) подключены через SearchEndpointModule в AppModule.
+[SearchController](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) и [SiteSearchService](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts) подключены через SearchEndpointModule в AppModule.
 
 `QUERY /search` принимает JSON-объект и возвращает `Accept-Query: application/json`, `Cache-Control: no-store`. К маршруту применяются общая защита от частых запросов и CSRF-проверка QUERY.
 

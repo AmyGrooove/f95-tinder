@@ -18,7 +18,7 @@
 
 ## Реализованное публичное чтение (`ITEM-01`)
 
-Согласовано и реализовано 25 октября 2026 года: [ItemController.getById](../../../../src/endpoints/item/controllers/item.controller.ts), [ItemService](../../../../src/endpoints/item/services/item.service.ts), [ItemResponseDto](../../../../src/endpoints/item/dto/response/item.response.ts). ItemEndpointModule подключён к AppModule.
+Согласовано и реализовано 25 октября 2026 года: [ItemController.getById](../../../../src/endpoints/item/controllers/itemController/core/item.controller.ts), [ItemService](../../../../src/endpoints/item/services/itemService/core/item.service.ts), [ItemResponseDto](../../../../src/endpoints/item/dto/response/item.response.ts). ItemEndpointModule подключён к AppModule.
 
 `GET /items/:id` доступен гостю, не проверяет cookies и возвращает 200 с `Cache-Control: no-store`. Параметр — ObjectId Item: 24 hex-символа, регистр допускается любой. Некорректный ID даёт 400; отсутствующий или помеченный удалённым Item — одинаковый 404. Действуют общие HTTP-настройки и throttling (429).
 
@@ -44,7 +44,7 @@
 
 Пустые массивы возвращаются как []; неизвестные поля и неприменимые блоки возвращаются как null, отсутствующие переводы остаются null. Порядок aliases и media сохраняется из Item. Фон выбирается клиентом из screenshot: отдельного backdrop-типа нет. Франшизы и другие коллекции читаются отдельным QUERY /collections с itemIds; внешние ссылки, статистика, личные сведения, служебные даты и поля хранения в ответ не входят.
 
-[ItemRepository.findDetailsById](../../../../src/entities/item/services/item.repository.ts) выполняет одну агрегацию с проекциями и соединениями TagItem/Tag и ItemRelation/Item/Relation. Чтение не пишет в БД и не обращается к UserItem, UserCollection, ItemStats, Collection или источникам. DTO формируется явно в ItemService.
+[ItemRepository.findDetailsById](../../../../src/entities/item/services/itemRepository/core/item.repository.ts) выполняет одну агрегацию с проекциями и соединениями TagItem/Tag и ItemRelation/Item/Relation. Чтение не пишет в БД и не обращается к UserItem, UserCollection, ItemStats, Collection или источникам. DTO формируется явно в ItemService.
 
 ## Осталось
 
@@ -64,6 +64,6 @@
 
 Обновлённая HTTP-интеграционная suite остановилась в globalSetup: Docker runtime недоступен (`Could not find a working container runtime strategy`). Интеграционные проверки нового контракта ещё не выполнены. Результаты ниже относятся к прежнему контракту до удаления Feature.
 
-25 октября 2026 года прошли 32 unit-теста [ItemService](../../../../src/endpoints/item/__tests__/item.service.test.ts) и [ItemController](../../../../src/endpoints/item/__tests__/item.controller.test.ts), 42 [HTTP-интеграционных теста Item](../../../../src/endpoints/item/__tests__/item.controller.integration.test.ts) и 3 проверки общего тестового стенда после подключения ItemEndpointModule. Интеграции используют одноразовые MongoDB 8.0.17 и Redis 8.2.3, действующие HTTP-настройки и реальные агрегации репозитория.
+25 октября 2026 года прошли 32 unit-теста [ItemService](../../../../src/endpoints/item/services/itemService/__tests__/item.service.test.ts) и [ItemController](../../../../src/endpoints/item/controllers/itemController/__tests__/item.controller.test.ts), 42 [HTTP-интеграционных теста Item](../../../../src/endpoints/item/controllers/itemController/__tests__/item.controller.integration.test.ts) и 3 проверки общего тестового стенда после подключения ItemEndpointModule. Интеграции используют одноразовые MongoDB 8.0.17 и Redis 8.2.3, действующие HTTP-настройки и реальные агрегации репозитория.
 
 Проверены точный состав ответа и nullable-поля, типы и даты характеристик, прямые теги и их сортировка, направление связей с обеих сторон, fallback роли по языкам, удалённые и отсутствующие ссылки, порядок связей и 61 связь без обрезки, отсутствие рекурсии, 400/404, гостевой и авторизованный доступ, отсутствие изменений документов и личных утечек, повторное чтение после изменения/удаления, CORS, throttling и OpenAPI 3.2. TypeScript с тестами и ESLint прошли; при реализации также прошла сборка Nest/Rspack. Браузер, внешний proxy и рабочая БД не использовались.

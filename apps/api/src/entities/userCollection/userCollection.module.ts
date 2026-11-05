@@ -5,7 +5,7 @@ import {
   UserCollection,
   UserCollectionSchema,
 } from "./schemas/userCollection.schema"
-import { UserCollectionRepository } from "./services/userCollection.repository"
+import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 
 @Module({
   imports: [

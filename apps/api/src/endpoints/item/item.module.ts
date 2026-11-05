@@ -2,8 +2,8 @@ import { Module } from "@nestjs/common"
 
 import { ItemModule } from "@entities/item/item.module"
 
-import { ItemController } from "./controllers/item.controller"
-import { ItemService } from "./services/item.service"
+import { ItemController } from "@endpoints/item/controllers/itemController"
+import { ItemService } from "@endpoints/item/services/itemService"
 
 @Module({
   imports: [ItemModule],

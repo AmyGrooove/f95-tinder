@@ -11,13 +11,13 @@ import { MailModule } from "@infrastructure/mail/mail.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 
-import { AccountController } from "./controllers/account.controller"
-import { AccountSetupController } from "./controllers/accountSetup.controller"
-import { AccountEmailController } from "./controllers/accountEmail.controller"
-import { AccountCredentialsController } from "./controllers/accountCredentials.controller"
-import { AccountService } from "./services/account.service"
-import { AccountSetupService } from "./services/accountSetup.service"
-import { AccountEmailService } from "./services/accountEmail.service"
+import { AccountController } from "@endpoints/account/controllers/accountController"
+import { AccountSetupController } from "@endpoints/account/controllers/accountSetupController"
+import { AccountEmailController } from "@endpoints/account/controllers/accountEmailController"
+import { AccountCredentialsController } from "@endpoints/account/controllers/accountCredentialsController"
+import { AccountService } from "@endpoints/account/services/accountService"
+import { AccountSetupService } from "@endpoints/account/services/accountSetupService"
+import { AccountEmailService } from "@endpoints/account/services/accountEmailService"
 
 @Module({
   imports: [

@@ -1,16 +1,12 @@
 import type { Types } from "mongoose"
 
 import type { EItemType } from "../schemas/EItemType"
-import type { EItemField } from "../schemas/EItemField"
+import type { TItemFieldFilter } from "./TItemFieldFilter"
 
 interface IItemFilter {
   types?: readonly EItemType[]
   tagIds?: readonly Types.ObjectId[]
-  fields?: readonly {
-    field: EItemField
-    min?: number | Date
-    max?: number | Date
-  }[]
+  fields?: readonly TItemFieldFilter[]
   ratingMin?: number
   ratingMax?: number
 }

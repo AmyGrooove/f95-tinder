@@ -5,7 +5,7 @@ import {
   ItemCollection,
   ItemCollectionSchema,
 } from "./schemas/itemCollection.schema"
-import { ItemCollectionRepository } from "./services/itemCollection.repository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 
 @Module({
   imports: [

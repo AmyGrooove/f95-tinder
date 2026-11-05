@@ -11,7 +11,7 @@
 | Пропуск и переход к следующему          | Нет контракта подбора | POST /userItems/skip создаёт исключение на 90 дней; интеграция пропуска и клиентских исключений в подбор ещё не реализована     |
 | Подбор до 25 разных произведений        | Нет готового сценария | Клиент хранит ID и счётчик, сервер выдаёт рекомендации по условиям и исключениям; HTTP-контракт и восстановление ещё уточняются |
 
-Код записи: [UserItemController](../../../../src/endpoints/userItem/controllers/userItem.controller.ts), [UserItemService](../../../../src/endpoints/userItem/services/userItem.service.ts). Временный пропуск хранится в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts).
+Код записи: [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts), [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts). Временный пропуск хранится в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts).
 
 ## Осталось
 

@@ -11,7 +11,7 @@
 | Карточка и краткий просмотр         | Нет самостоятельного чтения | Нужны публичные данные произведения `ITEM-01/03`                                                |
 | Пропуск, порядок и восстановление   | Уточнить                    | Пока не определены правила очереди и необходимость серверного хранения                          |
 
-Код сохранения: [UserItemController](../../../../src/endpoints/userItem/controllers/userItem.controller.ts) и [UserItemService](../../../../src/endpoints/userItem/services/userItem.service.ts). Мутация рейтинга сама по себе не ограничена completed: это условие источника инструмента, а не повод менять общий контракт оценки.
+Код сохранения: [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) и [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts). Мутация рейтинга сама по себе не ограничена completed: это условие источника инструмента, а не повод менять общий контракт оценки.
 
 ## Осталось
 

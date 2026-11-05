@@ -9,9 +9,9 @@ import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserModule } from "@entities/user/user.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 
-import { UserItemController } from "./controllers/userItem.controller"
-import { UserItemService } from "./services/userItem.service"
-import { UserItemStatsService } from "./services/userItemStats.service"
+import { UserItemController } from "@endpoints/userItem/controllers/userItemController"
+import { UserItemService } from "@endpoints/userItem/services/userItemService"
+import { UserItemStatsService } from "@endpoints/userItem/services/userItemStatsService"
 
 @Module({
   imports: [

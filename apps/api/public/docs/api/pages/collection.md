@@ -15,7 +15,7 @@
 | `PATCH /collections/:id/hidden`   | Личное скрытие, без запрета прямого чтения                                                                                                 |
 | `DELETE /collections/:id`         | Мягкое удаление автором; операция редактора также доступна отсюда                                                                          |
 
-Код: [CollectionReadController](../../../../src/endpoints/collection/controllers/collectionRead.controller.ts), [CollectionContentService](../../../../src/endpoints/collection/services/collectionContent.service.ts), [CollectionService](../../../../src/endpoints/collection/services/collection.service.ts), [CollectionUserService](../../../../src/endpoints/collection/services/collectionUser.service.ts).
+Код: [CollectionReadController](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [CollectionContentService](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts), [CollectionService](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [CollectionUserService](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts).
 
 Чтение состава публичное: возвращает только Item и данные включения в подборку, без userItem. Cookie авторизации не проверяется. Краткий QUERY /userItems читает состояние по известным ID UserItem; для карточек состава, где доступны только ID Item, поиск личной записи по Item ещё нужен (LIB-01).
 

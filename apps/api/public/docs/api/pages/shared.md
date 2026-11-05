@@ -4,7 +4,7 @@
 
 ## Реализовано
 
-Все восемь операций [UserItemController](../../../../src/endpoints/userItem/controllers/userItem.controller.ts) вызывают [UserItemService](../../../../src/endpoints/userItem/services/userItem.service.ts):
+Все восемь операций [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) вызывают [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts):
 
 | Маршрут                                    | Покрываемое действие                                                                      |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
@@ -37,7 +37,7 @@ PATCH `/userItems/:id` принимает одно или несколько п�
 - [ ] `REC-01`: определить и реализовать общую рекомендательную выдачу.
 - [ ] `REC-02`: добавить чтение состояния через LIB-01 и применение исключений в будущих рекомендациях и явных фильтрах выдач.
 
-Исключения хранятся в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts): skipped удаляется через 90 дней, blocked бессрочный и может сохранять прежние данные. UserRecommendationState удалён из кода; показы не записываются. [UserItemService](../../../../src/endpoints/userItem/services/userItem.service.ts) не пересчитывает метрики произведения, профиль вкусов или журнал действий; задачи статистики и истории находятся в [произведении](item.md) и [профиле](profile.md).
+Исключения хранятся в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts): skipped удаляется через 90 дней, blocked бессрочный и может сохранять прежние данные. UserRecommendationState удалён из кода; показы не записываются. [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts) не пересчитывает метрики произведения, профиль вкусов или журнал действий; задачи статистики и истории находятся в [произведении](item.md) и [профиле](profile.md).
 
 ## Уточнить перед соответствующей реализацией
 

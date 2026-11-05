@@ -12,7 +12,7 @@
 | Созданные и избранные коллекции     | Нет выдачи | Реакции и чтение известной коллекции есть; список по автору/избранному отсутствует (`SEARCH-03`)                                         |
 | Последние действия и полная история | Нет        | Текущие мутации UserItem не записывают журнал этих действий; даты записи и массив попыток не заменяют историю оценок/статусов/избранного |
 
-Основание: [AccountService](../../../../src/endpoints/account/services/account.service.ts), [UserItemService](../../../../src/endpoints/userItem/services/userItem.service.ts), [collection endpoints](../../../../src/endpoints/collection).
+Основание: [AccountService](../../../../src/endpoints/account/services/accountService/core/account.service.ts), [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [collection endpoints](../../../../src/endpoints/collection).
 
 ## Осталось
 

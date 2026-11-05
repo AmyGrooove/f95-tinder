@@ -9,10 +9,10 @@ import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { SearchModule } from "@infrastructure/search/search.module"
 
-import { SearchController } from "./controllers/search.controller"
-import { SyncSearchJobHandler } from "./services/handlers/syncSearchJob.handler"
-import { SiteSearchService } from "./services/siteSearch.service"
-import { SearchSyncSchedulerService } from "./services/searchSyncScheduler.service"
+import { SearchController } from "@endpoints/search/controllers/searchController"
+import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
+import { SiteSearchService } from "@endpoints/search/services/siteSearchService"
+import { SearchSyncSchedulerService } from "@endpoints/search/services/searchSyncSchedulerService"
 
 @Module({
   imports: [

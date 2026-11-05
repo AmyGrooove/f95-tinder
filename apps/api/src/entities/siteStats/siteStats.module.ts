@@ -7,7 +7,7 @@ import {
   SiteRatingsStats,
   SiteRatingsStatsSchema,
 } from "./schemas/siteRatingsStats.schema"
-import { SiteRatingsStatsRepository } from "./services/siteRatingsStats.repository"
+import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 
 @Module({
   imports: [

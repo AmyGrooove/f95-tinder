@@ -16,7 +16,7 @@ All source paths below belong to `apps/api`. This map describes inspected produc
 
 [AppModule](../src/app/app.module.ts) imports config, logger, database, cache, throttling, scheduler, health and 16 entity modules. [HealthModule](../src/infrastructure/health/health.module.ts) additionally imports jobs, mail, search and storage, making their initialization part of the application graph. Removing a health dependency can therefore also change provider and worker startup.
 
-Product HTTP endpoints, application event handlers and cron use cases belong in `src/endpoints`, grouped under a suitable existing slice or a dedicated slice when none fits. `src/app` owns application composition, initialization and AppController with its status page, background routes and related helpers and assets. UserItem metric coordination lives in `src/endpoints/userItem/services/userItemStats.service.ts`.
+Product HTTP endpoints, application event handlers and cron use cases belong in `src/endpoints`, grouped under a suitable existing slice or a dedicated slice when none fits. `src/app` owns application composition, initialization and AppController with its status page, background routes and related helpers and assets. UserItem metric coordination lives in `src/endpoints/userItem/services/userItemStatsService/core/userItemStats.service.ts`.
 
 The old recommendation subsystem, taste profiles and tag-weight jobs were removed on 5 November 2026. Requirements and historical experiments remain in the recommendation plan and research documents; no replacement is implemented.
 

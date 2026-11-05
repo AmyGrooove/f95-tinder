@@ -10,13 +10,13 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { MailModule } from "@infrastructure/mail/mail.module"
 
-import { AuthController } from "./controllers/auth.controller"
-import { SessionController } from "./controllers/session.controller"
-import { PasswordResetController } from "./controllers/passwordReset.controller"
-import { AuthService } from "./services/auth.service"
-import { ConfirmationService } from "./services/confirmation.service"
-import { SessionService } from "./services/session.service"
-import { PasswordResetService } from "./services/passwordReset.service"
+import { AuthController } from "@endpoints/auth/controllers/authController"
+import { SessionController } from "@endpoints/auth/controllers/sessionController"
+import { PasswordResetController } from "@endpoints/auth/controllers/passwordResetController"
+import { AuthService } from "@endpoints/auth/services/authService"
+import { ConfirmationService } from "@endpoints/auth/services/confirmationService"
+import { SessionService } from "@endpoints/auth/services/sessionService"
+import { PasswordResetService } from "@endpoints/auth/services/passwordResetService"
 
 @Module({
   imports: [
