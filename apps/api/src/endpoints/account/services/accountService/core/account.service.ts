@@ -16,10 +16,10 @@ import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
 
-import type { WhoamiResponseDto } from "@endpoints/account/dto/response/whoami.response"
-import type { UsernameBodyDto } from "@endpoints/account/dto/body/username.body"
-import type { DisplayNameBodyDto } from "@endpoints/account/dto/body/displayName.body"
-import type { PasswordBodyDto } from "@endpoints/account/dto/body/password.body"
+import type { WhoamiResponseDto } from "../dto/whoami.response"
+import type { UsernameBodyDto } from "../dto/username.body"
+import type { DisplayNameBodyDto } from "../dto/displayName.body"
+import type { PasswordBodyDto } from "../dto/password.body"
 
 @Injectable()
 class AccountService {

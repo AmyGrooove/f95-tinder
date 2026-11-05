@@ -1,4 +1,8 @@
 import { describe, expect, it } from "@jest/globals"
+import sharp from "sharp"
+import { ItemRepository } from "@entities/item/services/itemRepository"
+import { EItemType } from "@entities/item/schemas/EItemType"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { Types } from "mongoose"
 
 import type { Collection } from "@entities/collection/schemas/collection.schema"
@@ -7,10 +11,192 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
-import type { CollectionResponseDto } from "@endpoints/collection/dto/response/collection.response"
+import type { CollectionResponseDto } from "@endpoints/collection/services/collectionService"
 import { createCollection } from "@endpoints/collection/__tests__/functions/createCollection"
 
 describe("CollectionController HTTP", () => {
+  it("сохраняет add, update, move и remove блоков и произведений одним запросом", async () => {
+    const { app, connection } = getTestApplication()
+    const {
+      owner,
+      collection,
+      first,
+      second,
+      firstGroupId,
+      secondGroupId,
+      textId,
+    } = await createCollection()
+    const added = await app
+      .get(ItemRepository)
+      .write.create({
+        type: EItemType.MOVIE,
+        title: { ru: "Новый фильм", en: null },
+      })
+    const groupId = new Types.ObjectId().toHexString()
+    const url = "/collections/" + collection.id
+    const response = await app.inject({
+      method: "PATCH",
+      url,
+      headers: owner.headers,
+      payload: {
+        version: 0,
+        blocks: {
+          add: [{ id: groupId, type: "group", title: { ru: "Новая группа" } }],
+          update: [{ id: textId, content: { ru: "Вступление" } }],
+          move: [{ id: groupId, beforeBlockId: textId }],
+          remove: [firstGroupId],
+        },
+        items: {
+          add: [{ itemId: added._id.toHexString(), groupId }],
+          update: [
+            { itemId: first._id.toHexString(), note: "  Новая заметка  " },
+          ],
+          move: [
+            {
+              itemId: first._id.toHexString(),
+              groupId,
+              beforeItemId: added._id.toHexString(),
+            },
+          ],
+          remove: [second._id.toHexString()],
+        },
+      },
+    })
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    const details = await app.inject({ method: "GET", url })
+    expect(details.json()).toMatchObject({
+      version: 1,
+      blocks: [
+        { id: groupId },
+        { id: textId, content: { ru: "Вступление" } },
+        { id: secondGroupId },
+      ],
+    })
+    expect(
+      await connection
+        .collection<ItemCollection>("ItemCollection")
+        .find({
+          collectionId: new Types.ObjectId(collection.id),
+        })
+        .sort({ position: 1 })
+        .toArray(),
+    ).toMatchObject([
+      {
+        item: first._id,
+        groupId: new Types.ObjectId(groupId),
+        position: 0,
+        note: "Новая заметка",
+      },
+      {
+        item: added._id,
+        groupId: new Types.ObjectId(groupId),
+        position: 1,
+        note: null,
+      },
+    ])
+  })
+
+  it("откатывает изменения при ссылке на удаляемый якорь", async () => {
+    const { app, connection } = getTestApplication()
+    const { owner, collection, first, second, secondGroupId } =
+      await createCollection()
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/collections/" + collection.id,
+      headers: owner.headers,
+      payload: {
+        version: 0,
+        title: { ru: "Не сохранять" },
+        items: {
+          move: [
+            {
+              itemId: first._id.toHexString(),
+              groupId: secondGroupId,
+              beforeItemId: second._id.toHexString(),
+            },
+          ],
+          remove: [second._id.toHexString()],
+        },
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect(
+      await connection
+        .collection("Collection")
+        .findOne({ _id: new Types.ObjectId(collection.id) }),
+    ).toMatchObject({
+      version: 0,
+      title: { ru: "Подборка" },
+    })
+    expect(await connection.collection("ItemCollection").countDocuments()).toBe(
+      2,
+    )
+  })
+
+  it("загружает и заменяет обложку автора через multipart", async () => {
+    const { app } = getTestApplication()
+    const { owner, collection } = await createCollection()
+    const outsider = await createAccount()
+    const image = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: "#123456" },
+    })
+      .png()
+      .toBuffer()
+    const boundary = "test-collection-poster"
+    const payload = Buffer.concat([
+      Buffer.from(
+        "--" +
+          boundary +
+          '\r\nContent-Disposition: form-data; name="file"; filename="poster.png"\r\nContent-Type: image/png\r\n\r\n',
+      ),
+      image,
+      Buffer.from("\r\n--" + boundary + "--\r\n"),
+    ])
+    const url = "/collections/" + collection.id
+    const upload = (headers: Record<string, string>, body = payload) =>
+      app.inject({
+        method: "PUT",
+        url: url + "/poster",
+        headers: {
+          ...headers,
+          "content-type": "multipart/form-data; boundary=" + boundary,
+        },
+        payload: body,
+      })
+    expect((await upload(outsider.headers)).statusCode).toBe(404)
+    expect(
+      (await upload(owner.headers, Buffer.from("--" + boundary + "--\r\n")))
+        .statusCode,
+    ).toBe(400)
+    const first = await upload(owner.headers)
+    expect(first.statusCode).toBe(204)
+    expect(first.body).toBe("")
+    const firstDetails = (
+      await app.inject({ method: "GET", url })
+    ).json<CollectionResponseDto>()
+    const firstPath = new URL(firstDetails.media[0]?.src ?? "").pathname.slice(
+      1,
+    )
+    expect(firstDetails.media).toEqual([
+      {
+        src: expect.stringContaining(
+          "/collections/" + collection.id + "/poster/",
+        ),
+        type: "poster",
+        language: null,
+      },
+    ])
+    expect(await app.get(StorageService).isExists(firstPath)).toBe(true)
+    expect((await upload(owner.headers)).statusCode).toBe(204)
+    const secondDetails = (
+      await app.inject({ method: "GET", url })
+    ).json<CollectionResponseDto>()
+    expect(secondDetails.media).toHaveLength(1)
+    expect(secondDetails.media[0]?.src).not.toBe(firstDetails.media[0]?.src)
+    expect(await app.get(StorageService).isExists(firstPath)).toBe(false)
+  })
+
   it("создаёт минимальную подборку с автором из cookie и значениями по умолчанию", async () => {
     const { app, connection } = getTestApplication()
     const { user, headers } = await createAccount()
@@ -23,10 +209,21 @@ describe("CollectionController HTTP", () => {
 
     expect(response.statusCode).toBe(201)
     expect(response.headers["cache-control"]).toBe("no-store")
-    const result = response.json<CollectionResponseDto>()
+    const created = response.json<{ id: string }>()
+    expect(created).toEqual({ id: expect.any(String) })
+    const read = await app.inject({
+      method: "GET",
+      url: "/collections/" + created.id,
+    })
+    expect(read.statusCode).toBe(200)
+    const result = read.json<CollectionResponseDto>()
     expect(result).toEqual({
       id: expect.any(String),
-      authorId: user._id.toHexString(),
+      author: {
+        id: user._id.toHexString(),
+        avatar: user.avatarUrl,
+        displayName: user.displayName,
+      },
       version: 0,
       type: "custom",
       title: { ru: null, en: "Collection" },
@@ -63,7 +260,7 @@ describe("CollectionController HTTP", () => {
       textId,
       secondGroupId,
     ])
-    expect(collection.authorId).toBe(owner.user._id.toHexString())
+    expect(collection.author?.id).toBe(owner.user._id.toHexString())
     expect(collection).not.toHaveProperty("items")
     const memberships = await connection
       .collection<ItemCollection>("ItemCollection")
@@ -94,6 +291,7 @@ describe("CollectionController HTTP", () => {
     { title: { ru: "Тест" }, authorId: "507f1f77bcf86cd799439011" },
     { title: { ru: "Тест" }, type: "invalid" },
     { title: { ru: "Тест" }, blocks: null },
+    { title: { ru: "Тест" }, media: [] },
     { title: { ru: "Тест" }, blocks: [{ type: "text", content: {} }] },
     {
       title: { ru: "Тест" },
@@ -179,25 +377,33 @@ describe("CollectionController HTTP", () => {
       payload: {
         version: 0,
         title: { en: "Updated" },
-        blockOrder: [secondGroupId, textId, firstGroupId],
-        upsertItems: [
-          {
-            itemId: first._id.toHexString(),
-            groupId: secondGroupId,
-            position: 3,
-          },
-        ],
-        removeItemIds: [second._id.toHexString()],
+        blocks: {
+          move: [
+            { id: secondGroupId, beforeBlockId: firstGroupId },
+            { id: textId, beforeBlockId: firstGroupId },
+          ],
+        },
+        items: {
+          move: [
+            {
+              itemId: first._id.toHexString(),
+              groupId: secondGroupId,
+              beforeItemId: null,
+            },
+          ],
+          remove: [second._id.toHexString()],
+        },
       },
     })
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(response.headers["cache-control"]).toBe("no-store")
-    expect(response.json()).toMatchObject({
-      version: 1,
-      title: { ru: null, en: "Updated" },
+    const read = await app.inject({
+      method: "GET",
+      url: "/collections/" + collection.id,
     })
     expect(
-      response.json<CollectionResponseDto>().blocks.map((block) => block.id),
+      read.json<CollectionResponseDto>().blocks.map((block) => block.id),
     ).toEqual([secondGroupId, textId, firstGroupId])
     expect(
       await connection
@@ -212,7 +418,7 @@ describe("CollectionController HTTP", () => {
     expect(memberships[0]).toMatchObject({
       item: first._id,
       groupId: new Types.ObjectId(secondGroupId),
-      position: 3,
+      position: 0,
       note: "Заметка",
     })
   })
@@ -228,14 +434,20 @@ describe("CollectionController HTTP", () => {
       headers: owner.headers,
       payload: {
         version: 0,
-        removeBlockIds: [firstGroupId],
-        upsertBlocks: [{ id: newId, type: "group" }],
-        blockOrder: [newId, textId, secondGroupId],
+        blocks: {
+          remove: [firstGroupId],
+          add: [{ id: newId, type: "group", beforeBlockId: textId }],
+        },
       },
     })
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    const read = await app.inject({
+      method: "GET",
+      url: "/collections/" + collection.id,
+    })
     expect(
-      response.json<CollectionResponseDto>().blocks.map((block) => block.id),
+      read.json<CollectionResponseDto>().blocks.map((block) => block.id),
     ).toEqual([newId, textId, secondGroupId])
     expect(
       await connection
@@ -254,8 +466,10 @@ describe("CollectionController HTTP", () => {
     { version: 0.5, media: [] },
     { version: 0, title: null },
     { version: 0, author: null },
-    { version: 0, blockOrder: [] },
-    { version: 0, upsertBlocks: [{ type: "group", id: "invalid" }] },
+    { version: 0, blocks: { move: [] } },
+    { version: 0, blocks: null },
+    { version: 0, items: { update: [{}] } },
+    { version: 0, blocks: { add: [{ type: "group", id: "invalid" }] } },
   ])(
     "отклоняет некорректное обновление без изменения БД: %j",
     async (payload) => {
@@ -289,7 +503,7 @@ describe("CollectionController HTTP", () => {
       payload: {
         version: 1,
         title: { ru: "Нельзя" },
-        removeItemIds: [first._id.toHexString()],
+        items: { remove: [first._id.toHexString()] },
       },
     })
     expect(response.statusCode).toBe(409)
@@ -317,17 +531,19 @@ describe("CollectionController HTTP", () => {
       }),
     )
     expect(responses.map((response) => response.statusCode).sort()).toEqual([
-      200, 409,
+      204, 409,
     ])
-    const success = responses.find((response) => response.statusCode === 200)
-    expect(success).toBeDefined()
+    const success = responses.findIndex(
+      (response) => response.statusCode === 204,
+    )
+    expect(responses[success]?.body).toBe("")
     expect(
       await connection
         .collection<Collection>("Collection")
         .findOne({ _id: new Types.ObjectId(collection.id) }),
     ).toMatchObject({
       version: 1,
-      title: success?.json<CollectionResponseDto>().title,
+      title: { ru: ["Первый", "Второй"][success] },
     })
   })
 
@@ -346,8 +562,8 @@ describe("CollectionController HTTP", () => {
       headers: owner.headers,
       payload: { version: 0, media: [] },
     })
-    expect(response.statusCode).toBe(200)
-    expect(response.json()).toMatchObject({ version: 1 })
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(
       await connection
         .collection("Collection")
@@ -416,17 +632,11 @@ describe("CollectionController HTTP", () => {
       headers: owner.headers,
       payload: {
         version: 0,
-        upsertItems: [
-          {
-            itemId: first._id.toHexString(),
-            groupId: firstGroupId,
-            position: 0,
-            note,
-          },
-        ],
+        items: { update: [{ itemId: first._id.toHexString(), note }] },
       },
     })
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(
       await connection.collection("ItemCollection").findOne({
         collectionId: new Types.ObjectId(collection.id),
@@ -445,13 +655,14 @@ describe("CollectionController HTTP", () => {
       payload: {
         version: 0,
         title: { ru: "Нельзя" },
-        upsertItems: [
-          {
-            itemId: new Types.ObjectId().toHexString(),
-            groupId: firstGroupId,
-            position: 0,
-          },
-        ],
+        items: {
+          add: [
+            {
+              itemId: new Types.ObjectId().toHexString(),
+              groupId: firstGroupId,
+            },
+          ],
+        },
       },
     })
     expect(response.statusCode).toBe(404)
@@ -491,11 +702,11 @@ describe("CollectionController HTTP", () => {
     const { collection, owner } = await createCollection()
     const favorite = await app.inject({
       method: "PATCH",
-      url: `/collections/${collection.id}/favorite`,
+      url: `/collections/${collection.id}/user`,
       headers: owner.headers,
       payload: { isFavorite: true },
     })
-    expect(favorite.statusCode).toBe(200)
+    expect(favorite.statusCode).toBe(204)
     const response = await app.inject({
       method: "DELETE",
       url: `/collections/${collection.id}`,

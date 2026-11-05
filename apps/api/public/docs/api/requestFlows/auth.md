@@ -20,7 +20,7 @@
 
 ## POST /auth/register
 
-Создаёт аккаунт без email/пароля и сразу открывает сессию. Доступ без авторизации; тело не требуется. Пример: `POST /auth/register` → `201 {"username":"quietfox042","accessCode":"AbCdEfGhIjKlMnOpQrStUvWxYz012345"}` и обе auth-cookies. Код в примере вымышленный.
+Создаёт аккаунт без email/пароля и сразу открывает сессию. Доступ без авторизации; тело не требуется. Пример: `POST /auth/register` → `204` без тела и обе auth-cookies.
 
 ```mermaid
 flowchart TD
@@ -33,14 +33,14 @@ flowchart TD
     end
     B --> C
     E -->|Commit| F["Установить обе cookies"]:::action
-    F --> G(["201: username и accessCode"]):::http
+    F --> G(["204: без тела"]):::http
 ```
 
 **Данные и проверки:** `UserRepository.createNew` генерирует логин/displayName и 24 случайных байта в виде 32-символьного base64url кода; хранит SHA-256 `accessCodeHash`. `AuthService.createSession` создаёт `UserSession` с userAgent, страной, сроком 120 дней и SHA-256 refresh-хешем. Другие сущности, включая UserSettings, этот поток не создаёт.
 
 **Согласованность и ошибки:** `AuthService.register` повторяет всю регистрацию при конфликте уникального username, максимум 10 попыток; затем 503. Другие ошибки не преобразуются в этот 503. При ошибке внутри транзакции User и UserSession откатываются вместе. Ответ отправляется после commit и установки cookies; фона нет. Ошибка отправки ответа после commit не удаляет созданный аккаунт. Общие 403/429 описаны выше.
 
-**Исходники:** [AuthController.register](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.register/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [ответ](../../../../src/endpoints/auth/dto/response/register.response.ts), общие репозитории и транзакции выше.
+**Исходники:** [AuthController.register](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.register/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), общие репозитории и транзакции выше.
 
 <a id="login"></a>
 
@@ -65,7 +65,7 @@ flowchart TD
 
 **Ошибки и ответ:** неизвестный логин, отсутствие пароля и неверный пароль дают одинаковый 401; DTO — 400, общие 403/429. Транзакции нет: HTTP ждёт сохранения сессии, затем устанавливает cookies. Фона нет; ошибка после сохранения сессии не откатывает её.
 
-**Исходники:** [AuthController.login](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.login/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginBodyDto](../../../../src/endpoints/auth/dto/body/login.body.ts).
+**Исходники:** [AuthController.login](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.login/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginBodyDto](../../../../src/endpoints/auth/services/authService/dto/login.body.ts).
 
 <a id="login-code"></a>
 
@@ -89,13 +89,13 @@ flowchart TD
 
 **Ошибки и ответ:** неверный код и аккаунт с паролем — одинаковый 401; формат/лишние поля — 400, общие 403/429. Транзакции и фона нет. HTTP ждёт сохранения сессии; ошибка после записи не удаляет её.
 
-**Исходники:** [AuthController.loginByCode](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.loginByCode/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginCodeBodyDto](../../../../src/endpoints/auth/dto/body/loginCode.body.ts), [UserRepository.findByAccessCode](../../../../src/entities/user/services/userRepository/core/user.repository.ts).
+**Исходники:** [AuthController.loginByCode](../../../../src/endpoints/auth/controllers/authController/core/auth.controller.ts), [AuthService.loginByCode/createSession](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginCodeBodyDto](../../../../src/endpoints/auth/services/authService/dto/loginCode.body.ts), [UserRepository.findByAccessCode](../../../../src/entities/user/services/userRepository/core/user.repository.ts).
 
 <a id="reissue-code"></a>
 
 ## PATCH /auth/login/code
 
-Перевыпускает секретный код до установки пароля. Требует access-cookie, действующую собственную сессию и текущий код. Пример: `{"accessCode":"AbCdEfGhIjKlMnOpQrStUvWxYz012345"}` → `200 {"accessCode":"ZyXwVuTsRqPoNmLkJiHgFeDcBa543210"}` и новые auth-cookies.
+Перевыпускает секретный код до установки пароля. Требует access-cookie, действующую собственную сессию и текущий код. Пример: `{"accessCode":"AbCdEfGhIjKlMnOpQrStUvWxYz012345"}` → `204` без тела и новые auth-cookies.
 
 ```mermaid
 flowchart TD
@@ -109,14 +109,14 @@ flowchart TD
     end
     B --> C
     F -->|Commit| G["Установить обе cookies"]:::action
-    G --> H(["200: новый accessCode"]):::http
+    G --> H(["204: без тела"]):::http
 ```
 
 **Данные и проверки:** `UserRepository.reissueAccessCode` атомарно проверяет userId, SHA-256 старого кода и `passwordHash:null`, записывает хеш нового случайного кода. `updateRefreshToken` проверяет принадлежность и явный срок текущей сессии, меняет refresh-хеш, expiresAt на 120 дней и lastRefreshedAt. Её id/userAgent/country сохраняются; `deleteOthers` удаляет все остальные сессии, включая истёкшие.
 
 **Ошибки и ответ:** неверный код, наличие пароля, отсутствующая/истёкшая сессия или JWT — 401; DTO — 400, общие 403/429. Проверка активной сессии здесь выполняется условной записью внутри транзакции, без отдельного предварительного чтения. Ошибка до commit откатывает все изменения; cookies меняются после commit. Параллельное использование старого кода не позволяет обоим запросам успешно заменить его. Фона нет.
 
-**Исходники:** [AccountCredentialsController.reissueCode](../../../../src/endpoints/account/controllers/accountCredentialsController/core/accountCredentials.controller.ts), [AuthService.reissueCode](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginCodeBodyDto](../../../../src/endpoints/auth/dto/body/loginCode.body.ts), [ответ](../../../../src/endpoints/auth/dto/response/loginCode.response.ts).
+**Исходники:** [AccountCredentialsController.reissueCode](../../../../src/endpoints/account/controllers/accountCredentialsController/core/accountCredentials.controller.ts), [AuthService.reissueCode](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), [LoginCodeBodyDto](../../../../src/endpoints/auth/services/authService/dto/loginCode.body.ts).
 
 <a id="logout"></a>
 
@@ -170,7 +170,7 @@ flowchart TD
 
 **Ответ и сбои:** MongoDB не изменяется, транзакции нет. HTTP ожидает `MailService.send` → `JobService.add`, но не доставку. Ошибка enqueue логируется, условно удаляется только подтверждение с тем же codeHash; cooldown остаётся, а ответ всё равно 204. Ошибка cleanup тоже только логируется. Ошибки Redis вне mail catch не скрываются. DTO — 400, общие 403/429. Принятый queue job не доказывает получение письма. Фоновый обработчик описан ниже.
 
-**Исходники:** [PasswordResetController.requestPasswordReset](../../../../src/endpoints/auth/controllers/passwordResetController/core/passwordReset.controller.ts), [PasswordResetService.requestReset](../../../../src/endpoints/auth/services/passwordResetService/core/passwordReset.service.ts), [PasswordResetBodyDto](../../../../src/endpoints/auth/dto/body/passwordReset.body.ts), [Lua и сроки](../../../../src/endpoints/auth/services/passwordResetService/static/PASSWORD_RESET.ts), [IPasswordReset](../../../../src/endpoints/auth/services/passwordResetService/types/IPasswordReset.ts).
+**Исходники:** [PasswordResetController.requestPasswordReset](../../../../src/endpoints/auth/controllers/passwordResetController/core/passwordReset.controller.ts), [PasswordResetService.requestReset](../../../../src/endpoints/auth/services/passwordResetService/core/passwordReset.service.ts), [PasswordResetBodyDto](../../../../src/endpoints/auth/services/passwordResetService/dto/passwordReset.body.ts), [Lua и сроки](../../../../src/endpoints/auth/services/passwordResetService/static/PASSWORD_RESET.ts), [IPasswordReset](../../../../src/endpoints/auth/services/passwordResetService/types/IPasswordReset.ts).
 
 <a id="confirm-password-reset"></a>
 
@@ -197,7 +197,7 @@ flowchart TD
 
 **Согласованность и ошибки:** после расходования кода `replacePassword` условно проверяет исходные userId/email/passwordHash. Затем в той же MongoDB-транзакции удаляются все сессии, включая истёкшие. Несовпадение состояния, неверный/истёкший/погашенный код — 400; общие 403/429. Ошибка БД откатывает пароль и удаление сессий вместе, но не восстанавливает Redis-код: требуется новый запрос сброса. Cookies очищаются только после commit, фона нет.
 
-**Исходники:** [PasswordResetController.confirmPasswordReset](../../../../src/endpoints/auth/controllers/passwordResetController/core/passwordReset.controller.ts), [PasswordResetService.confirmReset/consumeReset](../../../../src/endpoints/auth/services/passwordResetService/core/passwordReset.service.ts), [DTO](../../../../src/endpoints/auth/dto/body/confirmPasswordReset.body.ts), [ConfirmationService.consume](../../../../src/endpoints/auth/services/confirmationService/core/confirmation.service.ts), [CONFIRMATION_SCRIPT](../../../../src/endpoints/auth/services/confirmationService/static/CONFIRMATION_SCRIPT.ts), [UserRepository.replacePassword](../../../../src/entities/user/services/userRepository/core/user.repository.ts).
+**Исходники:** [PasswordResetController.confirmPasswordReset](../../../../src/endpoints/auth/controllers/passwordResetController/core/passwordReset.controller.ts), [PasswordResetService.confirmReset/consumeReset](../../../../src/endpoints/auth/services/passwordResetService/core/passwordReset.service.ts), [DTO](../../../../src/endpoints/auth/services/passwordResetService/dto/confirmPasswordReset.body.ts), [ConfirmationService.consume](../../../../src/endpoints/auth/services/confirmationService/core/confirmation.service.ts), [CONFIRMATION_SCRIPT](../../../../src/endpoints/auth/services/confirmationService/static/CONFIRMATION_SCRIPT.ts), [UserRepository.replacePassword](../../../../src/entities/user/services/userRepository/core/user.repository.ts).
 
 <a id="get-sessions"></a>
 
@@ -222,7 +222,7 @@ flowchart TD
 
 **Ошибки и ответ:** невалидный JWT, отсутствующий User или текущая сессия — 401; общий лимит — 429. HTTP ждёт обоих чтений и маппинга, cookies сохраняются.
 
-**Исходники:** [SessionController.getSessions](../../../../src/endpoints/auth/controllers/sessionController/core/session.controller.ts), [SessionService.getSessions](../../../../src/endpoints/auth/services/sessionService/core/session.service.ts), [UserSessionRepository.findActiveByUser](../../../../src/entities/userSession/services/userSessionRepository/core/userSession.repository.ts), [SessionResponseDto](../../../../src/endpoints/auth/dto/response/session.response.ts).
+**Исходники:** [SessionController.getSessions](../../../../src/endpoints/auth/controllers/sessionController/core/session.controller.ts), [SessionService.getSessions](../../../../src/endpoints/auth/services/sessionService/core/session.service.ts), [UserSessionRepository.findActiveByUser](../../../../src/entities/userSession/services/userSessionRepository/core/userSession.repository.ts), [SessionResponseDto](../../../../src/endpoints/auth/services/sessionService/dto/session.response.ts).
 
 <a id="delete-other-sessions"></a>
 

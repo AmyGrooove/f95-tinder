@@ -7,8 +7,10 @@ import { ItemRepository } from "@entities/item/services/itemRepository"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
-import type { CreateCollectionBodyDto } from "../../dto/body/createCollection.body"
-import type { CollectionResponseDto } from "../../dto/response/collection.response"
+import type {
+  CreateCollectionBodyDto,
+  CollectionResponseDto,
+} from "@endpoints/collection/services/collectionService"
 
 const createCollection = async (
   overrides: Partial<CreateCollectionBodyDto> = {},
@@ -61,6 +63,11 @@ const createCollection = async (
   })
   expect(response.statusCode).toBe(201)
 
+  const { id } = response.json<{ id: string }>()
+  expect(response.json()).toEqual({ id })
+  const details = await app.inject({ method: "GET", url: "/collections/" + id })
+  expect(details.statusCode).toBe(200)
+
   return {
     owner,
     first,
@@ -69,7 +76,7 @@ const createCollection = async (
     secondGroupId,
     textId,
     body,
-    collection: response.json<CollectionResponseDto>(),
+    collection: details.json<CollectionResponseDto>(),
   }
 }
 

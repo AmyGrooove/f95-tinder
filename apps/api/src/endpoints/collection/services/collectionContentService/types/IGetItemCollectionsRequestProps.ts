@@ -1,6 +1,6 @@
 import type { Types } from "mongoose"
 
-import type { ItemCollectionsBodyDto } from "@endpoints/collection/dto/body/itemCollections.body"
+import type { ItemCollectionsBodyDto } from "../dto/itemCollections.body"
 
 interface IGetItemCollectionsRequestProps {
   id: Types.ObjectId

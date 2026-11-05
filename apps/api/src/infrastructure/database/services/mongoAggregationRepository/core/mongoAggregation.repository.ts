@@ -8,7 +8,7 @@ class MongoAggregationRepository<
   async aggregate<TResult>(
     pipeline: PipelineStage[],
     options?: AggregateOptions,
-  ): Promise<TResult[]> {
+  ) {
     const results = await this.model
       .aggregate<TResult>(pipeline, options)
       .exec()

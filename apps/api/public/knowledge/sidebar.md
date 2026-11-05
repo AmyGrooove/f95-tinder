@@ -26,6 +26,12 @@
 - [Карта страниц](/product/pages/readme.md)
 - [Маскот Биски](/product/mascot/readme.md)
 
+Задачи и планы
+
+- [Открытые задачи](/todos/readme.md)
+- [Этапы backend](/todos/roadmap.md)
+- [Задачи по страницам](/todos/pages.md)
+
 Исследования и источники
 
 - [Рекомендательная система](/research/recommendationSystem.md)

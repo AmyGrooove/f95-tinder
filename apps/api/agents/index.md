@@ -4,7 +4,7 @@ All source paths below belong to `apps/api`. This map describes inspected produc
 
 | Read when changing                                                                           | Context                                 |
 | -------------------------------------------------------------------------------------------- | --------------------------------------- |
-| HTTP use cases, account flows, library mutations, collection behavior or Item detail reading | [Endpoint routes](endpoints.md)         |
+| HTTP use cases, account flows, library mutations, collection behavior or search | [Endpoint routes](endpoints.md)         |
 | Startup, module wiring, configuration, CORS, health, build commands                          | [Runtime and configuration](runtime.md) |
 | MongoDB entities, queries, transactions, pagination, cache or search                         | [Data access](data-access.md)           |
 | JWTs, authenticated request context, roles or throttling                                     | [Security](security.md)                 |
@@ -20,7 +20,7 @@ Product HTTP endpoints, application event handlers and cron use cases belong in 
 
 The old recommendation subsystem, taste profiles and tag-weight jobs were removed on 5 November 2026. Requirements and historical experiments remain in the recommendation plan and research documents; no replacement is implemented.
 
-The six product HTTP endpoint modules implement 19 account/auth routes, seven UserItem mutations, one summary QUERY, eleven collection routes, public GET /items/:id and QUERY /search, for 40 product routes in total. AppController additionally exposes the status page and background routes described in [runtime](runtime.md). Read [endpoint routes](endpoints.md) for task-specific controllers, services, repositories and invariants; [the endpoint catalog](../public/docs/api/endpoints.md) links every operation to its request-flow diagram, and [the API overview](../public/docs/api/readme.md) links the current contracts. General catalogue listing and recommendation HTTP routes are outside the current endpoint tree.
+The five product HTTP endpoint modules implement 19 account/auth routes, seven UserItem mutations, one summary QUERY, eight collection routes and public QUERY /search, for 36 product routes in total. AppController additionally exposes the status page and background routes described in [runtime](runtime.md). Read [endpoint routes](endpoints.md) for task-specific controllers, services, repositories and invariants; [the endpoint catalog](../public/docs/api/endpoints.md) links every operation to its request-flow diagram, and [the API overview](../public/docs/api/readme.md) links the current contracts. General catalogue listing and recommendation HTTP routes are outside the current endpoint tree.
 
 [Entities](../src/entities) contains 16 persistence slices. Use [data access](data-access.md) for repository APIs and [the entity inventory](../public/docs/api/entities.md) for fields and relationships. Item is the single catalogue entity, referenced directly by ObjectId. The `@entities/*` and `@endpoints/*` aliases are defined in [tsconfig.json](../tsconfig.json); entity barrels are absent. Target requirements and planned scope are in [product documentation](../public/docs/product/readme.md).
 

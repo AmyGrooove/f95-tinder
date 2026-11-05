@@ -1,3 +1,6 @@
+import { BadRequestException } from "@nestjs/common"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { UpdateCollectionReactionBodyDto } from "../dto/updateCollectionReaction.body"
 import { REGEX } from "@shared/static/REGEX"
 import {
   Body,
@@ -16,11 +19,10 @@ import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 
-import { UserCollectionResponseDto } from "@endpoints/collection/dto/response/userCollection.response"
-import { CollectionUserService } from "@endpoints/collection/services/collectionUserService"
-import { FavoriteBodyDto } from "@endpoints/collection/dto/body/favorite.body"
-import { RatingBodyDto } from "@endpoints/collection/dto/body/rating.body"
-import { HiddenBodyDto } from "@endpoints/collection/dto/body/hidden.body"
+import {
+  UserCollectionResponseDto,
+  CollectionUserService,
+} from "@endpoints/collection/services/collectionUserService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.collections)
 @ApiCookieAuth("accessCookie")
@@ -59,8 +61,8 @@ class CollectionUserController {
     return this.collectionUserService.getUser(accessToken, id)
   }
 
-  @Patch(":id/favorite")
-  @HttpCode(200)
+  @Patch(":id/user")
+  @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiParam({
     name: "id",
@@ -68,106 +70,34 @@ class CollectionUserController {
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
-    operationId: "CollectionUserController_updateFavorite",
-    summary: SWAGGER_DICTIONARY.collection.updateFavorite,
-    description: SWAGGER_DICTIONARY.collection.favoriteDescription,
-    response: {
-      status: 200,
-      type: UserCollectionResponseDto,
-      description: SWAGGER_DICTIONARY.collection.userResponse,
-    },
+    operationId: "CollectionUserController_updateReaction",
+    summary: "Изменить личную реакцию",
+    response: { status: 204, description: "Реакция сохранена" },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
+      { status: 409, description: DICTIONARY.collection.ownRatingForbidden },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],
   })
-  updateFavorite(
+  async updateReaction(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: FavoriteBodyDto,
+    @Body() reaction: UpdateCollectionReactionBodyDto,
   ) {
-    return this.collectionUserService.updateReaction(accessToken, {
-      id,
-      reaction: { isFavorite: body.isFavorite },
-    })
-  }
+    if (
+      reaction?.isFavorite === undefined &&
+      reaction?.rating === undefined &&
+      reaction?.isHidden === undefined
+    ) {
+      throw new BadRequestException(SWAGGER_DICTIONARY.common.invalidRequest)
+    }
 
-  @Patch(":id/rating")
-  @HttpCode(200)
-  @Header("Cache-Control", "no-store")
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
-  })
-  @ApiEndpoint({
-    operationId: "CollectionUserController_updateRating",
-    summary: SWAGGER_DICTIONARY.collection.updateRating,
-    description: SWAGGER_DICTIONARY.collection.ratingDescription,
-    response: {
-      status: 200,
-      type: UserCollectionResponseDto,
-      description: SWAGGER_DICTIONARY.collection.userResponse,
-    },
-    errors: [
-      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
-      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
-      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
-      { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
-      {
-        status: 409,
-        description: SWAGGER_DICTIONARY.collection.ownRatingForbidden,
-      },
-      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
-    ],
-  })
-  updateRating(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: RatingBodyDto,
-  ) {
-    return this.collectionUserService.updateReaction(accessToken, {
+    await this.collectionUserService.updateReaction(accessToken, {
       id,
-      reaction: { rating: body.rating },
-    })
-  }
-
-  @Patch(":id/hidden")
-  @HttpCode(200)
-  @Header("Cache-Control", "no-store")
-  @ApiParam({
-    name: "id",
-    type: String,
-    schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
-  })
-  @ApiEndpoint({
-    operationId: "CollectionUserController_updateHidden",
-    summary: SWAGGER_DICTIONARY.collection.updateHidden,
-    description: SWAGGER_DICTIONARY.collection.hiddenDescription,
-    response: {
-      status: 200,
-      type: UserCollectionResponseDto,
-      description: SWAGGER_DICTIONARY.collection.userResponse,
-    },
-    errors: [
-      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
-      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
-      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
-      { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
-      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
-    ],
-  })
-  updateHidden(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
-    @Body() body: HiddenBodyDto,
-  ) {
-    return this.collectionUserService.updateReaction(accessToken, {
-      id,
-      reaction: { isHidden: body.isHidden },
+      reaction,
     })
   }
 }

@@ -1,8 +1,10 @@
+import { createHash, randomBytes } from "node:crypto"
+import { Types } from "mongoose"
 import { expect } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
-import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
+import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
@@ -19,26 +21,38 @@ const createAccount = async (
       ...(ip === undefined ? {} : { "x-forwarded-for": ip }),
     },
   })
-  expect(response.statusCode).toBe(201)
+  expect(response.statusCode).toBe(204)
+  expect(response.body).toBe("")
 
-  const registration = response.json<RegisterResponseDto>()
+  const accessToken =
+    response.cookies.find(({ name }) => name === "__Host-accessToken")?.value ??
+    ""
+  const { sub, sessionId } = await app
+    .get(SecurityJwtService)
+    .verifyAccessToken(accessToken)
+  const userId = new Types.ObjectId(sub)
+  const accessCode = randomBytes(24).toString("base64url")
   const users = connection.collection<User>("User")
   const password = "Initial-password-123"
 
-  if (kind === "password") {
-    await users.updateOne(
-      { username: registration.username },
-      {
-        $set: {
-          email: `${registration.username}@example.test`,
-          passwordHash: await hashValue(password),
-          accessCodeHash: null,
-        },
-      },
-    )
-  }
-
-  const user = await users.findOne({ username: registration.username })
+  const user = await users.findOneAndUpdate(
+    { _id: userId },
+    {
+      $set:
+        kind === "password"
+          ? {
+              email: sub + "@example.test",
+              passwordHash: await hashValue(password),
+              accessCodeHash: null,
+            }
+          : {
+              accessCodeHash: createHash("sha256")
+                .update(accessCode)
+                .digest("hex"),
+            },
+    },
+    { returnDocument: "after" },
+  )
 
   if (user === null) {
     throw new Error("Зарегистрированный пользователь не найден")
@@ -46,7 +60,7 @@ const createAccount = async (
 
   const session = await connection
     .collection<UserSession>("UserSession")
-    .findOne({ user: user._id })
+    .findOne({ _id: new Types.ObjectId(sessionId), user: user._id })
 
   if (session === null) {
     throw new Error("Сессия зарегистрированного пользователя не найдена")
@@ -56,7 +70,7 @@ const createAccount = async (
     user,
     session,
     password,
-    accessCode: registration.accessCode,
+    accessCode,
     headers: {
       origin: "http://localhost",
       ...(ip === undefined ? {} : { "x-forwarded-for": ip }),

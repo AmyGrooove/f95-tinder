@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common"
+import { StorageModule } from "@infrastructure/storage/storage.module"
 
 import { CollectionModule } from "@entities/collection/collection.module"
 import { ItemCollectionModule } from "@entities/itemCollection/itemCollection.module"
@@ -25,6 +26,7 @@ import { SynchronizeTagCollectionsJobHandler } from "@endpoints/collection/servi
 @Module({
   imports: [
     CollectionModule,
+    StorageModule,
     ItemCollectionModule,
     ItemModule,
     UserModule,

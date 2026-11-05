@@ -3,6 +3,7 @@ import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
+import { UserRepository } from "@entities/user/services/userRepository"
 import { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
@@ -70,9 +71,7 @@ describe("AccountCredentialsController HTTP", () => {
           .toArray(),
       ).toEqual(beforeSessions)
       failure.mockRestore()
-      expect((await app.inject(request)).statusCode).toBe(
-        kind === "password" ? 204 : 200,
-      )
+      expect((await app.inject(request)).statusCode).toBe(204)
     },
   )
 
@@ -212,6 +211,16 @@ describe("AccountCredentialsController HTTP", () => {
       payload: { accessCode },
     })
     expect(otherLogin.statusCode).toBe(204)
+    const repository = app.get(UserRepository)
+    const reissueAccessCode = repository.reissueAccessCode.bind(repository)
+    let newAccessCode: string | undefined
+    jest
+      .spyOn(repository, "reissueAccessCode")
+      .mockImplementation(async (...args) => {
+        const result = await reissueAccessCode(...args)
+        newAccessCode = result.accessCode
+        return result
+      })
     const response = await app.inject({
       method: "PATCH",
       url: "/auth/login/code",
@@ -219,13 +228,14 @@ describe("AccountCredentialsController HTTP", () => {
       payload: { accessCode },
     })
 
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(response.headers["cache-control"]).toBe("no-store")
-    const result = response.json<{ accessCode: string }>()
-    expect(result).toEqual({
-      accessCode: expect.stringMatching(/^[A-Za-z0-9_-]{32}$/),
-    })
-    expect(result.accessCode).not.toBe(accessCode)
+    if (newAccessCode === undefined) {
+      throw new Error("Новый секретный код не создан")
+    }
+    expect(newAccessCode).toMatch(/^[A-Za-z0-9_-]{32}$/)
+    expect(newAccessCode).not.toBe(accessCode)
     expect(response.headers["set-cookie"]).toEqual(
       expect.arrayContaining([
         expect.stringMatching(
@@ -239,9 +249,7 @@ describe("AccountCredentialsController HTTP", () => {
     expect(
       await connection.collection<User>("User").findOne({ _id: user._id }),
     ).toMatchObject({
-      accessCodeHash: createHash("sha256")
-        .update(result.accessCode)
-        .digest("hex"),
+      accessCodeHash: createHash("sha256").update(newAccessCode).digest("hex"),
     })
     const sessions = await connection
       .collection<UserSession>("UserSession")
@@ -271,7 +279,7 @@ describe("AccountCredentialsController HTTP", () => {
       method: "POST",
       url: "/auth/login/code",
       headers,
-      payload: result,
+      payload: { accessCode: newAccessCode },
     })
     expect(newCode.statusCode).toBe(204)
   })

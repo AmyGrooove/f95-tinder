@@ -17,8 +17,10 @@ import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
-import { SessionResponseDto } from "@endpoints/auth/dto/response/session.response"
-import { SessionService } from "@endpoints/auth/services/sessionService"
+import {
+  SessionResponseDto,
+  SessionService,
+} from "@endpoints/auth/services/sessionService"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.sessions)

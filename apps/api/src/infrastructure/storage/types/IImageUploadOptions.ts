@@ -1,5 +1,7 @@
+import type { FastifyRequest } from "fastify"
+
 interface IImageUploadOptions {
-  path: string
+  path: string | ((request: FastifyRequest) => string)
 
   maxBytes?: number
   maxHeight?: number

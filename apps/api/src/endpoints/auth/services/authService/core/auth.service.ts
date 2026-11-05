@@ -18,10 +18,10 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 import { requestContext } from "@shared/functions/context/requestContext"
 
-import type { LoginCodeBodyDto } from "@endpoints/auth/dto/body/loginCode.body"
-import type { LoginBodyDto } from "@endpoints/auth/dto/body/login.body"
-import type { LoginCodeResponseDto } from "@endpoints/auth/dto/response/loginCode.response"
-import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
+import type { LoginCodeBodyDto } from "../dto/loginCode.body"
+import type { LoginBodyDto } from "../dto/login.body"
+import type { LoginCodeResponseDto } from "../dto/loginCode.response"
+import type { RegisterResponseDto } from "../dto/register.response"
 import type { ICreateAuthSessionProps } from "../types/ICreateAuthSessionProps"
 
 @Injectable()

@@ -3,7 +3,8 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-import type { ItemCollectionsResponseDto } from "@endpoints/collection/dto/response/itemCollections.response"
+import type { CollectionDisplayGroupResponseDto } from "../../../dto/collectionDisplayGroup.response"
+import type { CollectionDisplayTextResponseDto } from "../../../dto/collectionDisplayText.response"
 import type { ICreateCollectionDisplayBlocksProps } from "../types/ICreateCollectionDisplayBlocksProps"
 
 const createCollectionDisplayBlocks = ({
@@ -12,13 +13,17 @@ const createCollectionDisplayBlocks = ({
   page,
   limit,
   isFiltered,
-}: ICreateCollectionDisplayBlocksProps): ItemCollectionsResponseDto["displayBlocks"] => {
+}: ICreateCollectionDisplayBlocksProps): (
+  CollectionDisplayGroupResponseDto | CollectionDisplayTextResponseDto
+)[] => {
   const counts = new Map(
     groupCounts.map((group) => [group.groupId.toHexString(), group.total]),
   )
   const start = (page.page - 1) * limit
   const end = start + page.items.length
-  const displayBlocks: ItemCollectionsResponseDto["displayBlocks"] = []
+  const displayBlocks: (
+    CollectionDisplayGroupResponseDto | CollectionDisplayTextResponseDto
+  )[] = []
   let offset = 0
 
   for (const block of blocks) {

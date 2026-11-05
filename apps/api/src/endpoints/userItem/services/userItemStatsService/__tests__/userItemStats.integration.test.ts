@@ -10,7 +10,7 @@ import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
-import type { UserItemResponseDto } from "@endpoints/userItem/dto/response/userItem.response"
+import { readSavedUserItem } from "@endpoints/userItem/__tests__/functions/readSavedUserItem"
 
 describe("UserItemStats MongoDB HTTP", () => {
   let clientIndex = 0
@@ -37,8 +37,12 @@ describe("UserItemStats MongoDB HTTP", () => {
       headers: account.headers,
       payload: { itemId: String(itemId), status },
     })
-    expect(response.statusCode).toBe(201)
-    return { ...account, entry: response.json<UserItemResponseDto>() }
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    return {
+      ...account,
+      entry: await readSavedUserItem({ item: itemId, user: account.user._id }),
+    }
   }
   const patch = async (
     owner: Awaited<ReturnType<typeof createEntry>>,
@@ -50,8 +54,9 @@ describe("UserItemStats MongoDB HTTP", () => {
       headers: owner.headers,
       payload,
     })
-    expect(response.statusCode).toBe(200)
-    return response.json<UserItemResponseDto>()
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    return readSavedUserItem({ _id: new Types.ObjectId(owner.entry.id) })
   }
   const readItem = async (item: Types.ObjectId) => {
     return await getTestApplication()
@@ -177,7 +182,8 @@ describe("UserItemStats MongoDB HTTP", () => {
         headers: owner.headers,
         payload: { isCompleted: true },
       })
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
     }
     const beforeSite = await readSite()
     await patch(owner, { status: EUserItemStatus.BLOCKED })
@@ -231,7 +237,8 @@ describe("UserItemStats MongoDB HTTP", () => {
       headers: owner.headers,
       payload: { progress: 7, startedAt: "2026-10-01T00:00:00Z" },
     })
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(applyItem).not.toHaveBeenCalled()
     expect(applySite).not.toHaveBeenCalled()
     expect(await readItem(item._id)).toEqual(beforeItem)
@@ -250,12 +257,13 @@ describe("UserItemStats MongoDB HTTP", () => {
         headers: account.headers,
         payload: { itemId: String(item._id) },
       })
-      expect(created.statusCode).toBe(201)
+      expect(created.statusCode).toBe(204)
+      expect(created.body).toBe("")
       expect(await readItem(item._id)).toBeNull()
       expect(await readSite()).toBeNull()
       const removed = await app.inject({
         method: "DELETE",
-        url: `/userItems/${created.json<UserItemResponseDto>().id}`,
+        url: `/userItems/${(await readSavedUserItem({ item: item._id })).id}`,
         headers: account.headers,
       })
       expect(removed.statusCode).toBe(204)
@@ -380,7 +388,7 @@ describe("UserItemStats MongoDB HTTP", () => {
       ),
     )
     expect(responses.map((response) => response.statusCode)).toEqual([
-      201, 201, 201, 201,
+      204, 204, 204, 204,
     ])
     expect(
       await connection
@@ -418,7 +426,7 @@ describe("UserItemStats MongoDB HTTP", () => {
       ),
     )
     expect(responses.map((response) => response.statusCode)).toEqual([
-      200, 200, 200, 200,
+      204, 204, 204, 204,
     ])
     expect(await readSite()).toMatchObject({ sum: 27, count: 4, average: 6.75 })
   })
@@ -437,7 +445,7 @@ describe("UserItemStats MongoDB HTTP", () => {
         }),
       ),
     )
-    expect(responses.map((response) => response.statusCode)).toEqual([200, 200])
+    expect(responses.map((response) => response.statusCode)).toEqual([204, 204])
     expect(await readItem(item._id)).toMatchObject({
       ratingsCount: 1,
       ratingAverage: 9,

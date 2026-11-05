@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 
+import { Types } from "mongoose"
 import { describe, expect, it } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
@@ -11,7 +12,6 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
 
 describe("AuthController HTTP", () => {
   const expectAuthCookies = (
@@ -49,23 +49,10 @@ describe("AuthController HTTP", () => {
       },
     })
 
-    expect(response.statusCode).toBe(201)
+    expect(response.statusCode).toBe(204)
     expect(response.headers["cache-control"]).toBe("no-store")
-    const result = response.json<RegisterResponseDto>()
-    expect(result).toEqual({
-      username: expect.any(String),
-      accessCode: expect.stringMatching(/^[A-Za-z0-9_-]{32}$/),
-    })
+    expect(response.body).toBe("")
     expectAuthCookies(response.cookies)
-    const user = await connection
-      .collection<User>("User")
-      .findOne({ username: result.username })
-    expect(user).toMatchObject({
-      passwordHash: null,
-      accessCodeHash: createHash("sha256")
-        .update(result.accessCode)
-        .digest("hex"),
-    })
     const cookieHeader = response.cookies
       .map(({ name, value }) => `${name}=${value}`)
       .join("; ")
@@ -78,7 +65,14 @@ describe("AuthController HTTP", () => {
     const jwt = app.get(SecurityJwtService)
     const access = await jwt.verifyAccessToken(accessToken)
     const refresh = await jwt.verifyRefreshToken(refreshToken)
-    expect(access.sub).toBe(user?._id.toHexString())
+    const user = await connection
+      .collection<User>("User")
+      .findOne({ _id: new Types.ObjectId(access.sub) })
+    expect(user).toMatchObject({
+      username: expect.any(String),
+      passwordHash: null,
+      accessCodeHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    })
     expect(refresh).toMatchObject({
       sub: access.sub,
       sessionId: access.sessionId,
@@ -149,7 +143,7 @@ describe("AuthController HTTP", () => {
         },
       })
 
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
       const accessToken = response.cookies.find(
         ({ name }) => name === "__Host-accessToken",
       )?.value
@@ -498,7 +492,7 @@ describe("AuthController HTTP", () => {
   })
 
   it.each([
-    { url: "/auth/register", limit: 2, status: 201, payload: undefined },
+    { url: "/auth/register", limit: 2, status: 204, payload: undefined },
     {
       url: "/auth/login",
       limit: 5,

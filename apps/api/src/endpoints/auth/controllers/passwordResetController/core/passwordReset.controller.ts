@@ -14,9 +14,11 @@ import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { PasswordResetBodyDto } from "@endpoints/auth/dto/body/passwordReset.body"
-import { PasswordResetService } from "@endpoints/auth/services/passwordResetService"
-import { ConfirmPasswordResetBodyDto } from "@endpoints/auth/dto/body/confirmPasswordReset.body"
+import {
+  PasswordResetBodyDto,
+  PasswordResetService,
+  ConfirmPasswordResetBodyDto,
+} from "@endpoints/auth/services/passwordResetService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.passwordReset)
 @Controller("auth/password/reset")

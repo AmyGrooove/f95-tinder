@@ -11,7 +11,7 @@ import type { UserCollection } from "@entities/userCollection/schemas/userCollec
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import type { UserCollectionResponseDto } from "@endpoints/collection/dto/response/userCollection.response"
+import type { UserCollectionResponseDto } from "../dto/userCollection.response"
 import type { IUpdateCollectionReactionProps } from "../types/IUpdateCollectionReactionProps"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
 
@@ -43,7 +43,7 @@ class CollectionUserService {
   async updateReaction(
     accessToken: unknown,
     props: IUpdateCollectionReactionProps,
-  ): Promise<UserCollectionResponseDto> {
+  ) {
     const userId = await this.collectionAuthService.authenticate(accessToken)
     const collection = await this.collectionRepository.findNotDeletedAuthorById(
       props.id,
@@ -70,8 +70,6 @@ class CollectionUserService {
     if (isNil(reaction)) {
       throw new NotFoundException(DICTIONARY.collection.notFound)
     }
-
-    return this.mapResponse(reaction)
   }
 
   private mapResponse(

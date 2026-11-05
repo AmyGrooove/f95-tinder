@@ -15,10 +15,11 @@ import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
-import { LoginCodeBodyDto } from "@endpoints/auth/dto/body/loginCode.body"
-import { LoginBodyDto } from "@endpoints/auth/dto/body/login.body"
-import { AuthService } from "@endpoints/auth/services/authService"
+import {
+  LoginCodeBodyDto,
+  LoginBodyDto,
+  AuthService,
+} from "@endpoints/auth/services/authService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.auth)
 @Controller("auth")
@@ -147,6 +148,7 @@ class AuthController {
   }
 
   @Post("register")
+  @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 2, ttl: 60_000 } })
   @ApiEndpoint({
@@ -154,8 +156,7 @@ class AuthController {
     summary: SWAGGER_DICTIONARY.auth.register.summary,
     description: SWAGGER_DICTIONARY.auth.register.description,
     response: {
-      status: 201,
-      type: RegisterResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.auth.register.response,
       headers: {
         "Set-Cookie": {
@@ -179,12 +180,10 @@ class AuthController {
   async register(
     @Headers("user-agent") userAgent: string | undefined,
     @Res({ passthrough: true }) reply: unknown,
-  ): Promise<RegisterResponseDto> {
-    const result = await this.authService.register(userAgent)
+  ) {
+    const { tokens } = await this.authService.register(userAgent)
 
-    this.securityCookieService.setAuthCookies(reply, result.tokens)
-
-    return result.response
+    this.securityCookieService.setAuthCookies(reply, tokens)
   }
 }
 

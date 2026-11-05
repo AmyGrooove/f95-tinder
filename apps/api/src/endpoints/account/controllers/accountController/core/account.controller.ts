@@ -12,10 +12,12 @@ import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { DisplayNameBodyDto } from "@endpoints/account/dto/body/displayName.body"
-import { UsernameBodyDto } from "@endpoints/account/dto/body/username.body"
-import { WhoamiResponseDto } from "@endpoints/account/dto/response/whoami.response"
-import { AccountService } from "@endpoints/account/services/accountService"
+import {
+  DisplayNameBodyDto,
+  UsernameBodyDto,
+  WhoamiResponseDto,
+  AccountService,
+} from "@endpoints/account/services/accountService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.account)
 @Controller("account")

@@ -27,7 +27,7 @@ import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExcepti
 import { LoggerService } from "@infrastructure/logger/services/loggerService"
 
 import { UserItemController } from "../core/userItem.controller"
-import type { UserItemResponseDto } from "@endpoints/userItem/dto/response/userItem.response"
+import type { UserItemResponseDto } from "@endpoints/userItem/services/userItemService"
 import { UserItemService } from "@endpoints/userItem/services/userItemService"
 
 describe("UserItemController", () => {
@@ -112,16 +112,24 @@ describe("UserItemController", () => {
     expect(
       document.components?.schemas?.UserItemSummaryResponseDto,
     ).not.toHaveProperty("properties.note")
-    for (const name of [
-      "CreateAttemptBodyDto",
-      "UpdateAttemptBodyDto",
-      "AttemptResponseDto",
-    ]) {
+    for (const name of ["CreateAttemptBodyDto", "UpdateAttemptBodyDto"]) {
       expect(document.components?.schemas?.[name]).toMatchObject({
         properties: {
           unit: { enum: [EUnit.MINUTE, EUnit.PERCENT, EUnit.EPISODE] },
         },
       })
+    }
+    for (const [path, method] of [
+      ["/userItems", "post"],
+      ["/userItems/skip", "post"],
+      ["/userItems/block", "post"],
+      ["/userItems/{id}", "patch"],
+      ["/userItems/{id}/attempts", "post"],
+      ["/userItems/{id}/attempts/{attemptId}", "patch"],
+    ] as const) {
+      const response = document.paths[path]?.[method]?.responses?.["204"]
+      expect(response).toBeDefined()
+      expect(response).not.toHaveProperty("content")
     }
   })
 
@@ -245,7 +253,7 @@ describe("UserItemController", () => {
     await app?.close()
   })
 
-  it("добавляет произведение через POST и возвращает 201 с записью и запретом кеширования", async () => {
+  it("добавляет произведение через POST и возвращает 204 без тела с запретом кеширования", async () => {
     const payload = { itemId, status: EUserItemStatus.PLANNED }
     const response = await app.inject({
       method: "POST",
@@ -254,9 +262,9 @@ describe("UserItemController", () => {
       payload,
     })
 
-    expect(response.statusCode).toBe(201)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(response.headers["cache-control"]).toBe("no-store")
-    expect(response.json()).toEqual(result)
     expect(service.create).toHaveBeenCalledTimes(1)
     expect(service.create).toHaveBeenCalledWith("access-token", payload)
   })
@@ -297,9 +305,9 @@ describe("UserItemController", () => {
         payload,
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual(result)
       expect(service.update).toHaveBeenCalledTimes(1)
       expect(service.update).toHaveBeenCalledWith("access-token", {
         id: new Types.ObjectId(id),
@@ -343,7 +351,7 @@ describe("UserItemController", () => {
       completedAt: null,
     },
   ] as const)(
-    "передаёт данные попытки %j и возвращает 201",
+    "передаёт данные попытки %j и возвращает 204",
     async (payload) => {
       const response = await app.inject({
         method: "POST",
@@ -352,9 +360,9 @@ describe("UserItemController", () => {
         payload,
       })
 
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual(result)
       expect(service.createAttempt).toHaveBeenCalledTimes(1)
       expect(service.createAttempt).toHaveBeenCalledWith("access-token", {
         id: new Types.ObjectId(id),
@@ -382,9 +390,9 @@ describe("UserItemController", () => {
         payload,
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual(result)
       expect(service.updateAttempt).toHaveBeenCalledTimes(1)
       expect(service.updateAttempt).toHaveBeenCalledWith("access-token", {
         id: new Types.ObjectId(id),
@@ -724,7 +732,7 @@ describe("UserItemController", () => {
   )
 
   it.each(["skip", "block"] as const)(
-    "создаёт исключение через %s с кодом 201 и запретом кеширования",
+    "создаёт исключение через %s с кодом 204 и запретом кеширования",
     async (operation) => {
       const exclusion = {
         ...result,
@@ -743,9 +751,9 @@ describe("UserItemController", () => {
         headers,
         payload: { itemId },
       })
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual(exclusion)
       expect(service[operation]).toHaveBeenCalledWith("access-token", {
         itemId,
       })

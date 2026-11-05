@@ -3,7 +3,7 @@ import type { ICollectionGroupCount } from "@entities/itemCollection/services/it
 import type { IPagePaginationResult } from "@infrastructure/database/types/IPaginationResult"
 import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 
-import type { ItemCollectionResponseDto } from "@endpoints/collection/dto/response/itemCollection.response"
+import type { ItemCollectionResponseDto } from "../../../dto/itemCollection.response"
 
 interface ICreateCollectionDisplayBlocksProps {
   blocks: CollectionBlock[]

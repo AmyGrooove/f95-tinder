@@ -40,7 +40,7 @@ class MongoTransactionService {
   async run<TResult>(
     callback: (session: ClientSession) => Promise<TResult>,
     options?: Parameters<ClientSession["withTransaction"]>[1],
-  ): Promise<TResult> {
+  ) {
     const session = await this.connection.startSession()
 
     try {

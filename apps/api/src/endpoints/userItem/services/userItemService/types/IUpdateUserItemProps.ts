@@ -1,6 +1,6 @@
 import type { Types } from "mongoose"
 
-import type { UpdateUserItemBodyDto } from "@endpoints/userItem/dto/body/updateUserItem.body"
+import type { UpdateUserItemBodyDto } from "../dto/updateUserItem.body"
 
 interface IUpdateUserItemProps {
   id: Types.ObjectId

@@ -1,6 +1,6 @@
 import { isString } from '../../isString'
 
-const isEmptyString = (value: unknown): boolean => {
+const isEmptyString = (value: unknown) => {
   return isString(value) && value.trim().length === 0
 }
 

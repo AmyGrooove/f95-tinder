@@ -1,3 +1,11 @@
+import {
+  DeleteObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3ServiceException,
+} from "@aws-sdk/client-s3"
+import { STORAGE_CLIENT } from "@infrastructure/storage/static/STORAGE_CLIENT"
 import { APP_FILTER } from "@nestjs/core"
 import { getConnectionToken } from "@nestjs/mongoose"
 import {
@@ -12,7 +20,6 @@ import { CollectionEndpointModule } from "@endpoints/collection/collection.modul
 import { TagCollectionsInitializationService } from "@endpoints/collection/services/tagCollectionsInitializationService"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
-import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
@@ -73,13 +80,45 @@ const createTestApplication = async (search?: {
     const authRedis = await redisEnvironment.connect()
     const accountRedis = await redisEnvironment.connect()
 
+    const objects = new Map<string, number>()
+    const storageClient = {
+      send: async (command: unknown) => {
+        if (command instanceof HeadBucketCommand) {
+          return {}
+        }
+        if (
+          command instanceof PutObjectCommand &&
+          command.input.Key &&
+          Buffer.isBuffer(command.input.Body)
+        ) {
+          objects.set(command.input.Key, command.input.Body.length)
+          return {}
+        }
+        if (command instanceof HeadObjectCommand && command.input.Key) {
+          const size = objects.get(command.input.Key)
+          if (size === undefined) {
+            throw new S3ServiceException({
+              name: "NotFound",
+              $fault: "client",
+              $metadata: { httpStatusCode: 404 },
+            })
+          }
+          return { ContentLength: size }
+        }
+        if (command instanceof DeleteObjectCommand && command.input.Key) {
+          objects.delete(command.input.Key)
+          return {}
+        }
+        throw new Error("Неожиданная команда тестового S3")
+      },
+    }
+
     const moduleRef = await Test.createTestingModule({
       imports: [
         AuthModule,
         AccountModule,
         UserItemEndpointModule,
         CollectionEndpointModule,
-        ItemEndpointModule,
         ...(search === undefined ? [] : [SearchEndpointModule]),
         LoggerModule,
         ThrottlingModule,
@@ -88,6 +127,8 @@ const createTestApplication = async (search?: {
     })
       .overrideModule(MailModule)
       .useModule(TestMailModule)
+      .overrideProvider(STORAGE_CLIENT)
+      .useValue(storageClient)
       .overrideProvider(TagCollectionsInitializationService)
       .useValue({})
       .overrideProvider(infrastructureConfiguration.KEY)

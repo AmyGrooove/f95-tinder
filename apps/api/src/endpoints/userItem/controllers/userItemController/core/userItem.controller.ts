@@ -17,17 +17,18 @@ import { Types } from "mongoose"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { CreateUserItemBodyDto } from "@endpoints/userItem/dto/body/createUserItem.body"
-import { CreateExclusionBodyDto } from "@endpoints/userItem/dto/body/createExclusion.body"
-import { UpdateUserItemBodyDto } from "@endpoints/userItem/dto/body/updateUserItem.body"
-import { CreateAttemptBodyDto } from "@endpoints/userItem/dto/body/createAttempt.body"
-import { UpdateAttemptBodyDto } from "@endpoints/userItem/dto/body/updateAttempt.body"
-import { UserItemResponseDto } from "@endpoints/userItem/dto/response/userItem.response"
+import {
+  CreateUserItemBodyDto,
+  CreateExclusionBodyDto,
+  UpdateUserItemBodyDto,
+  CreateAttemptBodyDto,
+  UpdateAttemptBodyDto,
+  UserItemService,
+  QueryUserItemsBodyDto,
+  UserItemSummaryResponseDto,
+} from "@endpoints/userItem/services/userItemService"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { UserItemService } from "@endpoints/userItem/services/userItemService"
 import { USER_ITEM_ERRORS } from "../static/USER_ITEM_ERRORS"
-import { QueryUserItemsBodyDto } from "@endpoints/userItem/dto/body/queryUserItems.body"
-import { UserItemSummaryResponseDto } from "@endpoints/userItem/dto/response/userItemSummary.response"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.userItems)
 @ApiCookieAuth("accessCookie")
@@ -61,70 +62,67 @@ class UserItemController {
   }
 
   @Post()
-  @HttpCode(201)
+  @HttpCode(204)
   @ApiEndpoint({
     operationId: "UserItemController_create",
     summary: SWAGGER_DICTIONARY.userItem.create,
     description: SWAGGER_DICTIONARY.userItem.createDescription,
     response: {
-      status: 201,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  create(
+  async create(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Body() body: CreateUserItemBodyDto,
   ) {
-    return this.userItemService.create(accessToken, body)
+    await this.userItemService.create(accessToken, body)
   }
 
   @Post("skip")
-  @HttpCode(201)
+  @HttpCode(204)
   @ApiEndpoint({
     operationId: "UserItemController_skip",
     summary: SWAGGER_DICTIONARY.userItem.skip,
     description: SWAGGER_DICTIONARY.userItem.skipDescription,
     response: {
-      status: 201,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  skip(
+  async skip(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Body() body: CreateExclusionBodyDto,
   ) {
-    return this.userItemService.skip(accessToken, body)
+    await this.userItemService.skip(accessToken, body)
   }
 
   @Post("block")
-  @HttpCode(201)
+  @HttpCode(204)
   @ApiEndpoint({
     operationId: "UserItemController_block",
     summary: SWAGGER_DICTIONARY.userItem.block,
     description: SWAGGER_DICTIONARY.userItem.blockDescription,
     response: {
-      status: 201,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  block(
+  async block(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Body() body: CreateExclusionBodyDto,
   ) {
-    return this.userItemService.block(accessToken, body)
+    await this.userItemService.block(accessToken, body)
   }
 
   @Patch(":id")
-  @HttpCode(200)
+  @HttpCode(204)
   @ApiParam({
     name: "id",
     type: String,
@@ -135,19 +133,18 @@ class UserItemController {
     summary: SWAGGER_DICTIONARY.userItem.update,
     description: SWAGGER_DICTIONARY.userItem.partialUpdate,
     response: {
-      status: 200,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  update(
+  async update(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: UpdateUserItemBodyDto,
   ) {
-    return this.userItemService.update(accessToken, { id, body })
+    await this.userItemService.update(accessToken, { id, body })
   }
 
   @Delete(":id")
@@ -176,7 +173,7 @@ class UserItemController {
   }
 
   @Post(":id/attempts")
-  @HttpCode(201)
+  @HttpCode(204)
   @ApiParam({
     name: "id",
     type: String,
@@ -187,23 +184,22 @@ class UserItemController {
     summary: SWAGGER_DICTIONARY.userItem.createAttempt,
     description: SWAGGER_DICTIONARY.userItem.createAttemptDescription,
     response: {
-      status: 201,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  createAttempt(
+  async createAttempt(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Body() body: CreateAttemptBodyDto,
   ) {
-    return this.userItemService.createAttempt(accessToken, { id, body })
+    await this.userItemService.createAttempt(accessToken, { id, body })
   }
 
   @Patch(":id/attempts/:attemptId")
-  @HttpCode(200)
+  @HttpCode(204)
   @ApiParam({
     name: "id",
     type: String,
@@ -219,20 +215,19 @@ class UserItemController {
     summary: SWAGGER_DICTIONARY.userItem.updateAttempt,
     description: SWAGGER_DICTIONARY.userItem.updateAttemptDescription,
     response: {
-      status: 200,
-      type: UserItemResponseDto,
+      status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
     },
     errors: USER_ITEM_ERRORS,
   })
   @Header("Cache-Control", "no-store")
-  updateAttempt(
+  async updateAttempt(
     @Cookies("__Host-accessToken") accessToken: unknown,
     @Param("id", MongoObjectIdHandler) id: Types.ObjectId,
     @Param("attemptId", MongoObjectIdHandler) attemptId: Types.ObjectId,
     @Body() body: UpdateAttemptBodyDto,
   ) {
-    return this.userItemService.updateAttempt(accessToken, {
+    await this.userItemService.updateAttempt(accessToken, {
       id,
       attemptId,
       body,

@@ -1,3 +1,5 @@
 export { PasswordResetService } from "./core/passwordReset.service"
 export { PASSWORD_RESET } from "./static/PASSWORD_RESET"
 export type { IPasswordReset } from "./types/IPasswordReset"
+export { PasswordResetBodyDto } from "./dto/passwordReset.body"
+export { ConfirmPasswordResetBodyDto } from "./dto/confirmPasswordReset.body"

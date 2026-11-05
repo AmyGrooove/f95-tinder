@@ -4,10 +4,14 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common"
 import { Types } from "mongoose"
-import type { HydratedDocument } from "mongoose"
+import type { ClientSession, HydratedDocument } from "mongoose"
 
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import { StorageService } from "@infrastructure/storage/services/storageService"
+import { UserRepository } from "@entities/user/services/userRepository"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
@@ -22,17 +26,13 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
-import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 
-import type { CollectionResponseDto } from "@endpoints/collection/dto/response/collection.response"
-import type { CreateCollectionBodyDto } from "@endpoints/collection/dto/body/createCollection.body"
-import type { CreateBlockBodyDto } from "@endpoints/collection/dto/body/createBlock.body"
-import type { UpdateCollectionBodyDto } from "@endpoints/collection/dto/body/updateCollection.body"
+import type { CollectionResponseDto } from "../dto/collection.response"
+import type { CreateCollectionBodyDto } from "../dto/createCollection.body"
+import type { CreateBlockBodyDto } from "../dto/createBlock.body"
+import type { UpdateCollectionBodyDto } from "../dto/updateCollection.body"
 import type { IUpdateCollectionRequestProps } from "../types/IUpdateCollectionRequestProps"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
-import type { QueryCollectionsBodyDto } from "@endpoints/collection/dto/body/queryCollections.body"
-import type { QueryCollectionsResponseDto } from "@endpoints/collection/dto/response/queryCollections.response"
 
 @Injectable()
 class CollectionService {
@@ -42,41 +42,9 @@ class CollectionService {
     private readonly itemRepository: ItemRepository,
     private readonly collectionAuthService: CollectionAuthService,
     private readonly transactionService: MongoTransactionService,
+    private readonly userRepository: UserRepository,
+    private readonly storageService: StorageService,
   ) {}
-
-  async query(
-    body: QueryCollectionsBodyDto,
-  ): Promise<QueryCollectionsResponseDto> {
-    const { page, limit } = normalizePagination(body)
-
-    if (!Number.isSafeInteger((page - 1) * limit)) {
-      throw new BadRequestException(DICTIONARY.collection.invalidPagination)
-    }
-
-    const result = await this.collectionRepository.querySummaries({
-      page,
-      limit,
-      itemIds: body.itemIds?.map((id) => new Types.ObjectId(id)),
-      type: body.type,
-    })
-
-    const items = result.items.map((collection) => ({
-      id: collection._id.toHexString(),
-      type: collection.type,
-      authorId: collection.author?.toHexString() ?? null,
-      title: {
-        [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
-        [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
-      },
-      media: collection.media.map((media) => ({
-        src: media.src,
-        language: media.language,
-        type: media.type,
-      })),
-    }))
-
-    return createPaginatedResult(items, result.total, page, limit)
-  }
 
   async create(accessToken: unknown, body: CreateCollectionBodyDto) {
     const userId = await this.collectionAuthService.authenticate(accessToken)
@@ -134,7 +102,7 @@ class CollectionService {
             title: body.title,
             description: body.description,
             type: body.type,
-            media: body.media,
+            media: [],
             blocks,
           },
           { session: transactionSession },
@@ -151,7 +119,7 @@ class CollectionService {
       },
     )
 
-    return this.mapResponse(collection)
+    return { id: collection._id.toHexString() }
   }
 
   async getById(id: Types.ObjectId): Promise<CollectionResponseDto> {
@@ -161,7 +129,27 @@ class CollectionService {
       throw new NotFoundException(DICTIONARY.collection.notFound)
     }
 
-    return this.mapResponse(collection)
+    const user = isNil(collection.author)
+      ? null
+      : await this.userRepository.read.findById(
+          collection.author.toHexString(),
+          {
+            _id: 1,
+            avatarUrl: 1,
+            displayName: 1,
+          },
+        )
+
+    return this.mapResponse(
+      collection,
+      isNil(user)
+        ? null
+        : {
+            id: user._id.toHexString(),
+            avatar: user.avatarUrl ?? null,
+            displayName: user.displayName,
+          },
+    )
   }
 
   async update(accessToken: unknown, props: IUpdateCollectionRequestProps) {
@@ -169,19 +157,19 @@ class CollectionService {
 
     const { id, body } = props
     const isChangeProvided =
-      [
-        body.title,
-        body.description,
-        body.media,
-        body.type,
-        body.blockOrder,
-      ].some((value) => !isUndefined(value)) ||
-      [
-        body.upsertBlocks,
-        body.removeBlockIds,
-        body.upsertItems,
-        body.removeItemIds,
-      ].some((values) => !isUndefined(values) && values.length > 0)
+      [body.title, body.description, body.media, body.type].some(
+        (value) => !isUndefined(value),
+      ) ||
+      [body.blocks, body.items].some(
+        (operations) =>
+          !isUndefined(operations) &&
+          [
+            operations.add,
+            operations.update,
+            operations.move,
+            operations.remove,
+          ].some((entries) => !!entries?.length),
+      )
 
     if (!isChangeProvided) {
       throw new BadRequestException(DICTIONARY.collection.emptyUpdate)
@@ -191,137 +179,146 @@ class CollectionService {
       throw new BadRequestException(DICTIONARY.collection.titleRequired)
     }
 
-    const collection = await this.transactionService.run(
-      async (transactionSession) => {
-        const current = await this.collectionRepository.findNotDeletedById(id, {
-          session: transactionSession,
-        })
+    await this.transactionService.run(async (transactionSession) => {
+      const current = await this.collectionRepository.findNotDeletedById(id, {
+        session: transactionSession,
+      })
 
-        if (
-          isNil(current) ||
-          isNil(current.author) ||
-          !current.author.equals(userId)
-        ) {
-          throw new NotFoundException(DICTIONARY.collection.notFound)
-        }
+      if (
+        isNil(current) ||
+        isNil(current.author) ||
+        !current.author.equals(userId)
+      ) {
+        throw new NotFoundException(DICTIONARY.collection.notFound)
+      }
 
-        if (current.version !== body.version) {
-          throw new ConflictException(DICTIONARY.collection.versionConflict)
-        }
+      if (current.version !== body.version) {
+        throw new ConflictException(DICTIONARY.collection.versionConflict)
+      }
 
-        if (current.version === Number.MAX_SAFE_INTEGER) {
-          throw new ConflictException(DICTIONARY.collection.versionLimit)
-        }
+      if (current.version === Number.MAX_SAFE_INTEGER) {
+        throw new ConflictException(DICTIONARY.collection.versionLimit)
+      }
 
-        const blocks = this.prepareUpdatedBlocks(current.blocks, body)
-        const groupIds = new Set(
-          blocks
-            .filter((block) => block.type === ECollectionBlockType.GROUP)
-            .map((block) => block.id.toHexString()),
+      const blocks = this.prepareUpdatedBlocks(current.blocks, body.blocks)
+      const groupIds = new Set(
+        blocks
+          .filter((block) => block.type === ECollectionBlockType.GROUP)
+          .map((block) => block.id.toHexString()),
+      )
+      const removedGroupIds = current.blocks
+        .filter(
+          (block) =>
+            block.type === ECollectionBlockType.GROUP &&
+            !groupIds.has(block.id.toHexString()),
         )
-        const removedGroupIds = current.blocks
-          .filter(
-            (block) =>
-              block.type === ECollectionBlockType.GROUP &&
-              !groupIds.has(block.id.toHexString()),
-          )
-          .map((block) => block.id)
-        const removeItemIds = this.normalizeUniqueIds(
-          body.removeItemIds ?? [],
-          DICTIONARY.collection.invalidItemChanges,
-        ).map((itemId) => new Types.ObjectId(itemId))
-        const removedItemIds = new Set(
-          removeItemIds.map((itemId) => itemId.toHexString()),
+        .map((block) => block.id)
+      const { items, removeItemIds } = await this.prepareItemChanges(
+        { id, changes: body.items, groupIds },
+        transactionSession,
+      )
+
+      const updated = await this.collectionRepository.updateVersioned(
+        {
+          id,
+          authorId: userId,
+          version: body.version,
+          changes: {
+            title: body.title ?? current.title,
+            description: body.description ?? current.description,
+            media: body.media ?? current.media,
+            type: body.type ?? current.type,
+            blocks,
+          },
+        },
+        { session: transactionSession },
+      )
+
+      if (isNil(updated)) {
+        throw new ConflictException(DICTIONARY.collection.versionConflict)
+      }
+
+      if (items.length > 0) {
+        await this.itemCollectionRepository.upsertForCollection(
+          { collectionId: id, items },
+          { session: transactionSession },
         )
-        const items = (body.upsertItems ?? []).map((item) => ({
-          item: new Types.ObjectId(item.itemId),
-          groupId: new Types.ObjectId(item.groupId),
-          position: item.position,
-          note: item.note,
-        }))
-        const itemIds = items.map((item) => item.item.toHexString())
+      }
 
-        if (
-          new Set(itemIds).size !== itemIds.length ||
-          itemIds.some((itemId) => removedItemIds.has(itemId))
-        ) {
-          throw new BadRequestException(
-            DICTIONARY.collection.invalidItemChanges,
-          )
-        }
-
-        if (items.some((item) => !groupIds.has(item.groupId.toHexString()))) {
-          throw new BadRequestException(DICTIONARY.collection.invalidGroup)
-        }
-
-        if (removeItemIds.length > 0) {
-          const memberships =
-            await this.itemCollectionRepository.findByCollectionAndItems(
-              { collectionId: id, itemIds: removeItemIds },
-              { session: transactionSession },
-            )
-
-          if (memberships.length !== removeItemIds.length) {
-            throw new BadRequestException(
-              DICTIONARY.collection.membershipNotFound,
-            )
-          }
-        }
-
-        if (items.length > 0) {
-          const existingItems = await this.itemRepository.findNotDeletedByIds(
-            items.map((item) => item.item),
-            { session: transactionSession },
-          )
-
-          if (existingItems.length !== items.length) {
-            throw new NotFoundException(DICTIONARY.collection.itemNotFound)
-          }
-        }
-
-        const updated = await this.collectionRepository.updateVersioned(
+      if (removeItemIds.length > 0 || removedGroupIds.length > 0) {
+        await this.itemCollectionRepository.removeForCollection(
           {
-            id,
-            authorId: userId,
-            version: body.version,
-            changes: {
-              title: body.title ?? current.title,
-              description: body.description ?? current.description,
-              media: body.media ?? current.media,
-              type: body.type ?? current.type,
-              blocks,
-            },
+            collectionId: id,
+            itemIds: removeItemIds,
+            groupIds: removedGroupIds,
           },
           { session: transactionSession },
         )
+      }
+    })
+  }
 
-        if (isNil(updated)) {
-          throw new ConflictException(DICTIONARY.collection.versionConflict)
-        }
+  async getOwnedCollection(accessToken: unknown, id: Types.ObjectId) {
+    const userId = await this.collectionAuthService.authenticate(accessToken)
+    const collection = await this.collectionRepository.findNotDeletedById(id)
+    if (
+      isNil(collection) ||
+      isNil(collection.author) ||
+      !collection.author.equals(userId)
+    ) {
+      throw new NotFoundException(DICTIONARY.collection.notFound)
+    }
+    return { collection, userId }
+  }
 
-        if (items.length > 0) {
-          await this.itemCollectionRepository.upsertForCollection(
-            { collectionId: id, items },
-            { session: transactionSession },
-          )
-        }
-
-        if (removeItemIds.length > 0 || removedGroupIds.length > 0) {
-          await this.itemCollectionRepository.removeForCollection(
-            {
-              collectionId: id,
-              itemIds: removeItemIds,
-              groupIds: removedGroupIds,
-            },
-            { session: transactionSession },
-          )
-        }
-
-        return updated
-      },
+  async replacePoster(
+    accessToken: unknown,
+    props: { id: Types.ObjectId; src: string | undefined },
+  ) {
+    const { collection, userId } = await this.getOwnedCollection(
+      accessToken,
+      props.id,
     )
-
-    return this.mapResponse(collection)
+    if (isNil(props.src)) {
+      throw new ServiceUnavailableException(
+        "Публичный адрес хранилища недоступен",
+      )
+    }
+    if (collection.version === Number.MAX_SAFE_INTEGER) {
+      throw new ConflictException(DICTIONARY.collection.versionLimit)
+    }
+    const updated = await this.collectionRepository.updateVersioned({
+      id: props.id,
+      authorId: userId,
+      version: collection.version,
+      changes: {
+        title: collection.title,
+        description: collection.description,
+        type: collection.type,
+        blocks: collection.blocks,
+        media: [
+          { src: props.src, language: null, type: EMediaType.POSTER },
+          ...collection.media.filter(
+            (media) => media.type !== EMediaType.POSTER,
+          ),
+        ],
+      },
+    })
+    if (isNil(updated)) {
+      throw new ConflictException(DICTIONARY.collection.versionConflict)
+    }
+    const prefix = "collections/" + props.id.toHexString() + "/poster/"
+    for (const poster of collection.media.filter(
+      (media) => media.type === EMediaType.POSTER,
+    )) {
+      const key = poster.src.slice(poster.src.lastIndexOf("/") + 1)
+      if (
+        poster.src.endsWith("/" + prefix + key) &&
+        /^[a-f0-9-]{36}\.webp$/.test(key)
+      ) {
+        await this.storageService.delete(prefix + key).catch(() => undefined)
+      }
+    }
   }
 
   async remove(accessToken: unknown, id: Types.ObjectId) {
@@ -347,45 +344,110 @@ class CollectionService {
     return normalized
   }
 
+  private insertBefore(
+    order: string[],
+    id: string,
+    before: string | null | undefined,
+    message: string,
+  ) {
+    const current = order.indexOf(id)
+    if (current >= 0) {
+      order.splice(current, 1)
+    }
+
+    const index = isNil(before)
+      ? order.length
+      : order.indexOf(before.toLowerCase())
+    if (index < 0) {
+      throw new BadRequestException(message)
+    }
+
+    order.splice(index, 0, id)
+  }
+
   private prepareUpdatedBlocks(
     current: CollectionBlock[],
-    body: UpdateCollectionBodyDto,
+    changes: UpdateCollectionBodyDto["blocks"],
   ) {
+    if (isUndefined(changes)) {
+      return current
+    }
+
+    const invalid = DICTIONARY.collection.invalidBlockChanges
+    const removed = new Set(
+      this.normalizeUniqueIds(changes.remove ?? [], invalid),
+    )
     const blocks = new Map(
       current.map((block) => [block.id.toHexString(), block]),
     )
-    const removedIds = new Set(
-      this.normalizeUniqueIds(
-        body.removeBlockIds ?? [],
-        DICTIONARY.collection.invalidBlockChanges,
-      ),
-    )
-    const upserts = (body.upsertBlocks ?? []).map((block) =>
-      this.prepareBlock(block),
-    )
-    const upsertIds = upserts.map((block) => block.id.toHexString())
 
-    if (
-      new Set(upsertIds).size !== upsertIds.length ||
-      upsertIds.some((id) => removedIds.has(id))
-    ) {
-      throw new BadRequestException(DICTIONARY.collection.invalidBlockChanges)
-    }
-
-    for (const id of removedIds) {
+    for (const id of removed) {
       if (!blocks.delete(id)) {
         throw new BadRequestException(DICTIONARY.collection.blockNotFound)
       }
     }
 
-    for (const block of upserts) {
-      const id = block.id.toHexString()
-      const existing = blocks.get(id)
-
-      if (!isNil(existing) && existing.type !== block.type) {
-        throw new BadRequestException(DICTIONARY.collection.blockTypeChange)
+    const order = [...blocks.keys()]
+    this.normalizeUniqueIds(
+      (changes.add ?? []).map((block) => block.id),
+      invalid,
+    )
+    for (const input of changes.add ?? []) {
+      const id = input.id.toLowerCase()
+      if (blocks.has(id) || removed.has(id)) {
+        throw new BadRequestException(invalid)
       }
 
+      const block = this.prepareBlock(input)
+      blocks.set(id, {
+        id: block.id,
+        type: block.type,
+        title: block.title ?? null,
+        description: block.description ?? null,
+        content: block.content ?? null,
+      })
+      this.insertBefore(
+        order,
+        id,
+        input.beforeBlockId,
+        DICTIONARY.collection.invalidBlockOrder,
+      )
+    }
+
+    this.normalizeUniqueIds(
+      (changes.update ?? []).map((block) => block.id),
+      invalid,
+    )
+    for (const { id: rawId, title, description, content } of changes.update ??
+      []) {
+      const id = rawId.toLowerCase()
+      const currentBlock = blocks.get(id)
+      if (isUndefined(currentBlock)) {
+        throw new BadRequestException(DICTIONARY.collection.blockNotFound)
+      }
+      if ([title, description, content].every(isUndefined)) {
+        throw new BadRequestException(invalid)
+      }
+
+      const fields =
+        currentBlock.type === ECollectionBlockType.GROUP
+          ? {
+              title: isUndefined(title) ? currentBlock.title : title,
+              description: isUndefined(description)
+                ? currentBlock.description
+                : description,
+              content,
+            }
+          : {
+              title,
+              description,
+              content: content ?? currentBlock.content ?? undefined,
+            }
+      const block = this.prepareBlock({
+        id,
+        type: currentBlock.type,
+        ...fields,
+      })
       blocks.set(id, {
         id: block.id,
         type: block.type,
@@ -395,28 +457,222 @@ class CollectionService {
       })
     }
 
-    if (isUndefined(body.blockOrder)) {
-      return [...blocks.values()]
-    }
-
-    const order = this.normalizeUniqueIds(
-      body.blockOrder,
-      DICTIONARY.collection.invalidBlockOrder,
+    this.normalizeUniqueIds(
+      (changes.move ?? []).map((block) => block.id),
+      invalid,
     )
-
-    if (order.length !== blocks.size) {
-      throw new BadRequestException(DICTIONARY.collection.invalidBlockOrder)
+    for (const move of changes.move ?? []) {
+      const id = move.id.toLowerCase()
+      if (!blocks.has(id)) {
+        throw new BadRequestException(DICTIONARY.collection.blockNotFound)
+      }
+      this.insertBefore(
+        order,
+        id,
+        move.beforeBlockId,
+        DICTIONARY.collection.invalidBlockOrder,
+      )
     }
 
-    return order.map((id) => {
+    return order.flatMap((id) => {
       const block = blocks.get(id)
+      return isUndefined(block) ? [] : [block]
+    })
+  }
 
-      if (isNil(block)) {
-        throw new BadRequestException(DICTIONARY.collection.invalidBlockOrder)
+  private async prepareItemChanges(
+    props: {
+      id: Types.ObjectId
+      changes: UpdateCollectionBodyDto["items"]
+      groupIds: Set<string>
+    },
+    session: ClientSession,
+  ) {
+    const { id, changes, groupIds } = props
+    const additions = changes?.add ?? []
+    const updates = changes?.update ?? []
+    const moves = changes?.move ?? []
+    const invalid = DICTIONARY.collection.invalidItemChanges
+    const removed = new Set(
+      this.normalizeUniqueIds(changes?.remove ?? [], invalid),
+    )
+    if (additions.length + updates.length + moves.length + removed.size === 0) {
+      return { items: [], removeItemIds: [] }
+    }
+
+    const addIds = this.normalizeUniqueIds(
+      additions.map((item) => item.itemId),
+      invalid,
+    )
+    const updateIds = this.normalizeUniqueIds(
+      updates.map((item) => item.itemId),
+      invalid,
+    )
+    const moveIds = this.normalizeUniqueIds(
+      moves.map((item) => item.itemId),
+      invalid,
+    )
+    const touchedIds = [...new Set([...addIds, ...updateIds, ...moveIds])]
+    if (touchedIds.some((itemId) => removed.has(itemId))) {
+      throw new BadRequestException(invalid)
+    }
+
+    const destinations = new Set(
+      [...additions, ...moves].map((item) => item.groupId.toLowerCase()),
+    )
+    for (const groupId of destinations) {
+      if (!groupIds.has(groupId)) {
+        throw new BadRequestException(DICTIONARY.collection.invalidGroup)
+      }
+    }
+
+    const removeItemIds = [...removed].map(
+      (itemId) => new Types.ObjectId(itemId),
+    )
+    const current = await this.itemCollectionRepository.read.findMany(
+      {
+        collectionId: id,
+        $or: [
+          {
+            item: {
+              $in: [
+                ...touchedIds.map((itemId) => new Types.ObjectId(itemId)),
+                ...removeItemIds,
+              ],
+            },
+          },
+          {
+            groupId: {
+              $in: [...destinations].map(
+                (groupId) => new Types.ObjectId(groupId),
+              ),
+            },
+          },
+        ],
+      },
+      { item: 1, groupId: 1, position: 1, note: 1 },
+      { session, sort: { position: 1, _id: 1 } },
+    )
+    const original = new Map(
+      current.map((member) => [member.item.toHexString(), member]),
+    )
+    if ([...removed].some((itemId) => !original.has(itemId))) {
+      throw new BadRequestException(DICTIONARY.collection.membershipNotFound)
+    }
+    if (addIds.some((itemId) => original.has(itemId))) {
+      throw new BadRequestException(invalid)
+    }
+
+    const newItems = addIds.map((itemId) => new Types.ObjectId(itemId))
+    if (
+      newItems.length > 0 &&
+      (await this.itemRepository.findNotDeletedByIds(newItems, { session }))
+        .length !== newItems.length
+    ) {
+      throw new NotFoundException(DICTIONARY.collection.itemNotFound)
+    }
+
+    const members = new Map(
+      current.map((member) => [
+        member.item.toHexString(),
+        {
+          item: member.item,
+          groupId: member.groupId,
+          position: member.position,
+          note: member.note,
+        },
+      ]),
+    )
+    const orders = new Map(
+      [...destinations].map((groupId) => [groupId, [] as string[]]),
+    )
+    for (const member of current) {
+      const itemId = member.item.toHexString()
+      if (!removed.has(itemId)) {
+        orders.get(member.groupId.toHexString())?.push(itemId)
+      }
+    }
+
+    for (const add of additions) {
+      const itemId = add.itemId.toLowerCase()
+      const groupId = add.groupId.toLowerCase()
+      const order = orders.get(groupId) ?? []
+      this.insertBefore(order, itemId, add.beforeItemId, invalid)
+      members.set(itemId, {
+        item: new Types.ObjectId(itemId),
+        groupId: new Types.ObjectId(groupId),
+        position: 0,
+        note: add.note ?? null,
+      })
+    }
+
+    for (const update of updates) {
+      const member = members.get(update.itemId.toLowerCase())
+      if (isUndefined(member)) {
+        throw new BadRequestException(DICTIONARY.collection.membershipNotFound)
+      }
+      member.note = update.note
+    }
+
+    for (const move of moves) {
+      const itemId = move.itemId.toLowerCase()
+      const member = members.get(itemId)
+      if (isUndefined(member)) {
+        throw new BadRequestException(DICTIONARY.collection.membershipNotFound)
       }
 
-      return block
+      const groupId = move.groupId.toLowerCase()
+      const source = orders.get(member.groupId.toHexString())
+      const index = source?.indexOf(itemId) ?? -1
+      if (index >= 0) {
+        source?.splice(index, 1)
+      }
+      const destination = orders.get(groupId) ?? []
+      this.insertBefore(destination, itemId, move.beforeItemId, invalid)
+      member.groupId = new Types.ObjectId(groupId)
+    }
+
+    for (const order of orders.values()) {
+      order.forEach((itemId, position) => {
+        const member = members.get(itemId)
+        if (!isUndefined(member)) {
+          member.position = position
+        }
+      })
+    }
+
+    if (
+      updates.some((update) => {
+        const member = members.get(update.itemId.toLowerCase())
+        return (
+          !isUndefined(member) && !groupIds.has(member.groupId.toHexString())
+        )
+      })
+    ) {
+      throw new BadRequestException(invalid)
+    }
+
+    const items = [...members.values()].flatMap((member) => {
+      const itemId = member.item.toHexString()
+      const previous = original.get(itemId)
+      if (removed.has(itemId) || !groupIds.has(member.groupId.toHexString())) {
+        return []
+      }
+
+      const note = previous?.note === member.note ? undefined : member.note
+      if (
+        !isUndefined(previous) &&
+        previous.groupId.equals(member.groupId) &&
+        previous.position === member.position &&
+        isUndefined(note)
+      ) {
+        return []
+      }
+
+      return [{ ...member, note }]
     })
+
+    return { items, removeItemIds }
   }
 
   private prepareBlock(
@@ -456,11 +712,12 @@ class CollectionService {
 
   private mapResponse(
     collection: HydratedDocument<Collection>,
+    author: CollectionResponseDto["author"],
   ): CollectionResponseDto {
     return {
       id: collection._id.toHexString(),
       version: collection.version,
-      authorId: collection.author?.toHexString() ?? null,
+      author,
       type: collection.type,
       title: {
         [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],

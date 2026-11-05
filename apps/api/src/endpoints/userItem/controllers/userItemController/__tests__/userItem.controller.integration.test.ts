@@ -2,6 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 import type { FastifyInstance } from "fastify"
 
+import { readSavedUserItem } from "@endpoints/userItem/__tests__/functions/readSavedUserItem"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
@@ -18,7 +19,7 @@ import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
-import type { UserItemResponseDto } from "@endpoints/userItem/dto/response/userItem.response"
+import type { UserItemResponseDto } from "@endpoints/userItem/services/userItemService"
 
 describe("UserItemController HTTP", () => {
   it.each(["create", "skip", "block"] as const)(
@@ -40,10 +41,9 @@ describe("UserItemController HTTP", () => {
             ? { itemId: String(item._id), status: EUserItemStatus.PLANNED }
             : { itemId: String(item._id) },
       })
-      expect(response.statusCode).toBe(201)
-      expect(
-        await readEntry(response.json<UserItemResponseDto>().id),
-      ).toMatchObject({
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
+      expect(await readSavedUserItem({ item: item._id })).toMatchObject({
         status:
           operation === "create"
             ? EUserItemStatus.PLANNED
@@ -77,9 +77,7 @@ describe("UserItemController HTTP", () => {
         headers: owner.headers,
         payload: operation === "update" ? { rating: 9 } : { isCompleted: true },
       })
-      expect(response.statusCode).toBe(
-        operation === "createAttempt" ? 201 : 200,
-      )
+      expect(response.statusCode).toBe(204)
       const committed = await readEntry(owner.entry.id)
       if (operation === "update") {
         expect(committed.rating).toBe(9)
@@ -110,7 +108,8 @@ describe("UserItemController HTTP", () => {
           headers: owner.headers,
           payload: { isFavorite: true },
         })
-        expect(seeded.statusCode).toBe(200)
+        expect(seeded.statusCode).toBe(204)
+        expect(seeded.body).toBe("")
       }
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
@@ -124,7 +123,8 @@ describe("UserItemController HTTP", () => {
         payload: { [field]: value },
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
@@ -140,7 +140,8 @@ describe("UserItemController HTTP", () => {
         headers: owner.headers,
         payload: { isCompleted: true },
       })
-      expect(first.statusCode).toBe(200)
+      expect(first.statusCode).toBe(204)
+      expect(first.body).toBe("")
       for (
         let index = 1;
         index < (operation === "create" ? 3 : 4);
@@ -152,7 +153,8 @@ describe("UserItemController HTTP", () => {
           headers: owner.headers,
           payload: { isCompleted: true },
         })
-        expect(seeded.statusCode).toBe(201)
+        expect(seeded.statusCode).toBe(204)
+        expect(seeded.body).toBe("")
       }
       const record = await readEntry(owner.entry.id)
       const applyItemStats = jest.spyOn(
@@ -169,7 +171,7 @@ describe("UserItemController HTTP", () => {
         payload: { isCompleted: operation === "create" },
       })
 
-      expect(response.statusCode).toBe(operation === "create" ? 201 : 200)
+      expect(response.statusCode).toBe(204)
       expect(applyItemStats).toHaveBeenCalledTimes(1)
     },
   )
@@ -198,7 +200,8 @@ describe("UserItemController HTTP", () => {
         payload,
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(applyItemStats).not.toHaveBeenCalled()
     },
   )
@@ -232,9 +235,7 @@ describe("UserItemController HTTP", () => {
               : { progress: 42 },
       })
 
-      expect(response.statusCode).toBe(
-        operation === "unfinishedAttempt" ? 201 : 200,
-      )
+      expect(response.statusCode).toBe(204)
       expect(applyItemStats).not.toHaveBeenCalled()
       const saved = await readEntry(owner.entry.id)
       if (operation === "note") {
@@ -261,7 +262,8 @@ describe("UserItemController HTTP", () => {
         headers: owner.headers,
         payload: { rating },
       })
-      expect(seeded.statusCode).toBe(200)
+      expect(seeded.statusCode).toBe(204)
+      expect(seeded.body).toBe("")
       const applyItemStats = jest.spyOn(
         app.get(ItemStatsRepository),
         "applyChanges",
@@ -429,9 +431,14 @@ describe("UserItemController HTTP", () => {
       headers: account.headers,
       payload: { itemId: item._id.toHexString(), status },
     })
-    expect(response.statusCode).toBe(201)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
 
-    return { ...account, item, entry: response.json<UserItemResponseDto>() }
+    return {
+      ...account,
+      item,
+      entry: await readSavedUserItem({ item: item._id }),
+    }
   }
 
   const readEntry = async (id: string) => {
@@ -492,8 +499,11 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { unit: "episode", progress: 0 },
       })
-      expect(created.statusCode).toBe(201)
-      const attempt = created.json<UserItemResponseDto>().attempts.at(-1)
+      expect(created.statusCode).toBe(204)
+      expect(created.body).toBe("")
+      const attempt = (
+        await readSavedUserItem({ _id: new Types.ObjectId(entry.id) })
+      ).attempts.at(-1)
       expect(attempt).toMatchObject({
         unit: "episode",
         progress: 0,
@@ -505,8 +515,11 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { progress: 120 },
       })
-      expect(updated.statusCode).toBe(200)
-      expect(updated.json<UserItemResponseDto>().status).toBe("inProgress")
+      expect(updated.statusCode).toBe(204)
+      expect(updated.body).toBe("")
+      expect(
+        (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) })).status,
+      ).toBe("inProgress")
       expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
         unit: "episode",
         progress: 120,
@@ -518,7 +531,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { unit: "episode", progress: 5 },
       })
-      expect(changed.statusCode).toBe(200)
+      expect(changed.statusCode).toBe(204)
+      expect(changed.body).toBe("")
       expect((await readEntry(entry.id)).attempts[0]).toMatchObject({
         unit: "episode",
         progress: 5,
@@ -737,22 +751,25 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { itemId: item._id.toHexString(), status: "completed" },
       })
-      expect(created.statusCode).toBe(201)
-      const entry = created.json<UserItemResponseDto>()
+      expect(created.statusCode).toBe(204)
+      expect(created.body).toBe("")
+      const entry = await readSavedUserItem({ item: item._id })
       const updated = await app.inject({
         method: "PATCH",
         url: `/userItems/${entry.id}`,
         headers,
         payload: { status: "completed" },
       })
-      expect(updated.statusCode).toBe(200)
+      expect(updated.statusCode).toBe(204)
+      expect(updated.body).toBe("")
       const attempt = await app.inject({
         method: "POST",
         url: `/userItems/${entry.id}/attempts`,
         headers,
         payload: { isCompleted: true, unit: "percent", progress: 100 },
       })
-      expect(attempt.statusCode).toBe(201)
+      expect(attempt.statusCode).toBe(204)
+      expect(attempt.body).toBe("")
       expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
         isCompleted: true,
         unit: "percent",
@@ -785,7 +802,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { unit: "percent", progress: 100 },
       })
-      expect(prepared.statusCode).toBe(200)
+      expect(prepared.statusCode).toBe(204)
+      expect(prepared.body).toBe("")
       await createCompletionTag({
         item: item._id,
         key:
@@ -807,8 +825,12 @@ describe("UserItemController HTTP", () => {
           headers,
           payload,
         })
-        expect(response.statusCode).toBe(200)
-        expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject({
+        expect(response.statusCode).toBe(204)
+        expect(response.body).toBe("")
+        expect(
+          (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }))
+            .attempts[0],
+        ).toMatchObject({
           isCompleted: true,
           unit: "percent",
           progress: 100,
@@ -826,10 +848,12 @@ describe("UserItemController HTTP", () => {
           headers,
           payload,
         })
-        expect(response.statusCode).toBe(200)
-        expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject(
-          payload,
-        )
+        expect(response.statusCode).toBe(204)
+        expect(response.body).toBe("")
+        expect(
+          (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }))
+            .attempts[0],
+        ).toMatchObject(payload)
       }
       const allowed = await app.inject({
         method: "POST",
@@ -840,7 +864,8 @@ describe("UserItemController HTTP", () => {
             ? { progress: 120 }
             : { unit: "percent", progress: 100 },
       })
-      expect(allowed.statusCode).toBe(201)
+      expect(allowed.statusCode).toBe(204)
+      expect(allowed.body).toBe("")
       expect((await readEntry(entry.id)).attempts.at(-1)?.isCompleted).toBe(
         false,
       )
@@ -958,7 +983,7 @@ describe("UserItemController HTTP", () => {
     )
 
     expect(responses.map((response) => response.statusCode).sort()).toEqual([
-      201, 409,
+      204, 409,
     ])
     expect(
       await connection
@@ -978,8 +1003,12 @@ describe("UserItemController HTTP", () => {
       payload: { itemId: first.item._id.toHexString(), status: "planned" },
     })
 
-    expect(response.statusCode).toBe(201)
-    expect(response.json<UserItemResponseDto>().id).not.toBe(first.entry.id)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    expect(
+      (await readSavedUserItem({ item: first.item._id, user: second.user._id }))
+        .id,
+    ).not.toBe(first.entry.id)
     expect(
       await connection
         .collection<UserItem>("UserItem")
@@ -1002,9 +1031,12 @@ describe("UserItemController HTTP", () => {
       },
     })
 
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(response.headers["cache-control"]).toBe("no-store")
-    expect(response.json()).toMatchObject({
+    expect(
+      await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }),
+    ).toMatchObject({
       status: "completed",
       rating: 9,
       isFavorite: true,
@@ -1029,7 +1061,8 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { rating: 8, isFavorite: true, note: "Заметка" },
     })
-    expect(prepared.statusCode).toBe(200)
+    expect(prepared.statusCode).toBe(204)
+    expect(prepared.body).toBe("")
     const before = await readEntry(entry.id)
     expect(before).toMatchObject({
       rating: 8,
@@ -1043,7 +1076,8 @@ describe("UserItemController HTTP", () => {
       payload: { rating: 9 },
     })
 
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(await readEntry(entry.id)).toMatchObject({
       rating: 9,
       status: before.status,
@@ -1073,7 +1107,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { rating: 8, isFavorite: true, note: "Заметка" },
       })
-      expect(prepared.statusCode).toBe(200)
+      expect(prepared.statusCode).toBe(204)
+      expect(prepared.body).toBe("")
       expect(await readEntry(entry.id)).toMatchObject({
         rating: 8,
         isFavorite: true,
@@ -1086,7 +1121,8 @@ describe("UserItemController HTTP", () => {
         payload,
       })
 
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(await readEntry(entry.id)).toMatchObject({
         status: "planned",
         rating: 8,
@@ -1109,7 +1145,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { isFavorite },
       })
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(await readEntry(entry.id)).toMatchObject({ isFavorite: true })
     }
 
@@ -1133,8 +1170,11 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { status },
       })
-      expect(response.statusCode).toBe(200)
-      const result = response.json<UserItemResponseDto>()
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
+      const result = await readSavedUserItem({
+        _id: new Types.ObjectId(entry.id),
+      })
       expect(result.status).toBe(status)
       expect(result.attempts).toHaveLength(1)
       attemptId = attemptId ?? result.attempts[0]?.id
@@ -1166,7 +1206,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { rating: 10, isFavorite: true, note: "Сохранить" },
       })
-      expect(prepared.statusCode).toBe(200)
+      expect(prepared.statusCode).toBe(204)
+      expect(prepared.body).toBe("")
       const before = await readEntry(entry.id)
       const changed = await app.inject({
         method: "PATCH",
@@ -1174,7 +1215,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { status },
       })
-      expect(changed.statusCode).toBe(200)
+      expect(changed.statusCode).toBe(204)
+      expect(changed.body).toBe("")
       expect(await readEntry(entry.id)).toMatchObject({
         status,
         expiresAt: null,
@@ -1198,7 +1240,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { progress: 80 },
       })
-      expect(edited.statusCode).toBe(200)
+      expect(edited.statusCode).toBe(204)
+      expect(edited.body).toBe("")
       expect(await readEntry(entry.id)).toMatchObject({
         status,
         attempts: [{ isCompleted: true, progress: 80 }],
@@ -1216,7 +1259,8 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { status: "inProgress" },
     })
-    expect(changed.statusCode).toBe(200)
+    expect(changed.statusCode).toBe(204)
+    expect(changed.body).toBe("")
     expect((await readEntry(entry.id)).attempts).toEqual(before.attempts)
     const added = await app.inject({
       method: "POST",
@@ -1224,8 +1268,11 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: {},
     })
-    expect(added.statusCode).toBe(201)
-    const result = added.json<UserItemResponseDto>()
+    expect(added.statusCode).toBe(204)
+    expect(added.body).toBe("")
+    const result = await readSavedUserItem({
+      _id: new Types.ObjectId(entry.id),
+    })
     expect(result.status).toBe("inProgress")
     expect(result.attempts).toHaveLength(2)
     expect(result.attempts[0]).toEqual(entry.attempts[0])
@@ -1241,11 +1288,12 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { status: "completed" },
     })
-    expect(completed.statusCode).toBe(200)
+    expect(completed.statusCode).toBe(204)
+    expect(completed.body).toBe("")
     expect(
-      completed
-        .json<UserItemResponseDto>()
-        .attempts.map((attempt) => attempt.isCompleted),
+      (
+        await readSavedUserItem({ _id: new Types.ObjectId(entry.id) })
+      ).attempts.map((attempt) => attempt.isCompleted),
     ).toEqual([true, true])
   })
 
@@ -1300,7 +1348,8 @@ describe("UserItemController HTTP", () => {
         completedAt: "2026-01-01T11:30:00.000Z",
       },
     })
-    expect(response.statusCode).toBe(201)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     const record = await readEntry(entry.id)
     expect(record.status).toBe("inProgress")
     expect(record.attempts).toHaveLength(2)
@@ -1335,9 +1384,15 @@ describe("UserItemController HTTP", () => {
         headers,
         payload,
       })
-      expect(response.statusCode).toBe(200)
-      expect(response.json<UserItemResponseDto>().status).toBe("inProgress")
-      expect(response.json<UserItemResponseDto>().attempts[0]).toMatchObject({
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
+      expect(
+        (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) })).status,
+      ).toBe("inProgress")
+      expect(
+        (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }))
+          .attempts[0],
+      ).toMatchObject({
         id: entry.attempts[0]?.id,
         ...payload,
       })
@@ -1359,7 +1414,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { unit: "percent", progress },
       })
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect((await readEntry(entry.id)).attempts.at(-1)).toMatchObject({
         unit: "percent",
         progress,
@@ -1411,7 +1467,8 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { completedAt: "2026-01-01T00:00:00.000Z" },
       })
-      expect(prepared.statusCode).toBe(200)
+      expect(prepared.statusCode).toBe(204)
+      expect(prepared.body).toBe("")
       const before = await readEntry(entry.id)
       const response = await app.inject({
         method: "PATCH",
@@ -1434,7 +1491,8 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { progress: 120 },
     })
-    expect(prepared.statusCode).toBe(200)
+    expect(prepared.statusCode).toBe(204)
+    expect(prepared.body).toBe("")
     const before = await readEntry(entry.id)
     const rejected = await app.inject({
       method: "PATCH",
@@ -1450,7 +1508,8 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { unit: "percent", progress: 100 },
     })
-    expect(accepted.statusCode).toBe(200)
+    expect(accepted.statusCode).toBe(204)
+    expect(accepted.body).toBe("")
     const invalidProgress = await app.inject({
       method: "PATCH",
       url,
@@ -1479,7 +1538,7 @@ describe("UserItemController HTTP", () => {
         }),
       ),
     )
-    expect(responses.map((response) => response.statusCode)).toEqual([201, 201])
+    expect(responses.map((response) => response.statusCode)).toEqual([204, 204])
     const record = await readEntry(entry.id)
     expect(record.status).toBe("inProgress")
     expect(record.attempts).toHaveLength(3)
@@ -1519,7 +1578,7 @@ describe("UserItemController HTTP", () => {
       }),
     ])
     expect(responses.map((response) => response.statusCode).sort()).toEqual([
-      200, 200, 201, 201,
+      204, 204, 204, 204,
     ])
     const record = await readEntry(entry.id)
     expect(record).toMatchObject({
@@ -1658,7 +1717,8 @@ describe("UserItemController HTTP", () => {
       payload: { rating: 9 },
     })
 
-    expect(response.statusCode).toBe(200)
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
     expect(await readEntry(entry.id)).toMatchObject({ rating: 9 })
   })
 
@@ -1717,9 +1777,10 @@ describe("UserItemController HTTP", () => {
         payload: { itemId: item._id.toHexString() },
       })
       const after = Date.now()
-      expect(response.statusCode).toBe(201)
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(response.headers["cache-control"]).toBe("no-store")
-      const entry = response.json<UserItemResponseDto>()
+      const entry = await readSavedUserItem({ item: item._id })
       expect(entry).toMatchObject({
         itemId: item._id.toHexString(),
         status: operation === "skip" ? "skipped" : "blocked",
@@ -1785,8 +1846,9 @@ describe("UserItemController HTTP", () => {
         headers,
         payload: { itemId: item._id.toHexString() },
       })
-      expect(created.statusCode).toBe(201)
-      const entry = created.json<UserItemResponseDto>()
+      expect(created.statusCode).toBe(204)
+      expect(created.body).toBe("")
+      const entry = await readSavedUserItem({ item: item._id })
       const before = await readEntry(entry.id)
       for (const target of [
         "/userItems/skip",
@@ -1823,7 +1885,7 @@ describe("UserItemController HTTP", () => {
       ),
     )
     expect(responses.map((response) => response.statusCode).sort()).toEqual([
-      201, 409,
+      204, 409,
     ])
     expect(
       await connection
@@ -1841,7 +1903,7 @@ describe("UserItemController HTTP", () => {
       expect(
         (await app.inject({ method: "PATCH", url, headers, payload }))
           .statusCode,
-      ).toBe(200)
+      ).toBe(204)
       const before = await readEntry(entry.id)
       const response = await app.inject({
         method: "PATCH",
@@ -1867,7 +1929,7 @@ describe("UserItemController HTTP", () => {
           payload: { rating: 8, isFavorite: true, note: "Заметка" },
         })
       ).statusCode,
-    ).toBe(200)
+    ).toBe(204)
     const response = await app.inject({
       method: "PATCH",
       url,
@@ -1879,8 +1941,11 @@ describe("UserItemController HTTP", () => {
         note: null,
       },
     })
-    expect(response.statusCode).toBe(200)
-    expect(response.json()).toMatchObject({
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    expect(
+      await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }),
+    ).toMatchObject({
       status: "skipped",
       rating: null,
       isFavorite: false,
@@ -1922,23 +1987,31 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { status: "skipped" },
     })
-    expect(first.statusCode).toBe(200)
-    const deadline = first.json<UserItemResponseDto>().expiresAt
+    expect(first.statusCode).toBe(204)
+    expect(first.body).toBe("")
+    const deadline = (
+      await readSavedUserItem({ _id: new Types.ObjectId(entry.id) })
+    ).expiresAt
     const repeated = await app.inject({
       method: "PATCH",
       url,
       headers,
       payload: { status: "skipped" },
     })
-    expect(repeated.statusCode).toBe(200)
-    expect(repeated.json<UserItemResponseDto>().expiresAt).toBe(deadline)
+    expect(repeated.statusCode).toBe(204)
+    expect(repeated.body).toBe("")
+    expect(
+      (await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }))
+        .expiresAt,
+    ).toBe(deadline)
     const blocked = await app.inject({
       method: "PATCH",
       url,
       headers,
       payload: { status: "blocked" },
     })
-    expect(blocked.statusCode).toBe(200)
+    expect(blocked.statusCode).toBe(204)
+    expect(blocked.body).toBe("")
     expect((await readEntry(entry.id)).expiresAt).toBeNull()
     const library = await app.inject({
       method: "PATCH",
@@ -1946,8 +2019,11 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { status: "inProgress" },
     })
-    expect(library.statusCode).toBe(200)
-    expect(library.json()).toMatchObject({
+    expect(library.statusCode).toBe(204)
+    expect(library.body).toBe("")
+    expect(
+      await readSavedUserItem({ _id: new Types.ObjectId(entry.id) }),
+    ).toMatchObject({
       expiresAt: null,
       status: "inProgress",
       attempts: [{ isCompleted: false }],
@@ -1976,8 +2052,9 @@ describe("UserItemController HTTP", () => {
       headers,
       payload: { itemId: item._id.toHexString(), status: "planned" },
     })
-    expect(fresh.statusCode).toBe(201)
-    expect(fresh.json<UserItemResponseDto>().id).not.toBe(entry.id)
+    expect(fresh.statusCode).toBe(204)
+    expect(fresh.body).toBe("")
+    expect((await readSavedUserItem({ item: item._id })).id).not.toBe(entry.id)
     expect(
       await connection
         .collection("UserItem")
@@ -2107,15 +2184,17 @@ describe("UserItemController HTTP", () => {
       headers: owner.headers,
       payload: { itemId: otherItem._id.toHexString(), status: "planned" },
     })
-    expect(second.statusCode).toBe(201)
-    const secondEntry = second.json<UserItemResponseDto>()
+    expect(second.statusCode).toBe(204)
+    expect(second.body).toBe("")
+    const secondEntry = await readSavedUserItem({ item: otherItem._id })
     const updated = await getFastify().inject({
       method: "PATCH",
       url: "/userItems/" + owner.entry.id,
       headers: owner.headers,
       payload: { rating: 8, isFavorite: true, note: "Приватная заметка" },
     })
-    expect(updated.statusCode).toBe(200)
+    expect(updated.statusCode).toBe(204)
+    expect(updated.body).toBe("")
     await connection
       .collection("Item")
       .updateOne({ _id: owner.item._id }, { $set: { deletedAt: new Date() } })
@@ -2168,8 +2247,9 @@ describe("UserItemController HTTP", () => {
         headers: owner.headers,
         payload: { itemId: item._id.toHexString() },
       })
-      expect(response.statusCode).toBe(201)
-      entries.push(response.json<UserItemResponseDto>())
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
+      entries.push(await readSavedUserItem({ item: item._id }))
     }
     const [expired, active, blocked] = entries
     expect(expired).toBeDefined()

@@ -1,103 +1,57 @@
 import { describe, expect, it } from "@jest/globals"
 import { plainToInstance } from "class-transformer"
 import { validate } from "class-validator"
-
-import { ItemCollectionsBodyDto } from "../dto/body/itemCollections.body"
+import { ItemCollectionsBodyDto } from "@endpoints/collection/services/collectionContentService"
 
 describe("ItemCollectionsBodyDto", () => {
-  it.each([undefined, "asc", "desc"])(
-    "принимает сортировку relevanceScore с направлением %s",
-    async (direction) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, {
-        sort: "relevanceScore",
-        direction,
-      })
+  const validateBody = (body: object) =>
+    validate(plainToInstance(ItemCollectionsBodyDto, body), {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    })
 
-      expect(
-        await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
-      ).toEqual([])
-      expect(dto.sort).toBe("relevanceScore")
-    },
+  it.each([{}, { cursor: "YWI", limit: 10 }, { limit: 20 }, { limit: 50 }])(
+    "принимает параметры подгрузки %j",
+    async (body) => expect(await validateBody(body)).toEqual([]),
   )
 
-  it.each([
-    { sort: "score", property: "sort" },
-    { sort: "relevanceScore", direction: "down", property: "direction" },
-  ])(
-    "отклоняет недопустимую сортировку $sort/$direction",
-    async ({ property, ...query }) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, query)
-
-      expect(await validate(dto)).toEqual([
-        expect.objectContaining({ property }),
-      ])
-    },
-  )
-
-  it.each([10, 20, 50])(
-    "принимает разрешённый размер страницы %i",
+  it.each([0, 60, 10.5, "10", null])(
+    "отклоняет размер порции %j",
     async (limit) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, { limit })
-      expect(await validate(dto)).toEqual([])
-      expect(dto.limit).toBe(limit)
-    },
-  )
-
-  it.each([0, 1, 60, 60.5, 61, 100])(
-    "отклоняет недопустимый размер страницы %i",
-    async (limit) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, { limit })
-      expect(await validate(dto)).toEqual([
+      expect(await validateBody({ limit })).toEqual([
         expect.objectContaining({ property: "limit" }),
       ])
     },
   )
 
-  it.each([
-    {},
-    { ratingMin: "1" },
-    { ratingMax: "10" },
-    { ratingMin: "7.25", ratingMax: "8.5" },
-  ])("принимает публичные числовые границы общей оценки %j", async (query) => {
-    const dto = plainToInstance(ItemCollectionsBodyDto, query)
-    expect(
-      await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
-    ).toEqual([])
-    if ("ratingMin" in query) {
-      expect(dto.ratingMin).toBe(Number(query.ratingMin))
-    }
-    if ("ratingMax" in query) {
-      expect(dto.ratingMax).toBe(Number(query.ratingMax))
-    }
-  })
-
-  it.each(["statuses", "isInLibrary", "isFavorite"])(
-    "отклоняет удалённый личный фильтр %s",
-    async (field) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, { [field]: "false" })
-      const errors = await validate(dto, {
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      })
-      expect(errors).toEqual([
-        expect.objectContaining({
-          property: field,
-          constraints: { whitelistValidation: expect.any(String) },
-        }),
+  it.each([null, false, "", "a/b", "x".repeat(151)])(
+    "отклоняет курсор %j",
+    async (cursor) => {
+      expect(await validateBody({ cursor })).toEqual([
+        expect.objectContaining({ property: "cursor" }),
       ])
     },
   )
 
-  describe.each(["ratingMin", "ratingMax"])("%s", (field) => {
-    it.each(
-      ["", "0", "10.1", "NaN", "Infinity", "bad", ["7", "8"]].map((value) => ({
-        value,
-      })),
-    )("отклоняет неверное значение $value", async ({ value }) => {
-      const dto = plainToInstance(ItemCollectionsBodyDto, { [field]: value })
-      expect(await validate(dto)).toEqual([
-        expect.objectContaining({ property: field }),
-      ])
-    })
+  it.each([
+    "page",
+    "mode",
+    "sort",
+    "direction",
+    "language",
+    "groupId",
+    "query",
+    "tags",
+    "excludeTags",
+    "fields",
+    "ratingMin",
+    "ratingMax",
+    "statuses",
+    "isInLibrary",
+    "isFavorite",
+  ])("отклоняет удалённое поле %s", async (field) => {
+    expect(await validateBody({ [field]: 1 })).toEqual([
+      expect.objectContaining({ property: field }),
+    ])
   })
 })

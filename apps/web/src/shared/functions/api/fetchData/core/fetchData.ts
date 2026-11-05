@@ -45,9 +45,7 @@ const getApiErrorResponse = async (
   }
 }
 
-const fetchData = async <TResponse>(
-  props: IFetchDataProps,
-): Promise<TResponse | undefined> => {
+const fetchData = async <TResponse>(props: IFetchDataProps) => {
   const { body, method = 'GET', path, query, signal } = props
 
   const searchParameters = new URLSearchParams()

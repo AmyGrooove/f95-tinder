@@ -5,7 +5,7 @@ import geoip from "geoip-lite"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 import { isString } from "@shared/functions/checks/isString"
 
-const getCountryByIp = (ip: unknown): ECountry => {
+const getCountryByIp = (ip: unknown) => {
   if (!isString(ip) || isIP(ip) === 0) {
     return ECountry.UNKNOWN
   }

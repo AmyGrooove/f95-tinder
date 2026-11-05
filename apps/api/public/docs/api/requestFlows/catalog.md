@@ -2,39 +2,7 @@
 
 [← Все эндпоинты](../endpoints.md) · [Обозначения схем](readme.md)
 
-Оба запроса публичные: access/refresh cookies не проверяются. Общие ограничения HTTP перечислены в [каталоге](../endpoints.md#common). Ни один запрос здесь не меняет MongoDB, не публикует события и не ставит задачи. Схемы сверены с production-кодом, а не с трассировкой запущенного API.
-
-<a id="item"></a>
-
-## GET /items/:id
-
-Открыть карточку произведения с тегами и связями.
-
-**Пример:** `GET /items/507f1f77bcf86cd799439011` без тела. **Ответ:** 200, объект с id/type, названиями, описанием, aliases, media, tags, relations, releaseDate, ageRestriction и nullable-блоками movie/series/game. Даты — ISO 8601, отсутствующие значения — null; личной библиотеки в ответе нет. `Cache-Control: no-store`.
-
-```mermaid
-flowchart TD
-    accTitle: Открытие карточки произведения
-    accDescr: Проверить ID, прочитать Item с тегами и связями, вернуть публичную карточку или 404
-    A(["GET /items/:id"]):::http --> B["Проверить формат ID"]:::action
-    B --> C[("Найти неудалённый Item")]:::data
-    C --> D{"Item найден?"}:::action
-    D -->|Нет| E(["404 — произведение не найдено"]):::http
-    D -->|Да| F[("Прочитать TagItem, Tag и ItemRelation, Item, Relation")]:::data
-    F --> G["Собрать публичную карточку"]:::action
-    G --> H(["200 — карточка произведения"]):::http
-```
-
-**Проверки и данные:** параметр должен содержать 24 hex-символа. Item с `deletedAt != null` равнозначен отсутствующему. Одна read-only агрегация читает прямые TagItem/Tag и обе стороны ItemRelation, противоположный Item и его роль Relation. Отсутствующие теги/роли и отсутствующие или удалённые связанные Item отбрасываются. Теги сортируются по relevanceScore, затем id; связи — по id. Читаются только публичные поля, без UserItem, ItemStats, источников и подборок.
-
-**Границы и ошибки:** 400 — невалидный ID; 404 — Item отсутствует или удалён; 429 — общий лимит. HTTP ждёт агрегацию и отображение полей. Транзакции, записей, внешних обращений и фоновых действий нет.
-
-<details>
-<summary>Технические подробности и исходники</summary>
-
-Прямой путь: [ItemController.getById](../../../../src/endpoints/item/controllers/itemController/core/item.controller.ts) → [ItemService.getById](../../../../src/endpoints/item/services/itemService/core/item.service.ts) → [ItemRepository.findDetailsById](../../../../src/entities/item/services/itemRepository/core/item.repository.ts) → MongoAggregationRepository. Формат ID проверяет [MongoObjectIdHandler](../../../../src/infrastructure/database/services/mongoObjectIdHandler/core/mongoObjectId.handler.ts). [Контракт карточки](../pages/item.md), [response DTO](../../../../src/endpoints/item/dto/response/item.response.ts).
-
-</details>
+Поисковый запрос публичный. Access/refresh cookies не проверяются. Общие ограничения HTTP перечислены в [каталоге](../endpoints.md#common). Поисковый запрос не меняет MongoDB, не публикует события и не ставит задачи. Схемы сверены с production-кодом, а не с трассировкой запущенного API.
 
 <a id="search"></a>
 
@@ -65,7 +33,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/dto/body/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/itemRepository/core/item.repository.ts), [User](../../../../src/entities/user/services/userRepository/core/user.repository.ts), [Collection](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
+[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/itemRepository/core/item.repository.ts), [User](../../../../src/entities/user/services/userRepository/core/user.repository.ts), [Collection](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
 
 </details>
 

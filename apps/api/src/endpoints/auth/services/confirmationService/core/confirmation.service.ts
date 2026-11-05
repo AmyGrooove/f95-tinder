@@ -14,7 +14,7 @@ import type { IConsumeConfirmationProps } from "../types/IConsumeConfirmationPro
 class ConfirmationService {
   async consume<TPending extends IConfirmation>(
     props: IConsumeConfirmationProps<TPending>,
-  ): Promise<TPending> {
+  ) {
     const { redis, key, code, attempts, invalidMessage, checkIsPending } = props
     const raw = await redis.get(key)
 

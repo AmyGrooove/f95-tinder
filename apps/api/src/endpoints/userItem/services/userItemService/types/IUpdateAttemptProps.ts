@@ -1,6 +1,6 @@
 import type { Types } from "mongoose"
 
-import type { UpdateAttemptBodyDto } from "@endpoints/userItem/dto/body/updateAttempt.body"
+import type { UpdateAttemptBodyDto } from "../dto/updateAttempt.body"
 
 interface IUpdateAttemptProps {
   id: Types.ObjectId

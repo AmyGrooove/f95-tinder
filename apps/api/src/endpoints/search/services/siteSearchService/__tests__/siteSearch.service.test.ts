@@ -25,7 +25,7 @@ import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 
-import { SearchBodyDto } from "@endpoints/search/dto/body/search.body"
+import { SearchBodyDto } from "../dto/search.body"
 import { SiteSearchService } from "../core/siteSearch.service"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 

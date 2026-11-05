@@ -98,8 +98,12 @@ class ImageUploadInterceptor implements NestInterceptor {
       mimeType,
       processingOptions,
     )
+    const path =
+      typeof metadata.options.path === "string"
+        ? metadata.options.path
+        : metadata.options.path(request)
     const processedUpload = await this.storageService.upload(
-      `${metadata.options.path.replace(REGEX.TRAILING_SLASHES, "")}/${randomUUID()}.webp`,
+      `${path.replace(REGEX.TRAILING_SLASHES, "")}/${randomUUID()}.webp`,
       output,
       "image/webp",
     )

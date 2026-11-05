@@ -6,7 +6,7 @@
 
 Изменения UserItem и его статистики выполняются одной MongoDB-транзакцией. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы/числа оценок. Старая подсистема рекомендаций удалена; очереди вкуса нет. HTTP ждёт завершения транзакции.
 
-**Ответ записи:** id, itemId, status, expiresAt (ISO/null), rating, isFavorite, note и attempts с id/isCompleted/progress/unit/startedAt/completedAt. Это UserItem, а не полная карточка Item.
+Изменяющие операции отвечают 204 без тела. Для чтения кратких записей используется QUERY.
 
 <a id="query"></a>
 
@@ -26,13 +26,13 @@ flowchart TD
 
 1–60 уникальных ObjectId, регистр hex не делает ID различными. Чужие/отсутствующие записи и skipped с истёкшим expiresAt пропускаются без 404; порядок оставшихся совпадает с запросом. Item не читается. Нет транзакции, записей, событий, очередей и внешних вызовов; HTTP ждёт чтения и маппинга. Это не чтение всей библиотеки и не поиск по itemId.
 
-**Технические подробности:** [UserItemController.query](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) → [UserItemService.query/authenticate](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts) → UserItemRepository.read.findMany. [DTO](../../../../src/endpoints/userItem/dto/body/queryUserItems.body.ts), [summary DTO](../../../../src/endpoints/userItem/dto/response/userItemSummary.response.ts).
+**Технические подробности:** [UserItemController.query](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) → [UserItemService.query/authenticate](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts) → UserItemRepository.read.findMany. [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/queryUserItems.body.ts), [summary DTO](../../../../src/endpoints/userItem/services/userItemService/dto/userItemSummary.response.ts).
 
 <a id="create"></a>
 
 ## POST /userItems
 
-Добавить произведение в библиотеку с обычным статусом. **Пример:** `POST /userItems`, `{"itemId":"507f1f77bcf86cd799439011","status":"planned"}`, access cookie. **Ответ:** 201, полная запись UserItem.
+Добавить произведение в библиотеку с обычным статусом. **Пример:** `POST /userItems`, `{"itemId":"507f1f77bcf86cd799439011","status":"planned"}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -44,18 +44,18 @@ flowchart TD
         C --> D[("Применить дельты — ItemStats, при необходимости SiteStats")]:::data
     end
     B --> C
-    D -->|Commit| R(["201 — UserItem"]):::http
+    D -->|Commit| R(["204 — без тела"]):::http
 ```
 
 До транзакции проверяется неудалённый Item; для completed — ограничения завершения. Для inProgress/onHold/completed/dropped автоматически создаётся первая попытка; completed помечает её завершённой. Просроченный skipped той же пары user/item удаляется внутри транзакции; другая существующая запись не заменяется — 409 уникальности. Нет Item — 404; недопустимое завершение — 409. HTTP ждёт commit.
 
-**Технические подробности:** UserItemController.create → UserItemService.create/createWithStatus/runMutation → ItemRepository.read.checkIsExists, UserItemRepository.write.deleteByFilter/create, UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [create DTO](../../../../src/endpoints/userItem/dto/body/createUserItem.body.ts), [допустимые статусы создания](../../../../src/endpoints/userItem/dto/body/status.body.ts).
+**Технические подробности:** UserItemController.create → UserItemService.create/createWithStatus/runMutation → ItemRepository.read.checkIsExists, UserItemRepository.write.deleteByFilter/create, UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [create DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createUserItem.body.ts), [допустимые статусы создания](../../../../src/endpoints/userItem/services/userItemService/dto/status.body.ts).
 
 <a id="skip"></a>
 
 ## POST /userItems/skip
 
-Отложить рекомендацию произведения на 90 дней. **Пример:** `POST /userItems/skip`, `{"itemId":"507f1f77bcf86cd799439011"}`, access cookie. **Ответ:** 201, UserItem со status=skipped и expiresAt.
+Отложить рекомендацию произведения на 90 дней. **Пример:** `POST /userItems/skip`, `{"itemId":"507f1f77bcf86cd799439011"}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -67,18 +67,18 @@ flowchart TD
         C --> D["Посчитать дельты статистики; нулевые не писать"]:::action
     end
     B --> C
-    D -->|Commit| R(["201 — пропуск сохранён"]):::http
+    D -->|Commit| R(["204 — без тела"]):::http
 ```
 
 Создаётся новая запись без оценки, избранного, заметки и попыток. Свежий skipped/другая существующая запись пары user/item даёт 409, отсутствующий/удалённый Item — 404. Чистый skipped не вносит вклад в ItemStats/SiteStats, поэтому вызов расчёта дельт обычно ничего туда не пишет. MongoDB TTL позже физически удаляет просроченные skipped независимо от запроса; это не BullMQ-джоба и не обещание удаления ровно в expiresAt. HTTP ждёт commit.
 
-**Технические подробности:** UserItemController.skip → UserItemService.skip/createWithStatus, общий путь создания выше. [Exclusion DTO](../../../../src/endpoints/userItem/dto/body/createExclusion.body.ts), [TTL-индекс](../../../../src/entities/userItem/schemas/userItem.schema.ts), [срок](../../../../src/endpoints/userItem/services/userItemService/static/USER_ITEM_SKIP_DURATION_MS.ts).
+**Технические подробности:** UserItemController.skip → UserItemService.skip/createWithStatus, общий путь создания выше. [Exclusion DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createExclusion.body.ts), [TTL-индекс](../../../../src/entities/userItem/schemas/userItem.schema.ts), [срок](../../../../src/endpoints/userItem/services/userItemService/static/USER_ITEM_SKIP_DURATION_MS.ts).
 
 <a id="block"></a>
 
 ## POST /userItems/block
 
-Бессрочно исключить произведение из рекомендаций. **Пример:** `POST /userItems/block`, `{"itemId":"507f1f77bcf86cd799439011"}`, access cookie. **Ответ:** 201, UserItem со status=blocked, expiresAt=null.
+Бессрочно исключить произведение из рекомендаций. **Пример:** `POST /userItems/block`, `{"itemId":"507f1f77bcf86cd799439011"}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -90,7 +90,7 @@ flowchart TD
         C --> D["Посчитать дельты статистики; нулевые не писать"]:::action
     end
     B --> C
-    D -->|Commit| R(["201 — блокировка сохранена"]):::http
+    D -->|Commit| R(["204 — без тела"]):::http
 ```
 
 Создание blocked не заменяет действующую запись пары user/item: 409. Для изменения существующей записи нужен PATCH /userItems/:id. Нет доступного Item — 404. Чистый blocked не входит в обычные счётчики библиотеки и не несёт оценки/избранного, поэтому ненулевых дельт статистики нет. TTL не применяется. HTTP ждёт commit; внешних вызовов нет.
@@ -101,7 +101,7 @@ flowchart TD
 
 ## PATCH /userItems/:id
 
-Изменить статус, оценку, избранное или заметку. **Пример:** `PATCH /userItems/507f1f77bcf86cd799439012`, `{"rating":8,"isFavorite":true}`, access cookie. **Ответ:** 200, полная UserItem после изменения.
+Изменить статус, оценку, избранное или заметку. **Пример:** `PATCH /userItems/507f1f77bcf86cd799439012`, `{"rating":8,"isFavorite":true}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -114,12 +114,12 @@ flowchart TD
         D --> E[("Сохранить UserItem и дельты ItemStats / SiteStats")]:::data
     end
     B --> C
-    E -->|Commit| R(["200 — UserItem"]):::http
+    E -->|Commit| R(["204 — без тела"]):::http
 ```
 
 rating — целое 1–10 или null для очистки; note допускает null. completed помечает последнюю попытку завершённой; переход в требующий попытку статус создаёт её, если попыток нет. skipped несовместим с оценкой/избранным/заметкой/попытками — 409. expiresAt обнуляется при выходе из skipped, при входе назначается 90 дней. Неверные даты/проценты/единицы попыток — 400; недопустимое завершение — 409. Отсутствующая, чужая или истёкшая skipped — одинаковый 404. ItemStats обновляется синхронно в транзакции. HTTP ждёт commit.
 
-**Технические подробности:** UserItemController.update → UserItemService.update/mutate/changeStatus/validateUserItem/validateCompletion; UserItemRepository.read.findOne/write.updateByFilter фильтруют владельца и срок. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/dto/body/updateUserItem.body.ts).
+**Технические подробности:** UserItemController.update → UserItemService.update/mutate/changeStatus/validateUserItem/validateCompletion; UserItemRepository.read.findOne/write.updateByFilter фильтруют владельца и срок. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/updateUserItem.body.ts).
 
 <a id="remove"></a>
 
@@ -148,7 +148,7 @@ flowchart TD
 
 ## POST /userItems/:id/attempts
 
-Добавить попытку просмотра или прохождения. **Пример:** `POST /userItems/507f1f77bcf86cd799439012/attempts`, `{"progress":30,"unit":"minute"}`, access cookie. **Ответ:** 201, вся UserItem с новой попыткой.
+Добавить попытку просмотра или прохождения. **Пример:** `POST /userItems/507f1f77bcf86cd799439012/attempts`, `{"progress":30,"unit":"minute"}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -161,18 +161,18 @@ flowchart TD
         D --> E[("Добавить attempts; обновить дельты ItemStats")]:::data
     end
     B --> C
-    E -->|Commit| R(["201 — UserItem с новой попыткой"]):::http
+    E -->|Commit| R(["204 — без тела"]):::http
 ```
 
 Новая попытка разрешена только inProgress/onHold/completed/dropped, иначе 409. По умолчанию isCompleted=false, progress=null, unit=minute, даты=null; `{}` допустим. Попытка **не меняет статус UserItem**. unit=episode разрешён только сериалам; percent не выше 100; завершение игры без определённого конца и незавершённого сезона запрещено по TagItem/Tag. Ошибки формата/дат/единиц — 400, ограничения завершения — 409, нет собственной активной записи — 404. Общий mutate обновляет статистику в той же транзакции. Нет внешних обращений; HTTP ждёт commit.
 
-**Технические подробности:** UserItemController.createAttempt → UserItemService.createAttempt/mutate/validateCompletion → UserItemRepository и при необходимости ItemRepository/TagItemRepository.checkHasTagKeys → UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/dto/body/createAttempt.body.ts).
+**Технические подробности:** UserItemController.createAttempt → UserItemService.createAttempt/mutate/validateCompletion → UserItemRepository и при необходимости ItemRepository/TagItemRepository.checkHasTagKeys → UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createAttempt.body.ts).
 
 <a id="update-attempt"></a>
 
 ## PATCH /userItems/:id/attempts/:attemptId
 
-Изменить прогресс, даты или завершённость конкретной попытки. **Пример:** `PATCH /userItems/507f1f77bcf86cd799439012/attempts/507f1f77bcf86cd799439013`, `{"progress":60}`, access cookie. **Ответ:** 200, вся обновлённая UserItem.
+Изменить прогресс, даты или завершённость конкретной попытки. **Пример:** `PATCH /userItems/507f1f77bcf86cd799439012/attempts/507f1f77bcf86cd799439013`, `{"progress":60}`, access cookie. **Ответ:** 204 без тела.
 
 ```mermaid
 flowchart TD
@@ -185,11 +185,11 @@ flowchart TD
         D --> E[("Сохранить attempts; обновить дельты ItemStats")]:::data
     end
     B --> C
-    E -->|Commit| R(["200 — обновлённая UserItem"]):::http
+    E -->|Commit| R(["204 — без тела"]):::http
 ```
 
 Пустое изменение — 400; неизвестная попытка/отсутствующая или чужая UserItem — 404. Те же ограничения дат/единиц/процентов и завершения, что при создании попытки; изменение попытки не меняет статус UserItem. В отличие от создания, отдельной проверки допустимости статуса для добавления здесь нет. ItemStats обновляется только при ненулевой дельте, например изменении числа завершённых попыток; SiteStats при обычном редактировании attempts не меняется. HTTP ждёт commit; внешних обращений и событий нет.
 
-**Технические подробности:** UserItemController.updateAttempt → UserItemService.updateAttempt/mutate/validateUserItem/validateCompletion. [Контроллер](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts), [сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/dto/body/updateAttempt.body.ts).
+**Технические подробности:** UserItemController.updateAttempt → UserItemService.updateAttempt/mutate/validateUserItem/validateCompletion. [Контроллер](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts), [сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/updateAttempt.body.ts).
 
 **Исходники статистики:** [UserItemStatsService](../../../../src/endpoints/userItem/services/userItemStatsService/core/userItemStats.service.ts), [ItemStatsRepository.applyChanges](../../../../src/entities/itemStats/services/itemStatsRepository/core/itemStats.repository.ts), [SiteRatingsStatsRepository.applyChanges](../../../../src/entities/siteStats/services/siteRatingsStatsRepository/core/siteRatingsStats.repository.ts).

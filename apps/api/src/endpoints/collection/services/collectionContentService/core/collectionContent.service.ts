@@ -1,41 +1,22 @@
 import { REGEX } from "@shared/static/REGEX"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
-import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common"
 import { Types } from "mongoose"
-import { isISO8601 } from "class-validator"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
-import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
-import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
-import type {
-  TCollectionFieldOptions,
-  IItemCollectionCard,
-} from "@entities/itemCollection/services/itemCollectionRepository"
-import type { TItemFieldFilter } from "@entities/item/types/TItemFieldFilter"
+import type { IItemCollectionCard } from "@entities/itemCollection/services/itemCollectionRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
-import { isDate } from "@shared/functions/checks/isDate"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { isString } from "@shared/functions/checks/isString"
-import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
-import { normalizePagination } from "@infrastructure/database/functions/normalizePagination"
-import { createPaginatedResult } from "@infrastructure/database/functions/createPaginatedResult"
 
-import type { CollectionFiltersResponseDto } from "@endpoints/collection/dto/response/collectionFilters.response"
-import { ECollectionMode } from "@endpoints/collection/types/ECollectionMode"
-import { ECollectionSort } from "@endpoints/collection/types/ECollectionSort"
 import type { IGetItemCollectionsRequestProps } from "../types/IGetItemCollectionsRequestProps"
-import type { CollectionFieldFilterQueryDto } from "@endpoints/collection/dto/query/collectionFieldFilter.query"
-import type { ItemCollectionResponseDto } from "@endpoints/collection/dto/response/itemCollection.response"
-import type { ItemCollectionsResponseDto } from "@endpoints/collection/dto/response/itemCollections.response"
-import { createCollectionDisplayBlocks } from "../functions/createCollectionDisplayBlocks"
+import type { ItemCollectionResponseDto } from "../dto/itemCollection.response"
+import type { ItemCollectionsResponseDto } from "../dto/itemCollections.response"
 
 @Injectable()
 class CollectionContentService {
@@ -44,145 +25,119 @@ class CollectionContentService {
     private readonly itemCollectionRepository: ItemCollectionRepository,
   ) {}
 
-  async getFilters(id: Types.ObjectId): Promise<CollectionFiltersResponseDto> {
-    const { collection, groupIds } = await this.getContentContext(id)
-
-    const options = await this.itemCollectionRepository.getFilterOptions({
-      collectionId: id,
-      groupIds,
-    })
-    const isGroupedModeAvailable =
-      options.nonEmptyGroupIds.length >= 2 ||
-      collection.blocks.some(
-        (block) => block.type === ECollectionBlockType.TEXT,
-      )
-
-    return {
-      tags: options.tags.map((tag) => ({
-        id: tag._id.toHexString(),
-        key: tag.key,
-        group: tag.group,
-        name: {
-          [ELanguage.RUSSIAN]: tag.name[ELanguage.RUSSIAN],
-          [ELanguage.ENGLISH]: tag.name[ELanguage.ENGLISH],
-        },
-      })),
-      fields: options.fields.map((field) => this.mapField(field)),
-      sorting: {
-        availableModes: isGroupedModeAvailable
-          ? [ECollectionMode.FLAT, ECollectionMode.GROUPED]
-          : [ECollectionMode.FLAT],
-      },
-    }
-  }
-
   async getItems({
     id,
     query,
   }: IGetItemCollectionsRequestProps): Promise<ItemCollectionsResponseDto> {
-    const { page, limit } = normalizePagination(query)
+    const limit = query.limit ?? 50
+    const { collection, groupIds } = await this.getContentContext(id)
+    const scope = id.toHexString() + ":" + collection.version + ":"
+    const after = this.readCursor(query.cursor, scope, groupIds.length)
+    const rows = await this.itemCollectionRepository.readContentSlice({
+      collectionId: id,
+      groupIds,
+      after,
+      limit: limit + 1,
+    })
+    const page = rows.slice(0, limit)
+    const last = page.at(-1)
+    const nextCursor =
+      rows.length > limit && last !== undefined
+        ? Buffer.from(
+            scope +
+              last.groupOrder +
+              ":" +
+              last.position +
+              ":" +
+              last._id.toHexString(),
+          ).toString("base64url")
+        : false
+    const items = page.map((row) => this.mapItem(row))
+    const itemsByGroup = new Map<string, ItemCollectionResponseDto[]>()
+    for (const item of items) {
+      const group = itemsByGroup.get(item.membership.groupId) ?? []
+      group.push(item)
+      itemsByGroup.set(item.membership.groupId, group)
+    }
 
-    if (!Number.isSafeInteger((page - 1) * limit)) {
+    const blocks: ItemCollectionsResponseDto["blocks"] = []
+    let pendingText: ItemCollectionsResponseDto["blocks"] = []
+    let groupOrder = -1
+    for (const block of collection.blocks) {
+      if (block.type === ECollectionBlockType.TEXT) {
+        if (groupOrder >= (after?.groupOrder ?? -1)) {
+          pendingText.push({
+            type: block.type,
+            content: {
+              ru: block.content?.ru ?? null,
+              en: block.content?.en ?? null,
+            },
+          })
+        }
+        continue
+      }
+
+      groupOrder += 1
+      const group = itemsByGroup.get(block.id.toHexString())
+      if (group === undefined) {
+        continue
+      }
+
+      blocks.push(...pendingText, {
+        type: block.type,
+        title: isNil(block.title)
+          ? null
+          : { ru: block.title.ru, en: block.title.en },
+        description: isNil(block.description)
+          ? null
+          : { ru: block.description.ru, en: block.description.en },
+        items: group.map(({ membership, ...item }) => ({
+          ...item,
+          note: membership.note,
+        })),
+      })
+      pendingText = []
+    }
+    if (nextCursor === false) {
+      blocks.push(...pendingText)
+    }
+
+    return { nextCursor, blocks }
+  }
+
+  private readCursor(
+    cursor: string | undefined,
+    scope: string,
+    groupCount: number,
+  ) {
+    if (cursor === undefined) {
+      return undefined
+    }
+
+    const decoded = Buffer.from(cursor, "base64url").toString()
+    const [group, offset, id, extra] = decoded.slice(scope.length).split(":")
+    const groupOrder = Number(group)
+    const position = Number(offset)
+    if (
+      !decoded.startsWith(scope) ||
+      group !== String(groupOrder) ||
+      offset !== String(position) ||
+      !Number.isSafeInteger(groupOrder) ||
+      groupOrder < 0 ||
+      groupOrder >= groupCount ||
+      !Number.isSafeInteger(position) ||
+      position < 0 ||
+      id === undefined ||
+      !REGEX.MONGO_OBJECT_ID.test(id) ||
+      extra !== undefined
+    ) {
       throw new BadRequestException(DICTIONARY.collection.invalidPagination)
     }
 
-    if (
-      !isUndefined(query.ratingMin) &&
-      !isUndefined(query.ratingMax) &&
-      query.ratingMin > query.ratingMax
-    ) {
-      throw new BadRequestException(DICTIONARY.collection.invalidRatingRange)
-    }
-
-    const { collection, groupIds, groupId } = await this.getContentContext(
-      id,
-      query.groupId,
-    )
-
-    if (
-      query.sort === ECollectionSort.RELEVANCE_SCORE &&
-      collection.type !== ECollectionType.TAG
-    ) {
-      throw new BadRequestException(DICTIONARY.collection.unavailableSort)
-    }
-
-    const fields = this.prepareFieldFilters(query.fields)
-    const groupCounts =
-      await this.itemCollectionRepository.countAvailableItemsByGroup({
-        collectionId: id,
-        groupIds,
-      })
-    const isGroupedModeAvailable =
-      groupCounts.length >= 2 ||
-      collection.blocks.some(
-        (block) => block.type === ECollectionBlockType.TEXT,
-      )
-    const mode =
-      query.mode ??
-      (isGroupedModeAvailable ? ECollectionMode.GROUPED : ECollectionMode.FLAT)
-
-    if (mode === ECollectionMode.GROUPED && !isGroupedModeAvailable) {
-      throw new BadRequestException(DICTIONARY.collection.unavailableMode)
-    }
-
-    const direction =
-      query.direction ??
-      (query.sort === ECollectionSort.RELEVANCE_SCORE ? "desc" : "asc")
-    const result = await this.itemCollectionRepository.readContentPage({
-      collectionId: id,
-      groupIds,
-      groupId,
-      isGrouped: mode === ECollectionMode.GROUPED,
-      sort: query.sort ?? ECollectionSort.COLLECTION,
-      direction: direction === "desc" ? -1 : 1,
-      language: query.language ?? ELanguage.RUSSIAN,
-      page,
-      limit,
-      tags: (query.tags ?? []).map((id) => new Types.ObjectId(id)),
-      excludeTags: (query.excludeTags ?? []).map(
-        (id) => new Types.ObjectId(id),
-      ),
-      fields,
-      query: query.query,
-      ratingMin: query.ratingMin,
-      ratingMax: query.ratingMax,
-    })
-    const response = createPaginatedResult(
-      result.items.map((item) => this.mapItem(item)),
-      result.total,
-      page,
-      limit,
-    )
-    const isFiltered = [
-      query.groupId,
-      query.query,
-      query.tags,
-      query.excludeTags,
-      query.fields,
-      query.ratingMin,
-      query.ratingMax,
-    ].some((value) => !isUndefined(value))
-
-    return {
-      ...response,
-      mode,
-      displayBlocks:
-        mode === ECollectionMode.FLAT
-          ? []
-          : createCollectionDisplayBlocks({
-              blocks: collection.blocks,
-              groupCounts,
-              page: response,
-              limit,
-              isFiltered,
-            }),
-    }
+    return { groupOrder, position, id: new Types.ObjectId(id) }
   }
 
-  private async getContentContext(
-    id: Types.ObjectId,
-    requestedGroupId?: string,
-  ) {
+  private async getContentContext(id: Types.ObjectId) {
     const collection = await this.collectionRepository.findNotDeletedById(id)
 
     if (isNil(collection)) {
@@ -192,99 +147,8 @@ class CollectionContentService {
     const groupIds = collection.blocks
       .filter((block) => block.type === ECollectionBlockType.GROUP)
       .map((block) => block.id)
-    const groupId = isUndefined(requestedGroupId)
-      ? undefined
-      : new Types.ObjectId(requestedGroupId)
 
-    if (!isUndefined(groupId) && !groupIds.some((id) => id.equals(groupId))) {
-      throw new BadRequestException(DICTIONARY.collection.invalidGroup)
-    }
-
-    return { collection, groupIds, groupId }
-  }
-
-  private prepareFieldFilters(
-    filters: CollectionFieldFilterQueryDto[] = [],
-  ): TItemFieldFilter[] {
-    if (
-      new Set(filters.map((filter) => filter.field)).size !== filters.length
-    ) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
-    }
-
-    return filters.map((filter): TItemFieldFilter => {
-      const definition = ITEM_FIELD_DEFINITIONS[filter.field]
-
-      if (
-        isUndefined(definition) ||
-        (isUndefined(filter.min) && isUndefined(filter.max))
-      ) {
-        throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
-      }
-
-      if (definition.valueType === EItemFieldValueType.NUMBER) {
-        if (
-          (!isUndefined(filter.min) && !isFiniteNumber(filter.min)) ||
-          (!isUndefined(filter.max) && !isFiniteNumber(filter.max))
-        ) {
-          throw new BadRequestException(
-            DICTIONARY.collection.invalidFieldFilters,
-          )
-        }
-
-        const min = isFiniteNumber(filter.min) ? filter.min : undefined
-        const max = isFiniteNumber(filter.max) ? filter.max : undefined
-
-        if (!isUndefined(min) && !isUndefined(max) && min > max) {
-          throw new BadRequestException(
-            DICTIONARY.collection.invalidFieldFilters,
-          )
-        }
-
-        return {
-          field: filter.field,
-          valueType: EItemFieldValueType.NUMBER,
-          min,
-          max,
-        }
-      }
-
-      const min = this.parseFieldDate(filter.min)
-      const max = this.parseFieldDate(filter.max)
-
-      if (!isUndefined(min) && !isUndefined(max) && min > max) {
-        throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
-      }
-
-      return {
-        field: filter.field,
-        valueType: EItemFieldValueType.DATE,
-        min,
-        max,
-      }
-    })
-  }
-
-  private parseFieldDate(value: unknown) {
-    if (isUndefined(value)) {
-      return undefined
-    }
-
-    if (
-      !isString(value) ||
-      !isISO8601(value, { strict: true, strictSeparator: true }) ||
-      !(REGEX.ISO_DATE.test(value) || REGEX.ISO_TIMEZONE_SUFFIX.test(value))
-    ) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
-    }
-
-    const date = new Date(value)
-
-    if (!isDate(date)) {
-      throw new BadRequestException(DICTIONARY.collection.invalidFieldFilters)
-    }
-
-    return date
+    return { collection, groupIds }
   }
 
   private mapItem(card: IItemCollectionCard): ItemCollectionResponseDto {
@@ -295,7 +159,7 @@ class CollectionContentService {
         [ELanguage.RUSSIAN]: card.item.title[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: card.item.title[ELanguage.ENGLISH],
       },
-      media: card.item.media.map((media) => ({
+      media: (card.item.media ?? []).map((media) => ({
         src: media.src,
         language: media.language,
         type: media.type,
@@ -305,33 +169,6 @@ class CollectionContentService {
         position: card.position,
         note: card.note,
       },
-    }
-  }
-
-  private mapField(
-    field: TCollectionFieldOptions,
-  ): CollectionFiltersResponseDto["fields"][number] {
-    const definition = ITEM_FIELD_DEFINITIONS[field.field]
-    const metadata = {
-      field: field.field,
-      name: definition.name,
-      unit: definition.unit,
-    }
-
-    if (field.valueType === EItemFieldValueType.DATE) {
-      return {
-        ...metadata,
-        valueType: field.valueType,
-        min: field.min.toISOString(),
-        max: field.max.toISOString(),
-      }
-    }
-
-    return {
-      ...metadata,
-      valueType: field.valueType,
-      min: field.min,
-      max: field.max,
     }
   }
 }

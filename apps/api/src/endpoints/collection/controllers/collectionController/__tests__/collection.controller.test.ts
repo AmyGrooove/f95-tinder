@@ -5,9 +5,8 @@ import {
   UnauthorizedException,
 } from "@nestjs/common"
 import { Test, type TestingModule } from "@nestjs/testing"
+import { ImageUploadInterceptor } from "@infrastructure/storage/services/imageUploadInterceptor"
 import { Types } from "mongoose"
-
-import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 
 import { CollectionController } from "../core/collection.controller"
 import { CollectionService } from "@endpoints/collection/services/collectionService"
@@ -29,19 +28,11 @@ describe("CollectionController", () => {
     moduleRef = await Test.createTestingModule({
       controllers: [CollectionController],
       providers: [{ provide: CollectionService, useValue: service }],
-    }).compile()
-    const result = {
-      id: new Types.ObjectId().toHexString(),
-      version: 0,
-      authorId: null,
-      type: ECollectionType.CUSTOM,
-      title: { ru: "Подборка", en: null },
-      description: { ru: null, en: null },
-      media: [],
-      blocks: [],
-      createdAt: "2026-10-23T00:00:00.000Z",
-      updatedAt: "2026-10-23T00:00:00.000Z",
-    }
+    })
+      .overrideInterceptor(ImageUploadInterceptor)
+      .useValue({})
+      .compile()
+    const result = { id: new Types.ObjectId().toHexString() }
 
     return { controller: moduleRef.get(CollectionController), service, result }
   }
@@ -55,12 +46,12 @@ describe("CollectionController", () => {
     expect(service.create).toHaveBeenCalledWith("token", body)
   })
 
-  it("передаёт ObjectId и версию 0 при обновлении и возвращает результат", async () => {
-    const { controller, service, result } = await createController()
+  it("передаёт ObjectId и версию 0 при обновлении без тела ответа", async () => {
+    const { controller, service } = await createController()
     const id = new Types.ObjectId()
     const body = { version: 0, media: [] }
-    service.update.mockResolvedValue(result)
-    await expect(controller.update("token", id, body)).resolves.toBe(result)
+    service.update.mockResolvedValue(undefined)
+    await expect(controller.update("token", id, body)).resolves.toBeUndefined()
     expect(service.update).toHaveBeenCalledTimes(1)
     expect(service.update).toHaveBeenCalledWith("token", { id, body })
   })

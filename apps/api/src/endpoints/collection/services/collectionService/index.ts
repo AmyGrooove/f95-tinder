@@ -1,1 +1,8 @@
 export { CollectionService } from "./core/collection.service"
+export { CreateCollectionBodyDto } from "./dto/createCollection.body"
+export { CollectionResponseDto } from "./dto/collection.response"
+export { TextBlockResponseDto } from "./dto/textBlock.response"
+export { GroupBlockResponseDto } from "./dto/groupBlock.response"
+export { QueryCollectionsBodyDto } from "./dto/queryCollections.body"
+export { QueryCollectionsResponseDto } from "./dto/queryCollections.response"
+export { UpdateCollectionBodyDto } from "./dto/updateCollection.body"

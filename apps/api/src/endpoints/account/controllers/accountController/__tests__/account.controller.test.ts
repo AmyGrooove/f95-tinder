@@ -11,9 +11,11 @@ import { EUserRole } from "@entities/user/schemas/EUserRole"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { AccountController } from "../core/account.controller"
-import { AccountService } from "@endpoints/account/services/accountService"
-import { DisplayNameBodyDto } from "@endpoints/account/dto/body/displayName.body"
-import { UsernameBodyDto } from "@endpoints/account/dto/body/username.body"
+import {
+  AccountService,
+  DisplayNameBodyDto,
+  UsernameBodyDto,
+} from "@endpoints/account/services/accountService"
 
 describe("AccountController", () => {
   let moduleRef: TestingModule | undefined

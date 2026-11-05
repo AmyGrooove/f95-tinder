@@ -25,7 +25,7 @@ import { createTestApplication } from "@app/__tests__/setup/createTestApplicatio
 
 import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
-import type { SearchResponseDto } from "@endpoints/search/dto/response/search.response"
+import type { SearchResponseDto } from "@endpoints/search/services/siteSearchService"
 
 describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
   const docker = promisify(execFile)

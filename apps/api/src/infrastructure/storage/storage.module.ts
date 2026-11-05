@@ -65,7 +65,7 @@ import { DICTIONARY } from "@shared/static/DICTIONARY"
     StorageHealthService,
     StorageService,
   ],
-  exports: [StorageHealthService, StorageService],
+  exports: [ImageProcessingService, StorageHealthService, StorageService],
 })
 class StorageModule {}
 

@@ -18,18 +18,19 @@ describe("CollectionUserController HTTP", () => {
         { path: "favorite", payload: { isFavorite: true } },
         { path: "hidden", payload: { isHidden: true } },
         { path: "rating", payload: { rating: 8 } },
-      ].map(async ({ path, payload }) =>
+      ].map(async ({ payload }) =>
         app.inject({
           method: "PATCH",
-          url: `/collections/${collection.id}/${path}`,
+          url: `/collections/${collection.id}/user`,
           headers,
           payload,
         }),
       ),
     )
     expect(responses.map((response) => response.statusCode)).toEqual([
-      200, 200, 200,
+      204, 204, 204,
     ])
+    expect(responses.map((response) => response.body)).toEqual(["", "", ""])
     const records = await connection
       .collection("UserCollection")
       .find({ user: user._id, collectionId: new Types.ObjectId(collection.id) })
@@ -47,6 +48,46 @@ describe("CollectionUserController HTTP", () => {
     })
     expect(read.statusCode).toBe(200)
     expect(read.json()).toEqual({ isFavorite: true, isHidden: true, rating: 8 })
+  })
+
+  it("принимает несколько полей в одном запросе и отклоняет прежние маршруты", async () => {
+    const { app } = getTestApplication()
+    const { collection } = await createCollection()
+    const { headers } = await createAccount()
+    const base = "/collections/" + collection.id
+    const response = await app.inject({
+      method: "PATCH",
+      url: base + "/user",
+      headers,
+      payload: {
+        isFavorite: true,
+        isHidden: true,
+        rating: 8,
+      },
+    })
+    expect(response.statusCode).toBe(204)
+    expect(response.body).toBe("")
+    expect(
+      (
+        await app.inject({ method: "GET", url: base + "/user", headers })
+      ).json(),
+    ).toEqual({
+      isFavorite: true,
+      isHidden: true,
+      rating: 8,
+    })
+    for (const path of ["favorite", "hidden", "rating"]) {
+      expect(
+        (
+          await app.inject({
+            method: "PATCH",
+            url: base + "/" + path,
+            headers,
+            payload: {},
+          })
+        ).statusCode,
+      ).toBe(404)
+    }
   })
 
   it("возвращает реакцию по умолчанию без создания записи", async () => {
@@ -111,16 +152,16 @@ describe("CollectionUserController HTTP", () => {
         expected: { isFavorite: false, rating: null, isHidden: false },
       },
     ]
-    for (const { path, payload, expected } of changes) {
+    for (const { payload, expected } of changes) {
       const response = await app.inject({
         method: "PATCH",
-        url: `${base}/${path}`,
+        url: `${base}/user`,
         headers,
         payload,
       })
-      expect(response.statusCode).toBe(200)
+      expect(response.statusCode).toBe(204)
       expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual(expected)
+      expect(response.body).toBe("")
       expect(
         await connection.collection<UserCollection>("UserCollection").findOne({
           user: user._id,
@@ -160,16 +201,12 @@ describe("CollectionUserController HTTP", () => {
     for (const isFavorite of [true, true]) {
       const response = await app.inject({
         method: "PATCH",
-        url: `/collections/${collection.id}/favorite`,
+        url: `/collections/${collection.id}/user`,
         headers: owner.headers,
         payload: { isFavorite },
       })
-      expect(response.statusCode).toBe(200)
-      expect(response.json()).toEqual({
-        isFavorite: true,
-        rating: null,
-        isHidden: false,
-      })
+      expect(response.statusCode).toBe(204)
+      expect(response.body).toBe("")
       expect(
         await connection.collection("UserCollection").countDocuments(),
       ).toBe(1)
@@ -179,7 +216,7 @@ describe("CollectionUserController HTTP", () => {
   it("запрещает автору оценивать свою подборку, разрешая сброс оценки и другие реакции", async () => {
     const { app, connection } = getTestApplication()
     const { collection, owner } = await createCollection()
-    const url = `/collections/${collection.id}/rating`
+    const url = `/collections/${collection.id}/user`
     expect(
       (
         await app.inject({
@@ -199,19 +236,15 @@ describe("CollectionUserController HTTP", () => {
       headers: owner.headers,
       payload: { rating: null },
     })
-    expect(clear.statusCode).toBe(200)
-    expect(clear.json()).toEqual({
-      isFavorite: false,
-      rating: null,
-      isHidden: false,
-    })
+    expect(clear.statusCode).toBe(204)
+    expect(clear.body).toBe("")
   })
 
   it.each([
     { path: "favorite", payload: {} },
     { path: "favorite", payload: { isFavorite: "true" } },
     { path: "favorite", payload: { isFavorite: null } },
-    { path: "favorite", payload: { isFavorite: true, rating: 4 } },
+    { path: "favorite", payload: { isFavorite: true, unexpected: 4 } },
     { path: "hidden", payload: {} },
     { path: "hidden", payload: { isHidden: 1 } },
     { path: "hidden", payload: { isHidden: null } },
@@ -220,23 +253,20 @@ describe("CollectionUserController HTTP", () => {
     { path: "rating", payload: { rating: 11 } },
     { path: "rating", payload: { rating: 1.5 } },
     { path: "rating", payload: { rating: "5" } },
-  ])(
-    "отклоняет некорректное тело $path: $payload",
-    async ({ path, payload }) => {
-      const { app, connection } = getTestApplication()
-      const { collection, owner } = await createCollection()
-      const response = await app.inject({
-        method: "PATCH",
-        url: `/collections/${collection.id}/${path}`,
-        headers: owner.headers,
-        payload,
-      })
-      expect(response.statusCode).toBe(400)
-      expect(
-        await connection.collection("UserCollection").countDocuments(),
-      ).toBe(0)
-    },
-  )
+  ])("отклоняет некорректное тело $path: $payload", async ({ payload }) => {
+    const { app, connection } = getTestApplication()
+    const { collection, owner } = await createCollection()
+    const response = await app.inject({
+      method: "PATCH",
+      url: `/collections/${collection.id}/user`,
+      headers: owner.headers,
+      payload,
+    })
+    expect(response.statusCode).toBe(400)
+    expect(await connection.collection("UserCollection").countDocuments()).toBe(
+      0,
+    )
+  })
 
   it.each([
     { path: "user", method: "GET" as const, payload: undefined },
@@ -249,10 +279,10 @@ describe("CollectionUserController HTTP", () => {
     { path: "hidden", method: "PATCH" as const, payload: { isHidden: true } },
   ])(
     "проверяет cookie, сессию, id и существование подборки для $path",
-    async ({ path, method, payload }) => {
+    async ({ method, payload }) => {
       const { app, connection } = getTestApplication()
       const { collection, owner } = await createCollection()
-      const url = `/collections/${collection.id}/${path}`
+      const url = `/collections/${collection.id}/user`
       expect(
         (
           await app.inject({
@@ -280,7 +310,7 @@ describe("CollectionUserController HTTP", () => {
         (
           await app.inject({
             method,
-            url: `/collections/invalid/${path}`,
+            url: `/collections/invalid/user`,
             headers: owner.headers,
             payload,
           })
@@ -290,7 +320,7 @@ describe("CollectionUserController HTTP", () => {
         (
           await app.inject({
             method,
-            url: `/collections/${new Types.ObjectId().toHexString()}/${path}`,
+            url: `/collections/${new Types.ObjectId().toHexString()}/user`,
             headers: owner.headers,
             payload,
           })

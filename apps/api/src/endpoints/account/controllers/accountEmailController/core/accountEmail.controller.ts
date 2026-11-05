@@ -13,9 +13,11 @@ import { Throttle } from "@nestjs/throttler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { EmailBodyDto } from "@endpoints/account/dto/body/email.body"
-import { ConfirmEmailBodyDto } from "@endpoints/account/dto/body/confirmEmail.body"
-import { AccountEmailService } from "@endpoints/account/services/accountEmailService"
+import {
+  EmailBodyDto,
+  ConfirmEmailBodyDto,
+  AccountEmailService,
+} from "@endpoints/account/services/accountEmailService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountEmail)
 @Controller("account/email")

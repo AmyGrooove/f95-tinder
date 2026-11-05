@@ -10,39 +10,39 @@ class InfrastructureConfigService {
     private readonly configuration: TInfrastructureConfiguration,
   ) {}
 
-  get app(): TInfrastructureConfiguration["app"] {
+  get app() {
     return this.configuration.app
   }
 
-  get database(): TInfrastructureConfiguration["database"] {
+  get database() {
     return this.configuration.database
   }
 
-  get knowledge(): TInfrastructureConfiguration["knowledge"] {
+  get knowledge() {
     return this.configuration.knowledge
   }
 
-  get redis(): TInfrastructureConfiguration["redis"] {
+  get redis() {
     return this.configuration.redis
   }
 
-  get jwt(): TInfrastructureConfiguration["jwt"] {
+  get jwt() {
     return this.configuration.jwt
   }
 
-  get storage(): TInfrastructureConfiguration["storage"] {
+  get storage() {
     return this.configuration.storage
   }
 
-  get search(): TInfrastructureConfiguration["search"] {
+  get search() {
     return this.configuration.search
   }
 
-  get mail(): TInfrastructureConfiguration["mail"] {
+  get mail() {
     return this.configuration.mail
   }
 
-  get sources(): TInfrastructureConfiguration["sources"] {
+  get sources() {
     return this.configuration.sources
   }
 }

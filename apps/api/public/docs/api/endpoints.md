@@ -2,14 +2,14 @@
 
 Все фактически подключённые операции — от входа до подборок. Выбери маршрут, чтобы увидеть простую схему, пример запроса, проверки и момент ответа.
 
-<div class="endpoint-overview"><span><strong>40</strong> продуктовых операций</span><span><strong>4</strong> служебных маршрута</span><span>Сверено с кодом · 29 октября 2026</span></div>
+<div class="endpoint-overview"><span><strong>36</strong> продуктовых операций</span><span><strong>4</strong> служебных маршрута</span><span>Сверено с кодом · 6 ноября 2026</span></div>
 
 <nav class="endpoint-jumps" aria-label="Области API">
 <a href="#/api/endpoints?id=auth">Вход и сессии<span>11</span></a>
 <a href="#/api/endpoints?id=account">Аккаунт<span>8</span></a>
 <a href="#/api/endpoints?id=catalog">Каталог и поиск<span>2</span></a>
 <a href="#/api/endpoints?id=library">Личная библиотека<span>8</span></a>
-<a href="#/api/endpoints?id=collections">Подборки<span>11</span></a>
+<a href="#/api/endpoints?id=collections">Подборки<span>8</span></a>
 <a href="#/api/endpoints?id=service">Служебные маршруты<span>4</span></a>
 </nav>
 
@@ -18,7 +18,7 @@
 <h2 id="auth" class="endpoint-group-title">Вход и сессии<span>11</span></h2>
 <p class="endpoint-group-description">Регистрация, восстановление доступа и устройства</p>
 <div class="endpoint-list" aria-label="Вход и сессии">
-<a class="endpoint-row" href="#/api/requestFlows/auth?id=register"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/auth/register</code><span>Создать аккаунт и получить секретный код</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
+<a class="endpoint-row" href="#/api/requestFlows/auth?id=register"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/auth/register</code><span>Создать аккаунт и открыть сессию</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/auth?id=login"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/auth/login</code><span>Войти по логину и паролю</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/auth?id=login-code"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/auth/login/code</code><span>Войти по секретному коду</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/auth?id=reissue-code"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/auth/login/code</code><span>Заменить секретный код и завершить другие сессии</span></span><span class="endpoint-access">Access + код</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
@@ -47,7 +47,6 @@
 <h2 id="catalog" class="endpoint-group-title">Каталог и поиск<span>2</span></h2>
 <p class="endpoint-group-description">Публичные карточки и поиск по сайту</p>
 <div class="endpoint-list" aria-label="Каталог и поиск">
-<a class="endpoint-row" href="#/api/requestFlows/catalog?id=item"><span class="endpoint-method endpoint-method--get">GET</span><span class="endpoint-main"><code>/items/:id</code><span>Открыть произведение, его теги и связи</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/catalog?id=search"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/search</code><span>Найти произведения, пользователей и подборки</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
@@ -64,20 +63,17 @@
 <a class="endpoint-row" href="#/api/requestFlows/userItems?id=update-attempt"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/userItems/:id/attempts/:attemptId</code><span>Обновить прогресс и даты попытки</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
-<h2 id="collections" class="endpoint-group-title">Подборки<span>11</span></h2>
+<h2 id="collections" class="endpoint-group-title">Подборки<span>8</span></h2>
 <p class="endpoint-group-description">Публичное чтение, авторский состав и личные реакции</p>
 <div class="endpoint-list" aria-label="Подборки">
-<a class="endpoint-row" href="#/api/requestFlows/collections?id=query"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/collections</code><span>Получить страницу кратких подборок</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=get"><span class="endpoint-method endpoint-method--get">GET</span><span class="endpoint-main"><code>/collections/:id</code><span>Открыть метаданные и блоки подборки</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=items"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/collections/:id/items</code><span>Прочитать страницу произведений подборки</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
-<a class="endpoint-row" href="#/api/requestFlows/collections?id=filters"><span class="endpoint-method endpoint-method--get">GET</span><span class="endpoint-main"><code>/collections/:id/filters</code><span>Получить доступные фильтры подборки</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=create"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/collections</code><span>Создать подборку и её состав</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=update"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/collections/:id</code><span>Изменить метаданные, блоки и состав</span></span><span class="endpoint-access">Автор</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=remove"><span class="endpoint-method endpoint-method--delete">DELETE</span><span class="endpoint-main"><code>/collections/:id</code><span>Скрыть подборку через soft delete</span></span><span class="endpoint-access">Автор</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/collections?id=user"><span class="endpoint-method endpoint-method--get">GET</span><span class="endpoint-main"><code>/collections/:id/user</code><span>Прочитать свою реакцию на подборку</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
-<a class="endpoint-row" href="#/api/requestFlows/collections?id=favorite"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/collections/:id/favorite</code><span>Добавить или убрать из избранного</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
-<a class="endpoint-row" href="#/api/requestFlows/collections?id=rating"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/collections/:id/rating</code><span>Оценить подборку или очистить оценку</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
-<a class="endpoint-row" href="#/api/requestFlows/collections?id=hidden"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/collections/:id/hidden</code><span>Изменить личный флаг скрытия</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
+<a class="endpoint-row" href="#/api/requestFlows/collections?id=reaction"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/collections/:id/user</code><span>Изменить личную реакцию</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
+<a class="endpoint-row" href="#/api/requestFlows/collections?id=poster"><span class="endpoint-method endpoint-method--post">PUT</span><span class="endpoint-main"><code>/collections/:id/poster</code><span>Загрузить обложку</span></span><span class="endpoint-access">Автор</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
 <h2 id="service" class="endpoint-group-title">Служебные маршруты<span>4</span></h2>
@@ -106,4 +102,4 @@
 
 [Устройство API](readme.md) · [Покрытие продуктовых страниц](pages/readme.md) · [Сущности и связи](entities.md)
 
-**Источники состава:** [AppModule](../../../src/app/app.module.ts), [AuthModule](../../../src/endpoints/auth/auth.module.ts), [AccountModule](../../../src/endpoints/account/account.module.ts), [UserItemEndpointModule](../../../src/endpoints/userItem/userItem.module.ts), [CollectionEndpointModule](../../../src/endpoints/collection/collection.module.ts), [ItemEndpointModule](../../../src/endpoints/item/item.module.ts), [SearchEndpointModule](../../../src/endpoints/search/search.module.ts), [AppController](../../../src/app/controllers/appController/core/app.controller.ts), [HealthModule](../../../src/infrastructure/health/health.module.ts).
+**Источники состава:** [AppModule](../../../src/app/app.module.ts), [AuthModule](../../../src/endpoints/auth/auth.module.ts), [AccountModule](../../../src/endpoints/account/account.module.ts), [UserItemEndpointModule](../../../src/endpoints/userItem/userItem.module.ts), [CollectionEndpointModule](../../../src/endpoints/collection/collection.module.ts), [SearchEndpointModule](../../../src/endpoints/search/search.module.ts), [AppController](../../../src/app/controllers/appController/core/app.controller.ts), [HealthModule](../../../src/infrastructure/health/health.module.ts).

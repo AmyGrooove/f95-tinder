@@ -19,7 +19,7 @@ class TagItemMutationService {
     private readonly transactionService: MongoTransactionService,
   ) {}
 
-  async run<TResult>(props: ITagItemMutationProps<TResult>): Promise<TResult> {
+  async run<TResult>(props: ITagItemMutationProps<TResult>) {
     this.transactionService.assertManagedSession(props.session)
 
     const previous =

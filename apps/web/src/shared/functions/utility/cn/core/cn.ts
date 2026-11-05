@@ -1,7 +1,7 @@
 import { isNil } from '@shared/functions/checks/isNil'
 import type { TCnValue } from '../types/TCnValue'
 
-const cn = (...classNames: TCnValue[]): string => {
+const cn = (...classNames: TCnValue[]) => {
   const normalizedClassNames = classNames.flatMap((className) => {
     if (isNil(className) || className === false) {
       return []

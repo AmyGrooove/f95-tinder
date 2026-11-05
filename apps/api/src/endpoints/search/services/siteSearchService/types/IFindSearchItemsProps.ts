@@ -1,4 +1,4 @@
-import type { SearchBodyDto } from "@endpoints/search/dto/body/search.body"
+import type { SearchBodyDto } from "../dto/search.body"
 
 interface IFindSearchItemsProps {
   body: SearchBodyDto

@@ -1,1 +1,5 @@
 export { AccountService } from "./core/account.service"
+export { DisplayNameBodyDto } from "./dto/displayName.body"
+export { UsernameBodyDto } from "./dto/username.body"
+export { WhoamiResponseDto } from "./dto/whoami.response"
+export { PasswordBodyDto } from "./dto/password.body"

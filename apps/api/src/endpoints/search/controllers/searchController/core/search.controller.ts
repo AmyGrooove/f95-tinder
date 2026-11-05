@@ -11,10 +11,12 @@ import { ApiTags } from "@nestjs/swagger"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 
-import { SearchBodyDto } from "@endpoints/search/dto/body/search.body"
+import {
+  SearchBodyDto,
+  SearchResponseDto,
+  SiteSearchService,
+} from "@endpoints/search/services/siteSearchService"
 import { SearchBodyInterceptor } from "@endpoints/search/services/searchBodyInterceptor"
-import { SearchResponseDto } from "@endpoints/search/dto/response/search.response"
-import { SiteSearchService } from "@endpoints/search/services/siteSearchService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.search)
 @Controller("search")

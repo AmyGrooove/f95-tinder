@@ -5,7 +5,6 @@ import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
-import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 
 import { ItemModule } from "@entities/item/item.module"
@@ -51,7 +50,6 @@ import { AppController } from "./controllers/appController"
     AccountModule,
     UserItemEndpointModule,
     CollectionEndpointModule,
-    ItemEndpointModule,
     ItemModule,
     CollectionModule,
     ItemCollectionModule,

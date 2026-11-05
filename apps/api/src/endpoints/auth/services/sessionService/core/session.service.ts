@@ -15,7 +15,7 @@ import { requestContext } from "@shared/functions/context/requestContext"
 
 import { AuthService } from "@endpoints/auth/services/authService"
 
-import type { SessionResponseDto } from "@endpoints/auth/dto/response/session.response"
+import type { SessionResponseDto } from "../dto/session.response"
 
 @Injectable()
 class SessionService {

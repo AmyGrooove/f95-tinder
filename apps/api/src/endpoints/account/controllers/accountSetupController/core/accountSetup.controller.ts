@@ -13,9 +13,11 @@ import { Throttle } from "@nestjs/throttler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 
-import { AccountSetupService } from "@endpoints/account/services/accountSetupService"
-import { SetupBodyDto } from "@endpoints/account/dto/body/setup.body"
-import { ConfirmSetupBodyDto } from "@endpoints/account/dto/body/confirmSetup.body"
+import {
+  AccountSetupService,
+  SetupBodyDto,
+  ConfirmSetupBodyDto,
+} from "@endpoints/account/services/accountSetupService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountSetup)
 @Controller("account/credentials")

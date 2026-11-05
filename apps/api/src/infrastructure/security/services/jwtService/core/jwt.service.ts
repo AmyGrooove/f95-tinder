@@ -60,7 +60,7 @@ class SecurityJwtService {
     )
   }
 
-  async verifyAccessToken(token: string): Promise<IAccessTokenPayload> {
+  async verifyAccessToken(token: string) {
     try {
       const appName = this.configurationService.app.name
       const payload = await this.jwtService.verifyAsync<IAccessTokenPayload>(
@@ -88,7 +88,7 @@ class SecurityJwtService {
     }
   }
 
-  async verifyRefreshToken(token: string): Promise<IRefreshTokenPayload> {
+  async verifyRefreshToken(token: string) {
     try {
       const appName = this.configurationService.app.name
       const payload = await this.jwtService.verifyAsync<IRefreshTokenPayload>(

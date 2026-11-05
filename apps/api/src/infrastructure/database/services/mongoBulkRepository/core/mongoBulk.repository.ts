@@ -61,7 +61,7 @@ class MongoBulkRepository<
   async deleteMany(
     filter: QueryFilter<TSchema>,
     options?: mongo.DeleteOptions & MongooseBaseQueryOptions<TSchema>,
-  ): Promise<mongo.DeleteResult> {
+  ) {
     const result = await this.model
       .deleteMany(filter as QueryFilter<TDocument>, options)
       .exec()
@@ -72,7 +72,7 @@ class MongoBulkRepository<
   async bulkWrite(
     operations: Parameters<Model<TSchema>["bulkWrite"]>[0],
     options?: MongooseBulkWriteOptions,
-  ): Promise<mongo.BulkWriteResult> {
+  ) {
     const result = await this.model.bulkWrite(operations, options)
 
     return result

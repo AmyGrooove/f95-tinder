@@ -29,7 +29,7 @@ class TagCollectionsInitializationService implements OnModuleInit {
     const resolved = new Map<string, HydratedDocument<Tag>>()
     const resolving = new Set<string>()
 
-    const ensureTag = async (key: string): Promise<HydratedDocument<Tag>> => {
+    const ensureTag = async (key: string) => {
       const cached = resolved.get(key)
 
       if (!isNil(cached)) {

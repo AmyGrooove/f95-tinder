@@ -6,31 +6,11 @@
 
 Ни один из этих одиннадцати HTTP-потоков не публикует событий, не ставит джоб и не обращается к внешним сервисам. Включение Item в подборку не меняет UserItem и вкус пользователя. Отдельный обработчик изменений TagItem поддерживает автоматические подборки, но эти маршруты его **не вызывают**. Обновление поиска происходит [независимым фоном](catalog.md#search-sync).
 
-<a id="query"></a>
-
-## QUERY /collections
-
-Публично получить страницу кратких подборок. **Пример:** `QUERY /collections`, `{"page":1,"limit":20,"type":"custom"}`. **Ответ:** 200, пагинированные `items` с id/type/authorId/title/media и метаданные страницы; `Accept-Query: application/json`.
-
-```mermaid
-flowchart TD
-    accTitle: Список публичных подборок
-    accDescr: Проверить тело и пагинацию, выбрать неудалённые Collection, при необходимости отфильтровать по ItemCollection и вернуть страницу
-    A(["QUERY /collections"]):::http --> B["Проверить JSON, тип и пагинацию"]:::action
-    B --> C[("Выбрать неудалённые Collection; при itemIds проверить ItemCollection")]:::data
-    C --> D["Отсортировать по новизне и собрать страницу"]:::action
-    D --> E(["200 — краткие подборки"]):::http
-```
-
-Тело обязательно должно быть объектом, `{}` допустим. page по умолчанию 1, limit 50, допустимые размеры 10/20/50; limit отсутствует в ответе; небезопасное целочисленное смещение — 400. itemIds — опционально 1–60 уникальных ObjectId: подходит подборка, содержащая **хотя бы один** из них. Item отдельно не читается и его удалённость в этом фильтре не проверяется. type=franchise дополнительно ограничивает author=null. Сортировка createdAt/id по убыванию, страница и total — одна агрегация с facet. Пустая выборка — 200. Нет транзакции и записей; HTTP ждёт агрегацию.
-
-**Технические подробности:** [CollectionReadController.query](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts) → [CollectionQueryBodyInterceptor](../../../../src/endpoints/collection/services/collectionQueryBodyInterceptor/core/collectionQueryBody.interceptor.ts) → [CollectionService.query](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) → [CollectionRepository.querySummaries](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). [DTO](../../../../src/endpoints/collection/dto/body/queryCollections.body.ts).
-
 <a id="get"></a>
 
 ## GET /collections/:id
 
-Открыть метаданные и блоки подборки. **Пример:** `GET /collections/507f1f77bcf86cd799439011`, без тела. **Ответ:** 200, id/version/authorId/type/title/description/media/blocks/createdAt/updatedAt. Item внутри групп загружаются отдельно.
+Открыть метаданные и блоки подборки. **Пример:** `GET /collections/507f1f77bcf86cd799439011`, без тела. **Ответ:** 200, id/version/author/type/title/description/media/blocks/createdAt/updatedAt. Автор — {id, avatar, displayName} или null. Item внутри групп загружаются отдельно.
 
 ```mermaid
 flowchart TD
@@ -43,59 +23,27 @@ flowchart TD
 
 Одна выборка Collection без транзакции, Items/реакции/пользователь не читаются. Отсутствующая и soft-deleted подборка дают одинаковый 404. Даты — ISO, языковые значения и nullable поля отображаются явно. HTTP ждёт чтения и маппинга, записей нет.
 
-**Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/dto/response/collection.response.ts).
+**Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/services/collectionService/dto/collection.response.ts).
 
 <a id="items"></a>
 
 ## QUERY /collections/:id/items
 
-Публично получить страницу произведений подборки. **Пример:** `QUERY /collections/507f1f77bcf86cd799439011/items`, `{"page":1,"limit":20,"mode":"flat","sort":"title","language":"ru"}`. **Ответ:** 200, карточки Item с данными включения, метаданные пагинации, mode и displayBlocks (пусты при flat).
+Первый запрос передаёт {} или limit. Следующие передают cursor из nextCursor. Ответ 200 содержит nextCursor (строка или false) и blocks. В группах blocks идут карточки текущей порции с note. Изменение версии подборки делает старый курсор недействительным и возвращает 400.
 
 ```mermaid
 flowchart TD
-    accTitle: Произведения внутри подборки
-    accDescr: Прочитать Collection, проверить группу, режим и фильтры, посчитать доступные группы и выбрать страницу ItemCollection с Item и необходимыми тегами и статистикой
-    A(["QUERY /collections/:id/items"]):::http --> B["Проверить ID, пагинацию и диапазоны"]:::action
-    B --> C[("Прочитать Collection и её группы")]:::data
-    C --> D[("Посчитать доступные ItemCollection + Item по группам")]:::data
-    D --> E["Проверить режим и сортировку"]:::action
-    E --> F[("Выбрать страницу — ItemCollection, Item; TagItem и ItemStats по необходимости")]:::data
-    F --> G["Собрать карточки и displayBlocks"]:::action
-    G --> H(["200 — одна страница произведений"]):::http
+    A["Проверить ID, cursor и limit"] --> B["Прочитать подборку"]
+    B --> C["Выбрать limit + 1 произведений после курсора"]
+    C --> D["Собрать блоки с произведениями текущей порции"]
+    D --> E["200 · nextCursor, blocks"]
 ```
-
-page от 1, limit 10/20/50 (по умолчанию 50); limit отсутствует в ответе и передаётся отдельно при сборке displayBlocks. Группа должна принадлежать подборке. grouped доступен при двух непустых группах или наличии текстового блока; иначе только flat. relevanceScore разрешён только type=tag; другие варианты — collection/title. Поддерживаются текстовый фильтр query, tags/excludeTags, диапазоны полей и общей оценки. ItemStats читается для фильтра оценки, TagItem — для фильтров тегов. Фильтры применяются до пагинации; она одна по всем Item, а не отдельная на каждую группу. Удалённые Item исключаются.
-
-Нет Collection — 404; чужая группа, недоступный mode/sort, неправильные диапазоны, повторяющиеся/неизвестные поля и невалидные даты — 400. Контекст, счётчики групп и страница читаются отдельными агрегациями без общей транзакции/snapshot: при параллельном редактировании возможны расхождения. UserCollection/UserItem не читаются. HTTP ждёт все чтения и сборку, записей нет.
-
-**Технические подробности:** CollectionReadController.getItems → [CollectionContentService.getItems/getContentContext/prepareFieldFilters](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts) → [CollectionRepository.findNotDeletedById](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.countAvailableItemsByGroup/readContentPage](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts) → [createItemCollectionsPipeline](../../../../src/entities/itemCollection/services/itemCollectionRepository/functions/createItemCollectionsPipeline/core/createItemCollectionsPipeline.ts). [DTO](../../../../src/endpoints/collection/dto/body/itemCollections.body.ts), [display blocks](../../../../src/endpoints/collection/services/collectionContentService/functions/createCollectionDisplayBlocks/index.ts).
-
-<a id="filters"></a>
-
-## GET /collections/:id/filters
-
-Получить доступные теги, диапазоны полей и режимы отображения для всей подборки. **Пример:** `GET /collections/507f1f77bcf86cd799439011/filters`, без тела и query-параметров. **Ответ:** 200, tags, fields и sorting.availableModes.
-
-```mermaid
-flowchart TD
-    accTitle: Фильтры подборки
-    accDescr: Проверить подборку, прочитать доступные Item и их теги и характеристики, определить режимы отображения и вернуть варианты фильтров
-    A(["GET /collections/:id/filters"]):::http --> B["Проверить ID"]:::action
-    B --> C[("Прочитать Collection и её группы")]:::data
-    C --> D[("Собрать ItemCollection, Item, TagItem и Tag")]:::data
-    D --> E["Определить диапазоны полей и доступность grouped"]:::action
-    E --> F(["200 — варианты фильтров"]):::http
-```
-
-Только неудалённые Item в существующих группах Collection. Диапазоны берутся из характеристик Item, теги — из TagItem/Tag; режим grouped доступен по тем же условиям, что выше. Справочник не зависит от выбранных клиентом фильтров и не принимает groupId или другие query-поля (400). Нет подборки — 404; пустая подборка возвращает пустые варианты и flat. ItemStats/UserItem не читаются. Транзакции нет; HTTP ждёт контекст и агрегацию, записей нет.
-
-**Технические подробности:** CollectionReadController.getFilters → CollectionContentService.getFilters/getContentContext → ItemCollectionRepository.getFilterOptions. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts), [репозиторий](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), [query DTO](../../../../src/endpoints/collection/dto/query/collectionFilters.query.ts).
 
 <a id="create"></a>
 
 ## POST /collections
 
-Создать подборку от текущего пользователя. **Пример:** `POST /collections`, `{"title":{"ru":"Вечернее кино"},"type":"custom"}`, access cookie. **Ответ:** 201, метаданные и blocks новой Collection с version.
+Создать подборку от текущего пользователя. **Пример:** `POST /collections`, `{"title":{"ru":"Вечернее кино"},"type":"custom"}`, access cookie. **Ответ:** 201, объект {id}.
 
 ```mermaid
 flowchart TD
@@ -108,18 +56,18 @@ flowchart TD
         D --> E[("Создать ItemCollection, если передан состав")]:::data
     end
     B --> C
-    E -->|Commit| F(["201 — новая подборка"]):::http
+    E -->|Commit| F(["201 — ID подборки"]):::http
 ```
 
 Название должно быть заполнено хотя бы на одном языке. Проверяются уникальные ID блоков/Item, корректность group/text и принадлежность каждого item.groupId итоговой группе. Нет добавляемого Item или он удалён — 404; структура/дубли/пустое название — 400. Collection и весь состав создаются/откатываются вместе; при пустом составе Item/ItemCollection не затрагиваются. После commit выполняется только отображение ответа, enqueue/events нет. Потерянный ответ не откатывает создание.
 
-**Технические подробности:** [CollectionController.create](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts) → [CollectionService.create/prepareBlock](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) → CollectionAuthService.authenticate → MongoTransactionService.run → ItemRepository.findNotDeletedByIds, CollectionRepository.write.create, ItemCollectionRepository.createForCollection. [DTO](../../../../src/endpoints/collection/dto/body/createCollection.body.ts).
+**Технические подробности:** [CollectionController.create](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts) → [CollectionService.create/prepareBlock](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) → CollectionAuthService.authenticate → MongoTransactionService.run → ItemRepository.findNotDeletedByIds, CollectionRepository.write.create, ItemCollectionRepository.createForCollection. [DTO](../../../../src/endpoints/collection/services/collectionService/dto/createCollection.body.ts).
 
 <a id="update"></a>
 
 ## PATCH /collections/:id
 
-Изменить собственную подборку и её состав с проверкой версии. **Пример:** `PATCH /collections/507f1f77bcf86cd799439011`, `{"version":0,"title":{"ru":"Кино на выходные"}}`, access cookie. **Ответ:** 200, обновлённые метаданные/blocks и version+1.
+Изменить собственную подборку и её состав с проверкой версии. Поля blocks и items группируют операции add, update, move и remove. **Пример:** `PATCH /collections/507f1f77bcf86cd799439011`, `{"version":0,"title":{"ru":"Кино на выходные"}}`, access cookie. **Ответ:** 204 без тела. Версия увеличивается при сохранении.
 
 ```mermaid
 flowchart TD
@@ -133,12 +81,12 @@ flowchart TD
         E --> F[("Добавить, переместить или удалить ItemCollection")]:::data
     end
     B --> C
-    F -->|Commit| G(["200 — обновлённая подборка"]):::http
+    F -->|Commit| G(["204 — без тела"]):::http
 ```
 
 Чужая, автоматическая (author=null), отсутствующая или удалённая Collection — одинаковый 404. Устаревшая версия или предел Number.MAX_SAFE_INTEGER — 409. Проверяются итоговый порядок блоков, уникальность, отсутствие конфликтующих добавлений/удалений, доступные группы, наличие удаляемых memberships и неудалённые добавляемые Item. Невалидная структура/пустое изменение — 400; нет Item — 404. Удаление группы удаляет связанные ItemCollection, кроме перенесённых в сохранённые группы. Все чтения/записи состава и условная запись версии используют одну session; сбой откатывает их вместе. HTTP ждёт commit, очередей и postcommit-вызовов нет.
 
-**Технические подробности:** CollectionController.update → CollectionService.update/prepareUpdatedBlocks → [CollectionRepository.updateVersioned](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.findByCollectionAndItems/upsertForCollection/removeForCollection](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), ItemRepository.findNotDeletedByIds. [Сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/updateCollection.body.ts).
+**Технические подробности:** CollectionController.update → CollectionService.update/prepareUpdatedBlocks → [CollectionRepository.updateVersioned](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.findByCollectionAndItems/upsertForCollection/removeForCollection](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), ItemRepository.findNotDeletedByIds. [Сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [DTO](../../../../src/endpoints/collection/services/collectionService/dto/updateCollection.body.ts).
 
 <a id="remove"></a>
 
@@ -179,63 +127,29 @@ flowchart TD
 
 **Технические подробности:** [CollectionUserController.getUser](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts) → [CollectionUserService.getUser/mapResponse](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts) → CollectionRepository.checkIsNotDeleted, [UserCollectionRepository.findByUserAndCollection](../../../../src/entities/userCollection/services/userCollectionRepository/core/userCollection.repository.ts).
 
-<a id="favorite"></a>
+<a id="reaction"></a>
 
-## PATCH /collections/:id/favorite
+## PATCH /collections/:id/user
 
-Добавить/убрать подборку из избранного. **Пример:** `PATCH /collections/507f1f77bcf86cd799439011/favorite`, `{"isFavorite":true}`, access cookie. **Ответ:** 200, полная личная реакция isFavorite/rating/isHidden.
-
-```mermaid
-flowchart TD
-    accTitle: Избранная подборка
-    accDescr: Проверить пользователя и Collection, создать или обновить только isFavorite в собственной UserCollection и вернуть реакцию
-    A(["PATCH /collections/:id/favorite"]):::http --> B["Проверить доступ и boolean"]:::action
-    B --> C[("Прочитать неудалённую Collection")]:::data
-    C --> D[("Создать или обновить isFavorite — UserCollection")]:::data
-    D --> E(["200 — личная реакция"]):::http
-```
-
-Нет Collection — 404. Допустимо и для своей подборки. Остальные поля существующей реакции сохраняются, при первом upsert получают defaults. Запись атомарна по user+collectionId, но предварительная проверка Collection не включена в транзакцию: одновременное удаление подборки не откатывает реакцию. HTTP ждёт upsert и маппинг; ни статистика Item/Site, ни очереди не вызываются. Ошибка ответа после записи её не отменяет.
-
-**Технические подробности:** CollectionUserController.updateFavorite → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById → UserCollectionRepository.upsertReaction. При гонке создания уникальный конфликт повторяется обычным update. [Сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [репозиторий](../../../../src/entities/userCollection/services/userCollectionRepository/core/userCollection.repository.ts), [DTO](../../../../src/endpoints/collection/dto/body/favorite.body.ts).
-
-<a id="rating"></a>
-
-## PATCH /collections/:id/rating
-
-Оценить чужую подборку или очистить свою оценку. **Пример:** `PATCH /collections/507f1f77bcf86cd799439011/rating`, `{"rating":8}`, access cookie. **Ответ:** 200, личная реакция isFavorite/rating/isHidden.
+Принимает одно или несколько полей isFavorite, rating, isHidden. Пропущенные поля сохраняются, rating: null снимает оценку. Пустое тело отклоняется с 400. Автор не может поставить своей подборке оценку. Успех — 204 без тела.
 
 ```mermaid
 flowchart TD
-    accTitle: Оценка подборки
-    accDescr: Проверить пользователя и подборку, запретить ненулевую оценку своей подборки, атомарно сохранить rating в UserCollection
-    A(["PATCH /collections/:id/rating"]):::http --> B["Проверить доступ и rating: 1–10 или null"]:::action
-    B --> C[("Прочитать Collection и автора")]:::data
-    C --> D["Запретить оценку собственной подборки"]:::action
-    D --> E[("Создать или обновить rating — UserCollection")]:::data
-    E --> F(["200 — личная реакция"]):::http
+    A["Проверить access и тело"] --> B["Проверить подборку и право оценки"]
+    B --> C["Сохранить переданные поля реакции одной записью"]
+    C --> D["204 · без тела"]
 ```
 
-Ненулевая оценка своей подборки — 409; `rating:null` допускается и очищает оценку. Отсутствующая/удалённая Collection — 404, неверный диапазон/нецелое/отсутствующее rating — 400. Остальные реакции сохраняются. Предварительное чтение и atomic upsert без общей транзакции, с теми же границами гонки, что у favorite. ItemStats/SiteStats не затрагиваются — это оценка Collection, а не Item. HTTP ждёт upsert, фона нет.
+<a id="poster"></a>
 
-**Технические подробности:** CollectionUserController.updateRating → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/rating.body.ts).
+## PUT /collections/:id/poster
 
-<a id="hidden"></a>
-
-## PATCH /collections/:id/hidden
-
-Сохранить личный флаг скрытия подборки. **Пример:** `PATCH /collections/507f1f77bcf86cd799439011/hidden`, `{"isHidden":true}`, access cookie. **Ответ:** 200, личная реакция isFavorite/rating/isHidden.
+Автор передаёт одно изображение в multipart-поле file. Сервер обрабатывает его в WebP и сохраняет по ключу collections/<id>/poster/<uuid>.webp. Успех — 204 без тела. POST /collections принимает JSON без media.
 
 ```mermaid
 flowchart TD
-    accTitle: Личное скрытие подборки
-    accDescr: Проверить пользователя и доступность Collection, атомарно сохранить isHidden в UserCollection без изменения публичной подборки
-    A(["PATCH /collections/:id/hidden"]):::http --> B["Проверить доступ и boolean"]:::action
-    B --> C[("Прочитать неудалённую Collection")]:::data
-    C --> D[("Создать или обновить isHidden — UserCollection")]:::data
-    D --> E(["200 — личная реакция"]):::http
+    A["Проверить access и авторство"] --> B["Обработать изображение"]
+    B --> C["Записать WebP в S3"]
+    C --> D["Обновить ссылку на обложку с проверкой версии"]
+    D --> E["204 · без тела"]
 ```
-
-Флаг не удаляет Collection и не делает её приватной, не меняет состав и реакции других пользователей. Публичные QUERY /collections и QUERY /search не используют этот личный флаг. Нет Collection — 404. Atomic upsert без общей транзакции с предварительной проверкой; другие поля реакции сохраняются. HTTP ждёт запись, фон/внешние обращения отсутствуют.
-
-**Технические подробности:** CollectionUserController.updateHidden → CollectionUserService.updateReaction → CollectionRepository.findNotDeletedAuthorById, UserCollectionRepository.upsertReaction. [Контроллер](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts), [DTO](../../../../src/endpoints/collection/dto/body/hidden.body.ts), [проверка доступа](../../../../src/endpoints/collection/services/collectionAuthService/core/collectionAuth.service.ts).

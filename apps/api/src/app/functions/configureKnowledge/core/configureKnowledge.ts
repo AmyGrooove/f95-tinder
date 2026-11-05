@@ -3,13 +3,12 @@ import { resolve } from "node:path"
 import { createHash, timingSafeEqual } from "node:crypto"
 import fastifyStatic from "@fastify/static"
 import type { NestFastifyApplication } from "@nestjs/platform-fastify"
-import type { FastifyInstance } from "fastify"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 
 const configureKnowledge = (app: NestFastifyApplication) => {
-  const fastify: FastifyInstance = app.getHttpAdapter().getInstance()
+  const fastify = app.getHttpAdapter().getInstance()
   const { username, password } = app.get(InfrastructureConfigService).knowledge
   const credentialsHash = createHash("sha256")
     .update(Buffer.from(`${username}:${password}`, "utf8").toString("base64"))

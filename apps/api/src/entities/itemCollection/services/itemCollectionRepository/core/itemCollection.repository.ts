@@ -31,6 +31,7 @@ import type { IRemoveItemCollectionsProps } from "../types/IRemoveItemCollection
 import type { ICollectionContentSelectionProps } from "../types/ICollectionContentSelectionProps"
 import type { ICollectionFilterOptions } from "../types/ICollectionFilterOptions"
 import type { IReadItemCollectionsProps } from "../types/IReadItemCollectionsProps"
+import type { IItemCollectionCard } from "../types/IItemCollectionCard"
 import type { IItemCollectionsAggregationResult } from "../types/IItemCollectionsAggregationResult"
 import type { ICollectionGroupCount } from "../types/ICollectionGroupCount"
 import { createItemCollectionsPipeline } from "../functions/createItemCollectionsPipeline"
@@ -96,6 +97,68 @@ class ItemCollectionRepository {
       )
 
     return { items: result?.items ?? [], total: result?.count[0]?.total ?? 0 }
+  }
+
+  readContentSlice(
+    props: ICollectionContentSelectionProps & {
+      limit: number
+      after?: {
+        groupOrder: number
+        position: number
+        id: ItemCollection["_id"]
+      }
+    },
+  ) {
+    const { after } = props
+    return this.aggregation.aggregate<
+      IItemCollectionCard & { _id: ItemCollection["_id"]; groupOrder: number }
+    >([
+      {
+        $match: {
+          collectionId: props.collectionId,
+          groupId: { $in: props.groupIds },
+        },
+      },
+      { $set: { groupOrder: { $indexOfArray: [props.groupIds, "$groupId"] } } },
+      ...(after === undefined
+        ? []
+        : [
+            {
+              $match: {
+                $or: [
+                  { groupOrder: { $gt: after.groupOrder } },
+                  {
+                    groupOrder: after.groupOrder,
+                    position: { $gt: after.position },
+                  },
+                  {
+                    groupOrder: after.groupOrder,
+                    position: after.position,
+                    _id: { $gt: after.id },
+                  },
+                ],
+              },
+            },
+          ]),
+      { $sort: { groupOrder: 1, position: 1, _id: 1 } },
+      {
+        $lookup: {
+          from: Item.name,
+          localField: "item",
+          foreignField: "_id",
+          as: "item",
+          pipeline: [
+            { $match: { deletedAt: null } },
+            { $project: { _id: 1, type: 1, title: 1, media: 1 } },
+          ],
+        },
+      },
+      { $unwind: "$item" },
+      { $limit: props.limit },
+      {
+        $project: { groupOrder: 1, groupId: 1, position: 1, note: 1, item: 1 },
+      },
+    ])
   }
 
   countAvailableItemsByGroup(props: ICollectionContentSelectionProps) {
