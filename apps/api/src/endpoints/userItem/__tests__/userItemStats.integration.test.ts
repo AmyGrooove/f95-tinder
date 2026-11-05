@@ -8,7 +8,7 @@ import { ItemStatsRepository } from "@entities/itemStats/services/itemStats.repo
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStats.repository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransaction.service"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
 

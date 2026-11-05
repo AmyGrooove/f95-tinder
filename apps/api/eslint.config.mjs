@@ -60,7 +60,7 @@ export default [
   ...typescriptEslint.configs.recommended,
   prettier,
   {
-    files: ["knowledge/**/*.js"],
+    files: ["public/**/*.js"],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -68,7 +68,7 @@ export default [
     },
   },
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "__tests__/**/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -170,7 +170,10 @@ export default [
     },
   },
   {
-    files: ["src/**/__tests__/**/*.ts", "src/tests/**/*.ts"],
+    files: ["src/**/__tests__/**/*.ts"],
+    rules: {
+      "import-x/no-restricted-paths": "off",
+    },
     settings: {
       "import-x/resolver-next": [
         createTypeScriptImportResolver({

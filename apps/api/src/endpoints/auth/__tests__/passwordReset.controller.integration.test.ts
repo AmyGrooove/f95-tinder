@@ -8,7 +8,7 @@ import { UserSessionRepository } from "@entities/userSession/services/userSessio
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "../../account/__tests__/functions/createAccount"
 import { readConfirmationCode } from "../../account/__tests__/functions/readConfirmationCode"

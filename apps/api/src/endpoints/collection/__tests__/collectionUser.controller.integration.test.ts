@@ -4,7 +4,7 @@ import { Types } from "mongoose"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import type { UserCollection } from "@entities/userCollection/schemas/userCollection.schema"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createCollection } from "./functions/createCollection"
 

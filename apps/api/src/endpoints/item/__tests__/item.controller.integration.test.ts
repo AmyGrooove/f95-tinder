@@ -11,7 +11,7 @@ import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { ItemResponseDto } from "../dto/response/item.response"
 

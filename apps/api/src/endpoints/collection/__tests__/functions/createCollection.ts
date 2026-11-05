@@ -5,7 +5,7 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemRepository } from "@entities/item/services/item.repository"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { CreateCollectionBodyDto } from "../../dto/body/createCollection.body"
 import type { CollectionResponseDto } from "../../dto/response/collection.response"

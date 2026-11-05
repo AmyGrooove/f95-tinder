@@ -4,7 +4,7 @@ import { Test } from "@nestjs/testing"
 import type { TestingModule } from "@nestjs/testing"
 
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
-import { getTestRedis } from "@test/setup/setupRedis"
+import { getTestRedis } from "./setup/setupRedis"
 
 import { CacheModule } from "../cache.module"
 import { CacheService } from "../services/cache.service"

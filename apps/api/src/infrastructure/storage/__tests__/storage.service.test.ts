@@ -23,7 +23,7 @@ import { ServiceUnavailableException } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/config.service"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { createTestConfiguration } from "@test/functions/createTestConfiguration"
+import { createTestConfiguration } from "@infrastructure/config/__tests__/setup/createTestConfiguration"
 
 import { StorageService } from "../services/storage.service"
 

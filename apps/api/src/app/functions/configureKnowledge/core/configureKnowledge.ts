@@ -51,7 +51,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
     })
 
     knowledge.register(fastifyStatic, {
-      root: resolve("knowledge"),
+      root: resolve("public/knowledge"),
       prefix: "/knowledge",
       redirect: true,
       decorateReply: false,
@@ -60,7 +60,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
     })
 
     knowledge.register(fastifyStatic, {
-      root: resolve("docs"),
+      root: resolve("public/docs"),
       prefix: "/knowledge/content/",
       decorateReply: false,
       index: false,

@@ -5,7 +5,7 @@ import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { UserSessionRepository } from "@entities/userSession/services/userSession.repository"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "./functions/createAccount"
 

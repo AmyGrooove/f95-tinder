@@ -4,7 +4,7 @@ import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import type { RegisterResponseDto } from "@endpoints/auth/dto/response/register.response"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 const createAccount = async (
   kind: "anonymous" | "password" = "anonymous",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals"
 import { Types } from "mongoose"
 
-import { getTestDatabase } from "@test/setup/setupDatabase"
+import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupDatabase"
 
 import { EItemField } from "../../../schemas/EItemField"
 import { EItemType } from "../../../schemas/EItemType"

@@ -7,7 +7,7 @@ import { EItemField } from "@entities/item/schemas/EItemField"
 import { ETagKey } from "@entities/tag/schemas/ETagKey"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createCollection } from "./functions/createCollection"
 import type { QueryCollectionsResponseDto } from "../dto/response/queryCollections.response"

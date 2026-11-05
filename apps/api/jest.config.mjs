@@ -4,13 +4,13 @@ const common = {
   ...createDefaultEsmPreset({ tsconfig: "<rootDir>/tsconfig.test.json" }),
   rootDir: import.meta.dirname,
   testEnvironment: "node",
-  setupFiles: ["<rootDir>/src/tests/setup/setupEnvironment.ts"],
+  setupFiles: ["<rootDir>/src/app/__tests__/setup/setupEnvironment.ts"],
   moduleNameMapper: {
     "^@entities/(.*)$": "<rootDir>/src/entities/$1",
     "^@endpoints/(.*)$": "<rootDir>/src/endpoints/$1",
     "^@infrastructure/(.*)$": "<rootDir>/src/infrastructure/$1",
     "^@shared/(.*)$": "<rootDir>/src/shared/$1",
-    "^@test/(.*)$": "<rootDir>/src/tests/$1",
+    "^@app/(.*)$": "<rootDir>/src/app/$1",
   },
   clearMocks: true,
   restoreMocks: true,
@@ -20,7 +20,6 @@ export default {
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/**/__tests__/**",
-    "!src/tests/**",
     "!src/**/*.d.ts",
     "!src/**/types/[IT]*.ts",
   ],
@@ -37,14 +36,9 @@ export default {
     {
       ...common,
       displayName: "integration",
-      moduleNameMapper: {
-        "^@infrastructure/security/functions/hashValue$":
-          "<rootDir>/src/tests/functions/hashValue/index.ts",
-        ...common.moduleNameMapper,
-      },
       testMatch: ["<rootDir>/src/**/__tests__/*.integration.test.ts"],
-      globalSetup: "<rootDir>/scripts/tests/setupIntegration.mjs",
-      globalTeardown: "<rootDir>/scripts/tests/teardownIntegration.mjs",
+      globalSetup: "<rootDir>/__tests__/setupIntegration.mjs",
+      globalTeardown: "<rootDir>/__tests__/teardownIntegration.mjs",
     },
   ],
   testTimeout: 30_000,

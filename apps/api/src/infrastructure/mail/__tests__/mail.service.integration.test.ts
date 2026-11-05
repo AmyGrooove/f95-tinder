@@ -7,7 +7,7 @@ import { Queue } from "bullmq"
 import { JobService } from "@infrastructure/jobs/services/job.service"
 import { JOBS_QUEUE_NAME } from "@infrastructure/jobs/static/JOBS_QUEUE_NAME"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { getTestRedis } from "@test/setup/setupRedis"
+import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 
 import { MailService } from "../services/mail.service"
 import { SEND_MAIL_JOB } from "../static/SEND_MAIL_JOB"

@@ -4,7 +4,7 @@ import { Types } from "mongoose"
 import { EItemField } from "@entities/item/schemas/EItemField"
 import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
-import { getTestDatabase } from "@test/setup/setupDatabase"
+import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupDatabase"
 
 import type { IReadItemCollectionsProps } from "../../../types/IReadItemCollectionsProps"
 import { createItemCollectionsPipeline } from "../core/createItemCollectionsPipeline"

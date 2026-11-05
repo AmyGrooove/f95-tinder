@@ -16,7 +16,7 @@ import type { UserSession } from "@entities/userSession/schemas/userSession.sche
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { UserItemRepository } from "@entities/userItem/services/userItem.repository"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { UserItemResponseDto } from "../dto/response/userItem.response"
 

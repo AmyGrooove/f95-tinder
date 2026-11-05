@@ -5,7 +5,7 @@ import type { Collection } from "@entities/collection/schemas/collection.schema"
 import type { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { CollectionResponseDto } from "../dto/response/collection.response"
 import { createCollection } from "./functions/createCollection"

@@ -15,7 +15,7 @@ import type { Queue } from "bullmq"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
-import { getTestRedis } from "@test/setup/setupRedis"
+import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 
 import { JobHandler } from "../decorators/JobHandler"
 import { JobCancelledError } from "../errors/JobCancelledError"

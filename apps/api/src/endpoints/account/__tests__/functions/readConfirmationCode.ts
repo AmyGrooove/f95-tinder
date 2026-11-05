@@ -1,4 +1,4 @@
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 const readConfirmationCode = () => {
   const message = getTestApplication().mail.messages.at(-1)

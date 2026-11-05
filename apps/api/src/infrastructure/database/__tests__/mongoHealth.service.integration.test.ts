@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals"
 
-import { getTestDatabase } from "@test/setup/setupDatabase"
+import { getTestDatabase } from "./setup/setupDatabase"
 
 import { MongoHealthService } from "../services/mongoHealth.service"
 

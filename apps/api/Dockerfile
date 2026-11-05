@@ -54,8 +54,7 @@ ENV NODE_ENV=production
 COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node --from=build /app/package.json ./package.json
-COPY --chown=node:node --from=build /app/docs ./docs
-COPY --chown=node:node --from=build /app/knowledge ./knowledge
+COPY --chown=node:node --from=build /app/public ./public
 
 USER node
 

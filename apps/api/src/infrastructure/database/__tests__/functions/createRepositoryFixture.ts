@@ -1,7 +1,7 @@
 import { Schema } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
-import { getTestDatabase } from "@test/setup/setupDatabase"
+import { getTestDatabase } from "../setup/setupDatabase"
 
 import { MongoAggregationRepository } from "../../services/mongoAggregation.repository"
 import { MongoBulkRepository } from "../../services/mongoBulk.repository"

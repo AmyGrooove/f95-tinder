@@ -7,7 +7,7 @@ import type { UserSession } from "@entities/userSession/schemas/userSession.sche
 import { SecurityJwtService } from "@infrastructure/security/services/jwt.service"
 import { JWT_ACCESS_EXPIRATION } from "@infrastructure/security/static/JWT_ACCESS_EXPIRATION"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { createAccount } from "../../account/__tests__/functions/createAccount"

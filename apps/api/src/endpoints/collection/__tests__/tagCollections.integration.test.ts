@@ -36,13 +36,13 @@ import { JobService } from "@infrastructure/jobs/services/job.service"
 import { JOBS_QUEUE_NAME } from "@infrastructure/jobs/static/JOBS_QUEUE_NAME"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import { LoggerService } from "@infrastructure/logger/services/logger.service"
-import { createTestConfiguration } from "@test/functions/createTestConfiguration"
-import { getTestDatabase } from "@test/setup/setupDatabase"
-import { getTestRedis } from "@test/setup/setupRedis"
+import { createTestConfiguration } from "@infrastructure/config/__tests__/setup/createTestConfiguration"
+import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupDatabase"
+import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 import { TagCollectionsInitializationService } from "../services/tagCollectionsInitialization.service"
 import { TagCollectionsSynchronizationService } from "../services/tagCollectionsSynchronization.service"
 import { SynchronizeTagCollectionsJobHandler } from "../handlers/synchronizeTagCollectionsJob.handler"
-import dictionary from "../../../../import/tags/tags.json" with { type: "json" }
+import dictionary from "../../../../public/import/tags/tags.json" with { type: "json" }
 
 describe("Tag collections MongoDB/BullMQ", () => {
   let moduleRef: TestingModule | undefined

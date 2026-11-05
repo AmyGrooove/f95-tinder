@@ -2,7 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
-import { getTestApplication } from "@test/setup/setupIntegration"
+import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "./functions/createAccount"
 import { readConfirmationCode } from "./functions/readConfirmationCode"

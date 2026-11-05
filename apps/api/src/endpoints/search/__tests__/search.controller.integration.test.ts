@@ -21,7 +21,7 @@ import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { CacheService } from "@infrastructure/cache/services/cache.service"
 import { SearchService } from "@infrastructure/search/services/search.service"
-import { createTestApplication } from "@test/functions/createTestApplication"
+import { createTestApplication } from "@app/__tests__/setup/createTestApplication"
 
 import { SyncSearchJobHandler } from "../handlers/syncSearchJob.handler"
 import { SEARCH_SETTINGS } from "../static/SEARCH_SETTINGS"

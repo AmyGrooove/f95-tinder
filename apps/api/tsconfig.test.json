@@ -11,7 +11,7 @@
       "@endpoints/*": ["./src/endpoints/*"],
       "@infrastructure/*": ["./src/infrastructure/*"],
       "@shared/*": ["./src/shared/*"],
-      "@test/*": ["./src/tests/*"]
+      "@app/*": ["./src/app/*"]
     }
   },
   "include": ["src/**/*.ts"],
