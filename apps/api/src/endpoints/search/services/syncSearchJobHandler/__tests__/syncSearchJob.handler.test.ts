@@ -11,6 +11,7 @@ import { Types } from "mongoose"
 
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
 import type { User } from "@entities/user/schemas/user.schema"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
@@ -52,6 +53,9 @@ describe("SyncSearchJobHandler", () => {
   const collections = {
     read: { findMany: jest.fn<CollectionRepository["read"]["findMany"]>() },
   }
+  const siteRatings = {
+    readAverage: jest.fn<SiteRatingsStatsRepository["readAverage"]>(),
+  }
   const context = {
     id: "search-job",
     attempt: 1,
@@ -70,6 +74,7 @@ describe("SyncSearchJobHandler", () => {
     items.read.findMany.mockResolvedValue([])
     users.read.findMany.mockResolvedValue([])
     collections.read.findMany.mockResolvedValue([])
+    siteRatings.readAverage.mockResolvedValue(null)
     module = await Test.createTestingModule({
       providers: [
         SyncSearchJobHandler,
@@ -78,6 +83,7 @@ describe("SyncSearchJobHandler", () => {
         { provide: ItemRepository, useValue: items },
         { provide: UserRepository, useValue: users },
         { provide: CollectionRepository, useValue: collections },
+        { provide: SiteRatingsStatsRepository, useValue: siteRatings },
       ],
     }).compile()
     handler = module.get(SyncSearchJobHandler)
@@ -92,6 +98,7 @@ describe("SyncSearchJobHandler", () => {
     })
     await handler.handle(null, context)
     expect(search.ensureIndex).toHaveBeenCalledTimes(3)
+    expect(siteRatings.readAverage).toHaveBeenCalledTimes(1)
     expect(cache.set).toHaveBeenCalledTimes(1)
     const [key, checkpoint, ttl] = cache.set.mock.calls[0]
     expect(key).toBe(SEARCH_SETTINGS.checkpointKey)
@@ -144,11 +151,13 @@ describe("SyncSearchJobHandler", () => {
     ])
   })
 
-  it.each(["settings", "read", "upsert", "cleanup", "delete"])(
+  it.each(["baseline", "settings", "read", "upsert", "cleanup", "delete"])(
     "сохраняет прежнюю отметку и исходную ошибку при сбое %s",
     async (phase) => {
       const error = new Error("search failed")
-      if (phase === "settings") {
+      if (phase === "baseline") {
+        siteRatings.readAverage.mockRejectedValueOnce(error)
+      } else if (phase === "settings") {
         search.ensureIndex.mockRejectedValueOnce(error)
       } else if (phase === "read") {
         items.readSearchIndexBatch.mockRejectedValueOnce(error)

@@ -14,6 +14,8 @@ interface IItemSearchDocument {
   tagIds: string[]
   fields: Record<string, number | null>
   rating: number | null
+  ratingScore: number | null
+  ratingsCount: number
   hasRating: number
   releaseDate: number | null
   hasReleaseDate: number

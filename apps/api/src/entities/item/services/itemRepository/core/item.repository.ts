@@ -86,7 +86,7 @@ class ItemRepository {
           from: ItemStats.name,
           localField: "_id",
           foreignField: "item",
-          pipeline: [{ $project: { ratingAverage: 1 } }],
+          pipeline: [{ $project: { ratingAverage: 1, ratingsCount: 1 } }],
           as: "searchMetrics",
         },
       },
@@ -105,6 +105,9 @@ class ItemRepository {
           game: 1,
           deletedAt: 1,
           tagIds: "$searchTags.tag",
+          ratingsCount: {
+            $ifNull: [{ $arrayElemAt: ["$searchMetrics.ratingsCount", 0] }, 0],
+          },
           rating: {
             $ifNull: [
               { $arrayElemAt: ["$searchMetrics.ratingAverage", 0] },

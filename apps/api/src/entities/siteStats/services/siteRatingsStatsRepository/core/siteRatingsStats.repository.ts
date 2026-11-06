@@ -13,6 +13,15 @@ class SiteRatingsStatsRepository {
     private readonly ratingsModel: Model<SiteRatingsStats>,
   ) {}
 
+  async readAverage() {
+    const metric = await this.ratingsModel
+      .findOne({ key: ESiteStatsKey.RATINGS }, { average: 1 })
+      .lean()
+      .exec()
+
+    return metric?.average ?? null
+  }
+
   async applyChanges(props: IUpdateSiteRatingsStatsProps) {
     const { sum, count, session } = props
 

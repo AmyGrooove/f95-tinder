@@ -227,7 +227,12 @@ class SiteSearchService {
                   "id:asc",
                 ]
               : itemSort?.type === ESearchItemSort.RATING
-                ? ["hasRating:desc", `rating:${itemDirection}`, "id:asc"]
+                ? [
+                    "hasRating:desc",
+                    `ratingScore:${itemDirection}`,
+                    "ratingsCount:desc",
+                    "id:asc",
+                  ]
                 : undefined,
       },
       collections: {

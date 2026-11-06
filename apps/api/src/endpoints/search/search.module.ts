@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common"
 import { ItemModule } from "@entities/item/item.module"
 import { UserModule } from "@entities/user/user.module"
 import { CollectionModule } from "@entities/collection/collection.module"
+import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
@@ -19,6 +20,7 @@ import { SearchSyncSchedulerService } from "@endpoints/search/services/searchSyn
     ItemModule,
     UserModule,
     CollectionModule,
+    SiteStatsModule,
     CacheModule,
     JobsModule,
     LoggerModule,

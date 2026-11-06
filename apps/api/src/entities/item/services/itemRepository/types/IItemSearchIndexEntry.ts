@@ -19,6 +19,7 @@ interface IItemSearchIndexEntry extends Pick<
 > {
   tagIds: Types.ObjectId[]
   rating: number | null
+  ratingsCount: number
 }
 
 export type { IItemSearchIndexEntry }

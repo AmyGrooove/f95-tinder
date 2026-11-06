@@ -6,8 +6,10 @@ import type { IItemSearchIndexEntry } from "@entities/item/services/itemReposito
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import { calculateItemRatingScore } from "@entities/itemStats/functions/calculateItemRatingScore"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
+import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
@@ -32,11 +34,14 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     private readonly itemRepository: ItemRepository,
     private readonly collectionRepository: CollectionRepository,
     private readonly userRepository: UserRepository,
+    private readonly siteRatingsStatsRepository: SiteRatingsStatsRepository,
   ) {}
 
   async handle(_payload: null, context: IJobContext) {
     const startedAt = Date.now()
-    const sources = this.createSources()
+    const siteRatingAverage =
+      await this.siteRatingsStatsRepository.readAverage()
+    const sources = this.createSources(siteRatingAverage)
     const existing = await Promise.all(
       sources.map((source) => this.searchService.hasIndex(source.index)),
     )
@@ -118,7 +123,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     }
   }
 
-  private createSources(): ISearchSyncSource[] {
+  private createSources(siteRatingAverage: number | null): ISearchSyncSource[] {
     const pagination = { maxTotalHits: SEARCH_SETTINGS.maxTotalHits }
     const typoTolerance = {
       enabled: true,
@@ -153,7 +158,8 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             `sortTitle.${ELanguage.ENGLISH}`,
             "releaseDate",
             "hasReleaseDate",
-            "rating",
+            "ratingScore",
+            "ratingsCount",
             "hasRating",
           ],
           displayedAttributes: ["id", "type", "title", "media"],
@@ -171,7 +177,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             id: item._id,
             document: !isNil(item.deletedAt)
               ? null
-              : this.mapItemDocument(item),
+              : this.mapItemDocument(item, siteRatingAverage),
           }))
         },
         readExisting: async (ids) => {
@@ -320,7 +326,17 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     }
   }
 
-  private mapItemDocument(item: IItemSearchIndexEntry) {
+  private mapItemDocument(
+    item: IItemSearchIndexEntry,
+    siteRatingAverage: number | null,
+  ) {
+    const { rating, ratingsCount } = item
+    const ratingScore = calculateItemRatingScore({
+      ratingAverage: rating,
+      ratingsCount,
+      siteRatingAverage,
+    })
+
     return {
       id: String(item._id),
       type: item.type,
@@ -339,8 +355,10 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         language: media.language,
       })),
       tagIds: item.tagIds.map((id) => String(id)),
-      rating: item.rating,
-      hasRating: isNil(item.rating) ? 0 : 1,
+      rating,
+      ratingScore,
+      ratingsCount: isNil(ratingScore) ? 0 : ratingsCount,
+      hasRating: isNil(ratingScore) ? 0 : 1,
       releaseDate: item.releaseDate?.getTime() ?? null,
       hasReleaseDate: isNil(item.releaseDate) ? 0 : 1,
       sortTitle: this.mapSortTitle(item.title),

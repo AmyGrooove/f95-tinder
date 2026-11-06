@@ -10,7 +10,7 @@
 
 ## 1. Контракт выдачи: согласованные части
 
-Пункт ещё не утверждён целиком. Здесь перечислены только принятые решения; оставшиеся вопросы обсуждаются в чате.
+Пункт ещё не утверждён целиком. [Вход и результат описаны типами](../../../src/endpoints/recommendations/services/recommendationsService/index.ts). Правила выдачи ниже относятся к будущей реализации.
 
 ### Входной интерфейс
 
@@ -26,8 +26,10 @@ interface IRecommendationFilter {
   tags?: readonly IValueFilter<Types.ObjectId>[]
   library?: IValueFilter<TLibraryStatus | "outside">
 
-  ratingMin?: number
-  ratingMax?: number
+  rating?: {
+    min?: number
+    max?: number
+  }
 }
 ```
 
@@ -44,7 +46,7 @@ interface IRecommendationFilter {
 ### Порции и результат
 
 - Для продолжения используется курсорная пагинация и общий `ICursorPagination` из задачи унификации пагинации.
-- Размер порции: `TPageSize = 10 | 20 | 50`, по умолчанию 50.
+- Размер порции: `TPageSize = 10 | 20 | 50`, по умолчанию 20.
 - Результат использует общий `ICursorPaginationResult<TItem>` — новое имя существующего IListResponse. Поля результата: `items`, `count`, `nextCursor`.
 - Внутренний результат сервиса — `ICursorPaginationResult<IRecommendationItem>` со следующим контрактом карточки:
 
@@ -148,15 +150,15 @@ interface IRecommendationLibraryFilter {
 
 ### Фильтр рейтинга
 
-- Сохранить отдельные `filter.ratingMin?: number` и `filter.ratingMax?: number`.
+- Передавать необязательные границы в `filter.rating.min` и `filter.rating.max`, как в фильтре рейтинга Search.
 - Границы относятся к обычному среднему рейтингу `ItemStats.ratingAverage`, а не к CF/ALS-score или сглаженному рейтингу.
-- Сохранить текущий контракт: конечные числа от 1 до 10 включительно, допускаются дробные значения; при двух границах ratingMin не превышает ratingMax.
+- Границы — конечные числа от 1 до 10 включительно, допускаются дробные значения. Если заданы обе границы, `min` не превышает `max`.
 - Кандидат без известного среднего рейтинга не проходит заданное рейтинговое условие. Если границы не заданы, отсутствие рейтинга само по себе не исключает Item.
 - Это самостоятельное условие по агрегату оценок; решение убрать точные диапазоны metadata из filter.fields на него не распространяется.
 
 ### Дополнительные общие изменения
 
-Общие изменения перечислены в [истории улучшений API](../api/sharedApiImprovements.md). Применение IValueFilter к доменным фильтрам остаётся [открытой задачей](apiImprovementsTodo.md).
+Общие изменения перечислены в [истории улучшений API](../api/sharedApiImprovements.md). `IValueFilter` уже используется в типах; исполнение условий фильтрации остаётся [открытой задачей](apiImprovementsTodo.md).
 
 ## 2. Данные для разработки и порядок проверки
 
@@ -283,9 +285,9 @@ interface IRecommendationLibraryFilter {
 ### Общий рейтинг для 10% популярного
 
 - Для этого источника выбирать допустимые произведения с ratingsCount > 0 и известным ItemStats.ratingAverage.
-- Основной порядок — ratingScore по убыванию, вычисляемый по сохранённой формуле createItemRatingScoreExpression: `(n * R + 20 * C) / (n + 20)`, где n — ItemStats.ratingsCount, R — ItemStats.ratingAverage, C — сохранённый средний рейтинг сайта из SiteStats.
+- Основной порядок — ratingScore по убыванию. Общая функция [calculateItemRatingScore](../../../src/entities/itemStats/functions/calculateItemRatingScore/index.ts) использует формулу `(n * R + 20 * C) / (n + 20)`, где n — ItemStats.ratingsCount, R — ItemStats.ratingAverage, C — сохранённый средний рейтинг сайта из SiteStats.
 - При одинаковом ratingScore сортировать по ratingsCount по убыванию, затем по Item._id по возрастанию.
-- При новой реализации восстановить helper формулы и чтение сохранённого среднего сайта с fallback 5.5 при отсутствии значения. Прежние createItemRatingScoreExpression и SiteRatingsStatsRepository.readRatingBaseline удалены вместе со старой подсистемой; это требование будущей реализации. Новый счётчик популярности для этого источника не добавлять.
+- Среднее по сайту читать через `SiteRatingsStatsRepository.readAverage()`, при отсутствии использовать 5,5. Для отбора в MongoDB предстоит применить те же правила расчёта до ограничения числа кандидатов. Новый счётчик популярности для этого источника не добавлять.
 - По смыслу канал выбирает высоко оценённые произведения с поправкой на число голосов. При нехватке кандидатов действует общее правило заполнения из остальных источников без ослабления фильтров.
 - Правило задаёт базовый порядок отдельного источника 10% выдачи и рейтинговой доли fallback перед ручной корректировкой. Обучающую популярность для CF/ALS и её роль в разрешении равных model scores оно не заменяет.
 

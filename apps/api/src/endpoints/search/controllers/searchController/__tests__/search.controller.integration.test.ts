@@ -265,17 +265,19 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       { item: missingAlternative._id, tag: requiredTag, relevanceScore: 1 },
       { item: missingRequired._id, tag: alternativeTag, relevanceScore: 1 },
     ])
-    await application.connection
-      .collection("ItemStats")
-      .insertMany(
-        [
-          ...matched,
-          excluded,
-          wrongType,
-          missingAlternative,
-          missingRequired,
-        ].map((item) => ({ item: item._id, ratingAverage: 7.5 })),
-      )
+    await application.connection.collection("ItemStats").insertMany(
+      [
+        ...matched,
+        excluded,
+        wrongType,
+        missingAlternative,
+        missingRequired,
+      ].map((item) => ({
+        item: item._id,
+        ratingAverage: 7.5,
+        ratingsCount: 1,
+      })),
+    )
     const collectionId = new Types.ObjectId()
     await application.connection.collection("Collection").insertOne({
       _id: collectionId,
@@ -348,8 +350,8 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       const low = await seedItem({ releaseDate: new Date("2000-01-01") })
       const high = await seedItem({ releaseDate: new Date("2020-01-01") })
       await application.connection.collection("ItemStats").insertMany([
-        { item: low._id, ratingAverage: 6 },
-        { item: high._id, ratingAverage: 9 },
+        { item: low._id, ratingAverage: 6, ratingsCount: 1 },
+        { item: high._id, ratingAverage: 9, ratingsCount: 1 },
       ])
       await synchronize()
       for (const sort of ["rating", "releaseDate"]) {
@@ -368,6 +370,63 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       }
     },
   )
+
+  it("сортирует с учётом числа голосов и пересчитывает порядок после изменения среднего сайта", async () => {
+    const oneVote = await seedItem()
+    const manyVotes = await seedItem()
+    const fewerTiedVotes = await seedItem()
+    const moreTiedVotes = await seedItem()
+    const noVotes = await seedItem()
+    await application.connection.collection("ItemStats").insertMany([
+      { item: oneVote._id, ratingAverage: 9, ratingsCount: 1 },
+      { item: manyVotes._id, ratingAverage: 8, ratingsCount: 100 },
+      { item: fewerTiedVotes._id, ratingAverage: 5.5, ratingsCount: 2 },
+      { item: moreTiedVotes._id, ratingAverage: 5.5, ratingsCount: 20 },
+      { item: noVotes._id, ratingAverage: 10, ratingsCount: 0 },
+    ])
+    await synchronize()
+
+    const readIds = async (
+      direction: "asc" | "desc",
+      rating?: { min: number; max: number },
+    ) => {
+      const response = await query({
+        search: "Орбита",
+        items: { rating, sort: { type: "rating", direction } },
+      })
+      expect(response.statusCode).toBe(200)
+      return response.json<SearchResponseDto>().items.map((item) => item.id)
+    }
+
+    expect(await readIds("desc")).toEqual(
+      [manyVotes, oneVote, moreTiedVotes, fewerTiedVotes, noVotes].map((item) =>
+        String(item._id),
+      ),
+    )
+    expect(await readIds("asc")).toEqual(
+      [moreTiedVotes, fewerTiedVotes, oneVote, manyVotes, noVotes].map((item) =>
+        String(item._id),
+      ),
+    )
+    const rating = { min: 8, max: 9 }
+    expect(await readIds("desc", rating)).toEqual([
+      String(manyVotes._id),
+      String(oneVote._id),
+    ])
+
+    await application.connection.collection("SiteStats").insertOne({
+      key: "ratings",
+      sum: 9,
+      count: 1,
+      average: 9,
+    })
+    await synchronize()
+
+    expect(await readIds("desc", rating)).toEqual([
+      String(oneVote._id),
+      String(manyVotes._id),
+    ])
+  })
 
   it("сортирует названия на выбранном языке с резервным переводом", async () => {
     const first = await seedItem({ title: { ru: "Zulu", en: "Alpha" } })
@@ -503,7 +562,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       .insertOne({ _id: tagId, key: "searchUpdatedTag" })
     await application.connection
       .collection("ItemStats")
-      .insertOne({ item: item._id, ratingAverage: 8 })
+      .insertOne({ item: item._id, ratingAverage: 8, ratingsCount: 1 })
     await synchronize()
     const matched = await query(body)
     expect(matched.statusCode).toBe(200)
