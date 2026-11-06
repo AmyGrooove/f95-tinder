@@ -1,7 +1,7 @@
 import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty } from "@nestjs/swagger"
 import { IsString, Matches } from "class-validator"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class LoginCodeBodyDto {
   @ApiProperty({

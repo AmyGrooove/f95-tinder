@@ -15,7 +15,7 @@ import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 import {
   CreateUserItemBodyDto,

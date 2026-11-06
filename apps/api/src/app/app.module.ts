@@ -6,6 +6,7 @@ import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
+import { TagEndpointModule } from "@endpoints/tag/tag.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -67,6 +68,7 @@ import { AppController } from "./controllers/appController"
     UserItemModule,
     UserSessionModule,
     SearchEndpointModule,
+    TagEndpointModule,
   ],
   controllers: [AppController],
   providers: [

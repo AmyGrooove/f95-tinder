@@ -1,5 +1,31 @@
 # Каталог и поиск
 
+<a id="tags"></a>
+
+## QUERY /tags
+
+Публичный запрос с JSON-телом. Пример первой порции: `{"group":{"anyOf":["genre","subgenre"]},"limit":20}`.
+
+```mermaid
+flowchart TD
+    accTitle: Поиск тегов и обновление словаря
+    accDescr: Запрос читает индекс Meilisearch. Отдельная еженедельная задача обновляет индекс из MongoDB.
+    A["QUERY /tags"]:::http --> B["Проверить тело и курсор"]:::action
+    B -->|Некорректные данные| C["400"]:::http
+    B -->|Несовместимые группы allOf| D["200 · пустая порция"]:::http
+    B -->|Условия поиска| E["Проверить готовность и запросить теги"]:::action
+    E --> F[("Meilisearch · site_tags")]:::external
+    E -->|Индекс недоступен| G["503"]:::http
+    E -->|Порция тегов| H["200 · items и nextCursor"]:::http
+    I["Запуск приложения или понедельник"]:::action -.-> J[["Задача синхронизации тегов"]]:::job
+    J --> K[("MongoDB · Tag")]:::entity
+    J -->|Обновить и удалить устаревшие теги| F
+```
+
+Отметка успешной синхронизации записывается после обновления индекса и удаления отсутствующих тегов. Запросы читают текущую версию индекса. Подробности фильтров и пагинации приведены в [контракте справочника](../pages/search.md#справочник-тегов).
+
+[TagController](../../../../src/endpoints/tag/controllers/tagController/core/tag.controller.ts) · [TagSearchService](../../../../src/endpoints/tag/services/tagSearchService/core/tagSearch.service.ts) · [SyncTagSearchJobHandler](../../../../src/endpoints/tag/services/syncTagSearchJobHandler/core/syncTagSearchJob.handler.ts)
+
 [← Все эндпоинты](../endpoints.md) · [Обозначения схем](readme.md)
 
 Поисковый запрос публичный. Access/refresh cookies не проверяются. Общие ограничения HTTP перечислены в [каталоге](../endpoints.md#common). Поисковый запрос не меняет MongoDB, не публикует события и не ставит задачи. Схемы сверены с production-кодом, а не с трассировкой запущенного API.

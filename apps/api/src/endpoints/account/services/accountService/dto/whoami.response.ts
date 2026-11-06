@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger"
 
 import { WhoamiSessionResponseDto } from "./whoamiSession.response"
 import { WhoamiUserResponseDto } from "./whoamiUser.response"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class WhoamiResponseDto {
   @ApiProperty({

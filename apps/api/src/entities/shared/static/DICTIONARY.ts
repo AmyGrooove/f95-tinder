@@ -68,6 +68,9 @@ const DICTIONARY = {
     textGroupFields: "Название и описание допустимы только для группы",
   },
   tag: {
+    invalidCursor: "Недействительный курсор тегов",
+    searchUnavailable: "Словарь тегов временно недоступен или ещё подготавливается",
+    searchEnqueueFailed: "Не удалось поставить синхронизацию тегов в очередь",
     selfParent: "Тег не может быть собственным родителем",
     duplicateParents: "Родительские теги не должны повторяться",
     invalidParents: "Родители должны быть массивом ObjectId тегов",
@@ -121,26 +124,6 @@ const DICTIONARY = {
     sessionNotFound: "Сессия не найдена",
     usernameUnavailable:
       "Не удалось создать уникальный логин, повторите запрос",
-  },
-  source: {
-    repeatedPage: "Повторилось состояние пагинации при сборе данных источника",
-    invalidPageNumber:
-      "Номер страницы должен быть положительным безопасным целым числом",
-  },
-  kodik: {
-    sourceNotFound: "Источник Kodik не найден в справочнике источников",
-    searchRequired:
-      "Необходимо указать название или идентификатор для поиска Kodik",
-    requestFailed: "Не удалось получить ответ API Kodik",
-    invalidResponse: "API Kodik вернул некорректный ответ",
-    invalidPageUrl: "API Kodik вернул недопустимую ссылку пагинации",
-  },
-  kodikMovies: {
-    jobNotFound: "Задача сбора фильмов Kodik не найдена",
-    repeatedPage: "API Kodik повторил страницу пагинации",
-    collecting: "Сбор новых фильмов",
-    announcements: "Перепроверка анонсов",
-    completed: "Сбор завершён",
   },
 } as const
 

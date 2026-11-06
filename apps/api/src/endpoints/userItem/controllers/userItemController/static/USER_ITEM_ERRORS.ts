@@ -1,4 +1,4 @@
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 const USER_ITEM_ERRORS = [
   { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },

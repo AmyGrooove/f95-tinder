@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger"
 import { IsByteLength, IsString, MinLength } from "class-validator"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class PasswordBodyDto {
   @ApiProperty({

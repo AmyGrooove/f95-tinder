@@ -16,7 +16,7 @@ import {
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import type { IPagePagination } from "@infrastructure/database/types/IPaginationInput"
 import type { TPageSize } from "@infrastructure/database/types/TPageSize"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 

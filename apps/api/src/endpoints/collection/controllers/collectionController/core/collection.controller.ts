@@ -28,7 +28,7 @@ import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 import {
   CollectionService,

@@ -1,6 +1,6 @@
 import { REGEX } from "@shared/static/REGEX"
 import { ApiProperty } from "@nestjs/swagger"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class RegisterResponseDto {
   @ApiProperty({

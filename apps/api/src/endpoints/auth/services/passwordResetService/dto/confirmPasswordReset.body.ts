@@ -3,7 +3,7 @@ import { ApiProperty } from "@nestjs/swagger"
 import { IsByteLength, IsString, Matches, MinLength } from "class-validator"
 
 import { PasswordResetBodyDto } from "./passwordReset.body"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class ConfirmPasswordResetBodyDto extends PasswordResetBodyDto {
   @ApiProperty({

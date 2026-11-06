@@ -21,7 +21,7 @@ import {
   SessionResponseDto,
   SessionService,
 } from "@endpoints/auth/services/sessionService"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.sessions)
 @Controller("auth/session")

@@ -4,7 +4,7 @@ import { Transform } from "class-transformer"
 import { IsString, Matches, MaxLength } from "class-validator"
 
 import { isString } from "@shared/functions/checks/isString"
-import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 class UsernameBodyDto {
   @ApiProperty({
