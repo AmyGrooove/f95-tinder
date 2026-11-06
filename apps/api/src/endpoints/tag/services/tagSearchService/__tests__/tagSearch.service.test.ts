@@ -6,6 +6,7 @@ import {
 
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import type { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import type { SearchService } from "@infrastructure/search/services/searchService"
 
 import { TAG_SEARCH_SETTINGS } from "../../../static/TAG_SEARCH_SETTINGS"
@@ -22,6 +23,7 @@ describe("TagSearchService", () => {
     const service = new TagSearchService(
       index as unknown as SearchService,
       cache as unknown as CacheService,
+      new CursorService(),
     )
     return { cache, index, service }
   }

@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto"
-
 import {
   BadRequestException,
   HttpException,
@@ -18,6 +16,7 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import type {
@@ -36,7 +35,6 @@ import { ESearchGroup } from "../types/ESearchGroup"
 import { ESearchItemSort } from "../types/ESearchItemSort"
 import { ESearchUserSort } from "../types/ESearchUserSort"
 import type { ISearchGroupOptions } from "../types/ISearchGroupOptions"
-import type { IReadOffsetsProps } from "../types/IReadOffsetsProps"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
 
 @Injectable()
@@ -47,6 +45,7 @@ class SiteSearchService {
     private readonly itemRepository: ItemRepository,
     private readonly userRepository: UserRepository,
     private readonly collectionRepository: CollectionRepository,
+    private readonly cursorService: CursorService,
   ) {}
 
   async search(body: SearchBodyDto): Promise<SearchResponseDto> {
@@ -60,21 +59,30 @@ class SiteSearchService {
         (included.length === 0 || included.includes(group)) &&
         !(body.types?.noneOf ?? []).includes(group),
     )
-    const fingerprint = createHash("sha256")
-      .update(
-        JSON.stringify([
-          body.search,
-          body.limit,
-          selected.map((group) => [group, options[group]]),
-        ]),
-      )
-      .digest("base64url")
-    const offsets = this.readOffsets({
-      cursor: body.cursor,
-      fingerprint,
-      selected,
-      limit: body.limit,
-    })
+    const scope = [
+      body.search,
+      body.limit,
+      selected.map((group) => [group, options[group]]),
+    ]
+    const offsets = isNil(body.cursor)
+      ? selected.map(() => 0)
+      : this.cursorService.read({
+          cursor: body.cursor,
+          scope,
+          invalidCursorMessage: DICTIONARY.search.invalidCursor,
+          isPosition: (value): value is (number | null)[] =>
+            isArray(value) &&
+            value.length === selected.length &&
+            value.some((offset) => offset !== null) &&
+            value.every(
+              (offset) =>
+                offset === null ||
+                (isFiniteNumber(offset) &&
+                  offset % body.limit === 0 &&
+                  offset > 0 &&
+                  offset < SEARCH_SETTINGS.maxTotalHits),
+            ),
+        })
     const active = selected.flatMap((group, index) => {
       const offset = offsets[index]
 
@@ -118,9 +126,7 @@ class SiteSearchService {
         (group) => pages.get(group)?.nextOffset ?? null,
       )
       const nextCursor = nextOffsets.some((offset) => offset !== null)
-        ? Buffer.from(JSON.stringify([1, fingerprint, nextOffsets])).toString(
-            "base64url",
-          )
+        ? this.cursorService.create({ scope, position: nextOffsets })
         : null
       const [items, collections, users] = await Promise.all([
         this.loadItems(pages.get(ESearchGroup.ITEMS)?.ids ?? []),
@@ -138,50 +144,6 @@ class SiteSearchService {
         cause: error,
       })
     }
-  }
-
-  private readOffsets(props: IReadOffsetsProps): (number | null)[] {
-    const { cursor, fingerprint, selected, limit } = props
-
-    if (isNil(cursor)) {
-      return selected.map(() => 0)
-    }
-
-    try {
-      const buffer = Buffer.from(cursor, "base64url")
-
-      if (buffer.toString("base64url") === cursor) {
-        const payload: unknown = JSON.parse(buffer.toString("utf8"))
-
-        if (isArray(payload) && payload.length === 3) {
-          const [version, hash, offsets] = payload
-
-          if (
-            version === 1 &&
-            hash === fingerprint &&
-            isArray(offsets) &&
-            offsets.length === selected.length &&
-            offsets.some((offset) => offset !== null) &&
-            offsets.every(
-              (offset): offset is number | null =>
-                offset === null ||
-                (isFiniteNumber(offset) &&
-                  offset % limit === 0 &&
-                  offset > 0 &&
-                  offset < SEARCH_SETTINGS.maxTotalHits),
-            )
-          ) {
-            return offsets
-          }
-        }
-      }
-    } catch (error) {
-      throw new BadRequestException(DICTIONARY.search.invalidCursor, {
-        cause: error,
-      })
-    }
-
-    throw new BadRequestException(DICTIONARY.search.invalidCursor)
   }
 
   private prepareGroups(

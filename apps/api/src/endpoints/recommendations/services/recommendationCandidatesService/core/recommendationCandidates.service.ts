@@ -11,7 +11,10 @@ import { requestContext } from "@shared/functions/context/requestContext"
 
 import { NEW_RELEASE_WINDOW_DAYS } from "../static/NEW_RELEASE_WINDOW_DAYS"
 import type { IReadRecommendationCandidatesProps } from "../types/IReadRecommendationCandidatesProps"
-import type { IRecommendationCandidateContext } from "../types/IRecommendationCandidateContext"
+import type {
+  IRecommendationCandidateContext,
+  IRecommendationViewer,
+} from "../types/IRecommendationCandidateContext"
 
 @Injectable()
 class RecommendationCandidatesService {
@@ -25,6 +28,12 @@ class RecommendationCandidatesService {
   async prepareContext(
     accessToken: unknown,
   ): Promise<IRecommendationCandidateContext> {
+    const viewer = await this.prepareViewer(accessToken)
+
+    return this.prepareContextForViewer(viewer)
+  }
+
+  async prepareViewer(accessToken: unknown): Promise<IRecommendationViewer> {
     const payload = await this.authService.verifyAccessToken(accessToken)
     const userId = new Types.ObjectId(payload.sub)
     const [session, isUserExists] = await Promise.all([
@@ -38,10 +47,16 @@ class RecommendationCandidatesService {
 
     requestContext.set("userId", payload.sub)
 
+    return { userId, country: session.country }
+  }
+
+  async prepareContextForViewer(
+    viewer: IRecommendationViewer,
+  ): Promise<IRecommendationCandidateContext> {
     const siteRatingAverage =
       await this.siteRatingsStatsRepository.readAverage()
 
-    return { userId, country: session.country, siteRatingAverage }
+    return { ...viewer, siteRatingAverage }
   }
 
   readPopularItemIds(

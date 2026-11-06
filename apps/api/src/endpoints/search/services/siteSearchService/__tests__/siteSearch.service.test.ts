@@ -33,6 +33,7 @@ import { ESearchItemSort } from "../types/ESearchItemSort"
 import { ESearchUserSort } from "../types/ESearchUserSort"
 import { SiteSearchService } from "../core/siteSearch.service"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 
 describe("SiteSearchService", () => {
   const cache = { get: jest.fn<CacheService["get"]>() }
@@ -80,6 +81,7 @@ describe("SiteSearchService", () => {
     module = await Test.createTestingModule({
       providers: [
         SiteSearchService,
+        CursorService,
         { provide: SearchService, useValue: search },
         { provide: CacheService, useValue: cache },
         { provide: ItemRepository, useValue: items },
@@ -263,6 +265,64 @@ describe("SiteSearchService", () => {
         batchSize: 500,
       }),
     )
+  })
+
+  it("продолжает обратную выдачу без пропусков и повторов при равных оценках между пачками", async () => {
+    const ids = Array.from(
+      { length: 23 },
+      (_, index) =>
+        new Types.ObjectId((index + 1).toString(16).padStart(24, "0")),
+    )
+    search.iterateMatches.mockImplementation(async function* () {
+      yield ids.slice(0, 12).map((id) => ({
+        id: String(id),
+        _rankingScore: 0.8,
+      }))
+      yield ids.slice(12).map((id, index) => ({
+        id: String(id),
+        _rankingScore: index === 0 ? 0.1 : 0.8,
+      }))
+    })
+    items.readPosterCardsByIds.mockImplementation(async (pageIds) =>
+      pageIds.map((_id) => ({
+        _id,
+        type: EItemType.MOVIE,
+        title: { ru: "Орбита", en: null },
+        media: [],
+      })),
+    )
+    const body = Object.assign(new SearchBodyDto(), {
+      search: "orbit",
+      limit: 10,
+      types: { anyOf: [ESearchGroup.ITEMS] },
+      items: {
+        sort: {
+          type: ESearchItemSort.RELEVANCE,
+          direction: ESearchSortDirection.ASC,
+        },
+      },
+    })
+
+    const first = await service.search(body)
+    expect(first.nextCursor).toEqual(expect.any(String))
+    const second = await service.search({
+      ...body,
+      cursor: first.nextCursor ?? undefined,
+    })
+    expect(second.nextCursor).toEqual(expect.any(String))
+    const last = await service.search({
+      ...body,
+      cursor: second.nextCursor ?? undefined,
+    })
+
+    expect(first.items.map((item) => item.id)).toEqual(
+      [ids[12], ...ids.slice(0, 9)].map(String),
+    )
+    expect(second.items.map((item) => item.id)).toEqual(
+      [...ids.slice(9, 12), ...ids.slice(13, 20)].map(String),
+    )
+    expect(last.items.map((item) => item.id)).toEqual(ids.slice(20).map(String))
+    expect(last.nextCursor).toBeNull()
   })
 
   it.each([undefined, NaN, Infinity])(

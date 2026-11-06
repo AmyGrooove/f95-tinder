@@ -1,4 +1,5 @@
 export { RecommendationsService } from "./core/recommendations.service"
+export { RecommendationCursorExpiredError } from "./errors/RecommendationCursorExpiredError"
 export type { IFindRecommendationsProps } from "./types/IFindRecommendationsProps"
 export type {
   IReadRecommendationCandidatesProps,

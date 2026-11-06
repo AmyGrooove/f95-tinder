@@ -1,16 +1,10 @@
-import { createHash } from "node:crypto"
-
-import {
-  BadRequestException,
-  Injectable,
-  ServiceUnavailableException,
-} from "@nestjs/common"
+import { Injectable, ServiceUnavailableException } from "@nestjs/common"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
-import { isArray } from "@shared/functions/checks/isArray"
 import { isNumber } from "@shared/functions/checks/isNumber"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -18,7 +12,6 @@ import { TAG_SEARCH_SETTINGS } from "../../../static/TAG_SEARCH_SETTINGS"
 import type { ITagSearchDocument } from "../../../types/ITagSearchDocument"
 import type { TagsBodyDto } from "../dto/tags.body"
 import type { TagsResponseDto } from "../dto/tags.response"
-import type { IReadOffsetProps } from "../types/IReadOffsetProps"
 import type { ISearchIndexProps } from "../types/ISearchIndexProps"
 
 @Injectable()
@@ -26,6 +19,7 @@ class TagSearchService {
   constructor(
     private readonly searchService: SearchService,
     private readonly cacheService: CacheService,
+    private readonly cursorService: CursorService,
   ) {}
 
   async search(props: TagsBodyDto): Promise<TagsResponseDto> {
@@ -36,10 +30,20 @@ class TagSearchService {
     const anyOf = group?.anyOf?.map((value) => value ?? ungrouped).sort() ?? []
     const noneOf =
       group?.noneOf?.map((value) => value ?? ungrouped).sort() ?? []
-    const fingerprint = createHash("sha256")
-      .update(JSON.stringify([search, allOf, anyOf, noneOf, limit]))
-      .digest("base64url")
-    const offset = this.readOffset({ cursor, fingerprint, limit })
+    const scope = [search, allOf, anyOf, noneOf, limit]
+    const offset = isUndefined(cursor)
+      ? 0
+      : this.cursorService.read({
+          cursor,
+          scope,
+          invalidCursorMessage: DICTIONARY.tag.invalidCursor,
+          isPosition: (value): value is number =>
+            isNumber(value) &&
+            Number.isSafeInteger(value) &&
+            value >= limit &&
+            value < maxTotalHits &&
+            value % limit === 0,
+        })
 
     if (allOf.length > 1) {
       return { items: [], nextCursor: null }
@@ -71,51 +75,10 @@ class TagSearchService {
     })
     const nextCursor =
       hits.length > limit
-        ? Buffer.from(
-            JSON.stringify([1, fingerprint, offset + limit]),
-          ).toString("base64url")
+        ? this.cursorService.create({ scope, position: offset + limit })
         : null
 
     return { items, nextCursor }
-  }
-
-  private readOffset(props: IReadOffsetProps) {
-    const { cursor, fingerprint, limit } = props
-
-    if (isUndefined(cursor)) {
-      return 0
-    }
-
-    try {
-      const buffer = Buffer.from(cursor, "base64url")
-      const decoded: unknown = JSON.parse(buffer.toString("utf8"))
-
-      if (
-        buffer.toString("base64url") === cursor &&
-        isArray(decoded) &&
-        decoded.length === 3
-      ) {
-        const [version, storedFingerprint, offset]: unknown[] = decoded
-
-        if (
-          version === 1 &&
-          storedFingerprint === fingerprint &&
-          isNumber(offset) &&
-          Number.isSafeInteger(offset) &&
-          offset >= limit &&
-          offset < TAG_SEARCH_SETTINGS.maxTotalHits &&
-          offset % limit === 0
-        ) {
-          return offset
-        }
-      }
-    } catch (error) {
-      throw new BadRequestException(DICTIONARY.tag.invalidCursor, {
-        cause: error,
-      })
-    }
-
-    throw new BadRequestException(DICTIONARY.tag.invalidCursor)
   }
 
   private async searchIndex(props: ISearchIndexProps) {

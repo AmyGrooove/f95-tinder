@@ -15,6 +15,8 @@ import type { SiteRatingsStatsRepository } from "@entities/siteStats/services/si
 import type { UserRepository } from "@entities/user/services/userRepository"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
 import { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
+import type { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import type { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
@@ -87,6 +89,8 @@ describe("RecommendationsService.readPopularItemIds", () => {
       candidatesService,
       new FallbackRecommendationsService(candidatesService),
       itemRepository,
+      {} as CacheService,
+      new CursorService(),
     )
     const signToken = (sessionId = session._id) =>
       jwtService.signAccessToken({

@@ -7,6 +7,7 @@ import { InfrastructureConfigService } from "@infrastructure/config/services/con
 
 import { CacheHealthService } from "./services/cacheHealthService"
 import { CacheService } from "./services/cacheService"
+import { CursorService } from "./services/cursorService"
 
 @Module({
   imports: [
@@ -31,8 +32,8 @@ import { CacheService } from "./services/cacheService"
       },
     }),
   ],
-  providers: [CacheHealthService, CacheService],
-  exports: [NestCacheModule, CacheHealthService, CacheService],
+  providers: [CacheHealthService, CacheService, CursorService],
+  exports: [NestCacheModule, CacheHealthService, CacheService, CursorService],
 })
 class CacheModule {}
 
