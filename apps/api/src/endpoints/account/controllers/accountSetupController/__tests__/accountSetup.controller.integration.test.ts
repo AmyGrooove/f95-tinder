@@ -7,7 +7,24 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { readConfirmationCode } from "@endpoints/account/__tests__/functions/readConfirmationCode"
 
-describe("AccountSetupController HTTP", () => {
+describe("AccountSetupController", () => {
+  it("блокирует запрос настройки с постороннего Origin до отправки письма", async () => {
+    const account = await createAccount()
+    const { app, mail } = getTestApplication()
+    const response = await app.inject({
+      method: "POST",
+      url: "/account/credentials",
+      headers: { ...account.headers, origin: "https://foreign.example" },
+      payload: {
+        email: "setup@example.com",
+        password: "New-password-123",
+        accessCode: account.accessCode,
+      },
+    })
+    expect(response.statusCode).toBe(403)
+    expect(mail.messages).toHaveLength(0)
+  })
+
   it("отправляет письмо, сохраняет заявку в Redis и завершает настройку только после подтверждения", async () => {
     const { app, connection, redis, mail } = getTestApplication()
     const { user, headers, accessCode, password } = await createAccount()

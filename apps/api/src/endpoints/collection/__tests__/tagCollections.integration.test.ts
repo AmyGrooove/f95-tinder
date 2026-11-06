@@ -44,7 +44,7 @@ import { TagCollectionsSynchronizationService } from "@endpoints/collection/serv
 import { SynchronizeTagCollectionsJobHandler } from "@endpoints/collection/services/synchronizeTagCollectionsJobHandler"
 import dictionary from "../../../../public/import/tags/tags.json" with { type: "json" }
 
-describe("Tag collections MongoDB/BullMQ", () => {
+describe("Синхронизация подборок по тегам", () => {
   let moduleRef: TestingModule | undefined
   let queue: Queue
   let tags: TagRepository

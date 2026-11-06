@@ -19,7 +19,7 @@ import { CacheModule } from "../../../cache.module"
 import { CacheService } from "../../../services/cacheService"
 import { CacheEndpoint } from "../index"
 
-describe("CacheEndpoint HTTP", () => {
+describe("CacheEndpoint", () => {
   @Controller("cache-endpoint")
   class TestController {
     calls = 0

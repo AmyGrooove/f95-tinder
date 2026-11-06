@@ -10,7 +10,28 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 
-describe("AccountCredentialsController HTTP", () => {
+describe("AccountCredentialsController", () => {
+  it("блокирует смену пароля с постороннего Origin и не выдаёт новые cookies", async () => {
+    const account = await createAccount("password")
+    const { app, connection } = getTestApplication()
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/account/password",
+      headers: { ...account.headers, origin: "https://foreign.example" },
+      payload: {
+        currentPassword: account.password,
+        newPassword: "New-password-123",
+      },
+    })
+    expect(response.statusCode).toBe(403)
+    expect(response.cookies).toEqual([])
+    expect(
+      await connection.collection("User").findOne({ _id: account.user._id }),
+    ).toMatchObject({
+      passwordHash: account.user.passwordHash,
+    })
+  })
+
   it.each(["password", "accessCode"] as const)(
     "откатывает смену секрета %s и текущего токена при сбое отзыва остальных сессий",
     async (kind) => {

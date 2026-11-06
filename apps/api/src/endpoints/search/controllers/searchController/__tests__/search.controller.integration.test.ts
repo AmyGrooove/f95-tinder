@@ -24,8 +24,10 @@ import { createTestApplication } from "@app/__tests__/setup/createTestApplicatio
 import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import type { SearchResponseDto } from "@endpoints/search/services/siteSearchService"
+import { SyncTagSearchJobHandler } from "@endpoints/tag/services/syncTagSearchJobHandler"
+import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 
-describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
+describe("SearchController", () => {
   const docker = promisify(execFile)
   let containerId: string | undefined
   let application: Awaited<ReturnType<typeof createTestApplication>>
@@ -785,6 +787,80 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
     expect(searchIndex).not.toHaveBeenCalled()
     expect(iterateMatches).not.toHaveBeenCalled()
+  })
+
+  it("QUERY /search отклоняет запрос без тела до обращения к индексу", async () => {
+    const search = jest.spyOn(application.app.get(SearchService), "search")
+    const response = await application.app.inject({
+      method: "QUERY",
+      url: "/search",
+      headers: { origin: "http://localhost" },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  describe("TagController", () => {
+    const queryTags = (payload: object, origin = "http://localhost") => {
+      return application.app.inject({
+        method: "QUERY",
+        url: "/tags",
+        payload,
+        headers: { origin },
+      })
+    }
+
+    it("возвращает гостю теги нужной группы после синхронизации с MongoDB", async () => {
+      const id = new Types.ObjectId()
+      await application.connection.collection("Tag").insertMany([
+        {
+          _id: id,
+          key: "genreOrbit",
+          group: ETagGroup.GENRE,
+          name: { ru: "Орбита", en: null },
+        },
+        { key: "orbit", group: null, name: { ru: "Орбита", en: null } },
+      ])
+      expect((await queryTags({})).statusCode).toBe(503)
+
+      await application.app.get(SyncTagSearchJobHandler).handle(null, {
+        id: "tag-search-test",
+        attempt: 1,
+        updateProgress: async () => {},
+        throwIfCancelled: async () => {},
+      })
+
+      const response = await queryTags({
+        search: "Орбита",
+        group: { allOf: [ETagGroup.GENRE] },
+        limit: 10,
+      })
+      expect(response.statusCode).toBe(200)
+      expect(response.headers["accept-query"]).toBe("application/json")
+      expect(response.headers["cache-control"]).toBe("no-store")
+      expect(response.json()).toEqual({
+        items: [
+          {
+            id: id.toHexString(),
+            key: "genreOrbit",
+            group: ETagGroup.GENRE,
+            name: { ru: "Орбита", en: null },
+          },
+        ],
+        nextCursor: null,
+      })
+    })
+
+    it("отклоняет некорректный фильтр и запрос с постороннего Origin", async () => {
+      expect(
+        (await queryTags({ group: { allOf: ["invalid"] } })).statusCode,
+      ).toBe(400)
+      expect((await queryTags({}, "https://foreign.example")).statusCode).toBe(
+        403,
+      )
+    })
   })
 
   it("сохраняет CORS для QUERY и блокирует посторонний Origin", async () => {

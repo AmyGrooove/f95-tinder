@@ -15,7 +15,27 @@ import { readConfirmationCode } from "@endpoints/account/__tests__/functions/rea
 import { PASSWORD_RESET } from "@endpoints/auth/services/passwordResetService"
 import type { IPasswordReset } from "@endpoints/auth/services/passwordResetService"
 
-describe("PasswordResetController HTTP", () => {
+describe("PasswordResetController", () => {
+  it("не подтверждает восстановление по коду от другого email", async () => {
+    const reset = await requestReset()
+    const { app, redis } = getTestApplication()
+    const pending = await redis.get(reset.key)
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/auth/password/reset",
+      headers: { origin: "http://localhost" },
+      payload: {
+        email: "other@example.com",
+        code: reset.code,
+        newPassword: "New-password-123",
+      },
+    })
+    expect(response.statusCode).toBe(400)
+    expect(response.cookies).toEqual([])
+    expect(pending).not.toBeNull()
+    expect(await redis.get(reset.key)).toBe(pending)
+  })
+
   const resetKey = (email: string) => {
     return `bisky-test:auth:passwordReset:{${createHash("sha256").update(email).digest("hex")}}`
   }

@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "@jest/globals"
 import { MongoTransactionService } from "../core/mongoTransaction.service"
 import { createRepositoryFixture } from "../../../__tests__/functions/createRepositoryFixture"
 
-describe("MongoTransactionService MongoDB", () => {
+describe("MongoTransactionService", () => {
   let fixture: Awaited<ReturnType<typeof createRepositoryFixture>>
   let service: MongoTransactionService
 

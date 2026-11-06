@@ -12,7 +12,7 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { readSavedUserItem } from "@endpoints/userItem/__tests__/functions/readSavedUserItem"
 
-describe("UserItemStats MongoDB HTTP", () => {
+describe("UserItemStatsService", () => {
   let clientIndex = 0
   const createAccount = async () => {
     clientIndex += 1

@@ -8,7 +8,7 @@ import { JobRegistryService } from "../core/jobRegistry.service"
 
 import { createJobsTestContext } from "../../../__tests__/setup/createJobsTestContext"
 
-describe("JobRegistryService Redis", () => {
+describe("JobRegistryService", () => {
   const jobsContext = createJobsTestContext()
 
   describe("JobRegistryService", () => {

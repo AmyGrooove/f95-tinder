@@ -4,7 +4,7 @@ import { getTestDatabase } from "../../../__tests__/setup/setupDatabase"
 
 import { MongoHealthService } from "../core/mongoHealth.service"
 
-describe("MongoHealthService MongoDB", () => {
+describe("MongoHealthService", () => {
   it("проверяет настоящее соединение и успешно проходит bootstrap", async () => {
     const service = new MongoHealthService(getTestDatabase().connection)
 

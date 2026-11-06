@@ -464,7 +464,7 @@
           "ru": "Страна производства — Босния и Герцеговина; не место действия или съёмок",
           "en": "Production country: Bosnia and Herzegovina; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Bosnia-Herzegovina"],
         "parents": []
       },
       {
@@ -607,7 +607,7 @@
           "ru": "Страна производства — Центрально-Африканская Республика; не место действия или съёмок",
           "en": "Production country: Central African Republic; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["ЦАР"],
         "parents": []
       },
       {
@@ -776,7 +776,14 @@
           "ru": "Страна производства — Демократическая Республика Конго; не место действия или съёмок",
           "en": "Production country: Democratic Republic of the Congo; distinct from the story setting or filming location"
         },
-        "aliases": ["Заир", "Zaire", "ДР Конго"],
+        "aliases": [
+          "Заир",
+          "Zaire",
+          "ДР Конго",
+          "DR Congo",
+          "DRC",
+          "Конго-Киншаса"
+        ],
         "parents": []
       },
       {
@@ -828,7 +835,7 @@
           "ru": "Страна производства — Доминиканская Республика; не место действия или съёмок",
           "en": "Production country: Dominican Republic; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Доминикана"],
         "parents": []
       },
       {
@@ -884,7 +891,7 @@
           "ru": "Страна производства — Сальвадор; не место действия или съёмок",
           "en": "Production country: El Salvador; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Эль-Сальвадор"],
         "parents": []
       },
       {
@@ -1547,7 +1554,7 @@
           "ru": "Страна производства — Мальдивы; не место действия или съёмок",
           "en": "Production country: Maldives; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Мальдивские острова"],
         "parents": []
       },
       {
@@ -1638,7 +1645,7 @@
           "ru": "Страна производства — Молдова; не место действия или съёмок",
           "en": "Production country: Moldova; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Молдавия", "Республика Молдова", "Republic of Moldova"],
         "parents": []
       },
       {
@@ -1833,7 +1840,7 @@
           "ru": "Страна производства — КНДР; не место действия или съёмок",
           "en": "Production country: North Korea; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["DPRK", "Корейская Народно-Демократическая Республика"],
         "parents": []
       },
       {
@@ -1967,7 +1974,7 @@
           "ru": "Страна производства — Филиппины; не место действия или съёмок",
           "en": "Production country: Philippines; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Филиппинские острова"],
         "parents": []
       },
       {
@@ -2019,7 +2026,7 @@
           "ru": "Страна производства — Республика Конго; не место действия или съёмок",
           "en": "Production country: Republic of the Congo; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Конго-Браззавиль", "Congo-Brazzaville"],
         "parents": []
       },
       {
@@ -2045,7 +2052,7 @@
           "ru": "Страна производства — Россия; не место действия или съёмок",
           "en": "Production country: Russia; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["Российская Федерация", "Russian Federation"],
         "parents": []
       },
       {
@@ -2292,7 +2299,7 @@
           "ru": "Страна производства — Южно-Африканская Республика; не место действия или съёмок",
           "en": "Production country: South Africa; distinct from the story setting or filming location"
         },
-        "aliases": [],
+        "aliases": ["ЮАР"],
         "parents": []
       },
       {
@@ -2305,7 +2312,7 @@
           "ru": "Страна производства — Южная Корея; не место действия или съёмок",
           "en": "Production country: South Korea; distinct from the story setting or filming location"
         },
-        "aliases": ["Республика Корея"],
+        "aliases": ["Республика Корея", "Republic of Korea"],
         "parents": []
       },
       {
@@ -2595,7 +2602,7 @@
           "ru": "Страна производства — ОАЭ; не место действия или съёмок",
           "en": "Production country: United Arab Emirates; distinct from the story setting or filming location"
         },
-        "aliases": ["Объединённые Арабские Эмираты"],
+        "aliases": ["Объединённые Арабские Эмираты", "UAE"],
         "parents": []
       },
       {
@@ -2610,7 +2617,8 @@
         },
         "aliases": [
           "Соединённое Королевство",
-          "United Kingdom of Great Britain and Northern Ireland"
+          "United Kingdom of Great Britain and Northern Ireland",
+          "UK"
         ],
         "parents": []
       },
@@ -2628,7 +2636,8 @@
           "Соединённые Штаты Америки",
           "Соединенные Штаты",
           "USA",
-          "United States of America"
+          "United States of America",
+          "U.S.A."
         ],
         "parents": []
       },
@@ -3130,7 +3139,7 @@
           "ru": "Реальные события реконструируются драматическими средствами с опорой на факты",
           "en": "Real events are reconstructed dramatically with a factual basis"
         },
-        "aliases": [],
+        "aliases": ["Documentary drama", "Документальная драма"],
         "parents": []
       },
       {
@@ -3143,7 +3152,7 @@
           "ru": "Документальная форма представления действительных событий; не синоним non-fiction любого вида",
           "en": "Documentary presentation of real subjects, distinct from all non-fiction"
         },
-        "aliases": ["Dokumentarfilm"],
+        "aliases": ["Dokumentarfilm", "Документалка"],
         "parents": []
       },
       {
@@ -3208,7 +3217,7 @@
           "ru": "Фильм изначально предназначен для телевизионного показа, а не регулярного сезона сериала",
           "en": "A film initially intended for television presentation rather than a regular series season"
         },
-        "aliases": ["TV-Film"],
+        "aliases": ["TV-Film", "ТВ-фильм", "TV movie", "Telefilm"],
         "parents": []
       },
       {
@@ -3247,7 +3256,7 @@
           "ru": "Вымышленная история подаётся средствами документального наблюдения",
           "en": "Fiction is presented through documentary conventions"
         },
-        "aliases": [],
+        "aliases": ["Мокьюментари", "Мокументари"],
         "parents": []
       },
       {
@@ -3260,7 +3269,7 @@
           "ru": "Самостоятельное видеопроизведение, созданное как сопровождение музыкальной записи; чистые рекламные и промоматериалы исключены",
           "en": "A standalone video work accompanying a musical recording, excluding purely advertising and promotional material"
         },
-        "aliases": ["MUSIC"],
+        "aliases": ["MUSIC", "Видеоклип"],
         "parents": []
       },
       {
@@ -3286,7 +3295,7 @@
           "ru": "Аниме, изначально выпущенное в интернете",
           "en": "Anime initially released online"
         },
-        "aliases": [],
+        "aliases": ["Original net anime"],
         "parents": []
       },
       {
@@ -3299,7 +3308,7 @@
           "ru": "Аниме, изначально выпущенное непосредственно на видеоносителе",
           "en": "Anime initially released directly to video"
         },
-        "aliases": [],
+        "aliases": ["Original video anime"],
         "parents": []
       },
       {
@@ -3351,7 +3360,7 @@
           "ru": "Самостоятельный фильм короткометражного формата; категория не назначается только по числу минут",
           "en": "A standalone short-form film; runtime alone does not establish this category"
         },
-        "aliases": [],
+        "aliases": ["Короткометражка", "Короткий метр"],
         "parents": []
       },
       {
@@ -3377,7 +3386,7 @@
           "ru": "Самостоятельный дополнительный выпуск вне обычной основной последовательности видеопроизведения",
           "en": "A standalone additional installment outside the regular main sequence of a video work"
         },
-        "aliases": [],
+        "aliases": ["Special episode", "Специальный выпуск"],
         "parents": []
       },
       {
@@ -3390,7 +3399,7 @@
           "ru": "Исполнитель обращается к аудитории с комическим монологом",
           "en": "A performer addresses an audience through comic monologue"
         },
-        "aliases": [],
+        "aliases": ["Stand-up comedy", "Стендап-комедия"],
         "parents": []
       },
       {
@@ -3608,7 +3617,7 @@
           "ru": "Игровое время замедляется при сохранении возможности выбирать и исполнять действия",
           "en": "Game time slows while players retain opportunities to choose and execute actions"
         },
-        "aliases": [],
+        "aliases": ["Буллет-тайм"],
         "parents": []
       },
       {
@@ -4050,7 +4059,7 @@
           "ru": "Игрок выбирает порядок задач или пути продвижения; открытый мир и нелинейное повествование не обязательны",
           "en": "Players choose task order or progression paths; an open world or nonlinear narrative is not required"
         },
-        "aliases": [],
+        "aliases": ["Non-linear progression"],
         "parents": []
       },
       {
@@ -4102,7 +4111,7 @@
           "ru": "Гибель необратимо завершает жизнь персонажа или текущую попытку",
           "en": "Death irreversibly ends a character’s life or the current run"
         },
-        "aliases": ["Perma Death"],
+        "aliases": ["Perma Death", "Permadeath", "Перманентная смерть"],
         "parents": []
       },
       {
@@ -4128,7 +4137,7 @@
           "ru": "Действия задаются выбором объектов указателем без вывода о жанре игры",
           "en": "Actions are specified by pointing at objects, without inferring the game genre"
         },
-        "aliases": ["Point & Click"],
+        "aliases": ["Point & Click", "Point-and-click"],
         "parents": []
       },
       {
@@ -4167,7 +4176,7 @@
           "ru": "Игра требует определённого ввода за короткое время в ходе заданной сцены",
           "en": "A scene requires a specified input within a short time window"
         },
-        "aliases": [],
+        "aliases": ["QTE", "Quick Time Events"],
         "parents": []
       },
       {
@@ -4206,7 +4215,7 @@
           "ru": "Непрерывное течение игры можно приостановить для принятия решений",
           "en": "Continuous simulation can be paused for decision-making"
         },
-        "aliases": [],
+        "aliases": ["RTwP", "Real time with pause"],
         "parents": []
       },
       {
@@ -4427,7 +4436,7 @@
           "ru": "Действия участников боя разрешаются отдельными последовательными ходами",
           "en": "Combatants' actions resolve in separate successive turns"
         },
-        "aliases": [],
+        "aliases": ["Turn based combat"],
         "parents": []
       },
       {
@@ -4440,7 +4449,7 @@
           "ru": "Игровые действия организованы отдельными ходами; признак не ограничен боем",
           "en": "Gameplay actions are organized into discrete turns, including systems beyond combat"
         },
-        "aliases": [],
+        "aliases": ["Turn based gameplay"],
         "parents": []
       },
       {
@@ -4484,7 +4493,14 @@
           "ru": "Несколько игроков совместно решают задачи; локальность и сеть здесь не различаются",
           "en": "Players collaborate on shared goals; local and online delivery are not distinguished"
         },
-        "aliases": ["Co-op", "Online Co-Op", "Local Co-Op", "Co-op Campaign"],
+        "aliases": [
+          "Co-op",
+          "Online Co-Op",
+          "Local Co-Op",
+          "Co-op Campaign",
+          "Кооп",
+          "Кооператив"
+        ],
         "parents": []
       },
       {
@@ -4497,7 +4513,7 @@
           "ru": "Режим с участием нескольких игроков; сам по себе не определяет сотрудничество или соперничество",
           "en": "A mode involving multiple players; it does not by itself specify cooperation or competition"
         },
-        "aliases": [],
+        "aliases": ["Мультиплеер"],
         "parents": []
       },
       {
@@ -4523,7 +4539,7 @@
           "ru": "Режим рассчитан на одного игрока",
           "en": "A mode designed for one player"
         },
-        "aliases": ["Singleplayer"],
+        "aliases": ["Singleplayer", "Синглплеер", "Single-player"],
         "parents": []
       },
       {
@@ -4536,7 +4552,7 @@
           "ru": "Несколько игроков играют с разделением общего экрана на отдельные области обзора; сотрудничество или соперничество определяется отдельно",
           "en": "Multiple players use separate views on a shared divided screen; cooperation or competition is specified separately"
         },
-        "aliases": [],
+        "aliases": ["Сплитскрин", "Split-screen"],
         "parents": []
       }
     ]
@@ -5383,7 +5399,7 @@
           "ru": "Искусственно созданные системы с интеллектуальным поведением существенно участвуют в конфликте или мире",
           "en": "Artificial systems exhibiting intelligent behavior are significant in the conflict or world"
         },
-        "aliases": [],
+        "aliases": ["ИИ", "AI"],
         "parents": []
       },
       {
@@ -5630,7 +5646,7 @@
           "ru": "Уход за детьми и ответственность за их благополучие составляют тему истории",
           "en": "Caring for children and responsibility for their welfare form a subject"
         },
-        "aliases": [],
+        "aliases": ["Уход за детьми"],
         "parents": []
       },
       {
@@ -7190,7 +7206,7 @@
           "ru": "История разворачивается после разрушительного события, изменившего устройство общества",
           "en": "The story unfolds after a devastating event transforms social order"
         },
-        "aliases": [],
+        "aliases": ["Постапокалиптический сеттинг"],
         "parents": []
       },
       {
@@ -8178,7 +8194,7 @@
           "ru": "События и обычаи Дня святого Валентина существенно организуют отношения или сюжет",
           "en": "Valentine's Day events and customs significantly organize relationships or plot"
         },
-        "aliases": [],
+        "aliases": ["День всех влюблённых"],
         "parents": []
       },
       {
@@ -8243,7 +8259,7 @@
           "ru": "Персонажи самостоятельно осуществляют наказание или защиту вне официальной правоохранительной системы",
           "en": "Characters enact punishment or protection outside official law enforcement"
         },
-        "aliases": [],
+        "aliases": ["Вигилантизм"],
         "parents": []
       },
       {
@@ -8321,7 +8337,7 @@
           "ru": "Онлайн-исполнители с виртуальными аватарами являются предметом истории; не любое использование VR",
           "en": "Online performers using virtual avatars are a story subject, distinct from all VR use"
         },
-        "aliases": ["VTubers"],
+        "aliases": ["VTubers", "Витуберы"],
         "parents": []
       },
       {
@@ -8477,7 +8493,7 @@
           "ru": "Первая мировая война составляет существенный исторический контекст событий",
           "en": "World War I forms a significant historical context"
         },
-        "aliases": [],
+        "aliases": ["WWI", "WW1", "World War 1"],
         "parents": []
       },
       {
@@ -8490,7 +8506,7 @@
           "ru": "Вторая мировая война составляет существенный исторический контекст событий",
           "en": "World War II forms a significant historical context"
         },
-        "aliases": [],
+        "aliases": ["WWII", "WW2", "World War 2"],
         "parents": []
       },
       {
@@ -8786,7 +8802,7 @@
           "ru": "Язык оригинала — аварский; не язык перевода или интерфейса",
           "en": "Original language: Avaric; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Avar"],
         "parents": []
       },
       {
@@ -8838,7 +8854,7 @@
           "ru": "Язык оригинала — бамбара; не язык перевода или интерфейса",
           "en": "Original language: Bambara; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Bamanankan"],
         "parents": []
       },
       {
@@ -9137,7 +9153,7 @@
           "ru": "Язык оригинала — дивехи; не язык перевода или интерфейса",
           "en": "Original language: Divehi; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Dhivehi", "Maldivian", "Мальдивский"],
         "parents": []
       },
       {
@@ -9150,7 +9166,7 @@
           "ru": "Язык оригинала — нидерландский; не язык перевода или интерфейса",
           "en": "Original language: Dutch; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Голландский"],
         "parents": []
       },
       {
@@ -9306,7 +9322,7 @@
           "ru": "Язык оригинала — ганда; не язык перевода или интерфейса",
           "en": "Original language: Ganda; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Luganda", "Луганда"],
         "parents": []
       },
       {
@@ -9579,7 +9595,7 @@
           "ru": "Язык оригинала — ирландский; не язык перевода или интерфейса",
           "en": "Original language: Irish; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Irish Gaelic"],
         "parents": []
       },
       {
@@ -9631,7 +9647,7 @@
           "ru": "Язык оригинала — гренландский; не язык перевода или интерфейса",
           "en": "Original language: Kalaallisut; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Greenlandic"],
         "parents": []
       },
       {
@@ -9696,7 +9712,7 @@
           "ru": "Язык оригинала — кикуйю; не язык перевода или интерфейса",
           "en": "Original language: Kikuyu; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Gikuyu"],
         "parents": []
       },
       {
@@ -9761,7 +9777,7 @@
           "ru": "Язык оригинала — куаньяма; не язык перевода или интерфейса",
           "en": "Original language: Kuanyama; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Kwanyama"],
         "parents": []
       },
       {
@@ -9982,7 +9998,7 @@
           "ru": "Язык оригинала — мэнский; не язык перевода или интерфейса",
           "en": "Original language: Manx; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Manx Gaelic"],
         "parents": []
       },
       {
@@ -10151,7 +10167,7 @@
           "ru": "Язык оригинала — норвежский букмол; не язык перевода или интерфейса",
           "en": "Original language: Norwegian Bokmål; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Bokmål", "Bokmal", "Букмол"],
         "parents": []
       },
       {
@@ -10164,7 +10180,7 @@
           "ru": "Язык оригинала — норвежский нюнорск; не язык перевода или интерфейса",
           "en": "Original language: Norwegian Nynorsk; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Nynorsk", "Нюнорск"],
         "parents": []
       },
       {
@@ -10177,7 +10193,7 @@
           "ru": "Язык оригинала — окситанский; не язык перевода или интерфейса",
           "en": "Original language: Occitan; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Langue d'oc"],
         "parents": []
       },
       {
@@ -10203,7 +10219,7 @@
           "ru": "Язык оригинала — оджибве; не язык перевода или интерфейса",
           "en": "Original language: Ojibwa; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Ojibwe", "Ojibway"],
         "parents": []
       },
       {
@@ -10268,7 +10284,7 @@
           "ru": "Язык оригинала — персидский; не язык перевода или интерфейса",
           "en": "Original language: Persian; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Фарси", "Farsi"],
         "parents": []
       },
       {
@@ -10359,7 +10375,7 @@
           "ru": "Язык оригинала — рунди; не язык перевода или интерфейса",
           "en": "Original language: Rundi; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Kirundi", "Кирунди"],
         "parents": []
       },
       {
@@ -10632,7 +10648,7 @@
           "ru": "Язык оригинала — свази; не язык перевода или интерфейса",
           "en": "Original language: Swati; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Siswati", "Сисвати"],
         "parents": []
       },
       {
@@ -10801,7 +10817,7 @@
           "ru": "Язык оригинала — тсвана; не язык перевода или интерфейса",
           "en": "Original language: Tswana; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Setswana", "Сетсвана"],
         "parents": []
       },
       {
@@ -10840,7 +10856,7 @@
           "ru": "Язык оригинала — тви; не язык перевода или интерфейса",
           "en": "Original language: Twi; excludes translations and interface language"
         },
-        "aliases": [],
+        "aliases": ["Чви"],
         "parents": []
       },
       {
@@ -11092,7 +11108,7 @@
           "ru": "Игровое пространство представлено изометрической или близкой аксонометрической проекцией",
           "en": "Play space uses an isometric or closely related axonometric projection"
         },
-        "aliases": [],
+        "aliases": ["Isometric view"],
         "parents": []
       },
       {
@@ -11118,7 +11134,7 @@
           "ru": "Камера показывает управляемого персонажа со стороны",
           "en": "Camera views the controlled character from outside"
         },
-        "aliases": [],
+        "aliases": ["Third-person"],
         "parents": []
       },
       {
@@ -11131,7 +11147,7 @@
           "ru": "Камера смотрит на игровое пространство преимущественно сверху",
           "en": "Camera views play space predominantly from above"
         },
-        "aliases": [],
+        "aliases": ["Top-down view"],
         "parents": []
       }
     ]
@@ -11188,7 +11204,7 @@
           "ru": "Выпущенная версия базовой игры для macOS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for macOS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["Mac OS"],
         "parents": []
       },
       {
@@ -11227,7 +11243,7 @@
           "ru": "Выпущенная версия базовой игры для Nintendo DS; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for Nintendo DS; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["NDS"],
         "parents": []
       },
       {
@@ -11279,7 +11295,7 @@
           "ru": "Выпущенная версия базовой игры для PlayStation 3; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for PlayStation 3; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["PS3"],
         "parents": []
       },
       {
@@ -11292,7 +11308,7 @@
           "ru": "Выпущенная версия базовой игры для PlayStation 4; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for PlayStation 4; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["PS4"],
         "parents": []
       },
       {
@@ -11305,7 +11321,7 @@
           "ru": "Выпущенная версия базовой игры для PlayStation 5; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for PlayStation 5; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["PS5"],
         "parents": []
       },
       {
@@ -11318,7 +11334,7 @@
           "ru": "Выпущенная версия базовой игры для PlayStation Portable; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for PlayStation Portable; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["PSP"],
         "parents": []
       },
       {
@@ -11331,7 +11347,7 @@
           "ru": "Выпущенная версия базовой игры для PlayStation Vita; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for PlayStation Vita; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["PS Vita"],
         "parents": []
       },
       {
@@ -11357,7 +11373,7 @@
           "ru": "Выпущенная версия базовой игры для Web browser; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for Web browser; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["Browser", "Веб-браузер"],
         "parents": []
       },
       {
@@ -11383,7 +11399,7 @@
           "ru": "Выпущенная версия базовой игры для Wii U; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for Wii U; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["Wii-U"],
         "parents": []
       },
       {
@@ -11435,7 +11451,7 @@
           "ru": "Выпущенная версия базовой игры для Xbox Series X|S; не владение устройством, не гарантия текущей продажи; совместимость и эмуляция сами по себе не создают тег",
           "en": "Released base-game version for Xbox Series X|S; not device ownership or current purchase availability; compatibility and emulation alone do not establish this tag"
         },
-        "aliases": [],
+        "aliases": ["Xbox Series X/S"],
         "parents": []
       }
     ]
@@ -11466,7 +11482,7 @@
           "ru": "Выпуск отменён до предусмотренного завершения",
           "en": "Release cancelled before its intended completion"
         },
-        "aliases": [],
+        "aliases": ["Canceled"],
         "parents": []
       },
       {
@@ -11479,7 +11495,7 @@
           "ru": "Выпуск произведения или сезона продолжается; не обновления уже выпущенной игры",
           "en": "The work or season is still being released; excludes updates to a released game"
         },
-        "aliases": [],
+        "aliases": ["В процессе выхода"],
         "parents": []
       },
       {
@@ -12412,7 +12428,7 @@
           "ru": "Огнестрельные столкновения поставлены как акробатическая хореография ближнего боя",
           "en": "Gunfights are choreographed as acrobatic close combat"
         },
-        "aliases": [],
+        "aliases": ["Gun-fu"],
         "parents": []
       },
       {
@@ -12464,7 +12480,7 @@
           "ru": "Резкая неожиданная смена изображения или звука вызывает испуг",
           "en": "An abrupt unexpected visual or sound change elicits a startle"
         },
-        "aliases": ["Jump Scare"],
+        "aliases": ["Jump Scare", "Скример", "Jumpscare"],
         "parents": []
       },
       {
@@ -12581,7 +12597,7 @@
           "ru": "Визуальная подача сознательно использует заметную пиксельную структуру изображений",
           "en": "Visual presentation deliberately uses visibly pixel-structured imagery"
         },
-        "aliases": [],
+        "aliases": ["Pixel art", "Пиксель-арт"],
         "parents": []
       },
       {
@@ -12924,7 +12940,7 @@
           "ru": "Развитие ролевого персонажа совмещено с боем, требующим непосредственного исполнения действий",
           "en": "Role-playing character progression combines with combat requiring direct execution"
         },
-        "aliases": [],
+        "aliases": ["ARPG", "Action role-playing game"],
         "parents": ["rolePlayingGame"]
       },
       {
@@ -13093,7 +13109,7 @@
           "ru": "Ужас строится вокруг нарушения целостности, превращений или искажения тела",
           "en": "Horror centers on bodily violation, transformation or distortion"
         },
-        "aliases": [],
+        "aliases": ["Боди-хоррор"],
         "parents": ["horror"]
       },
       {
@@ -13444,7 +13460,7 @@
           "ru": "Компьютерная ролевая традиция с системными правилами персонажей, диалогами и выбором решений",
           "en": "Computer role-playing tradition using systemic character rules, dialogue and choices"
         },
-        "aliases": [],
+        "aliases": ["Computer role-playing game"],
         "parents": ["rolePlayingGame"]
       },
       {
@@ -13977,7 +13993,7 @@
           "ru": "Ролевая игровая традиция JRPG; не код страны производства",
           "en": "JRPG design tradition, not a production-country label"
         },
-        "aliases": [],
+        "aliases": ["Japanese role-playing game"],
         "parents": ["rolePlayingGame"]
       },
       {
@@ -14172,7 +14188,7 @@
           "ru": "Ролевая игра с большим числом участников в общем устойчивом онлайн-мире",
           "en": "A role-playing game with many participants in a shared persistent online world"
         },
-        "aliases": [],
+        "aliases": ["Massively multiplayer online role-playing game"],
         "parents": ["rolePlayingGame"]
       },
       {
@@ -14185,7 +14201,7 @@
           "ru": "Соревнование команд управляемых героев на общей арене с развитием в рамках матча",
           "en": "Teams of controlled heroes compete in an arena with within-match progression"
         },
-        "aliases": [],
+        "aliases": ["Многопользовательская онлайн-боевая арена"],
         "parents": ["strategyGame"]
       },
       {
@@ -14575,7 +14591,7 @@
           "ru": "Любовная история организована через комические конфликты и ситуации",
           "en": "A romantic story is organized through comic conflicts and situations"
         },
-        "aliases": [],
+        "aliases": ["Romcom", "Ромком"],
         "parents": ["romance"]
       },
       {
@@ -14666,7 +14682,7 @@
           "ru": "Непрерывная стрельба и уклонение от атак организуют продвижение через потоки противников",
           "en": "Continuous shooting and dodging organize progress through streams of enemies"
         },
-        "aliases": [],
+        "aliases": ["Shmup"],
         "parents": ["shooter"]
       },
       {
@@ -14705,7 +14721,7 @@
           "ru": "Повторяющийся состав персонажей попадает в комические бытовые ситуации в эпизодической форме",
           "en": "A recurring cast encounters comic everyday situations in episodic form"
         },
-        "aliases": [],
+        "aliases": ["Situation comedy", "Ситуационная комедия"],
         "parents": ["comedy"]
       },
       {
@@ -14757,7 +14773,7 @@
           "ru": "Преувеличенные физические действия, падения и столкновения создают комический эффект",
           "en": "Exaggerated physical actions, falls and collisions create comic effect"
         },
-        "aliases": [],
+        "aliases": ["Слэпстик"],
         "parents": ["comedy"]
       },
       {
@@ -15004,7 +15020,7 @@
           "ru": "Развитие ролевых персонажей совмещено с позиционными тактическими решениями",
           "en": "Role-playing character progression combines with positional tactical decisions"
         },
-        "aliases": [],
+        "aliases": ["TRPG", "Tactical role-playing game"],
         "parents": ["rolePlayingGame"]
       },
       {
@@ -15121,7 +15137,7 @@
           "ru": "Стрельба определяет игру, а камера показывает управляемого персонажа извне",
           "en": "Shooting defines play while the camera views the controlled character externally"
         },
-        "aliases": [],
+        "aliases": ["Шутер с видом от третьего лица"],
         "parents": ["shooter"]
       },
       {
@@ -15173,7 +15189,7 @@
           "ru": "Размещение оборонительных средств останавливает последовательные волны наступающих противников",
           "en": "Placing defensive structures stops successive waves of advancing enemies"
         },
-        "aliases": [],
+        "aliases": ["Тауэр-дефенс"],
         "parents": ["strategyGame"]
       },
       {
@@ -15186,7 +15202,7 @@
           "ru": "Создание колоды из расширяемой коллекции карт и состязание по карточным правилам",
           "en": "Building decks from an expandable card collection and competing under card rules"
         },
-        "aliases": [],
+        "aliases": ["TCG", "CCG", "Collectible card game", "ККИ"],
         "parents": ["cardGame"]
       },
       {
@@ -15446,7 +15462,7 @@
           "ru": "Выявление виновного через сопоставление улик и круга подозреваемых составляет центральную загадку",
           "en": "Identifying the culprit through clues and a suspect pool forms the central puzzle"
         },
-        "aliases": [],
+        "aliases": ["Whodunnit"],
         "parents": ["mystery"]
       },
       {

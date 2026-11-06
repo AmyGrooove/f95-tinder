@@ -14,7 +14,20 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import type { CollectionResponseDto } from "@endpoints/collection/services/collectionService"
 import { createCollection } from "@endpoints/collection/__tests__/functions/createCollection"
 
-describe("CollectionController HTTP", () => {
+describe("CollectionController", () => {
+  it("отклоняет JSON вместо multipart на маршруте загрузки постера", async () => {
+    const { app } = getTestApplication()
+    const { owner, collection } = await createCollection()
+    const response = await app.inject({
+      method: "PUT",
+      url: "/collections/" + collection.id + "/poster",
+      headers: owner.headers,
+      payload: { image: "invalid" },
+    })
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
+  })
+
   it("сохраняет add, update, move и remove блоков и произведений одним запросом", async () => {
     const { app, connection } = getTestApplication()
     const {

@@ -20,7 +20,7 @@ import { SearchModule } from "../../../search.module"
 import { SearchService } from "../core/search.service"
 import { SEARCH_CLIENT } from "../../../static/SEARCH_CLIENT"
 
-describe("SearchService Meilisearch", () => {
+describe("SearchService", () => {
   const docker = promisify(execFile)
   const containerName = `bisky-search-test-${randomUUID()}`
   const apiKey = randomUUID()

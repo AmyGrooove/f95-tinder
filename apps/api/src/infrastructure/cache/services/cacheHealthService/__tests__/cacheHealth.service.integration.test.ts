@@ -9,7 +9,7 @@ import { CacheModule } from "../../../cache.module"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CacheHealthService } from "../core/cacheHealth.service"
 
-describe("CacheHealthService Redis", () => {
+describe("CacheHealthService", () => {
   let moduleRef: TestingModule | undefined
   let service: CacheService
   let health: CacheHealthService

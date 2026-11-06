@@ -12,7 +12,7 @@ import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 import { MailService } from "../core/mail.service"
 import { SEND_MAIL_JOB } from "../../../static/SEND_MAIL_JOB"
 
-describe("MailService Redis", () => {
+describe("MailService", () => {
   let moduleRef: TestingModule | undefined
   let queue: Queue | undefined
   let service: MailService
@@ -114,10 +114,12 @@ describe("MailService Redis", () => {
   })
 
   it("не создаёт задачу в Redis при ошибке валидации", async () => {
+    const waitingCount = await queue?.getWaitingCount()
+
     await expect(
       service.send({ to: "", subject: "Тема", text: "Текст" }),
     ).rejects.toThrow(DICTIONARY.mail.recipientRequired)
 
-    expect(await queue?.getWaitingCount()).toBe(0)
+    expect(await queue?.getWaitingCount()).toBe(waitingCount)
   })
 })

@@ -9,7 +9,7 @@ import { getTestRedis } from "../../../__tests__/setup/setupRedis"
 import { CacheModule } from "../../../cache.module"
 import { CacheService } from "../core/cache.service"
 
-describe("CacheService Redis", () => {
+describe("CacheService", () => {
   let moduleRef: TestingModule | undefined
   let service: CacheService
 

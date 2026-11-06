@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals"
 
 import { createJobsTestContext } from "../../../__tests__/setup/createJobsTestContext"
 
-describe("JobsHealthService Redis", () => {
+describe("JobsHealthService", () => {
   const jobsContext = createJobsTestContext()
 
   describe("JobsHealthService", () => {

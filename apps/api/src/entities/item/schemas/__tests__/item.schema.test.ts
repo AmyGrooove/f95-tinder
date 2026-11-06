@@ -18,7 +18,7 @@ describe("ItemSchema", () => {
       expected: null,
     },
     {
-      name: "отсутствующим полем при отсутствии входного значения",
+      name: "отсутствующей датой при пустом объекте series",
       series: {},
       expected: undefined,
     },
@@ -39,7 +39,12 @@ describe("ItemSchema", () => {
 
         await item.validate()
 
-        expect(item.toObject().series?.lastReleasedEpisodeAt).toEqual(expected)
+        const serialized = item.toObject()
+
+        expect(serialized.series?.lastReleasedEpisodeAt).toEqual(expected)
+        if (expected === undefined) {
+          expect(serialized).not.toHaveProperty("series.lastReleasedEpisodeAt")
+        }
         expect(item.releaseDate).toEqual(new Date("2026-01-01T00:00:00.000Z"))
       } finally {
         await connection.close()

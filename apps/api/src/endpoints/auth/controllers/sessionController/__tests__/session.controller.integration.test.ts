@@ -14,7 +14,31 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 
-describe("SessionController HTTP", () => {
+describe("SessionController", () => {
+  it("не обновляет сессию, если access-токен передан как refresh cookie", async () => {
+    const account = await createAccount()
+    const { app, connection } = getTestApplication()
+    const accessToken = account.headers.cookie.match(
+      /__Host-accessToken=([^;]+)/,
+    )?.[1]
+    expect(accessToken).toEqual(expect.any(String))
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/auth/session/refresh",
+      headers: {
+        origin: account.headers.origin,
+        cookie: `__Host-refreshToken=${accessToken}`,
+      },
+    })
+    expect(response.statusCode).toBe(401)
+    expect(response.cookies).toEqual([])
+    expect(
+      await connection
+        .collection("UserSession")
+        .findOne({ _id: account.session._id }),
+    ).toEqual(account.session)
+  })
+
   const addSession = async (
     session: UserSession,
     overrides: Partial<UserSession> = {},

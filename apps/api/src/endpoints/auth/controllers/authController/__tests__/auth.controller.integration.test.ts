@@ -13,7 +13,27 @@ import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 
-describe("AuthController HTTP", () => {
+describe("AuthController", () => {
+  it("не отзывает сессию при выходе с одним действующим refresh cookie", async () => {
+    const account = await createAccount()
+    const { app, connection } = getTestApplication()
+    const cookie = account.headers.cookie
+      .split("; ")
+      .find((part) => part.startsWith("__Host-refreshToken="))
+    const response = await app.inject({
+      method: "POST",
+      url: "/auth/logout",
+      headers: { origin: account.headers.origin, cookie },
+    })
+    expect(response.statusCode).toBe(401)
+    expect(response.cookies).toEqual([])
+    expect(
+      await connection
+        .collection("UserSession")
+        .findOne({ _id: account.session._id }),
+    ).toEqual(account.session)
+  })
+
   const expectAuthCookies = (
     cookies: Array<{ name: string; value: string }>,
   ) => {

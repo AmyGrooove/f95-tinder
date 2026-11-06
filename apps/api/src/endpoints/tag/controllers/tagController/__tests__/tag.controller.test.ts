@@ -205,7 +205,6 @@ describe("TagController", () => {
   })
 
   it.each([
-    { cursor: "broken" },
     { search: " " },
     { limit: "50" },
     { limit: 100 },
@@ -217,6 +216,16 @@ describe("TagController", () => {
     { q: "legacy" },
   ])("отклоняет некорректное тело %j", async (body) => {
     expect((await query(body)).statusCode).toBe(400)
+    expect(getCheckpoint).not.toHaveBeenCalled()
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  it("отклоняет отсутствующее тело и массив до чтения контрольной отметки", async () => {
+    const missing = await app.inject({ method: "QUERY", url: "/tags" })
+
+    expect(missing.statusCode).toBe(400)
+    expect((await query([])).statusCode).toBe(400)
+    expect(getCheckpoint).not.toHaveBeenCalled()
   })
 
   it("возвращает 503 до первого успешного обновления и при ошибке индекса", async () => {

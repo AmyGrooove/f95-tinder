@@ -8,7 +8,20 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 import { readConfirmationCode } from "@endpoints/account/__tests__/functions/readConfirmationCode"
 
-describe("AccountEmailController HTTP", () => {
+describe("AccountEmailController", () => {
+  it("блокирует запрос смены email с постороннего Origin до отправки письма", async () => {
+    const account = await createAccount("password")
+    const { app, mail } = getTestApplication()
+    const response = await app.inject({
+      method: "POST",
+      url: "/account/email",
+      headers: { ...account.headers, origin: "https://foreign.example" },
+      payload: { email: "new@example.com", currentPassword: account.password },
+    })
+    expect(response.statusCode).toBe(403)
+    expect(mail.messages).toHaveLength(0)
+  })
+
   it("отправляет письмо и меняет email в MongoDB только после подтверждения, удаляя заявку Redis", async () => {
     const { app, connection, redis, mail } = getTestApplication()
     const { user, headers, password } = await createAccount("password")

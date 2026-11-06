@@ -21,7 +21,18 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import type { UserItemResponseDto } from "@endpoints/userItem/services/userItemService"
 
-describe("UserItemController HTTP", () => {
+describe("UserItemController", () => {
+  it("отклоняет QUERY библиотеки без тела при действующей сессии", async () => {
+    const account = await createAccount()
+    const response = await getTestApplication().app.inject({
+      method: "QUERY",
+      url: "/userItems",
+      headers: account.headers,
+    })
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
+  })
+
   it.each(["create", "skip", "block"] as const)(
     "обновляет метрики в транзакции создания %s",
     async (operation) => {

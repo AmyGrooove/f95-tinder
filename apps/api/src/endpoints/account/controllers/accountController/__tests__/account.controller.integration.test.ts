@@ -6,7 +6,21 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
 
-describe("AccountController HTTP", () => {
+describe("AccountController", () => {
+  it("отклоняет whoami с действующим refresh cookie без access cookie", async () => {
+    const account = await createAccount()
+    const cookie = account.headers.cookie
+      .split("; ")
+      .find((part) => part.startsWith("__Host-refreshToken="))
+    const response = await getTestApplication().app.inject({
+      method: "GET",
+      url: "/account/whoami",
+      headers: { origin: account.headers.origin, cookie },
+    })
+    expect(response.statusCode).toBe(401)
+    expect(response.cookies).toEqual([])
+  })
+
   it("возвращает пользователя и действующую сессию через whoami", async () => {
     const { app } = getTestApplication()
     const { user, session, headers } = await createAccount()

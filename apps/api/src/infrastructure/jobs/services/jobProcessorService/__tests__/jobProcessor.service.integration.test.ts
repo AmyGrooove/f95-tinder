@@ -9,7 +9,7 @@ import type { TJobState } from "@infrastructure/jobs/services/jobService"
 
 import { createJobsTestContext } from "../../../__tests__/setup/createJobsTestContext"
 
-describe("JobProcessorService Redis", () => {
+describe("JobProcessorService", () => {
   const jobsContext = createJobsTestContext()
 
   describe("JobProcessorService", () => {

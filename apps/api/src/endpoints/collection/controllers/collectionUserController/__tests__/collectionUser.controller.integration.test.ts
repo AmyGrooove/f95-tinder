@@ -8,7 +8,31 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createCollection } from "@endpoints/collection/__tests__/functions/createCollection"
 
-describe("CollectionUserController HTTP", () => {
+describe("CollectionUserController", () => {
+  it("блокирует изменение личной реакции с постороннего Origin", async () => {
+    const { app } = getTestApplication()
+    const { owner, collection } = await createCollection()
+    const url = "/collections/" + collection.id + "/user"
+    const response = await app.inject({
+      method: "PATCH",
+      url,
+      headers: { ...owner.headers, origin: "https://foreign.example" },
+      payload: { isFavorite: true },
+    })
+    expect(response.statusCode).toBe(403)
+    const reaction = await app.inject({
+      method: "GET",
+      url,
+      headers: owner.headers,
+    })
+    expect(reaction.statusCode).toBe(200)
+    expect(reaction.json()).toEqual({
+      isFavorite: false,
+      rating: null,
+      isHidden: false,
+    })
+  })
+
   it("сохраняет параллельные первые реакции в одной записи без потери независимых полей", async () => {
     const { app, connection } = getTestApplication()
     const { collection } = await createCollection()

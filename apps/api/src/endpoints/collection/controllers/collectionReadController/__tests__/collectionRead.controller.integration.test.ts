@@ -7,7 +7,19 @@ import { ItemRepository } from "@entities/item/services/itemRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { ItemCollectionsResponseDto } from "@endpoints/collection/services/collectionContentService"
 
-describe("CollectionReadController HTTP", () => {
+describe("CollectionReadController", () => {
+  it("отклоняет QUERY состава без тела для существующей подборки", async () => {
+    const { app } = getTestApplication()
+    const { collection } = await createCollection()
+    const response = await app.inject({
+      method: "QUERY",
+      url: "/collections/" + collection.id + "/items",
+      headers: { origin: "http://localhost" },
+    })
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
+  })
+
   const query = (
     id: string,
     payload: object = {},

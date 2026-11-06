@@ -7,7 +7,7 @@ import { JOB_CANCELLED_RESULT } from "../../../static/JOB_CANCELLED_RESULT"
 
 import { createJobsTestContext } from "../../../__tests__/setup/createJobsTestContext"
 
-describe("JobService Redis", () => {
+describe("JobService", () => {
   const jobsContext = createJobsTestContext()
 
   describe("JobService", () => {
