@@ -12,6 +12,7 @@ const createAppConfiguration = () => {
     ? "development"
     : environmentValue.trim()
   const name = getRequiredEnvironmentValue("APP_NAME")
+  const siteVariant = process.env.SITE_VARIANT?.trim() ?? "main"
   const version = getRequiredEnvironmentValue("APP_VERSION")
   const description = getRequiredEnvironmentValue("APP_DESCRIPTION")
   const port = Number(getRequiredEnvironmentValue("PORT"))
@@ -54,6 +55,10 @@ const createAppConfiguration = () => {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_NODE_ENV)
   }
 
+  if (siteVariant !== "main" && siteVariant !== "adult") {
+    throw new Error(CONFIG_ERROR_MESSAGES.INVALID_SITE_VARIANT)
+  }
+
   if (!isInt(port) || port < 1 || port > 65_535) {
     throw new Error(CONFIG_ERROR_MESSAGES.INVALID_PORT)
   }
@@ -81,6 +86,7 @@ const createAppConfiguration = () => {
   return {
     environment: environment satisfies TEnvironmentNode,
     name,
+    siteVariant,
     version,
     description,
     port,

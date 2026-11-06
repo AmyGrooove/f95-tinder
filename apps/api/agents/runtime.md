@@ -32,7 +32,7 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 
 | Section   | Variables                                                                                              |
 | --------- | ------------------------------------------------------------------------------------------------------ |
-| App       | `NODE_ENV`, `APP_NAME`, `APP_VERSION`, `APP_DESCRIPTION`, `PORT`, `CORS_ORIGINS`                       |
+| App       | `NODE_ENV`, `APP_NAME`, `SITE_VARIANT`, `APP_VERSION`, `APP_DESCRIPTION`, `PORT`, `CORS_ORIGINS`       |
 | Knowledge | `KNOWLEDGE_USERNAME`, `KNOWLEDGE_PASSWORD`                                                             |
 | MongoDB   | `MONGO_URL`                                                                                            |
 | Redis     | `REDIS_URL`                                                                                            |
@@ -42,7 +42,7 @@ Bootstrap enables NestJS `enableCsrfProtection()` for the application before reg
 | Mail      | `RESEND_ACCESS_SECRET`, `MAIL_DOMAIN`                                                                  |
 | Sources   | `KODIK_API_TOKEN` (available as `sources.kodikApiToken`)                                               |
 
-All listed variables except `NODE_ENV` and the knowledge credentials are required by the configuration factory. Knowledge credentials default to empty strings, which disable the knowledge base without preventing API startup. Set both values in the deployment environment; changing them requires an application restart. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
+All listed variables except `NODE_ENV`, `SITE_VARIANT` and the knowledge credentials are required by the configuration factory. Knowledge credentials default to empty strings, which disable the knowledge base without preventing API startup. Set both values in the deployment environment; changing them requires an application restart. `NODE_ENV` defaults to `development` and accepts only `development` or `production`. `SITE_VARIANT` defaults to `main`, accepts `main` or `adult`, and is exposed as `app.siteVariant`. JWT secrets must each contain at least 32 characters. The app helper validates the name, semantic version, port and comma-separated HTTP(S) CORS origins; production forbids `*`. Redis parsing extracts database, credentials and TLS from its URL. Do not document or copy actual secret values.
 
 `APP_NAME` also identifies the storage bucket, queue prefix, cache namespace and JWT issuer/audience prefix. Changing it affects several integrations, not only display metadata.
 

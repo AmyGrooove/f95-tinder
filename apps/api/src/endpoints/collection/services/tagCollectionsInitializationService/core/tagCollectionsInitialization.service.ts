@@ -8,7 +8,7 @@ import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { isNil } from "@shared/functions/checks/isNil"
 
-import tagDictionary from "../../../../../../public/import/tags/tags.json" with { type: "json" }
+import tagDictionary from "../../../../../../public/import/main/tags/tags.json" with { type: "json" }
 
 @Injectable()
 class TagCollectionsInitializationService implements OnModuleInit {

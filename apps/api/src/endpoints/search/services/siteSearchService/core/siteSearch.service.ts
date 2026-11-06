@@ -9,9 +9,10 @@ import {
 import { Types } from "mongoose"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
-import type { Item } from "@entities/item/schemas/item.schema"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import type { IItemPosterCard } from "@entities/item/services/itemRepository"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
+import type { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
@@ -362,19 +363,11 @@ class SiteSearchService {
   }
 
   private async loadItems(ids: string[]): Promise<SearchResponseDto["items"]> {
-    if (ids.length === 0) {
-      return []
-    }
-
-    const documents = await this.itemRepository.read.findMany(
-      {
-        _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
-        deletedAt: null,
-      },
-      { _id: 1, type: 1, title: 1, media: 1 },
+    const cards = await this.itemRepository.readPosterCardsByIds(
+      ids.map((id) => new Types.ObjectId(id)),
     )
 
-    return this.orderCards(ids, documents).map((item) => this.mapItem(item))
+    return cards.map((item) => this.mapItem(item))
   }
 
   private async loadCollections(
@@ -436,7 +429,7 @@ class SiteSearchService {
     })
   }
 
-  private mapItem(item: Pick<Item, "_id" | "type" | "title" | "media">) {
+  private mapItem(item: IItemPosterCard) {
     return {
       id: String(item._id),
       type: item.type,
@@ -448,7 +441,9 @@ class SiteSearchService {
     }
   }
 
-  private mapMedia(media: MediaSrc[]) {
+  private mapMedia<TType extends EMediaType>(
+    media: (MediaSrc & { type: TType })[],
+  ) {
     return media.map((entry) => ({
       src: entry.src,
       language: entry.language,

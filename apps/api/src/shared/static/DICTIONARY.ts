@@ -14,6 +14,7 @@ const DICTIONARY = {
       "URL в переменной окружения содержит недопустимый протокол",
     INVALID_NODE_ENV:
       "NODE_ENV должен иметь значение development или production",
+    INVALID_SITE_VARIANT: "SITE_VARIANT должен иметь значение main или adult",
     INVALID_PORT: "PORT должен быть целым числом от 1 до 65535",
     INVALID_APP_NAME:
       "APP_NAME должен быть именем бакета Garage в нижнем регистре длиной от 3 до 63 символов",

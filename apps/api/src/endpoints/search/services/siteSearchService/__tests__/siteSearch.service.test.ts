@@ -21,7 +21,6 @@ import { EItemType } from "@entities/item/schemas/EItemType"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import type { Collection } from "@entities/collection/schemas/collection.schema"
 import type { User } from "@entities/user/schemas/user.schema"
-import type { Item } from "@entities/item/schemas/item.schema"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
@@ -47,12 +46,7 @@ describe("SiteSearchService", () => {
     iterateMatches: jest.fn<SearchService["iterateMatches"]>(),
   }
   const items = {
-    read: {
-      findMany:
-        jest.fn<
-          () => Promise<Pick<Item, "_id" | "type" | "title" | "media">[]>
-        >(),
-    },
+    readPosterCardsByIds: jest.fn<ItemRepository["readPosterCardsByIds"]>(),
   }
   const users = {
     read: {
@@ -103,7 +97,7 @@ describe("SiteSearchService", () => {
       limit: options?.limit ?? 10,
       processingTimeMs: 0,
     }))
-    items.read.findMany.mockResolvedValue([])
+    items.readPosterCardsByIds.mockResolvedValue([])
     users.read.findMany.mockResolvedValue([])
     collections.read.findMany.mockResolvedValue([])
   })
@@ -157,8 +151,8 @@ describe("SiteSearchService", () => {
       limit: 10,
       processingTimeMs: 0,
     })
-    items.read.findMany.mockResolvedValue(
-      [last, first].map((_id) => ({
+    items.readPosterCardsByIds.mockResolvedValue(
+      [first, last].map((_id) => ({
         _id,
         type: EItemType.MOVIE,
         title: { ru: "Актуальное название", en: null },
@@ -190,6 +184,11 @@ describe("SiteSearchService", () => {
       Object.assign(new SearchBodyDto(), { search: "orbit" }),
     )
 
+    expect(items.readPosterCardsByIds).toHaveBeenCalledWith([
+      first,
+      missing,
+      last,
+    ])
     expect(result).toEqual({
       items: [first, last].map((id) => ({
         id: String(id),
@@ -230,16 +229,13 @@ describe("SiteSearchService", () => {
         .reverse()
         .map((id) => ({ id: String(id), _rankingScore: 0.1 }))
     })
-    items.read.findMany.mockResolvedValue(
-      ids
-        .slice(-2)
-        .reverse()
-        .map((_id) => ({
-          _id,
-          type: EItemType.MOVIE,
-          title: { ru: "Орбита", en: null },
-          media: [],
-        })),
+    items.readPosterCardsByIds.mockResolvedValue(
+      ids.slice(-2).map((_id) => ({
+        _id,
+        type: EItemType.MOVIE,
+        title: { ru: "Орбита", en: null },
+        media: [],
+      })),
     )
     const result = await service.search(
       Object.assign(new SearchBodyDto(), {
@@ -256,6 +252,10 @@ describe("SiteSearchService", () => {
     expect(result.items.map((item) => item.id)).toEqual(
       ids.slice(-2).map(String),
     )
+    expect(items.readPosterCardsByIds).toHaveBeenCalledWith([
+      ...ids.slice(-2),
+      ...ids.slice(500, 508),
+    ])
     expect(result.nextCursor).toEqual(expect.any(String))
     expect(search.iterateMatches).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -286,7 +286,7 @@ describe("SiteSearchService", () => {
           }),
         ),
       ).rejects.toBeInstanceOf(ServiceUnavailableException)
-      expect(items.read.findMany).not.toHaveBeenCalled()
+      expect(items.readPosterCardsByIds).not.toHaveBeenCalled()
     },
   )
 
@@ -528,7 +528,7 @@ describe("SiteSearchService", () => {
           limit: 21,
           processingTimeMs: 0,
         })
-        items.read.findMany.mockRejectedValue(error)
+        items.readPosterCardsByIds.mockRejectedValue(error)
       }
       await expect(
         service.search(Object.assign(new SearchBodyDto(), { search: "orbit" })),

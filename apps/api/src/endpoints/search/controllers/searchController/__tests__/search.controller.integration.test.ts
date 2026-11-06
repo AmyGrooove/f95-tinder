@@ -4,6 +4,7 @@ import { Types } from "mongoose"
 
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { Item } from "@entities/item/schemas/item.schema"
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import { getSearchTestApplication } from "@app/__tests__/setup/setupSearchIntegration"
@@ -66,9 +67,19 @@ describe("SearchController", () => {
 
   it("возвращает независимые публичные группы с актуальными карточками без проверки cookie и записи данных", async () => {
     const { connection } = application
+    const poster = {
+      src: "/poster.jpg",
+      language: null,
+      type: EMediaType.POSTER,
+    }
     const item = await seedItem({
       aliases: ["Nebula"],
       description: { ru: "Секретное описание", en: null },
+      media: [
+        { src: "/screen.jpg", language: null, type: EMediaType.SCREENSHOT },
+        poster,
+        { src: "/trailer.mp4", language: null, type: EMediaType.TRAILER },
+      ],
     })
     const user = {
       _id: new Types.ObjectId(),
@@ -122,7 +133,7 @@ describe("SearchController", () => {
           id: String(item._id),
           type: "movie",
           title: { ru: "Актуальное название", en: "Orbit" },
-          media: [],
+          media: [poster],
         },
       ],
       users: [

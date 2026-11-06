@@ -15,12 +15,14 @@ import type { IItemDetails } from "../types/IItemDetails"
 import { ItemBan } from "@entities/itemBan/schemas/itemBan.schema"
 import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATING_SCORE_SETTINGS"
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
+import type { IItemPosterCard } from "../types/IItemPosterCard"
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import { createItemTagFilterPipeline } from "../functions/createItemTagFilterPipeline"
@@ -305,6 +307,38 @@ class ItemRepository {
     const items = await this.aggregation.aggregate<Pick<Item, "_id">>(pipeline)
 
     return items.map((item) => item._id)
+  }
+
+  async readPosterCardsByIds(ids: readonly Types.ObjectId[]) {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const pipeline = new AggregationBuilder()
+      .match({ _id: { $in: ids }, deletedAt: null })
+      .project({
+        _id: 1,
+        type: 1,
+        title: 1,
+        media: {
+          $filter: {
+            input: { $ifNull: ["$media", []] },
+            as: "media",
+            cond: { $eq: ["$$media.type", EMediaType.POSTER] },
+          },
+        },
+      })
+      .build()
+    const cards = await this.aggregation.aggregate<IItemPosterCard>(pipeline)
+    const cardsById = new Map(
+      cards.map((card) => [card._id.toHexString(), card]),
+    )
+
+    return ids.flatMap((id) => {
+      const card = cardsById.get(id.toHexString())
+
+      return isUndefined(card) ? [] : [card]
+    })
   }
 
   findNotDeletedByIds(

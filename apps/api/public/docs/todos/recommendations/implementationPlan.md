@@ -269,7 +269,7 @@ interface IRecommendationLibraryFilter {
 
 ### Fallback без collaborative-персонализации
 
-- [FallbackRecommendationsService](../../../../src/endpoints/recommendations/services/fallbackRecommendationsService/index.ts) собирает базовый список одного типа из популярного и новинок. Выбор режима и сборка полной выдачи относятся к основному сервису.
+- [FallbackRecommendationsService](../../../../src/endpoints/recommendations/services/fallbackRecommendationsService/index.ts) собирает базовый список одного типа из популярного и новинок. `RecommendationsService.readFallbackItemIds()` один раз проверяет сессию, затем чередует ID выбранных типов в порядке EItemType. `RecommendationsService.readFallbackItems()` пакетно загружает актуальные карточки с постерами в этом порядке. Выбор режима и курсор относятся к полной выдаче.
 - Включать CF/ALS при наличии пригодной рабочей модели и хотя бы 5 уникальных положительных взаимодействий пользователя с известными этой модели произведениями. Положительность определяется согласованными правилами оценок и избранного; порог хранится в static как стартовая настройка для последующей проверки на данных.
 - При недостаточной истории для CF/ALS или отсутствии пригодной рабочей модели использовать общий ratingScore как основу fallback с ручной корректировкой и ручными местами по согласованному правилу.
 - Использовать те же отбор, порядок и ограничения, что у источника популярного; отдельный scorer для этого fallback не создавать.
