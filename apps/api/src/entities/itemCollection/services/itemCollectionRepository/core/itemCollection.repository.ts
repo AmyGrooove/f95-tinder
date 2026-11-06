@@ -22,6 +22,7 @@ import { MongoWriteRepository } from "@infrastructure/database/services/mongoWri
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 
 import { ItemCollection } from "../../../schemas/itemCollection.schema"
 import type { TCreateItemCollection } from "../../../schemas/itemCollection.schema"
@@ -112,68 +113,62 @@ class ItemCollectionRepository {
     },
   ) {
     const { after, collectionId, groupIds, limit } = props
+    const builder = new AggregationBuilder()
+      .match({ collectionId, groupId: { $in: groupIds } })
+      .use({ $set: { groupOrder: { $indexOfArray: [groupIds, "$groupId"] } } })
+
+    if (!isUndefined(after)) {
+      builder.match({
+        $or: [
+          { groupOrder: { $gt: after.groupOrder } },
+          {
+            groupOrder: after.groupOrder,
+            position: { $gt: after.position },
+          },
+          {
+            groupOrder: after.groupOrder,
+            position: after.position,
+            _id: { $gt: after.id },
+          },
+        ],
+      })
+    }
+
+    const pipeline = builder
+      .sort({ groupOrder: 1, position: 1, _id: 1 })
+      .use(
+        {
+          $lookup: {
+            from: Item.name,
+            localField: "item",
+            foreignField: "_id",
+            as: "item",
+            pipeline: [
+              { $match: { deletedAt: null } },
+              { $project: { _id: 1, type: 1, title: 1, media: 1 } },
+            ],
+          },
+        },
+        { $unwind: "$item" },
+      )
+      .limit(limit)
+      .project({ groupOrder: 1, groupId: 1, position: 1, note: 1, item: 1 })
+      .build()
+
     return this.aggregation.aggregate<
       IItemCollectionCard & { _id: ItemCollection["_id"]; groupOrder: number }
-    >([
-      {
-        $match: {
-          collectionId,
-          groupId: { $in: groupIds },
-        },
-      },
-      { $set: { groupOrder: { $indexOfArray: [groupIds, "$groupId"] } } },
-      ...(isUndefined(after)
-        ? []
-        : [
-            {
-              $match: {
-                $or: [
-                  { groupOrder: { $gt: after.groupOrder } },
-                  {
-                    groupOrder: after.groupOrder,
-                    position: { $gt: after.position },
-                  },
-                  {
-                    groupOrder: after.groupOrder,
-                    position: after.position,
-                    _id: { $gt: after.id },
-                  },
-                ],
-              },
-            },
-          ]),
-      { $sort: { groupOrder: 1, position: 1, _id: 1 } },
-      {
-        $lookup: {
-          from: Item.name,
-          localField: "item",
-          foreignField: "_id",
-          as: "item",
-          pipeline: [
-            { $match: { deletedAt: null } },
-            { $project: { _id: 1, type: 1, title: 1, media: 1 } },
-          ],
-        },
-      },
-      { $unwind: "$item" },
-      { $limit: limit },
-      {
-        $project: { groupOrder: 1, groupId: 1, position: 1, note: 1, item: 1 },
-      },
-    ])
+    >(pipeline)
   }
 
   countAvailableItemsByGroup(props: ICollectionContentSelectionProps) {
     const { collectionId, groupIds } = props
 
-    return this.aggregation.aggregate<ICollectionGroupCount>([
-      {
-        $match: {
-          collectionId,
-          groupId: { $in: groupIds },
-        },
-      },
-      {
+    const pipeline = new AggregationBuilder()
+      .match({
+        collectionId,
+        groupId: { $in: groupIds },
+      })
+      .use({
         $lookup: {
           from: Item.name,
           localField: "item",
@@ -181,11 +176,13 @@ class ItemCollectionRepository {
           pipeline: [{ $match: { deletedAt: null } }, { $project: { _id: 1 } }],
           as: "itemDocument",
         },
-      },
-      { $match: { "itemDocument.0": { $exists: true } } },
-      { $group: { _id: "$groupId", total: { $sum: 1 } } },
-      { $project: { _id: 0, groupId: "$_id", total: 1 } },
-    ])
+      })
+      .match({ "itemDocument.0": { $exists: true } })
+      .use({ $group: { _id: "$groupId", total: { $sum: 1 } } })
+      .project({ _id: 0, groupId: "$_id", total: 1 })
+      .build()
+
+    return this.aggregation.aggregate<ICollectionGroupCount>(pipeline)
   }
 
   async getFilterOptions(props: ICollectionContentSelectionProps) {
@@ -194,161 +191,153 @@ class ItemCollectionRepository {
     const scope: PipelineStage.FacetPipelineStage[] = isUndefined(groupId)
       ? []
       : [{ $match: { groupId } }]
-    const [result] = await this.aggregation.aggregate<ICollectionFilterOptions>(
-      [
-        {
-          $match: {
-            collectionId,
-            groupId: { $in: groupIds },
-          },
-        },
-        {
-          $lookup: {
-            from: Item.name,
-            localField: "item",
-            foreignField: "_id",
-            pipeline: [
-              { $match: { deletedAt: null } },
-              {
-                $project: {
-                  _id: 1,
-                  releaseDate: 1,
-                  ageRestriction: {
-                    $convert: {
-                      input: {
-                        $cond: [
-                          {
-                            $eq: [
-                              "$ageRestriction",
-                              EAgeRestriction.AGE_18_PLUS_PLUS,
-                            ],
-                          },
-                          EAgeRestriction.AGE_18,
-                          "$ageRestriction",
-                        ],
-                      },
-                      to: "int",
-                      onError: null,
-                      onNull: null,
+    const pipeline = new AggregationBuilder()
+      .match({
+        collectionId,
+        groupId: { $in: groupIds },
+      })
+      .use({
+        $lookup: {
+          from: Item.name,
+          localField: "item",
+          foreignField: "_id",
+          pipeline: [
+            { $match: { deletedAt: null } },
+            {
+              $project: {
+                _id: 1,
+                releaseDate: 1,
+                ageRestriction: {
+                  $convert: {
+                    input: {
+                      $cond: [
+                        {
+                          $eq: [
+                            "$ageRestriction",
+                            EAgeRestriction.AGE_18_PLUS_PLUS,
+                          ],
+                        },
+                        EAgeRestriction.AGE_18,
+                        "$ageRestriction",
+                      ],
                     },
+                    to: "int",
+                    onError: null,
+                    onNull: null,
                   },
-                  movie: 1,
-                  series: 1,
-                  game: 1,
                 },
+                movie: 1,
+                series: 1,
+                game: 1,
               },
-            ],
-            as: "itemDocument",
-          },
+            },
+          ],
+          as: "itemDocument",
         },
-        { $unwind: "$itemDocument" },
-        {
-          $facet: {
-            nonEmptyGroups: [{ $group: { _id: "$groupId" } }, { $limit: 2 }],
-            tags: [
-              ...scope,
-              {
-                $lookup: {
-                  from: TagItem.name,
-                  localField: "item",
-                  foreignField: "item",
-                  pipeline: [{ $project: { tag: 1 } }],
-                  as: "tagItems",
-                },
+      })
+      .use({ $unwind: "$itemDocument" })
+      .use({
+        $facet: {
+          nonEmptyGroups: [{ $group: { _id: "$groupId" } }, { $limit: 2 }],
+          tags: [
+            ...scope,
+            {
+              $lookup: {
+                from: TagItem.name,
+                localField: "item",
+                foreignField: "item",
+                pipeline: [{ $project: { tag: 1 } }],
+                as: "tagItems",
               },
-              { $unwind: "$tagItems" },
-              { $group: { _id: "$tagItems.tag" } },
-              {
-                $lookup: {
-                  from: Tag.name,
-                  localField: "_id",
-                  foreignField: "_id",
-                  pipeline: [
-                    { $project: { _id: 1, key: 1, group: 1, name: 1 } },
+            },
+            { $unwind: "$tagItems" },
+            { $group: { _id: "$tagItems.tag" } },
+            {
+              $lookup: {
+                from: Tag.name,
+                localField: "_id",
+                foreignField: "_id",
+                pipeline: [{ $project: { _id: 1, key: 1, group: 1, name: 1 } }],
+                as: "tag",
+              },
+            },
+            { $unwind: "$tag" },
+            { $replaceRoot: { newRoot: "$tag" } },
+            { $sort: { key: 1, _id: 1 } },
+          ],
+          fields: [
+            ...scope,
+            {
+              $project: {
+                fields: Object.entries(ITEM_FIELD_DEFINITIONS).map(
+                  ([field, definition]) => ({
+                    field,
+                    valueType: definition.valueType,
+                    value: `$itemDocument.${field}`,
+                  }),
+                ),
+              },
+            },
+            { $unwind: "$fields" },
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        {
+                          $eq: [
+                            "$fields.valueType",
+                            EItemFieldValueType.NUMBER,
+                          ],
+                        },
+                        { $isNumber: "$fields.value" },
+                        { $gte: ["$fields.value", -Number.MAX_VALUE] },
+                        { $lte: ["$fields.value", Number.MAX_VALUE] },
+                      ],
+                    },
+                    {
+                      $and: [
+                        {
+                          $eq: ["$fields.valueType", EItemFieldValueType.DATE],
+                        },
+                        { $eq: [{ $type: "$fields.value" }, "date"] },
+                      ],
+                    },
                   ],
-                  as: "tag",
                 },
               },
-              { $unwind: "$tag" },
-              { $replaceRoot: { newRoot: "$tag" } },
-              { $sort: { key: 1, _id: 1 } },
-            ],
-            fields: [
-              ...scope,
-              {
-                $project: {
-                  fields: Object.entries(ITEM_FIELD_DEFINITIONS).map(
-                    ([field, definition]) => ({
-                      field,
-                      valueType: definition.valueType,
-                      value: `$itemDocument.${field}`,
-                    }),
-                  ),
-                },
+            },
+            {
+              $group: {
+                _id: "$fields.field",
+                valueType: { $first: "$fields.valueType" },
+                min: { $min: "$fields.value" },
+                max: { $max: "$fields.value" },
               },
-              { $unwind: "$fields" },
-              {
-                $match: {
-                  $expr: {
-                    $or: [
-                      {
-                        $and: [
-                          {
-                            $eq: [
-                              "$fields.valueType",
-                              EItemFieldValueType.NUMBER,
-                            ],
-                          },
-                          { $isNumber: "$fields.value" },
-                          { $gte: ["$fields.value", -Number.MAX_VALUE] },
-                          { $lte: ["$fields.value", Number.MAX_VALUE] },
-                        ],
-                      },
-                      {
-                        $and: [
-                          {
-                            $eq: [
-                              "$fields.valueType",
-                              EItemFieldValueType.DATE,
-                            ],
-                          },
-                          { $eq: [{ $type: "$fields.value" }, "date"] },
-                        ],
-                      },
-                    ],
-                  },
-                },
+            },
+            {
+              $project: {
+                _id: 0,
+                field: "$_id",
+                valueType: 1,
+                min: 1,
+                max: 1,
               },
-              {
-                $group: {
-                  _id: "$fields.field",
-                  valueType: { $first: "$fields.valueType" },
-                  min: { $min: "$fields.value" },
-                  max: { $max: "$fields.value" },
-                },
-              },
-              {
-                $project: {
-                  _id: 0,
-                  field: "$_id",
-                  valueType: 1,
-                  min: 1,
-                  max: 1,
-                },
-              },
-              { $sort: { field: 1 } },
-            ],
-          },
+            },
+            { $sort: { field: 1 } },
+          ],
         },
-        {
-          $project: {
-            nonEmptyGroupIds: "$nonEmptyGroups._id",
-            tags: 1,
-            fields: 1,
-          },
-        },
-      ],
-    )
+      })
+      .project({
+        nonEmptyGroupIds: "$nonEmptyGroups._id",
+        tags: 1,
+        fields: 1,
+      })
+      .build()
+
+    const [result] =
+      await this.aggregation.aggregate<ICollectionFilterOptions>(pipeline)
 
     return result ?? { nonEmptyGroupIds: [], tags: [], fields: [] }
   }

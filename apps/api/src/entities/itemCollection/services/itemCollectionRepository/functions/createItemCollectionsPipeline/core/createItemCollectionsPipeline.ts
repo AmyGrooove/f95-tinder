@@ -2,6 +2,8 @@ import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { PipelineStage } from "mongoose"
 
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+
 import { Item } from "@entities/item/schemas/item.schema"
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
@@ -32,14 +34,12 @@ const createItemCollectionsPipeline = (
     limit,
   } = props
 
-  const pipeline: PipelineStage[] = [
-    {
-      $match: {
-        collectionId,
-        groupId: isUndefined(groupId) ? { $in: groupIds } : groupId,
-      },
-    },
-    {
+  const builder = new AggregationBuilder()
+    .match({
+      collectionId,
+      groupId: isUndefined(groupId) ? { $in: groupIds } : groupId,
+    })
+    .use({
       $lookup: {
         from: Item.name,
         localField: "item",
@@ -81,27 +81,24 @@ const createItemCollectionsPipeline = (
         ],
         as: "itemDocument",
       },
-    },
-    { $unwind: "$itemDocument" },
-  ]
+    })
+    .use({ $unwind: "$itemDocument" })
 
   if (!isUndefined(query)) {
     const search = { $regex: escapeRegex(query), $options: "i" }
 
-    pipeline.push({
-      $match: {
-        $or: [
-          { [`itemDocument.title.${ELanguage.RUSSIAN}`]: search },
-          { [`itemDocument.title.${ELanguage.ENGLISH}`]: search },
-          { "itemDocument.aliases": search },
-        ],
-      },
+    builder.match({
+      $or: [
+        { [`itemDocument.title.${ELanguage.RUSSIAN}`]: search },
+        { [`itemDocument.title.${ELanguage.ENGLISH}`]: search },
+        { "itemDocument.aliases": search },
+      ],
     })
   }
 
   if (tags.length > 0 || excludeTags.length > 0) {
-    pipeline.push(
-      {
+    builder
+      .use({
         $lookup: {
           from: TagItem.name,
           localField: "item",
@@ -112,27 +109,24 @@ const createItemCollectionsPipeline = (
           ],
           as: "matchedTags",
         },
-      },
-      {
-        $match: {
-          $expr: {
-            $and: [
-              { $setIsSubset: [tags, "$matchedTags.tag"] },
-              {
-                $eq: [
-                  {
-                    $size: {
-                      $setIntersection: [excludeTags, "$matchedTags.tag"],
-                    },
+      })
+      .match({
+        $expr: {
+          $and: [
+            { $setIsSubset: [tags, "$matchedTags.tag"] },
+            {
+              $eq: [
+                {
+                  $size: {
+                    $setIntersection: [excludeTags, "$matchedTags.tag"],
                   },
-                  0,
-                ],
-              },
-            ],
-          },
+                },
+                0,
+              ],
+            },
+          ],
         },
-      },
-    )
+      })
   }
 
   for (const field of fields) {
@@ -149,20 +143,18 @@ const createItemCollectionsPipeline = (
 
     const fieldPath = `itemDocument.${field.field}`
 
-    pipeline.push({
-      $match: {
-        [fieldPath]: condition,
-        $expr:
-          field.valueType === EItemFieldValueType.NUMBER
-            ? { $isNumber: `$${fieldPath}` }
-            : { $eq: [{ $type: `$${fieldPath}` }, "date"] },
-      },
+    builder.match({
+      [fieldPath]: condition,
+      $expr:
+        field.valueType === EItemFieldValueType.NUMBER
+          ? { $isNumber: `$${fieldPath}` }
+          : { $eq: [{ $type: `$${fieldPath}` }, "date"] },
     })
   }
 
   if (!isUndefined(ratingMin) || !isUndefined(ratingMax)) {
-    pipeline.push(
-      {
+    builder
+      .use({
         $lookup: {
           from: ItemStats.name,
           localField: "item",
@@ -181,9 +173,8 @@ const createItemCollectionsPipeline = (
           ],
           as: "matchedMetric",
         },
-      },
-      { $match: { "matchedMetric.0": { $exists: true } } },
-    )
+      })
+      .match({ "matchedMetric.0": { $exists: true } })
   }
 
   const sort: Record<string, 1 | -1> =
@@ -202,7 +193,7 @@ const createItemCollectionsPipeline = (
   const languageTitle = `$itemDocument.title.${language}`
   const fallbackTitle = `$itemDocument.title.${language === ELanguage.RUSSIAN ? ELanguage.ENGLISH : ELanguage.RUSSIAN}`
 
-  pipeline.push({
+  builder.use({
     $facet: {
       count: [{ $count: "total" }],
       items: [
@@ -255,7 +246,7 @@ const createItemCollectionsPipeline = (
     },
   })
 
-  return pipeline
+  return builder.build()
 }
 
 export { createItemCollectionsPipeline }

@@ -1,5 +1,7 @@
 import type { PipelineStage } from "mongoose"
 
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -13,26 +15,20 @@ const createItemFilterPipeline = (
   props: ICreateItemFilterPipelineProps,
 ): PipelineStage[] => {
   const { filter, candidateItemIds, excludeItemIds } = props
-  const pipeline: PipelineStage[] = [
-    {
-      $match: {
-        deletedAt: null,
-        ...(!isUndefined(filter?.types) ? { type: { $in: filter.types } } : {}),
-        ...(!isUndefined(candidateItemIds) || !isUndefined(excludeItemIds)
-          ? {
-              _id: {
-                ...(!isUndefined(candidateItemIds)
-                  ? { $in: candidateItemIds }
-                  : {}),
-                ...(!isUndefined(excludeItemIds)
-                  ? { $nin: excludeItemIds }
-                  : {}),
-              },
-            }
-          : {}),
-      },
-    },
-  ]
+  const builder = new AggregationBuilder().match({
+    deletedAt: null,
+    ...(!isUndefined(filter?.types) ? { type: { $in: filter.types } } : {}),
+    ...(!isUndefined(candidateItemIds) || !isUndefined(excludeItemIds)
+      ? {
+          _id: {
+            ...(!isUndefined(candidateItemIds)
+              ? { $in: candidateItemIds }
+              : {}),
+            ...(!isUndefined(excludeItemIds) ? { $nin: excludeItemIds } : {}),
+          },
+        }
+      : {}),
+  })
 
   for (const field of filter?.fields ?? []) {
     const value =
@@ -55,29 +51,27 @@ const createItemFilterPipeline = (
           }
         : `$${field.field}`
 
-    pipeline.push({
-      $match: {
-        $expr: {
-          $and: [
-            {
-              $in: [
-                { $type: value },
-                isDate(field.min) || isDate(field.max)
-                  ? ["date"]
-                  : ["int", "long", "double", "decimal"],
-              ],
-            },
-            ...(!isUndefined(field.min) ? [{ $gte: [value, field.min] }] : []),
-            ...(!isUndefined(field.max) ? [{ $lte: [value, field.max] }] : []),
-          ],
-        },
+    builder.match({
+      $expr: {
+        $and: [
+          {
+            $in: [
+              { $type: value },
+              isDate(field.min) || isDate(field.max)
+                ? ["date"]
+                : ["int", "long", "double", "decimal"],
+            ],
+          },
+          ...(!isUndefined(field.min) ? [{ $gte: [value, field.min] }] : []),
+          ...(!isUndefined(field.max) ? [{ $lte: [value, field.max] }] : []),
+        ],
       },
     })
   }
 
   if (!isUndefined(filter?.tagIds) && filter.tagIds.length > 0) {
-    pipeline.push(
-      {
+    builder
+      .use({
         $lookup: {
           from: TagItem.name,
           localField: "_id",
@@ -98,17 +92,14 @@ const createItemFilterPipeline = (
           ],
           as: "searchFilterTags",
         },
-      },
-      {
-        $match: {
-          $expr: { $setIsSubset: [filter.tagIds, "$searchFilterTags.tag"] },
-        },
-      },
-      { $unset: "searchFilterTags" },
-    )
+      })
+      .match({
+        $expr: { $setIsSubset: [filter.tagIds, "$searchFilterTags.tag"] },
+      })
+      .use({ $unset: "searchFilterTags" })
   }
 
-  return pipeline
+  return builder.build()
 }
 
 export { createItemFilterPipeline }

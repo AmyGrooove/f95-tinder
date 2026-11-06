@@ -7,15 +7,22 @@ import { MongoWriteRepository } from "@infrastructure/database/services/mongoWri
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 
 import { Item } from "../../../schemas/item.schema"
 import type { TCreateItem } from "../../../schemas/item.schema"
 import type { IItemDetails } from "../types/IItemDetails"
+import { ItemBan } from "@entities/itemBan/schemas/itemBan.schema"
 import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
+import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATING_SCORE_SETTINGS"
+import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import { UserItem } from "@entities/userItem/schemas/userItem.schema"
+import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
+import type { IReadPopularItemIdsProps } from "../types/IReadPopularItemIdsProps"
 import type { IReadSearchIndexBatchProps } from "../types/IReadSearchIndexBatchProps"
 
 @Injectable()
@@ -54,69 +61,193 @@ class ItemRepository {
   readSearchIndexBatch(props: IReadSearchIndexBatchProps) {
     const { limit, afterId } = props
 
-    return this.aggregation.aggregate<IItemSearchIndexEntry>([
-      {
-        $match: !isUndefined(afterId) ? { _id: { $gt: afterId } } : {},
-      },
-      { $sort: { _id: 1 } },
-      { $limit: limit },
-      {
-        $lookup: {
-          from: TagItem.name,
-          localField: "_id",
-          foreignField: "item",
-          pipeline: [
-            {
-              $lookup: {
-                from: Tag.name,
-                localField: "tag",
-                foreignField: "_id",
-                pipeline: [{ $project: { _id: 1 } }],
-                as: "existingTag",
+    const pipeline = new AggregationBuilder()
+      .match(!isUndefined(afterId) ? { _id: { $gt: afterId } } : {})
+      .sort({ _id: 1 })
+      .limit(limit)
+      .use(
+        {
+          $lookup: {
+            from: TagItem.name,
+            localField: "_id",
+            foreignField: "item",
+            pipeline: [
+              {
+                $lookup: {
+                  from: Tag.name,
+                  localField: "tag",
+                  foreignField: "_id",
+                  pipeline: [{ $project: { _id: 1 } }],
+                  as: "existingTag",
+                },
               },
-            },
-            { $match: { "existingTag.0": { $exists: true } } },
-            { $project: { tag: 1 } },
-          ],
-          as: "searchTags",
+              { $match: { "existingTag.0": { $exists: true } } },
+              { $project: { tag: 1 } },
+            ],
+            as: "searchTags",
+          },
         },
-      },
-      {
+        {
+          $lookup: {
+            from: ItemStats.name,
+            localField: "_id",
+            foreignField: "item",
+            pipeline: [{ $project: { ratingAverage: 1, ratingsCount: 1 } }],
+            as: "searchMetrics",
+          },
+        },
+      )
+      .project({
+        _id: 1,
+        type: 1,
+        title: 1,
+        aliases: 1,
+        description: 1,
+        media: 1,
+        releaseDate: 1,
+        ageRestriction: 1,
+        movie: 1,
+        series: 1,
+        game: 1,
+        deletedAt: 1,
+        tagIds: "$searchTags.tag",
+        ratingsCount: {
+          $ifNull: [{ $arrayElemAt: ["$searchMetrics.ratingsCount", 0] }, 0],
+        },
+        rating: {
+          $ifNull: [
+            { $arrayElemAt: ["$searchMetrics.ratingAverage", 0] },
+            null,
+          ],
+        },
+      })
+      .build()
+
+    return this.aggregation.aggregate<IItemSearchIndexEntry>(pipeline)
+  }
+
+  async readPopularItemIds(props: IReadPopularItemIdsProps) {
+    const {
+      type,
+      limit,
+      siteRatingAverage,
+      userId,
+      country,
+      library = { anyOf: ["outside"] },
+    } = props
+    const { allOf = [], anyOf, noneOf = [] } = library
+    const allowedStatuses = (
+      [...USER_ITEM_LIBRARY_STATUSES, "outside"] as const
+    ).filter(
+      (status) =>
+        allOf.every((value) => value === status) &&
+        (anyOf?.includes(status) ?? true) &&
+        !noneOf.includes(status),
+    )
+
+    if (allowedStatuses.length === 0) {
+      return []
+    }
+
+    const { priorWeight, defaultSiteRatingAverage } = ITEM_RATING_SCORE_SETTINGS
+    const baseline = siteRatingAverage ?? defaultSiteRatingAverage
+    const pipeline = new AggregationBuilder()
+      .match({ type, deletedAt: null })
+      .use({
         $lookup: {
           from: ItemStats.name,
           localField: "_id",
           foreignField: "item",
-          pipeline: [{ $project: { ratingAverage: 1, ratingsCount: 1 } }],
-          as: "searchMetrics",
+          pipeline: [
+            {
+              $match: {
+                ratingsCount: { $gt: 0 },
+                ratingAverage: { $type: "number" },
+              },
+            },
+            { $project: { _id: 0, ratingsCount: 1, ratingAverage: 1 } },
+          ],
+          as: "metrics",
         },
-      },
-      {
-        $project: {
-          _id: 1,
-          type: 1,
-          title: 1,
-          aliases: 1,
-          description: 1,
-          media: 1,
-          releaseDate: 1,
-          ageRestriction: 1,
-          movie: 1,
-          series: 1,
-          game: 1,
-          deletedAt: 1,
-          tagIds: "$searchTags.tag",
-          ratingsCount: {
-            $ifNull: [{ $arrayElemAt: ["$searchMetrics.ratingsCount", 0] }, 0],
-          },
-          rating: {
-            $ifNull: [
-              { $arrayElemAt: ["$searchMetrics.ratingAverage", 0] },
-              null,
-            ],
-          },
+      })
+      .use({ $unwind: "$metrics" })
+      .use({
+        $lookup: {
+          from: UserItem.name,
+          localField: "_id",
+          foreignField: "item",
+          pipeline: [
+            {
+              $match: {
+                user: userId,
+                $or: [
+                  { status: { $ne: EUserItemStatus.SKIPPED } },
+                  { expiresAt: { $gt: new Date() } },
+                ],
+              },
+            },
+            { $project: { _id: 0, status: 1 } },
+          ],
+          as: "libraryEntry",
         },
-      },
-    ])
+      })
+      .match({
+        $expr: {
+          $in: [
+            {
+              $ifNull: [
+                { $arrayElemAt: ["$libraryEntry.status", 0] },
+                "outside",
+              ],
+            },
+            allowedStatuses,
+          ],
+        },
+      })
+      .use({
+        $lookup: {
+          from: ItemBan.name,
+          localField: "_id",
+          foreignField: "item",
+          pipeline: [
+            {
+              $match: {
+                $or: [{ countries: { $size: 0 } }, { countries: country }],
+              },
+            },
+            { $project: { _id: 1 } },
+          ],
+          as: "activeBans",
+        },
+      })
+      .match({ "activeBans.0": { $exists: false } })
+      .project({
+        ratingsCount: "$metrics.ratingsCount",
+        ratingScore: {
+          $divide: [
+            {
+              $add: [
+                {
+                  $multiply: [
+                    "$metrics.ratingsCount",
+                    "$metrics.ratingAverage",
+                  ],
+                },
+                priorWeight * baseline,
+              ],
+            },
+            { $add: ["$metrics.ratingsCount", priorWeight] },
+          ],
+        },
+      })
+      .sort({ ratingScore: -1, ratingsCount: -1, _id: 1 })
+      .limit(limit)
+      .project({ _id: 1 })
+      .build()
+
+    const items = await this.aggregation.aggregate<Pick<Item, "_id">>(pipeline)
+
+    return items.map((item) => item._id)
   }
 
   findNotDeletedByIds(
@@ -131,24 +262,22 @@ class ItemRepository {
   }
 
   async findDetailsById(id: Types.ObjectId): Promise<IItemDetails | null> {
-    const [item] = await this.aggregation.aggregate<IItemDetails>([
-      { $match: { _id: id, deletedAt: null } },
-      {
-        $project: {
-          _id: 1,
-          type: 1,
-          title: 1,
-          description: 1,
-          aliases: 1,
-          media: 1,
-          releaseDate: 1,
-          ageRestriction: 1,
-          movie: 1,
-          series: 1,
-          game: 1,
-        },
-      },
-      {
+    const pipeline = new AggregationBuilder()
+      .match({ _id: id, deletedAt: null })
+      .project({
+        _id: 1,
+        type: 1,
+        title: 1,
+        description: 1,
+        aliases: 1,
+        media: 1,
+        releaseDate: 1,
+        ageRestriction: 1,
+        movie: 1,
+        series: 1,
+        game: 1,
+      })
+      .use({
         $lookup: {
           from: "TagItem",
           localField: "_id",
@@ -169,8 +298,8 @@ class ItemRepository {
           ],
           as: "tags",
         },
-      },
-      {
+      })
+      .use({
         $lookup: {
           from: "ItemRelation",
           pipeline: [
@@ -221,8 +350,10 @@ class ItemRepository {
           ],
           as: "relations",
         },
-      },
-    ])
+      })
+      .build()
+
+    const [item] = await this.aggregation.aggregate<IItemDetails>(pipeline)
 
     return item ?? null
   }

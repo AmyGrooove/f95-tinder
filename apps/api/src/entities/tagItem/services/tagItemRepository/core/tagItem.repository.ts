@@ -7,6 +7,7 @@ import type { ICheckTagItemKeysProps } from "../types/ICheckTagItemKeysProps"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 
 import { TagItem } from "../../../schemas/tagItem.schema"
 import { TagItemWriteRepository } from "@entities/tagItem/services/tagItemWriteRepository"
@@ -47,25 +48,27 @@ class TagItemRepository {
   ) {
     const { itemId, group, keys } = props
 
-    const records = await this.aggregation.aggregate<{ _id: unknown }>(
-      [
-        { $match: { item: itemId } },
-        {
-          $lookup: {
-            from: Tag.name,
-            localField: "tag",
-            foreignField: "_id",
-            pipeline: [
-              { $match: { group, key: { $in: keys } } },
-              { $project: { _id: 1 } },
-            ],
-            as: "matchedTag",
-          },
+    const pipeline = new AggregationBuilder()
+      .match({ item: itemId })
+      .use({
+        $lookup: {
+          from: Tag.name,
+          localField: "tag",
+          foreignField: "_id",
+          pipeline: [
+            { $match: { group, key: { $in: keys } } },
+            { $project: { _id: 1 } },
+          ],
+          as: "matchedTag",
         },
-        { $match: { "matchedTag.0": { $exists: true } } },
-        { $limit: 1 },
-        { $project: { _id: 1 } },
-      ],
+      })
+      .match({ "matchedTag.0": { $exists: true } })
+      .limit(1)
+      .project({ _id: 1 })
+      .build()
+
+    const records = await this.aggregation.aggregate<{ _id: unknown }>(
+      pipeline,
       options,
     )
 

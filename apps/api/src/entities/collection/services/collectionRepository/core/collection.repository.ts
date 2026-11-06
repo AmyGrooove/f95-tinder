@@ -1,12 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import { mongo, Types } from "mongoose"
-import type {
-  HydratedDocument,
-  Model,
-  PipelineStage,
-  QueryOptions,
-} from "mongoose"
+import type { HydratedDocument, Model, QueryOptions } from "mongoose"
 
 import { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
@@ -16,6 +11,7 @@ import { MongoWriteRepository } from "@infrastructure/database/services/mongoWri
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -116,19 +112,15 @@ class CollectionRepository {
   ): Promise<ICollectionSummariesPage> {
     const { type, itemIds, page, limit } = props
 
-    const pipeline: PipelineStage[] = [
-      {
-        $match: {
-          deletedAt: null,
-          ...(isUndefined(type) ? {} : { type }),
-          ...(type === ECollectionType.FRANCHISE ? { author: null } : {}),
-        },
-      },
-    ]
+    const builder = new AggregationBuilder().match({
+      deletedAt: null,
+      ...(isUndefined(type) ? {} : { type }),
+      ...(type === ECollectionType.FRANCHISE ? { author: null } : {}),
+    })
 
     if (!isUndefined(itemIds)) {
-      pipeline.push(
-        {
+      builder
+        .use({
           $lookup: {
             from: ItemCollection.name,
             let: { collectionId: "$_id" },
@@ -144,12 +136,11 @@ class CollectionRepository {
             ],
             as: "matchingItems",
           },
-        },
-        { $match: { "matchingItems.0": { $exists: true } } },
-      )
+        })
+        .match({ "matchingItems.0": { $exists: true } })
     }
 
-    pipeline.push({
+    builder.use({
       $facet: {
         items: [
           { $sort: { createdAt: -1, _id: -1 } },
@@ -164,7 +155,7 @@ class CollectionRepository {
     const [result] = await this.aggregation.aggregate<{
       items: ICollectionSummariesPage["items"]
       count: { total: number }[]
-    }>(pipeline)
+    }>(builder.build())
 
     return { items: result?.items ?? [], total: result?.count[0]?.total ?? 0 }
   }
