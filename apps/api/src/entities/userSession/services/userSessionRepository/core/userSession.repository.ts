@@ -73,10 +73,12 @@ class UserSessionRepository {
   }
 
   findActive(props: IUserSessionOwnerProps) {
+    const { id, userId } = props
+
     return this.read.findOne(
       {
-        _id: props.id,
-        user: props.userId,
+        _id: id,
+        user: userId,
         expiresAt: { $gt: new Date() },
       },
       { _id: 1, expiresAt: 1, country: 1 },
@@ -99,9 +101,11 @@ class UserSessionRepository {
   }
 
   deleteActive(props: IUserSessionOwnerProps) {
+    const { id, userId } = props
+
     return this.write.deleteByFilter({
-      _id: props.id,
-      user: props.userId,
+      _id: id,
+      user: userId,
       expiresAt: { $gt: new Date() },
     })
   }
@@ -110,10 +114,9 @@ class UserSessionRepository {
     props: IUserSessionOwnerProps,
     options?: Pick<mongo.DeleteOptions, "session">,
   ) {
-    return this.bulk.deleteMany(
-      { user: props.userId, _id: { $ne: props.id } },
-      options,
-    )
+    const { userId, id } = props
+
+    return this.bulk.deleteMany({ user: userId, _id: { $ne: id } }, options)
   }
 
   deleteByUser(
@@ -127,17 +130,19 @@ class UserSessionRepository {
     props: IUpdateUserSessionRefreshTokenProps,
     options?: Pick<QueryOptions<UserSession>, "session">,
   ) {
+    const { id, userId, currentRefreshToken, refreshToken } = props
+
     const now = new Date()
 
     return this.write.updateByFilter(
       {
-        _id: props.id,
-        user: props.userId,
+        _id: id,
+        user: userId,
         expiresAt: { $gt: now },
-        ...(!isNil(props.currentRefreshToken)
+        ...(!isNil(currentRefreshToken)
           ? {
               refreshTokenHash: createHash("sha256")
-                .update(props.currentRefreshToken)
+                .update(currentRefreshToken)
                 .digest("hex"),
             }
           : {}),
@@ -145,7 +150,7 @@ class UserSessionRepository {
       {
         $set: {
           refreshTokenHash: createHash("sha256")
-            .update(props.refreshToken)
+            .update(refreshToken)
             .digest("hex"),
           expiresAt: new Date(now.getTime() + JWT_REFRESH_EXPIRATION * 1000),
           lastRefreshedAt: now,

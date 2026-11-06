@@ -5,6 +5,7 @@ import { IsString, Matches, MaxLength } from "class-validator"
 
 import { isString } from "@shared/functions/checks/isString"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 
 class UsernameBodyDto {
   @ApiProperty({
@@ -14,9 +15,11 @@ class UsernameBodyDto {
     maxLength: 32,
     pattern: REGEX.USERNAME.source,
   })
-  @Transform(({ value }: { value: unknown }) =>
-    isString(value) ? value.trim().toLowerCase() : value,
-  )
+  @Transform((props: ITransformProps) => {
+    const { value } = props
+
+    return isString(value) ? value.trim().toLowerCase() : value
+  })
   @IsString()
   @Matches(REGEX.USERNAME)
   @MaxLength(32)

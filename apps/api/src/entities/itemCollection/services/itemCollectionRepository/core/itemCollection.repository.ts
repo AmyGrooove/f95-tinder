@@ -88,11 +88,13 @@ class ItemCollectionRepository {
   }
 
   async readContentPage(props: IReadItemCollectionsProps) {
+    const { sort, language } = props
+
     const [result] =
       await this.aggregation.aggregate<IItemCollectionsAggregationResult>(
         createItemCollectionsPipeline(props),
-        props.sort === "title"
-          ? { collation: { locale: props.language, strength: 2 } }
+        sort === "title"
+          ? { collation: { locale: language, strength: 2 } }
           : undefined,
       )
 
@@ -109,18 +111,18 @@ class ItemCollectionRepository {
       }
     },
   ) {
-    const { after } = props
+    const { after, collectionId, groupIds, limit } = props
     return this.aggregation.aggregate<
       IItemCollectionCard & { _id: ItemCollection["_id"]; groupOrder: number }
     >([
       {
         $match: {
-          collectionId: props.collectionId,
-          groupId: { $in: props.groupIds },
+          collectionId,
+          groupId: { $in: groupIds },
         },
       },
-      { $set: { groupOrder: { $indexOfArray: [props.groupIds, "$groupId"] } } },
-      ...(after === undefined
+      { $set: { groupOrder: { $indexOfArray: [groupIds, "$groupId"] } } },
+      ...(isUndefined(after)
         ? []
         : [
             {
@@ -154,7 +156,7 @@ class ItemCollectionRepository {
         },
       },
       { $unwind: "$item" },
-      { $limit: props.limit },
+      { $limit: limit },
       {
         $project: { groupOrder: 1, groupId: 1, position: 1, note: 1, item: 1 },
       },
@@ -162,11 +164,13 @@ class ItemCollectionRepository {
   }
 
   countAvailableItemsByGroup(props: ICollectionContentSelectionProps) {
+    const { collectionId, groupIds } = props
+
     return this.aggregation.aggregate<ICollectionGroupCount>([
       {
         $match: {
-          collectionId: props.collectionId,
-          groupId: { $in: props.groupIds },
+          collectionId,
+          groupId: { $in: groupIds },
         },
       },
       {
@@ -185,15 +189,17 @@ class ItemCollectionRepository {
   }
 
   async getFilterOptions(props: ICollectionContentSelectionProps) {
-    const scope: PipelineStage.FacetPipelineStage[] = isUndefined(props.groupId)
+    const { groupId, collectionId, groupIds } = props
+
+    const scope: PipelineStage.FacetPipelineStage[] = isUndefined(groupId)
       ? []
-      : [{ $match: { groupId: props.groupId } }]
+      : [{ $match: { groupId } }]
     const [result] = await this.aggregation.aggregate<ICollectionFilterOptions>(
       [
         {
           $match: {
-            collectionId: props.collectionId,
-            groupId: { $in: props.groupIds },
+            collectionId,
+            groupId: { $in: groupIds },
           },
         },
         {
@@ -351,8 +357,10 @@ class ItemCollectionRepository {
     props: IItemCollectionsSelectionProps,
     options?: Pick<MongooseBulkWriteOptions, "session">,
   ) {
+    const { collectionId, itemIds } = props
+
     return this.read.findMany(
-      { collectionId: props.collectionId, item: { $in: props.itemIds } },
+      { collectionId, item: { $in: itemIds } },
       { _id: 1, item: 1 },
       options,
     )
@@ -362,10 +370,12 @@ class ItemCollectionRepository {
     props: ICreateItemCollectionsProps,
     options?: Pick<MongooseBulkWriteOptions, "session">,
   ) {
+    const { items, collectionId } = props
+
     return this.bulk.bulkWrite(
-      props.items.map((item) => ({
+      items.map((item) => ({
         updateOne: {
-          filter: { collectionId: props.collectionId, item: item.item },
+          filter: { collectionId, item: item.item },
           update: {
             $set: {
               groupId: item.groupId,
@@ -380,7 +390,7 @@ class ItemCollectionRepository {
                 : {}),
             },
             $setOnInsert: {
-              collectionId: props.collectionId,
+              collectionId,
               item: item.item,
             },
           },
@@ -395,13 +405,12 @@ class ItemCollectionRepository {
     props: IRemoveItemCollectionsProps,
     options?: Pick<MongooseBulkWriteOptions, "session">,
   ) {
+    const { collectionId, itemIds, groupIds } = props
+
     return this.bulk.deleteMany(
       {
-        collectionId: props.collectionId,
-        $or: [
-          { item: { $in: props.itemIds } },
-          { groupId: { $in: props.groupIds } },
-        ],
+        collectionId,
+        $or: [{ item: { $in: itemIds } }, { groupId: { $in: groupIds } }],
       },
       options,
     )
@@ -411,10 +420,12 @@ class ItemCollectionRepository {
     props: ICreateItemCollectionsProps,
     options?: Pick<InsertManyOptions, "session">,
   ) {
+    const { items, collectionId } = props
+
     return this.bulk.createMany(
-      props.items.map((item) => ({
+      items.map((item) => ({
         ...item,
-        collectionId: props.collectionId,
+        collectionId,
       })),
       options ?? {},
     )

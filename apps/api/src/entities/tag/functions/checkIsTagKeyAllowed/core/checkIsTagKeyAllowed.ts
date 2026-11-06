@@ -4,7 +4,9 @@ import type { ICheckIsTagKeyAllowedProps } from "../types/ICheckIsTagKeyAllowedP
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-const checkIsTagKeyAllowed = ({ key, group }: ICheckIsTagKeyAllowedProps) => {
+const checkIsTagKeyAllowed = (props: ICheckIsTagKeyAllowedProps) => {
+  const { key, group } = props
+
   if (!isString(key)) {
     return false
   }

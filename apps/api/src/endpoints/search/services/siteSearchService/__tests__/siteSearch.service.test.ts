@@ -25,8 +25,13 @@ import type { Item } from "@entities/item/schemas/item.schema"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
 
 import { SearchBodyDto } from "../dto/search.body"
+import { ESearchCollectionSort } from "../types/ESearchCollectionSort"
+import { ESearchGroup } from "../types/ESearchGroup"
+import { ESearchItemSort } from "../types/ESearchItemSort"
+import { ESearchUserSort } from "../types/ESearchUserSort"
 import { SiteSearchService } from "../core/siteSearch.service"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 
@@ -110,9 +115,11 @@ describe("SiteSearchService", () => {
       Object.assign(new SearchBodyDto(), {
         search: "orbit",
         limit: 10,
-        items: { sort: { type: "title", language: ELanguage.ENGLISH } },
-        users: { sort: { type: "displayName" } },
-        collections: { sort: { type: "updatedAt" } },
+        items: {
+          sort: { type: ESearchItemSort.TITLE, language: ELanguage.ENGLISH },
+        },
+        users: { sort: { type: ESearchUserSort.DISPLAY_NAME } },
+        collections: { sort: { type: ESearchCollectionSort.UPDATED_AT } },
       }),
     )
     expect(search.search).toHaveBeenCalledWith(
@@ -238,7 +245,12 @@ describe("SiteSearchService", () => {
       Object.assign(new SearchBodyDto(), {
         search: "orbit",
         limit: 10,
-        items: { sort: { type: "relevance", direction: "asc" } },
+        items: {
+          sort: {
+            type: ESearchItemSort.RELEVANCE,
+            direction: ESearchSortDirection.ASC,
+          },
+        },
       }),
     )
     expect(result.items.map((item) => item.id)).toEqual(
@@ -265,7 +277,12 @@ describe("SiteSearchService", () => {
         service.search(
           Object.assign(new SearchBodyDto(), {
             search: "orbit",
-            users: { sort: { type: "relevance", direction: "asc" } },
+            users: {
+              sort: {
+                type: ESearchUserSort.RELEVANCE,
+                direction: ESearchSortDirection.ASC,
+              },
+            },
           }),
         ),
       ).rejects.toBeInstanceOf(ServiceUnavailableException)
@@ -356,14 +373,20 @@ describe("SiteSearchService", () => {
       service.search({
         search: "orbit",
         limit: 20,
-        types: { noneOf: ["items", "collections", "users"] },
+        types: {
+          noneOf: [
+            ESearchGroup.ITEMS,
+            ESearchGroup.COLLECTIONS,
+            ESearchGroup.USERS,
+          ],
+        },
       }),
     ).resolves.toEqual(emptyResult)
     await expect(
       service.search({
         search: "orbit",
         limit: 20,
-        types: { anyOf: ["collections"] },
+        types: { anyOf: [ESearchGroup.COLLECTIONS] },
         collections: {
           types: { allOf: [ECollectionType.CUSTOM, ECollectionType.TAG] },
         },
@@ -396,7 +419,11 @@ describe("SiteSearchService", () => {
     const body = Object.assign(new SearchBodyDto(), {
       search: "orbit",
       limit: 10,
-      types: { allOf: ["items"], anyOf: ["users"], noneOf: ["collections"] },
+      types: {
+        allOf: [ESearchGroup.ITEMS],
+        anyOf: [ESearchGroup.USERS],
+        noneOf: [ESearchGroup.COLLECTIONS],
+      },
     })
     const first = await service.search(body)
     expect(first).toEqual({
@@ -418,10 +445,18 @@ describe("SiteSearchService", () => {
       service.search({ ...body, items: { rating: { min: 7 } }, cursor }),
     ).rejects.toBeInstanceOf(BadRequestException)
     await expect(
-      service.search({ ...body, items: { sort: { type: "rating" } }, cursor }),
+      service.search({
+        ...body,
+        items: { sort: { type: ESearchItemSort.RATING } },
+        cursor,
+      }),
     ).rejects.toBeInstanceOf(BadRequestException)
     await expect(
-      service.search({ ...body, types: { anyOf: ["users"] }, cursor }),
+      service.search({
+        ...body,
+        types: { anyOf: [ESearchGroup.USERS] },
+        cursor,
+      }),
     ).rejects.toBeInstanceOf(BadRequestException)
     await expect(
       service.search({ ...body, cursor: "broken" }),
@@ -454,7 +489,7 @@ describe("SiteSearchService", () => {
     }))
     const body = Object.assign(new SearchBodyDto(), {
       search: "orbit",
-      types: { anyOf: ["items"] },
+      types: { anyOf: [ESearchGroup.ITEMS] },
       limit: 50,
     })
     let cursor: string | null = null

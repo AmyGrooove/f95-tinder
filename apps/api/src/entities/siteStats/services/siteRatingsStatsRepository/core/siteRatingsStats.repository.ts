@@ -14,6 +14,8 @@ class SiteRatingsStatsRepository {
   ) {}
 
   async applyChanges(props: IUpdateSiteRatingsStatsProps) {
+    const { sum, count, session } = props
+
     const metric = await this.ratingsModel
       .findOneAndUpdate(
         { key: ESiteStatsKey.RATINGS },
@@ -21,8 +23,8 @@ class SiteRatingsStatsRepository {
           {
             $set: {
               createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
-              sum: { $add: [{ $ifNull: ["$sum", 0] }, props.sum] },
-              count: { $add: [{ $ifNull: ["$count", 0] }, props.count] },
+              sum: { $add: [{ $ifNull: ["$sum", 0] }, sum] },
+              count: { $add: [{ $ifNull: ["$count", 0] }, count] },
             },
           },
           {
@@ -38,7 +40,7 @@ class SiteRatingsStatsRepository {
           },
         ],
         {
-          session: props.session,
+          session,
           upsert: true,
           returnDocument: "after",
           updatePipeline: true,

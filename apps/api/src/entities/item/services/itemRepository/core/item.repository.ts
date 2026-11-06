@@ -16,6 +16,7 @@ import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
+import type { IReadSearchIndexBatchProps } from "../types/IReadSearchIndexBatchProps"
 
 @Injectable()
 class ItemRepository {
@@ -50,15 +51,15 @@ class ItemRepository {
     )
   }
 
-  readSearchIndexBatch(props: { limit: number; afterId?: Types.ObjectId }) {
+  readSearchIndexBatch(props: IReadSearchIndexBatchProps) {
+    const { limit, afterId } = props
+
     return this.aggregation.aggregate<IItemSearchIndexEntry>([
       {
-        $match: !isUndefined(props.afterId)
-          ? { _id: { $gt: props.afterId } }
-          : {},
+        $match: !isUndefined(afterId) ? { _id: { $gt: afterId } } : {},
       },
       { $sort: { _id: 1 } },
-      { $limit: props.limit },
+      { $limit: limit },
       {
         $lookup: {
           from: TagItem.name,

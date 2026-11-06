@@ -14,13 +14,29 @@ import type { IReadItemCollectionsProps } from "../../../types/IReadItemCollecti
 const createItemCollectionsPipeline = (
   props: IReadItemCollectionsProps,
 ): PipelineStage[] => {
+  const {
+    collectionId,
+    groupId,
+    groupIds,
+    query,
+    tags,
+    excludeTags,
+    fields,
+    ratingMin,
+    ratingMax,
+    sort: sortMode,
+    isGrouped,
+    direction,
+    language,
+    page,
+    limit,
+  } = props
+
   const pipeline: PipelineStage[] = [
     {
       $match: {
-        collectionId: props.collectionId,
-        groupId: isUndefined(props.groupId)
-          ? { $in: props.groupIds }
-          : props.groupId,
+        collectionId,
+        groupId: isUndefined(groupId) ? { $in: groupIds } : groupId,
       },
     },
     {
@@ -69,8 +85,8 @@ const createItemCollectionsPipeline = (
     { $unwind: "$itemDocument" },
   ]
 
-  if (!isUndefined(props.query)) {
-    const search = { $regex: escapeRegex(props.query), $options: "i" }
+  if (!isUndefined(query)) {
+    const search = { $regex: escapeRegex(query), $options: "i" }
 
     pipeline.push({
       $match: {
@@ -83,7 +99,7 @@ const createItemCollectionsPipeline = (
     })
   }
 
-  if (props.tags.length > 0 || props.excludeTags.length > 0) {
+  if (tags.length > 0 || excludeTags.length > 0) {
     pipeline.push(
       {
         $lookup: {
@@ -91,7 +107,7 @@ const createItemCollectionsPipeline = (
           localField: "item",
           foreignField: "item",
           pipeline: [
-            { $match: { tag: { $in: [...props.tags, ...props.excludeTags] } } },
+            { $match: { tag: { $in: [...tags, ...excludeTags] } } },
             { $project: { _id: 0, tag: 1 } },
           ],
           as: "matchedTags",
@@ -101,12 +117,12 @@ const createItemCollectionsPipeline = (
         $match: {
           $expr: {
             $and: [
-              { $setIsSubset: [props.tags, "$matchedTags.tag"] },
+              { $setIsSubset: [tags, "$matchedTags.tag"] },
               {
                 $eq: [
                   {
                     $size: {
-                      $setIntersection: [props.excludeTags, "$matchedTags.tag"],
+                      $setIntersection: [excludeTags, "$matchedTags.tag"],
                     },
                   },
                   0,
@@ -119,7 +135,7 @@ const createItemCollectionsPipeline = (
     )
   }
 
-  for (const field of props.fields) {
+  for (const field of fields) {
     const condition =
       field.valueType === EItemFieldValueType.NUMBER
         ? {
@@ -144,7 +160,7 @@ const createItemCollectionsPipeline = (
     })
   }
 
-  if (!isUndefined(props.ratingMin) || !isUndefined(props.ratingMax)) {
+  if (!isUndefined(ratingMin) || !isUndefined(ratingMax)) {
     pipeline.push(
       {
         $lookup: {
@@ -156,12 +172,8 @@ const createItemCollectionsPipeline = (
               $match: {
                 ratingAverage: {
                   $ne: null,
-                  ...(!isUndefined(props.ratingMin)
-                    ? { $gte: props.ratingMin }
-                    : {}),
-                  ...(!isUndefined(props.ratingMax)
-                    ? { $lte: props.ratingMax }
-                    : {}),
+                  ...(!isUndefined(ratingMin) ? { $gte: ratingMin } : {}),
+                  ...(!isUndefined(ratingMax) ? { $lte: ratingMax } : {}),
                 },
               },
             },
@@ -175,20 +187,20 @@ const createItemCollectionsPipeline = (
   }
 
   const sort: Record<string, 1 | -1> =
-    props.sort === "collection"
+    sortMode === "collection"
       ? { groupOrder: 1, position: 1, _id: 1 }
       : {
-          ...(props.isGrouped ? { groupOrder: 1 as const } : {}),
-          ...(props.sort === "relevanceScore"
+          ...(isGrouped ? { groupOrder: 1 as const } : {}),
+          ...(sortMode === "relevanceScore"
             ? {
                 isRelevanceMissing: 1 as const,
-                relevanceScore: props.direction,
+                relevanceScore: direction,
               }
-            : { sortTitle: props.direction }),
+            : { sortTitle: direction }),
           _id: 1,
         }
-  const languageTitle = `$itemDocument.title.${props.language}`
-  const fallbackTitle = `$itemDocument.title.${props.language === ELanguage.RUSSIAN ? ELanguage.ENGLISH : ELanguage.RUSSIAN}`
+  const languageTitle = `$itemDocument.title.${language}`
+  const fallbackTitle = `$itemDocument.title.${language === ELanguage.RUSSIAN ? ELanguage.ENGLISH : ELanguage.RUSSIAN}`
 
   pipeline.push({
     $facet: {
@@ -196,8 +208,8 @@ const createItemCollectionsPipeline = (
       items: [
         {
           $set: {
-            groupOrder: { $indexOfArray: [props.groupIds, "$groupId"] },
-            ...(props.sort === "relevanceScore"
+            groupOrder: { $indexOfArray: [groupIds, "$groupId"] },
+            ...(sortMode === "relevanceScore"
               ? {
                   isRelevanceMissing: {
                     $eq: [{ $ifNull: ["$relevanceScore", null] }, null],
@@ -223,8 +235,8 @@ const createItemCollectionsPipeline = (
           },
         },
         { $sort: sort },
-        { $skip: (props.page - 1) * props.limit },
-        { $limit: props.limit },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
         {
           $project: {
             _id: 0,

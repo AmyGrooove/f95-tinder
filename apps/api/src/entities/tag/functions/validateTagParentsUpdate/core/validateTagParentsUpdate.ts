@@ -8,10 +8,9 @@ import { isString } from "@shared/functions/checks/isString"
 import { validateTagParents } from "../../validateTagParents"
 import type { IValidateTagParentsUpdateProps } from "../types/IValidateTagParentsUpdateProps"
 
-const validateTagParentsUpdate = ({
-  id,
-  update,
-}: IValidateTagParentsUpdateProps) => {
+const validateTagParentsUpdate = (props: IValidateTagParentsUpdateProps) => {
+  const { id, update } = props
+
   if (isArray(update)) {
     throw new Error(DICTIONARY.tag.unsupportedParentsWrite)
   }

@@ -12,6 +12,7 @@ import {
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify"
 import { Test } from "@nestjs/testing"
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
@@ -22,7 +23,12 @@ import { TagController } from "../core/tag.controller"
 describe("TagController", () => {
   let app: NestFastifyApplication
   const getCheckpoint = jest.fn<() => Promise<number | null>>()
-  const search = jest.fn<SearchService["search"]>()
+  const search =
+    jest.fn<
+      (
+        ...args: Parameters<SearchService["search"]>
+      ) => ReturnType<SearchService["search"]>
+    >()
 
   const documents = Array.from({ length: 650 }, (_value, index) => ({
     id: index.toString(16).padStart(24, "0"),
@@ -76,6 +82,37 @@ describe("TagController", () => {
 
   afterEach(async () => {
     await app.close()
+  })
+
+  it("публикует маршрут QUERY и DTO запроса и ответа в OpenAPI", () => {
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder().setOpenAPIVersion("3.2.0").build(),
+    )
+
+    expect(document.paths["/tags"]?.query).toMatchObject({
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/TagsBodyDto" },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/TagsResponseDto" },
+            },
+          },
+        },
+      },
+    })
+    expect(document.components?.schemas?.TagGroupBodyDto).toMatchObject({
+      properties: {
+        allOf: { type: "array", items: { type: ["string", "null"] } },
+      },
+    })
   })
 
   it("возвращает весь словарь порциями по 50 без повторов и лишнего курсора на точной границе", async () => {

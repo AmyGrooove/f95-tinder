@@ -12,21 +12,20 @@ import type { ICreateItemFilterPipelineProps } from "../types/ICreateItemFilterP
 const createItemFilterPipeline = (
   props: ICreateItemFilterPipelineProps,
 ): PipelineStage[] => {
-  const { filter } = props
+  const { filter, candidateItemIds, excludeItemIds } = props
   const pipeline: PipelineStage[] = [
     {
       $match: {
         deletedAt: null,
         ...(!isUndefined(filter?.types) ? { type: { $in: filter.types } } : {}),
-        ...(!isUndefined(props.candidateItemIds) ||
-        !isUndefined(props.excludeItemIds)
+        ...(!isUndefined(candidateItemIds) || !isUndefined(excludeItemIds)
           ? {
               _id: {
-                ...(!isUndefined(props.candidateItemIds)
-                  ? { $in: props.candidateItemIds }
+                ...(!isUndefined(candidateItemIds)
+                  ? { $in: candidateItemIds }
                   : {}),
-                ...(!isUndefined(props.excludeItemIds)
-                  ? { $nin: props.excludeItemIds }
+                ...(!isUndefined(excludeItemIds)
+                  ? { $nin: excludeItemIds }
                   : {}),
               },
             }

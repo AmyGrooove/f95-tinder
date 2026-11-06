@@ -22,9 +22,11 @@ class TagCollectionsInitializationService implements OnModuleInit {
     await this.collections.initialize()
 
     const definitions = new Map(
-      tagDictionary.flatMap(({ group, tags }) =>
-        tags.map((tag) => [tag.key, { ...tag, group }] as const),
-      ),
+      tagDictionary.flatMap((props) => {
+        const { group, tags } = props
+
+        return tags.map((tag) => [tag.key, { ...tag, group }] as const)
+      }),
     )
     const resolved = new Map<string, HydratedDocument<Tag>>()
     const resolving = new Set<string>()

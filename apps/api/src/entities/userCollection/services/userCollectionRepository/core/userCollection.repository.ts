@@ -65,8 +65,10 @@ class UserCollectionRepository {
   }
 
   async upsertReaction(props: IUpsertUserCollectionReactionProps) {
-    const filter = { user: props.userId, collectionId: props.collectionId }
-    const update = { $set: props.reaction }
+    const { userId, collectionId, reaction } = props
+
+    const filter = { user: userId, collectionId }
+    const update = { $set: reaction }
     const projection = { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 }
 
     try {

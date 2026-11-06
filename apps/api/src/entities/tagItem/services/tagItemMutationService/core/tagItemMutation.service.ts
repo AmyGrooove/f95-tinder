@@ -4,8 +4,9 @@ import { isObjectIdOrHexString, Types } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
-import { isObject } from "@shared/functions/checks/isObject"
+import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isObject } from "@shared/functions/checks/isObject"
 import { TagItem } from "../../../schemas/tagItem.schema"
 import type { ITagItemMutationProps } from "../types/ITagItemMutationProps"
 import { TagItemEventsService } from "@entities/tagItem/services/tagItemEventsService"
@@ -20,16 +21,14 @@ class TagItemMutationService {
   ) {}
 
   async run<TResult>(props: ITagItemMutationProps<TResult>) {
-    this.transactionService.assertManagedSession(props.session)
+    const { session, filters, itemIds, mutate, isPartialWritePossible } = props
+
+    this.transactionService.assertManagedSession(session)
 
     const previous =
-      !isNil(props.filters) && props.filters.length > 0
+      !isNil(filters) && filters.length > 0
         ? await this.model
-            .find(
-              { $or: props.filters },
-              { _id: 1, item: 1 },
-              { session: props.session },
-            )
+            .find({ $or: filters }, { _id: 1, item: 1 }, { session })
             .lean()
             .exec()
         : []
@@ -42,11 +41,7 @@ class TagItemMutationService {
       const current =
         recordIds.length > 0
           ? await this.model
-              .find(
-                { _id: { $in: recordIds } },
-                { item: 1 },
-                { session: props.session },
-              )
+              .find({ _id: { $in: recordIds } }, { item: 1 }, { session })
               .lean()
               .exec()
           : []
@@ -55,20 +50,20 @@ class TagItemMutationService {
         [
           ...previous.map((record) => record.item),
           ...current.map((record) => record.item),
-          ...(props.itemIds ?? []),
+          ...(itemIds ?? []),
         ],
-        props.session,
+        session,
       )
     }
 
     let result: TResult
 
     try {
-      result = await props.mutate()
+      result = await mutate.call(props)
     } catch (error) {
       if (
-        props.isPartialWritePossible === true &&
-        props.session?.inTransaction() !== true
+        isPartialWritePossible === true &&
+        session?.inTransaction() !== true
       ) {
         await publish(
           isObject(error) && "result" in error ? error.result : undefined,
@@ -83,7 +78,7 @@ class TagItemMutationService {
   }
 
   private getRecordIds(result: unknown): Types.ObjectId[] {
-    if (Array.isArray(result)) {
+    if (isArray(result)) {
       return result.flatMap((entry: unknown) => this.getRecordIds(entry))
     }
 

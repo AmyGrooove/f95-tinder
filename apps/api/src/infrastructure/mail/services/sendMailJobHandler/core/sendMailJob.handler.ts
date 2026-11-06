@@ -40,13 +40,15 @@ class SendMailJobHandler {
     const result = await this.mailClient.emails.send(
       {
         ...content,
-        attachments: payload.attachments?.map(
-          ({ content, contentType, filename }) => ({
+        attachments: payload.attachments?.map((props) => {
+          const { content, contentType, filename } = props
+
+          return {
             content,
             contentType,
             filename,
-          }),
-        ),
+          }
+        }),
         from: `${MAIL_SENDERS[sender]} <${sender}@${domain}>`,
         replyTo: payload.replyTo,
         subject: payload.subject,

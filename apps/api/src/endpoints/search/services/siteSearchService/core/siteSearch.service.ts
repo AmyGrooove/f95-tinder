@@ -23,15 +23,20 @@ import type {
   ISearchDocument,
   ISearchMatch,
 } from "@infrastructure/search/services/searchService"
+import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import type { SearchBodyDto } from "../dto/search.body"
 import type { SearchResponseDto } from "../dto/search.response"
-import { SEARCH_GROUPS } from "../static/SEARCH_GROUPS"
+import { ESearchCollectionSort } from "../types/ESearchCollectionSort"
+import { ESearchGroup } from "../types/ESearchGroup"
+import { ESearchItemSort } from "../types/ESearchItemSort"
+import { ESearchUserSort } from "../types/ESearchUserSort"
+import type { ISearchGroupOptions } from "../types/ISearchGroupOptions"
+import type { IReadOffsetsProps } from "../types/IReadOffsetsProps"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
-import type { TSearchGroup } from "../types/TSearchGroup"
 
 @Injectable()
 class SiteSearchService {
@@ -49,7 +54,7 @@ class SiteSearchService {
       ...(body.types?.allOf ?? []),
       ...(body.types?.anyOf ?? []),
     ]
-    const selected = SEARCH_GROUPS.filter(
+    const selected = Object.values(ESearchGroup).filter(
       (group) =>
         (included.length === 0 || included.includes(group)) &&
         !(body.types?.noneOf ?? []).includes(group),
@@ -92,7 +97,9 @@ class SiteSearchService {
 
       const pages = new Map(
         await Promise.all(
-          active.map(async ({ group, offset, props }) => {
+          active.map(async (activeGroup) => {
+            const { group, offset, props } = activeGroup
+
             const hits = await this.searchGroup({ body, group, offset, props })
 
             return [
@@ -115,9 +122,9 @@ class SiteSearchService {
           )
         : null
       const [items, collections, users] = await Promise.all([
-        this.loadItems(pages.get("items")?.ids ?? []),
-        this.loadCollections(pages.get("collections")?.ids ?? []),
-        this.loadUsers(pages.get("users")?.ids ?? []),
+        this.loadItems(pages.get(ESearchGroup.ITEMS)?.ids ?? []),
+        this.loadCollections(pages.get(ESearchGroup.COLLECTIONS)?.ids ?? []),
+        this.loadUsers(pages.get(ESearchGroup.USERS)?.ids ?? []),
       ])
 
       return { items, collections, users, nextCursor }
@@ -132,17 +139,9 @@ class SiteSearchService {
     }
   }
 
-  private readOffsets({
-    cursor,
-    fingerprint,
-    selected,
-    limit,
-  }: {
-    cursor: string | undefined
-    fingerprint: string
-    selected: TSearchGroup[]
-    limit: number
-  }): (number | null)[] {
+  private readOffsets(props: IReadOffsetsProps): (number | null)[] {
+    const { cursor, fingerprint, selected, limit } = props
+
     if (isNil(cursor)) {
       return selected.map(() => 0)
     }
@@ -186,17 +185,25 @@ class SiteSearchService {
 
   private prepareGroups(
     body: SearchBodyDto,
-  ): Record<TSearchGroup, ISearchGroupProps> {
+  ): Record<ESearchGroup, ISearchGroupOptions> {
     const itemSort = body.items?.sort
     const itemDirection =
-      itemSort?.direction ?? (itemSort?.type === "title" ? "asc" : "desc")
+      itemSort?.direction ??
+      (itemSort?.type === ESearchItemSort.TITLE
+        ? ESearchSortDirection.ASC
+        : ESearchSortDirection.DESC)
     const collectionSort = body.collections?.sort
     const collectionDirection =
       collectionSort?.direction ??
-      (collectionSort?.type === "title" ? "asc" : "desc")
+      (collectionSort?.type === ESearchCollectionSort.TITLE
+        ? ESearchSortDirection.ASC
+        : ESearchSortDirection.DESC)
     const userSort = body.users?.sort
     const userDirection =
-      userSort?.direction ?? (userSort?.type === "displayName" ? "asc" : "desc")
+      userSort?.direction ??
+      (userSort?.type === ESearchUserSort.DISPLAY_NAME
+        ? ESearchSortDirection.ASC
+        : ESearchSortDirection.DESC)
     const collectionTypes = body.collections?.types
     const authorIds = body.collections?.authorIds
 
@@ -204,21 +211,22 @@ class SiteSearchService {
       items: {
         filter: this.createItemFilters(body.items),
         isAscendingRelevance:
-          (itemSort?.type ?? "relevance") === "relevance" &&
-          itemDirection === "asc",
+          (itemSort?.type ?? ESearchItemSort.RELEVANCE) ===
+            ESearchItemSort.RELEVANCE &&
+          itemDirection === ESearchSortDirection.ASC,
         sort:
-          itemSort?.type === "title"
+          itemSort?.type === ESearchItemSort.TITLE
             ? [
                 `sortTitle.${itemSort.language ?? ELanguage.RUSSIAN}:${itemDirection}`,
                 "id:asc",
               ]
-            : itemSort?.type === "releaseDate"
+            : itemSort?.type === ESearchItemSort.RELEASE_DATE
               ? [
                   "hasReleaseDate:desc",
                   `releaseDate:${itemDirection}`,
                   "id:asc",
                 ]
-              : itemSort?.type === "rating"
+              : itemSort?.type === ESearchItemSort.RATING
                 ? ["hasRating:desc", `rating:${itemDirection}`, "id:asc"]
                 : undefined,
       },
@@ -231,25 +239,27 @@ class SiteSearchService {
           ...this.createValueFilters("authorId", authorIds),
         ],
         isAscendingRelevance:
-          (collectionSort?.type ?? "relevance") === "relevance" &&
-          collectionDirection === "asc",
+          (collectionSort?.type ?? ESearchCollectionSort.RELEVANCE) ===
+            ESearchCollectionSort.RELEVANCE &&
+          collectionDirection === ESearchSortDirection.ASC,
         sort:
-          collectionSort?.type === "title"
+          collectionSort?.type === ESearchCollectionSort.TITLE
             ? [
                 `sortTitle.${collectionSort.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
                 "id:asc",
               ]
-            : collectionSort?.type === "updatedAt"
+            : collectionSort?.type === ESearchCollectionSort.UPDATED_AT
               ? [`updatedAt:${collectionDirection}`, "id:asc"]
               : undefined,
       },
       users: {
         filter: [],
         isAscendingRelevance:
-          (userSort?.type ?? "relevance") === "relevance" &&
-          userDirection === "asc",
+          (userSort?.type ?? ESearchUserSort.RELEVANCE) ===
+            ESearchUserSort.RELEVANCE &&
+          userDirection === ESearchSortDirection.ASC,
         sort:
-          userSort?.type === "displayName"
+          userSort?.type === ESearchUserSort.DISPLAY_NAME
             ? [`sortDisplayName:${userDirection}`, "id:asc"]
             : undefined,
       },
@@ -294,30 +304,22 @@ class SiteSearchService {
     ]
   }
 
-  private async searchGroup({
-    body,
-    group,
-    offset,
-    props,
-  }: {
-    body: SearchBodyDto
-    group: TSearchGroup
-    offset: number
-    props: ISearchGroupProps
-  }) {
+  private async searchGroup(props: ISearchGroupProps) {
+    const { body, group, offset, props: options } = props
+
     const index = SEARCH_SETTINGS.indexes[group]
     const limit = Math.min(
       body.limit + 1,
       SEARCH_SETTINGS.maxTotalHits - offset,
     )
 
-    if (!props.isAscendingRelevance) {
+    if (!options.isAscendingRelevance) {
       const result = await this.searchService.search<ISearchDocument>(
         index,
         body.search,
         {
-          filter: props.filter,
-          sort: props.sort,
+          filter: options.filter,
+          sort: options.sort,
           offset,
           limit,
           attributesToRetrieve: ["id"],
@@ -333,7 +335,7 @@ class SiteSearchService {
     for await (const batch of this.searchService.iterateMatches({
       index,
       query: body.search,
-      filter: props.filter,
+      filter: options.filter,
       batchSize: SEARCH_SETTINGS.batchSize,
     })) {
       if (batch.some((hit) => !isFiniteNumber(hit._rankingScore))) {

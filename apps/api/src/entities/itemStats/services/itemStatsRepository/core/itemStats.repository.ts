@@ -60,10 +60,20 @@ class ItemStatsRepository {
   }
 
   async applyChanges(props: IUpdateItemStatsProps) {
+    const {
+      ratingsCount,
+      favoritesCount,
+      completedAttemptsCount,
+      ratingDistribution,
+      statusCounts,
+      itemId,
+      session,
+    } = props
+
     const increments = {
-      ratingsCount: props.ratingsCount,
-      favoritesCount: props.favoritesCount,
-      completedAttemptsCount: props.completedAttemptsCount,
+      ratingsCount,
+      favoritesCount,
+      completedAttemptsCount,
       ...Object.fromEntries(
         Object.keys(RATING_DISTRIBUTION_VALUES).map((key) => [
           `ratingDistribution.${key}`,
@@ -77,13 +87,13 @@ class ItemStatsRepository {
         ]),
       ),
       ...Object.fromEntries(
-        Object.entries(props.ratingDistribution).map(([key, value]) => [
+        Object.entries(ratingDistribution).map(([key, value]) => [
           `ratingDistribution.${key}`,
           value,
         ]),
       ),
       ...Object.fromEntries(
-        Object.entries(props.statusCounts).map(([key, value]) => [
+        Object.entries(statusCounts).map(([key, value]) => [
           `statusCounts.${key}`,
           value,
         ]),
@@ -91,7 +101,7 @@ class ItemStatsRepository {
     }
     const metric = await this.model
       .findOneAndUpdate(
-        { item: props.itemId },
+        { item: itemId },
         [
           {
             $set: Object.fromEntries(
@@ -126,7 +136,7 @@ class ItemStatsRepository {
           },
         ],
         {
-          session: props.session,
+          session,
           upsert: true,
           returnDocument: "after",
           updatePipeline: true,

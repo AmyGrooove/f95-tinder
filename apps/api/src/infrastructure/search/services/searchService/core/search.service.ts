@@ -15,6 +15,7 @@ import type { ISearchQueryOptions } from "../types/ISearchQueryOptions"
 import type { ISearchResult } from "../types/ISearchResult"
 import type { IIterateSearchProps } from "../types/IIterateSearchProps"
 import type { ISearchMatch } from "../types/ISearchMatch"
+import type { IReadDocumentIdsProps } from "../types/IReadDocumentIdsProps"
 
 @Injectable()
 class SearchService {
@@ -86,22 +87,24 @@ class SearchService {
   }
 
   async *iterateMatches(props: IIterateSearchProps) {
+    const { index, batchSize, query, filter } = props
+
     let offset = 0
 
     while (true) {
-      const ids = await this.readDocumentIds(props.index, {
+      const ids = await this.readDocumentIds(index, {
         offset,
-        limit: props.batchSize,
+        limit: batchSize,
       })
 
       if (ids.length === 0) {
         return
       }
 
-      const result = await this.search<ISearchMatch>(props.index, props.query, {
+      const result = await this.search<ISearchMatch>(index, query, {
         offset: 0,
         limit: ids.length,
-        filter: [...(props.filter ?? []), `id IN ${JSON.stringify(ids)}`],
+        filter: [...(filter ?? []), `id IN ${JSON.stringify(ids)}`],
         attributesToRetrieve: ["id"],
         showRankingScore: true,
         matchingStrategy: "last",
@@ -137,10 +140,7 @@ class SearchService {
     }
   }
 
-  async readDocumentIds(
-    index: string,
-    options: { offset: number; limit: number },
-  ) {
+  async readDocumentIds(index: string, options: IReadDocumentIdsProps) {
     const result = await this.searchClient
       .index(index)
       .getDocuments<ISearchDocument>({

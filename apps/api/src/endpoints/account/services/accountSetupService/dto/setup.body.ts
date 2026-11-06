@@ -12,15 +12,18 @@ import {
 
 import { isString } from "@shared/functions/checks/isString"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 
 class SetupBodyDto {
   @ApiProperty({
     description: SWAGGER_DICTIONARY.account.dto.setupBody.email,
     maxLength: 254,
   })
-  @Transform(({ value }: { value: unknown }) =>
-    isString(value) ? value.trim().toLowerCase() : value,
-  )
+  @Transform((props: ITransformProps) => {
+    const { value } = props
+
+    return isString(value) ? value.trim().toLowerCase() : value
+  })
   @IsString()
   @IsEmail()
   @MaxLength(254)

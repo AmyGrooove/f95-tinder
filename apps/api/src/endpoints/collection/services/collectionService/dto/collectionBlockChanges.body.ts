@@ -13,6 +13,9 @@ import {
   ValidateNested,
 } from "class-validator"
 
+import { isNil } from "@shared/functions/checks/isNil"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+
 import { CreateBlockBodyDto } from "./createBlock.body"
 
 class CollectionBlockIdBodyDto {
@@ -23,9 +26,7 @@ class CollectionBlockIdBodyDto {
 
 class CollectionBlockInsertionBodyDto {
   @ApiPropertyOptional({ type: String, nullable: true })
-  @ValidateIf(
-    (_object: unknown, value: unknown) => value !== null && value !== undefined,
-  )
+  @ValidateIf((_object: unknown, value: unknown) => !isNil(value))
   @IsMongoId()
   beforeBlockId?: string | null
 }
@@ -57,7 +58,7 @@ class MoveCollectionBlockBodyDto extends CollectionBlockIdBodyDto {
 
 class CollectionBlockChangesBodyDto {
   @ApiPropertyOptional({ type: [AddCollectionBlockBodyDto] })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
@@ -65,7 +66,7 @@ class CollectionBlockChangesBodyDto {
   add?: AddCollectionBlockBodyDto[]
 
   @ApiPropertyOptional({ type: [UpdateCollectionBlockBodyDto] })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
@@ -73,7 +74,7 @@ class CollectionBlockChangesBodyDto {
   update?: UpdateCollectionBlockBodyDto[]
 
   @ApiPropertyOptional({ type: [MoveCollectionBlockBodyDto] })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsObject({ each: true })
   @ValidateNested({ each: true })
@@ -81,7 +82,7 @@ class CollectionBlockChangesBodyDto {
   move?: MoveCollectionBlockBodyDto[]
 
   @ApiPropertyOptional({ type: [String] })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsArray()
   @IsMongoId({ each: true })
   remove?: string[]

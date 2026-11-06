@@ -195,13 +195,13 @@ const componentHooks = createRule(
         }
 
         components.set(owner, true)
-        const props = owner.params[0]
+        const { type, name } = owner.params[0]
 
         if (
-          props.type !== "Identifier" ||
+          type !== "Identifier" ||
           node.arguments.length !== 1 ||
           node.arguments[0].type !== "Identifier" ||
-          node.arguments[0].name !== props.name
+          node.arguments[0].name !== name
         ) {
           context.report({ node, messageId: "props" })
         }

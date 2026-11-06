@@ -15,6 +15,8 @@ import {
 import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
@@ -88,9 +90,9 @@ class CollectionUserController {
     @Body() reaction: UpdateCollectionReactionBodyDto,
   ) {
     if (
-      reaction?.isFavorite === undefined &&
-      reaction?.rating === undefined &&
-      reaction?.isHidden === undefined
+      isUndefined(reaction?.isFavorite) &&
+      isUndefined(reaction?.rating) &&
+      isUndefined(reaction?.isHidden)
     ) {
       throw new BadRequestException(SWAGGER_DICTIONARY.common.invalidRequest)
     }

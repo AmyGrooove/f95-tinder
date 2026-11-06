@@ -114,17 +114,19 @@ class CollectionRepository {
   async querySummaries(
     props: IQueryCollectionsProps,
   ): Promise<ICollectionSummariesPage> {
+    const { type, itemIds, page, limit } = props
+
     const pipeline: PipelineStage[] = [
       {
         $match: {
           deletedAt: null,
-          ...(isUndefined(props.type) ? {} : { type: props.type }),
-          ...(props.type === ECollectionType.FRANCHISE ? { author: null } : {}),
+          ...(isUndefined(type) ? {} : { type }),
+          ...(type === ECollectionType.FRANCHISE ? { author: null } : {}),
         },
       },
     ]
 
-    if (!isUndefined(props.itemIds)) {
+    if (!isUndefined(itemIds)) {
       pipeline.push(
         {
           $lookup: {
@@ -133,7 +135,7 @@ class CollectionRepository {
             pipeline: [
               {
                 $match: {
-                  item: { $in: props.itemIds },
+                  item: { $in: itemIds },
                   $expr: { $eq: ["$collectionId", "$$collectionId"] },
                 },
               },
@@ -151,8 +153,8 @@ class CollectionRepository {
       $facet: {
         items: [
           { $sort: { createdAt: -1, _id: -1 } },
-          { $skip: (props.page - 1) * props.limit },
-          { $limit: props.limit },
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
           { $project: { _id: 1, type: 1, author: 1, title: 1, media: 1 } },
         ],
         count: [{ $count: "total" }],
@@ -190,16 +192,18 @@ class CollectionRepository {
     props: IUpdateCollectionProps,
     options?: Pick<QueryOptions<Collection>, "session">,
   ) {
+    const { id, authorId, version, changes } = props
+
     return this.write.updateByFilter(
       {
-        _id: props.id,
-        author: props.authorId,
+        _id: id,
+        author: authorId,
         deletedAt: null,
-        ...(props.version === 0
+        ...(version === 0
           ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
-          : { version: props.version }),
+          : { version }),
       },
-      { $set: { ...props.changes, version: props.version + 1 } },
+      { $set: { ...changes, version: version + 1 } },
       options,
     )
   }

@@ -33,6 +33,8 @@ import type { CreateBlockBodyDto } from "../dto/createBlock.body"
 import type { UpdateCollectionBodyDto } from "../dto/updateCollection.body"
 import type { IUpdateCollectionRequestProps } from "../types/IUpdateCollectionRequestProps"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
+import type { IPrepareItemChangesProps } from "../types/IPrepareItemChangesProps"
+import type { IReplacePosterProps } from "../types/IReplacePosterProps"
 
 @Injectable()
 class CollectionService {
@@ -271,15 +273,16 @@ class CollectionService {
     return { collection, userId }
   }
 
-  async replacePoster(
-    accessToken: unknown,
-    props: { id: Types.ObjectId; src: string | undefined },
-  ) {
+  async replacePoster(accessToken: unknown, props: IReplacePosterProps) {
+    const { id } = props
+
     const { collection, userId } = await this.getOwnedCollection(
       accessToken,
-      props.id,
+      id,
     )
-    if (isNil(props.src)) {
+    const { src } = props
+
+    if (isNil(src)) {
       throw new ServiceUnavailableException(
         "Публичный адрес хранилища недоступен",
       )
@@ -288,7 +291,7 @@ class CollectionService {
       throw new ConflictException(DICTIONARY.collection.versionLimit)
     }
     const updated = await this.collectionRepository.updateVersioned({
-      id: props.id,
+      id: id,
       authorId: userId,
       version: collection.version,
       changes: {
@@ -297,7 +300,7 @@ class CollectionService {
         type: collection.type,
         blocks: collection.blocks,
         media: [
-          { src: props.src, language: null, type: EMediaType.POSTER },
+          { src: src, language: null, type: EMediaType.POSTER },
           ...collection.media.filter(
             (media) => media.type !== EMediaType.POSTER,
           ),
@@ -307,7 +310,7 @@ class CollectionService {
     if (isNil(updated)) {
       throw new ConflictException(DICTIONARY.collection.versionConflict)
     }
-    const prefix = "collections/" + props.id.toHexString() + "/poster/"
+    const prefix = "collections/" + id.toHexString() + "/poster/"
     for (const poster of collection.media.filter(
       (media) => media.type === EMediaType.POSTER,
     )) {
@@ -481,11 +484,7 @@ class CollectionService {
   }
 
   private async prepareItemChanges(
-    props: {
-      id: Types.ObjectId
-      changes: UpdateCollectionBodyDto["items"]
-      groupIds: Set<string>
-    },
+    props: IPrepareItemChangesProps,
     session: ClientSession,
   ) {
     const { id, changes, groupIds } = props

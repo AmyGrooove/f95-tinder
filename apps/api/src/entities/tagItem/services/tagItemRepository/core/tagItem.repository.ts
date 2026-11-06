@@ -45,16 +45,18 @@ class TagItemRepository {
     props: ICheckTagItemKeysProps,
     options?: Pick<AggregateOptions, "session">,
   ) {
+    const { itemId, group, keys } = props
+
     const records = await this.aggregation.aggregate<{ _id: unknown }>(
       [
-        { $match: { item: props.itemId } },
+        { $match: { item: itemId } },
         {
           $lookup: {
             from: Tag.name,
             localField: "tag",
             foreignField: "_id",
             pipeline: [
-              { $match: { group: props.group, key: { $in: props.keys } } },
+              { $match: { group, key: { $in: keys } } },
               { $project: { _id: 1 } },
             ],
             as: "matchedTag",

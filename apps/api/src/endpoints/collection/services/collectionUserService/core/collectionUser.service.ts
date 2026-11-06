@@ -44,17 +44,18 @@ class CollectionUserService {
     accessToken: unknown,
     props: IUpdateCollectionReactionProps,
   ) {
+    const { id, reaction: requestedReaction } = props
+
     const userId = await this.collectionAuthService.authenticate(accessToken)
-    const collection = await this.collectionRepository.findNotDeletedAuthorById(
-      props.id,
-    )
+    const collection =
+      await this.collectionRepository.findNotDeletedAuthorById(id)
 
     if (isNil(collection)) {
       throw new NotFoundException(DICTIONARY.collection.notFound)
     }
 
     if (
-      !isNil(props.reaction.rating) &&
+      !isNil(requestedReaction.rating) &&
       !isNil(collection.author) &&
       collection.author.equals(userId)
     ) {
@@ -63,8 +64,8 @@ class CollectionUserService {
 
     const reaction = await this.userCollectionRepository.upsertReaction({
       userId,
-      collectionId: props.id,
-      reaction: props.reaction,
+      collectionId: id,
+      reaction: requestedReaction,
     })
 
     if (isNil(reaction)) {

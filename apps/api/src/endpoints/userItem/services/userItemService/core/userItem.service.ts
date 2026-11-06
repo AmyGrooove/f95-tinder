@@ -180,12 +180,14 @@ class UserItemService {
   }
 
   async update(accessToken: unknown, props: IUpdateUserItemProps) {
-    this.requireChanges(props.body)
+    const { body, id } = props
+
+    this.requireChanges(body)
 
     return this.mutate(accessToken, {
-      id: props.id,
+      id,
       mutate: async (userItem, session) => {
-        const { status, rating, isFavorite, note } = props.body
+        const { status, rating, isFavorite, note } = body
 
         if (status === EUserItemStatus.COMPLETED) {
           await this.validateCompletion({
@@ -236,10 +238,11 @@ class UserItemService {
   }
 
   async createAttempt(accessToken: unknown, props: ICreateAttemptProps) {
+    const { id, body } = props
+
     return this.mutate(accessToken, {
-      id: props.id,
+      id,
       mutate: async (userItem, session) => {
-        const { body } = props
         if (!this.checkRequiresAttempt(userItem.status)) {
           throw new ConflictException(DICTIONARY.userItem.attemptNotAllowed)
         }
@@ -267,21 +270,22 @@ class UserItemService {
   }
 
   async updateAttempt(accessToken: unknown, props: IUpdateAttemptProps) {
-    this.requireChanges(props.body)
+    const { body, id, attemptId } = props
+
+    this.requireChanges(body)
 
     return this.mutate(accessToken, {
-      id: props.id,
+      id,
       mutate: async (userItem, session) => {
         const attempt = userItem.attempts.find((entry) =>
-          entry.id.equals(props.attemptId),
+          entry.id.equals(attemptId),
         )
 
         if (isNil(attempt)) {
           throw new NotFoundException(DICTIONARY.userItem.attemptNotFound)
         }
 
-        const { isCompleted, progress, unit, startedAt, completedAt } =
-          props.body
+        const { isCompleted, progress, unit, startedAt, completedAt } = body
 
         if (
           isCompleted === true ||
@@ -335,11 +339,13 @@ class UserItemService {
   }
 
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
+    const { id, mutate } = props
+
     const userId = await this.authenticate(accessToken)
 
     const result = await this.runMutation(async (session) => {
       const filter = {
-        _id: props.id,
+        _id: id,
         user: userId,
         $or: [
           { status: { $ne: EUserItemStatus.SKIPPED } },
@@ -358,7 +364,7 @@ class UserItemService {
 
       const previous = this.userItemStatsService.getState(userItem)
 
-      await props.mutate(userItem, session)
+      await mutate(userItem, session)
       this.validateUserItem(userItem)
 
       if (userItem.attempts.some((attempt) => attempt.unit === EUnit.EPISODE)) {

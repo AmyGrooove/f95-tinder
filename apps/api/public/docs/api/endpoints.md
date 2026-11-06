@@ -2,7 +2,7 @@
 
 Все фактически подключённые операции — от входа до подборок. Выбери маршрут, чтобы увидеть простую схему, пример запроса, проверки и момент ответа.
 
-<div class="endpoint-overview"><span><strong>36</strong> продуктовых операций</span><span><strong>4</strong> служебных маршрута</span><span>Сверено с кодом · 6 ноября 2026</span></div>
+<div class="endpoint-overview"><span><strong>37</strong> продуктовых операций</span><span><strong>4</strong> служебных маршрута</span><span>Сверено с кодом · 6 ноября 2026</span></div>
 
 <nav class="endpoint-jumps" aria-label="Области API">
 <a href="#/api/endpoints?id=auth">Вход и сессии<span>11</span></a>
@@ -48,6 +48,7 @@
 <p class="endpoint-group-description">Публичные карточки и поиск по сайту</p>
 <div class="endpoint-list" aria-label="Каталог и поиск">
 <a class="endpoint-row" href="#/api/requestFlows/catalog?id=search"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/search</code><span>Найти произведения, пользователей и подборки</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
+<a class="endpoint-row" href="#/api/requestFlows/catalog?id=tags"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/tags</code><span>Найти теги для фильтров каталога</span></span><span class="endpoint-access">Публичный</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
 <h2 id="library" class="endpoint-group-title">Личная библиотека<span>8</span></h2>

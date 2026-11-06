@@ -19,6 +19,7 @@ import { BACKGROUNDS } from "../static/BACKGROUNDS"
 import { HOME_PAGE_HTML } from "../static/HOME_PAGE_HTML"
 import { SERVICE_HEALTH_ICONS } from "../static/SERVICE_HEALTH_ICONS"
 import { SERVICE_HEALTH_HTML } from "../static/SERVICE_HEALTH_HTML"
+import type { IGetBackgroundProps } from "../types/IGetBackgroundProps"
 
 @Controller("")
 class AppController {
@@ -30,9 +31,7 @@ class AppController {
   async getBackground(
     @Headers("cookie") cookie: string | undefined,
     @Res({ passthrough: true })
-    response: {
-      header: (name: string, value: string) => void
-    },
+    response: IGetBackgroundProps,
   ) {
     const previousIndex = cookie?.match(REGEX.BACKGROUND_COOKIE)?.[1]
     const previousBackground = isUndefined(previousIndex)

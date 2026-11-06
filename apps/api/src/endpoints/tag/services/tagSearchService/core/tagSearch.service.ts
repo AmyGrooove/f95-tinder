@@ -9,12 +9,17 @@ import {
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
+import { isArray } from "@shared/functions/checks/isArray"
 import { isNumber } from "@shared/functions/checks/isNumber"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { TAG_SEARCH_SETTINGS } from "../../../static/TAG_SEARCH_SETTINGS"
 import type { ITagSearchDocument } from "../../../types/ITagSearchDocument"
 import type { TagsBodyDto } from "../dto/tags.body"
 import type { TagsResponseDto } from "../dto/tags.response"
+import type { IReadOffsetProps } from "../types/IReadOffsetProps"
+import type { ISearchIndexProps } from "../types/ISearchIndexProps"
 
 @Injectable()
 class TagSearchService {
@@ -23,14 +28,10 @@ class TagSearchService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async search({
-    search = "",
-    group,
-    limit,
-    cursor,
-  }: TagsBodyDto): Promise<TagsResponseDto> {
-    const { index, checkpointKey, maxTotalHits, ungrouped } =
-      TAG_SEARCH_SETTINGS
+  async search(props: TagsBodyDto): Promise<TagsResponseDto> {
+    const { search = "", group, limit, cursor } = props
+
+    const { maxTotalHits, ungrouped } = TAG_SEARCH_SETTINGS
     const allOf = group?.allOf?.map((value) => value ?? ungrouped).sort() ?? []
     const anyOf = group?.anyOf?.map((value) => value ?? ungrouped).sort() ?? []
     const noneOf =
@@ -58,12 +59,16 @@ class TagSearchService {
       offset,
       limit: Math.min(limit + 1, maxTotalHits - offset),
     })
-    const items = hits.slice(0, limit).map(({ id, key, group, name }) => ({
-      id,
-      key,
-      group: group === ungrouped ? null : group,
-      name: { ru: name.ru, en: name.en },
-    }))
+    const items = hits.slice(0, limit).map((props) => {
+      const { id, key, group, name } = props
+
+      return {
+        id,
+        key,
+        group: group === ungrouped ? null : group,
+        name: { ru: name.ru, en: name.en },
+      }
+    })
     const nextCursor =
       hits.length > limit
         ? Buffer.from(
@@ -74,16 +79,10 @@ class TagSearchService {
     return { items, nextCursor }
   }
 
-  private readOffset({
-    cursor,
-    fingerprint,
-    limit,
-  }: {
-    cursor?: string
-    fingerprint: string
-    limit: number
-  }) {
-    if (cursor === undefined) {
+  private readOffset(props: IReadOffsetProps) {
+    const { cursor, fingerprint, limit } = props
+
+    if (isUndefined(cursor)) {
       return 0
     }
 
@@ -93,7 +92,7 @@ class TagSearchService {
 
       if (
         buffer.toString("base64url") === cursor &&
-        Array.isArray(decoded) &&
+        isArray(decoded) &&
         decoded.length === 3
       ) {
         const [version, storedFingerprint, offset]: unknown[] = decoded
@@ -119,17 +118,9 @@ class TagSearchService {
     throw new BadRequestException(DICTIONARY.tag.invalidCursor)
   }
 
-  private async searchIndex({
-    search,
-    filter,
-    offset,
-    limit,
-  }: {
-    search: string
-    filter: string[]
-    offset: number
-    limit: number
-  }) {
+  private async searchIndex(props: ISearchIndexProps) {
+    const { search, filter, offset, limit } = props
+
     try {
       const checkpoint = await this.cacheService.get<number>(
         TAG_SEARCH_SETTINGS.checkpointKey,
@@ -141,7 +132,7 @@ class TagSearchService {
           search,
           {
             filter,
-            sort: ["id:asc"],
+            sort: [`id:${ESearchSortDirection.ASC}`],
             offset,
             limit,
           },

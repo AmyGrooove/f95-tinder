@@ -13,6 +13,7 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import type { IItemCollectionCard } from "@entities/itemCollection/services/itemCollectionRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import type { IGetItemCollectionsRequestProps } from "../types/IGetItemCollectionsRequestProps"
 import type { ItemCollectionResponseDto } from "../dto/itemCollection.response"
@@ -25,10 +26,11 @@ class CollectionContentService {
     private readonly itemCollectionRepository: ItemCollectionRepository,
   ) {}
 
-  async getItems({
-    id,
-    query,
-  }: IGetItemCollectionsRequestProps): Promise<ItemCollectionsResponseDto> {
+  async getItems(
+    props: IGetItemCollectionsRequestProps,
+  ): Promise<ItemCollectionsResponseDto> {
+    const { id, query } = props
+
     const limit = query.limit ?? 50
     const { collection, groupIds } = await this.getContentContext(id)
     const scope = id.toHexString() + ":" + collection.version + ":"
@@ -42,7 +44,7 @@ class CollectionContentService {
     const page = rows.slice(0, limit)
     const last = page.at(-1)
     const nextCursor =
-      rows.length > limit && last !== undefined
+      rows.length > limit && !isUndefined(last)
         ? Buffer.from(
             scope +
               last.groupOrder +
@@ -79,7 +81,7 @@ class CollectionContentService {
 
       groupOrder += 1
       const group = itemsByGroup.get(block.id.toHexString())
-      if (group === undefined) {
+      if (isUndefined(group)) {
         continue
       }
 
@@ -91,10 +93,14 @@ class CollectionContentService {
         description: isNil(block.description)
           ? null
           : { ru: block.description.ru, en: block.description.en },
-        items: group.map(({ membership, ...item }) => ({
-          ...item,
-          note: membership.note,
-        })),
+        items: group.map((props) => {
+          const { membership, ...item } = props
+
+          return {
+            ...item,
+            note: membership.note,
+          }
+        }),
       })
       pendingText = []
     }
@@ -110,7 +116,7 @@ class CollectionContentService {
     scope: string,
     groupCount: number,
   ) {
-    if (cursor === undefined) {
+    if (isUndefined(cursor)) {
       return undefined
     }
 
@@ -127,9 +133,9 @@ class CollectionContentService {
       groupOrder >= groupCount ||
       !Number.isSafeInteger(position) ||
       position < 0 ||
-      id === undefined ||
+      isUndefined(id) ||
       !REGEX.MONGO_OBJECT_ID.test(id) ||
-      extra !== undefined
+      !isUndefined(extra)
     ) {
       throw new BadRequestException(DICTIONARY.collection.invalidPagination)
     }

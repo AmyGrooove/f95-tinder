@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common"
 import type { Types } from "mongoose"
 
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+
 import { TagRepository } from "@entities/tag/services/tagRepository"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
@@ -30,16 +32,20 @@ class SyncTagSearchJobHandler implements IJobHandler<null> {
     weekStart.setUTCDate(
       weekStart.getUTCDate() - ((weekStart.getUTCDay() + 6) % 7),
     )
-    const hasIndex = await this.searchService.hasIndex(index)
+    const isIndexPresent = await this.searchService.hasIndex(index)
     const checkpoint = await this.cacheService.get<number>(checkpointKey)
 
-    if (hasIndex && checkpoint !== null && checkpoint >= weekStart.getTime()) {
+    if (
+      isIndexPresent &&
+      checkpoint !== null &&
+      checkpoint >= weekStart.getTime()
+    ) {
       return
     }
 
     await context.throwIfCancelled()
 
-    if (!hasIndex && checkpoint !== null) {
+    if (!isIndexPresent && checkpoint !== null) {
       await this.cacheService.delete(checkpointKey)
     }
 
@@ -73,7 +79,7 @@ class SyncTagSearchJobHandler implements IJobHandler<null> {
     while (true) {
       await context.throwIfCancelled()
       const tags = await this.tagRepository.read.findMany(
-        afterId === undefined ? {} : { _id: { $gt: afterId } },
+        isUndefined(afterId) ? {} : { _id: { $gt: afterId } },
         { _id: 1, key: 1, group: 1, name: 1 },
         { sort: { _id: 1 }, limit: batchSize },
       )

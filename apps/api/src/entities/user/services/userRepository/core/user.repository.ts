@@ -69,12 +69,14 @@ class UserRepository {
     props: IReissueAccessCodeProps,
     options?: Pick<QueryOptions<User>, "session">,
   ) {
+    const { userId, accessCode: currentAccessCode } = props
+
     const accessCode = randomBytes(24).toString("base64url")
     const user = await this.write.updateByFilter(
       {
-        _id: props.userId,
+        _id: userId,
         accessCodeHash: createHash("sha256")
-          .update(props.accessCode)
+          .update(currentAccessCode)
           .digest("hex"),
         passwordHash: null,
       },
@@ -93,13 +95,15 @@ class UserRepository {
     props: IReplacePasswordProps,
     options?: Pick<QueryOptions<User>, "session">,
   ) {
+    const { userId, email, currentPasswordHash, passwordHash } = props
+
     return this.write.updateByFilter(
       {
-        _id: props.userId,
-        email: props.email,
-        passwordHash: props.currentPasswordHash,
+        _id: userId,
+        email,
+        passwordHash: currentPasswordHash,
       },
-      { $set: { passwordHash: props.passwordHash } },
+      { $set: { passwordHash } },
       { ...options, projection: { _id: 1 } },
     )
   }

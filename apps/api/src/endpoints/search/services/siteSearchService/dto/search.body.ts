@@ -21,6 +21,7 @@ import {
   SearchUsersBodyDto,
   SearchCollectionsBodyDto,
 } from "./searchOptions.body"
+import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 
 class SearchBodyDto {
   @ApiProperty({
@@ -29,9 +30,11 @@ class SearchBodyDto {
     maxLength: 200,
     description: SWAGGER_DICTIONARY.search.text,
   })
-  @Transform(({ value }: { value: unknown }) =>
-    isString(value) ? value.trim() : value,
-  )
+  @Transform((props: ITransformProps) => {
+    const { value } = props
+
+    return isString(value) ? value.trim() : value
+  })
   @IsString()
   @Length(1, 200)
   search: string

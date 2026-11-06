@@ -1,9 +1,13 @@
-interface ISearchGroupProps {
-  filter: string[]
-  isAscendingRelevance: boolean
+import type { SearchBodyDto } from "../dto/search.body"
 
-  isImpossible?: boolean
-  sort?: string[]
+import type { ESearchGroup } from "./ESearchGroup"
+import type { ISearchGroupOptions } from "./ISearchGroupOptions"
+
+interface ISearchGroupProps {
+  body: SearchBodyDto
+  group: ESearchGroup
+  offset: number
+  props: ISearchGroupOptions
 }
 
 export type { ISearchGroupProps }

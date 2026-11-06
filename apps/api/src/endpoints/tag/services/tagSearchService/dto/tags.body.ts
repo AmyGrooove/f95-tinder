@@ -13,19 +13,22 @@ import {
 } from "class-validator"
 
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
 import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { isString } from "@shared/functions/checks/isString"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 
 const TAG_GROUP_VALUES = [...Object.values(ETagGroup), null]
 
-class TagGroupBodyDto {
+class TagGroupBodyDto implements IValueFilter<ETagGroup | null> {
   @ApiPropertyOptional({
-    enum: TAG_GROUP_VALUES,
-    isArray: true,
+    type: "array",
+    items: { type: ["string", "null"], enum: TAG_GROUP_VALUES },
     minItems: 1,
     uniqueItems: true,
   })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsArray()
   @ArrayNotEmpty()
   @ArrayUnique()
@@ -33,12 +36,12 @@ class TagGroupBodyDto {
   allOf?: (ETagGroup | null)[]
 
   @ApiPropertyOptional({
-    enum: TAG_GROUP_VALUES,
-    isArray: true,
+    type: "array",
+    items: { type: ["string", "null"], enum: TAG_GROUP_VALUES },
     minItems: 1,
     uniqueItems: true,
   })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsArray()
   @ArrayNotEmpty()
   @ArrayUnique()
@@ -46,12 +49,12 @@ class TagGroupBodyDto {
   anyOf?: (ETagGroup | null)[]
 
   @ApiPropertyOptional({
-    enum: TAG_GROUP_VALUES,
-    isArray: true,
+    type: "array",
+    items: { type: ["string", "null"], enum: TAG_GROUP_VALUES },
     minItems: 1,
     uniqueItems: true,
   })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsArray()
   @ArrayNotEmpty()
   @ArrayUnique()
@@ -61,16 +64,18 @@ class TagGroupBodyDto {
 
 class TagsBodyDto {
   @ApiPropertyOptional({ type: String, minLength: 1, maxLength: 200 })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
-  @Transform(({ value }: { value: unknown }) =>
-    isString(value) ? value.trim() : value,
-  )
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @Transform((props: ITransformProps) => {
+    const { value } = props
+
+    return isString(value) ? value.trim() : value
+  })
   @IsString()
   @Length(1, 200)
   search?: string
 
   @ApiPropertyOptional({ type: TagGroupBodyDto })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @Type(() => TagGroupBodyDto)
   @IsObject()
   @ValidateNested()
@@ -81,7 +86,7 @@ class TagsBodyDto {
   limit: TPageSize = 50
 
   @ApiPropertyOptional({ type: String, minLength: 1, maxLength: 256 })
-  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsString()
   @Length(1, 256)
   cursor?: string

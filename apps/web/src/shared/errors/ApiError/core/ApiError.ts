@@ -7,12 +7,14 @@ class ApiError extends Error {
   readonly status: number
 
   constructor(props: IApiErrorProps) {
-    super(props.message)
+    const { message, code, details, status } = props
+
+    super(message)
 
     this.name = 'ApiError'
-    this.code = props.code
-    this.details = props.details
-    this.status = props.status
+    this.code = code
+    this.details = details
+    this.status = status
   }
 }
 

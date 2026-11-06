@@ -21,6 +21,7 @@ import { TagCollectionsInitializationService } from "@endpoints/collection/servi
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
+import { TagEndpointModule } from "@endpoints/tag/tag.module"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 import { AppExceptionFilter } from "@infrastructure/logger/decorators/AppExceptionFilter"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
@@ -128,7 +129,9 @@ const createTestApplication = async (search?: {
         AccountModule,
         UserItemEndpointModule,
         CollectionEndpointModule,
-        ...(search === undefined ? [] : [SearchEndpointModule]),
+        ...(search === undefined
+          ? []
+          : [SearchEndpointModule, TagEndpointModule]),
         LoggerModule,
         ThrottlingModule,
       ],

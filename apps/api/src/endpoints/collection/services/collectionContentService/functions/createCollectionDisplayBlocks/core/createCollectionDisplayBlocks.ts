@@ -7,15 +7,11 @@ import type { CollectionDisplayGroupResponseDto } from "../../../dto/collectionD
 import type { CollectionDisplayTextResponseDto } from "../../../dto/collectionDisplayText.response"
 import type { ICreateCollectionDisplayBlocksProps } from "../types/ICreateCollectionDisplayBlocksProps"
 
-const createCollectionDisplayBlocks = ({
-  blocks,
-  groupCounts,
-  page,
-  limit,
-  isFiltered,
-}: ICreateCollectionDisplayBlocksProps): (
-  CollectionDisplayGroupResponseDto | CollectionDisplayTextResponseDto
-)[] => {
+const createCollectionDisplayBlocks = (
+  props: ICreateCollectionDisplayBlocksProps,
+): (CollectionDisplayGroupResponseDto | CollectionDisplayTextResponseDto)[] => {
+  const { blocks, groupCounts, page, limit, isFiltered } = props
+
   const counts = new Map(
     groupCounts.map((group) => [group.groupId.toHexString(), group.total]),
   )

@@ -3,11 +3,14 @@ import { isObjectIdOrHexString, Types } from "mongoose"
 import { checkIsUniqueObjectIdArray } from "@entities/shared/functions/checks/checkIsUniqueObjectIdArray"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isArray } from "@shared/functions/checks/isArray"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import type { IValidateTagParentsProps } from "../types/IValidateTagParentsProps"
 
-const validateTagParents = ({ id, parents }: IValidateTagParentsProps) => {
-  if (parents === undefined) {
+const validateTagParents = (props: IValidateTagParentsProps) => {
+  const { id, parents } = props
+
+  if (isUndefined(parents)) {
     return
   }
 

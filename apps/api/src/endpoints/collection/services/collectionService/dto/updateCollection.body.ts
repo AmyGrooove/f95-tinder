@@ -54,14 +54,14 @@ class UpdateCollectionBodyDto {
   media?: MediaBodyDto[]
 
   @ApiPropertyOptional({ type: CollectionBlockChangesBodyDto })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsObject()
   @ValidateNested()
   @Type(() => CollectionBlockChangesBodyDto)
   blocks?: CollectionBlockChangesBodyDto
 
   @ApiPropertyOptional({ type: CollectionItemChangesBodyDto })
-  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @ValidateIf((_object: unknown, value: unknown) => !isUndefined(value))
   @IsObject()
   @ValidateNested()
   @Type(() => CollectionItemChangesBodyDto)

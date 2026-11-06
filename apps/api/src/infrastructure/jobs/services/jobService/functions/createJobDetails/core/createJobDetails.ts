@@ -3,15 +3,12 @@ import type { Job } from "bullmq"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
-import type { TJobState } from "../../../types/TJobState"
 import type { IJobDetails } from "../../../types/IJobDetails"
 import { normalizeJobProgress } from "../../normalizeJobProgress"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
+import type { ICreateJobDetailsProps } from "../types/ICreateJobDetailsProps"
 
-const createJobDetails = (
-  job: Job,
-  details: { state: TJobState; name: string },
-) => {
+const createJobDetails = (job: Job, details: ICreateJobDetailsProps) => {
   if (!isString(job.id) || job.id === "") {
     throw new Error(DICTIONARY.jobs.missingDetailsId)
   }

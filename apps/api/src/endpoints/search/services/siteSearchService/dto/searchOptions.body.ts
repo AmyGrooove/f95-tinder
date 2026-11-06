@@ -6,7 +6,6 @@ import {
   ArrayUnique,
   IsArray,
   IsEnum,
-  IsIn,
   IsMongoId,
   IsNumber,
   IsObject,
@@ -20,19 +19,22 @@ import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
+import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-import { SEARCH_GROUPS } from "../static/SEARCH_GROUPS"
-import type { TSearchGroup } from "../types/TSearchGroup"
+import { ESearchCollectionSort } from "../types/ESearchCollectionSort"
+import { ESearchGroup } from "../types/ESearchGroup"
+import { ESearchItemSort } from "../types/ESearchItemSort"
+import { ESearchUserSort } from "../types/ESearchUserSort"
 
 const isProvided = (_object: unknown, value: unknown) => !isUndefined(value)
 const normalizeId = (value: unknown) =>
   isString(value) ? value.toLowerCase() : value
 
-class SearchGroupFilterDto implements IValueFilter<TSearchGroup> {
+class SearchGroupFilterDto implements IValueFilter<ESearchGroup> {
   @ApiPropertyOptional({
-    enum: SEARCH_GROUPS,
+    enum: ESearchGroup,
     isArray: true,
     minItems: 1,
     maxItems: 3,
@@ -42,11 +44,11 @@ class SearchGroupFilterDto implements IValueFilter<TSearchGroup> {
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
   @ArrayUnique()
-  @IsIn(SEARCH_GROUPS, { each: true })
-  allOf?: TSearchGroup[]
+  @IsEnum(ESearchGroup, { each: true })
+  allOf?: ESearchGroup[]
 
   @ApiPropertyOptional({
-    enum: SEARCH_GROUPS,
+    enum: ESearchGroup,
     isArray: true,
     minItems: 1,
     maxItems: 3,
@@ -56,11 +58,11 @@ class SearchGroupFilterDto implements IValueFilter<TSearchGroup> {
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
   @ArrayUnique()
-  @IsIn(SEARCH_GROUPS, { each: true })
-  anyOf?: TSearchGroup[]
+  @IsEnum(ESearchGroup, { each: true })
+  anyOf?: ESearchGroup[]
 
   @ApiPropertyOptional({
-    enum: SEARCH_GROUPS,
+    enum: ESearchGroup,
     isArray: true,
     minItems: 1,
     maxItems: 3,
@@ -70,13 +72,13 @@ class SearchGroupFilterDto implements IValueFilter<TSearchGroup> {
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
   @ArrayUnique()
-  @IsIn(SEARCH_GROUPS, { each: true })
-  noneOf?: TSearchGroup[]
+  @IsEnum(ESearchGroup, { each: true })
+  noneOf?: ESearchGroup[]
 }
 
 class SearchCollectionTypeFilterDto implements IValueFilter<ECollectionType> {
   @ApiPropertyOptional({
-    enum: Object.values(ECollectionType),
+    enum: ECollectionType,
     isArray: true,
     minItems: 1,
     maxItems: 4,
@@ -86,11 +88,11 @@ class SearchCollectionTypeFilterDto implements IValueFilter<ECollectionType> {
   @ArrayMinSize(1)
   @ArrayMaxSize(4)
   @ArrayUnique()
-  @IsIn(Object.values(ECollectionType), { each: true })
+  @IsEnum(ECollectionType, { each: true })
   allOf?: ECollectionType[]
 
   @ApiPropertyOptional({
-    enum: Object.values(ECollectionType),
+    enum: ECollectionType,
     isArray: true,
     minItems: 1,
     maxItems: 4,
@@ -100,11 +102,11 @@ class SearchCollectionTypeFilterDto implements IValueFilter<ECollectionType> {
   @ArrayMinSize(1)
   @ArrayMaxSize(4)
   @ArrayUnique()
-  @IsIn(Object.values(ECollectionType), { each: true })
+  @IsEnum(ECollectionType, { each: true })
   anyOf?: ECollectionType[]
 
   @ApiPropertyOptional({
-    enum: Object.values(ECollectionType),
+    enum: ECollectionType,
     isArray: true,
     minItems: 1,
     maxItems: 4,
@@ -114,7 +116,7 @@ class SearchCollectionTypeFilterDto implements IValueFilter<ECollectionType> {
   @ArrayMinSize(1)
   @ArrayMaxSize(4)
   @ArrayUnique()
-  @IsIn(Object.values(ECollectionType), { each: true })
+  @IsEnum(ECollectionType, { each: true })
   noneOf?: ECollectionType[]
 }
 
@@ -164,10 +166,10 @@ class SearchRatingDto {
 }
 
 class SearchSortDto {
-  @ApiPropertyOptional({ enum: ["asc", "desc"] })
+  @ApiPropertyOptional({ enum: ESearchSortDirection })
   @ValidateIf(isProvided)
-  @IsIn(["asc", "desc"])
-  direction?: "asc" | "desc"
+  @IsEnum(ESearchSortDirection)
+  direction?: ESearchSortDirection
 }
 
 class SearchTitleSortDto extends SearchSortDto {
@@ -178,21 +180,21 @@ class SearchTitleSortDto extends SearchSortDto {
 }
 
 class SearchItemSortDto extends SearchTitleSortDto {
-  @ApiProperty({ enum: ["relevance", "title", "releaseDate", "rating"] })
-  @IsIn(["relevance", "title", "releaseDate", "rating"])
-  type: "relevance" | "title" | "releaseDate" | "rating"
+  @ApiProperty({ enum: ESearchItemSort })
+  @IsEnum(ESearchItemSort)
+  type: ESearchItemSort
 }
 
 class SearchCollectionSortDto extends SearchTitleSortDto {
-  @ApiProperty({ enum: ["relevance", "title", "updatedAt"] })
-  @IsIn(["relevance", "title", "updatedAt"])
-  type: "relevance" | "title" | "updatedAt"
+  @ApiProperty({ enum: ESearchCollectionSort })
+  @IsEnum(ESearchCollectionSort)
+  type: ESearchCollectionSort
 }
 
 class SearchUserSortDto extends SearchSortDto {
-  @ApiProperty({ enum: ["relevance", "displayName"] })
-  @IsIn(["relevance", "displayName"])
-  type: "relevance" | "displayName"
+  @ApiProperty({ enum: ESearchUserSort })
+  @IsEnum(ESearchUserSort)
+  type: ESearchUserSort
 }
 
 class SearchItemsBodyDto {
