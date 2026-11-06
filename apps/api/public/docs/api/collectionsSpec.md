@@ -101,7 +101,7 @@ CollectionRepository.softDeleteByAuthor одним условным обновл
 
 ## Выдача Item
 
-QUERY /collections/:id/items принимает {cursor?, limit?}. Размер порции — 10, 20 или 50, по умолчанию 50. Ответ 200 — {nextCursor, blocks}. nextCursor — строка для следующего запроса или false. Курсор привязан к ID и версии подборки. Порядок определяется группой, позицией и ID включения. В blocks[].items блоков group приходят элементы текущей порции с note, в блоках text — content.
+QUERY /collections/:id/items принимает {cursor?, limit?}. Размер порции — 10, 20 или 50, по умолчанию 50. Ответ 200 — {nextCursor, blocks}. nextCursor — строка для следующего запроса или null. Курсор привязан к ID и версии подборки. Порядок определяется группой, позицией и ID включения. В blocks[].items блоков group приходят элементы текущей порции с note, в блоках text — content.
 
 ## Загрузка обложки
 

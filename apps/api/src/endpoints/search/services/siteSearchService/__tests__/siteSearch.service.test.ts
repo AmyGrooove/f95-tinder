@@ -9,6 +9,7 @@ import {
 import {
   BadRequestException,
   ServiceUnavailableException,
+  ValidationPipe,
 } from "@nestjs/common"
 import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
@@ -32,7 +33,12 @@ import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 describe("SiteSearchService", () => {
   const cache = { get: jest.fn<CacheService["get"]>() }
   const search = {
-    search: jest.fn<SearchService["search"]>(),
+    search:
+      jest.fn<
+        (
+          ...args: Parameters<SearchService["search"]>
+        ) => ReturnType<SearchService["search"]>
+      >(),
     iterateMatches: jest.fn<SearchService["iterateMatches"]>(),
   }
   const items = {
@@ -103,19 +109,18 @@ describe("SiteSearchService", () => {
     await service.search(
       Object.assign(new SearchBodyDto(), {
         search: "orbit",
-        page: 3,
-        limit: 4,
-        items: { sort: "title", language: ELanguage.ENGLISH },
-        users: { sort: "username" },
-        collections: { sort: "updatedAt" },
+        limit: 10,
+        items: { sort: { type: "title", language: ELanguage.ENGLISH } },
+        users: { sort: { type: "displayName" } },
+        collections: { sort: { type: "updatedAt" } },
       }),
     )
     expect(search.search).toHaveBeenCalledWith(
       SEARCH_SETTINGS.indexes.items,
       "orbit",
       expect.objectContaining({
-        offset: 8,
-        limit: 4,
+        offset: 0,
+        limit: 11,
         sort: ["sortTitle.en:asc", "id:asc"],
         attributesToRetrieve: ["id"],
       }),
@@ -123,7 +128,7 @@ describe("SiteSearchService", () => {
     expect(search.search).toHaveBeenCalledWith(
       SEARCH_SETTINGS.indexes.users,
       "orbit",
-      expect.objectContaining({ sort: ["sortUsername:asc", "id:asc"] }),
+      expect.objectContaining({ sort: ["sortDisplayName:asc", "id:asc"] }),
     )
     expect(search.search).toHaveBeenCalledWith(
       SEARCH_SETTINGS.indexes.collections,
@@ -179,34 +184,25 @@ describe("SiteSearchService", () => {
     )
 
     expect(result).toEqual({
-      items: {
-        hits: [first, last].map((id) => ({
-          id: String(id),
-          type: "movie",
-          title: { ru: "Актуальное название", en: null },
-          media: [],
-        })),
-        estimatedTotalHits: 3,
-      },
-      users: {
-        hits: [first, last].map((id) => ({
-          id: String(id),
-          username: "username",
-          displayName: "Имя",
-          avatarUrl: null,
-        })),
-        estimatedTotalHits: 3,
-      },
-      collections: {
-        hits: [first, last].map((id) => ({
-          id: String(id),
-          type: "custom",
-          title: { ru: "Подборка", en: null },
-          media: [],
-          authorId: id.equals(first) ? String(first) : null,
-        })),
-        estimatedTotalHits: 3,
-      },
+      items: [first, last].map((id) => ({
+        id: String(id),
+        type: "movie",
+        title: { ru: "Актуальное название", en: null },
+        media: [],
+      })),
+      users: [first, last].map((id) => ({
+        id: String(id),
+        username: "username",
+        displayName: "Имя",
+        avatarUrl: null,
+      })),
+      collections: [first, last].map((id) => ({
+        id: String(id),
+        type: "custom",
+        title: { ru: "Подборка", en: null },
+        media: [],
+      })),
+      nextCursor: null,
     })
   })
 
@@ -241,22 +237,14 @@ describe("SiteSearchService", () => {
     const result = await service.search(
       Object.assign(new SearchBodyDto(), {
         search: "orbit",
-        limit: 1,
-        page: 2,
-        items: { direction: "asc" },
+        limit: 10,
+        items: { sort: { type: "relevance", direction: "asc" } },
       }),
     )
-    expect(result.items).toEqual({
-      hits: [
-        {
-          id: String(ids.at(-1)),
-          type: "movie",
-          title: { ru: "Орбита", en: null },
-          media: [],
-        },
-      ],
-      estimatedTotalHits: SEARCH_SETTINGS.maxTotalHits + 2,
-    })
+    expect(result.items.map((item) => item.id)).toEqual(
+      ids.slice(-2).map(String),
+    )
+    expect(result.nextCursor).toEqual(expect.any(String))
     expect(search.iterateMatches).toHaveBeenCalledWith(
       expect.objectContaining({
         index: SEARCH_SETTINGS.indexes.items,
@@ -277,7 +265,7 @@ describe("SiteSearchService", () => {
         service.search(
           Object.assign(new SearchBodyDto(), {
             search: "orbit",
-            users: { direction: "asc" },
+            users: { sort: { type: "relevance", direction: "asc" } },
           }),
         ),
       ).rejects.toBeInstanceOf(ServiceUnavailableException)
@@ -293,41 +281,199 @@ describe("SiteSearchService", () => {
     expect(search.search).not.toHaveBeenCalled()
   })
 
-  it("отклоняет недоступную глубину страницы до обращения к Redis", async () => {
-    await expect(
-      service.search(
-        Object.assign(new SearchBodyDto(), {
-          search: "orbit",
-          page: 201,
-          limit: 50,
-        }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException)
-    expect(cache.get).not.toHaveBeenCalled()
+  it("валидирует вложенные настройки через HTTP pipe и сохраняет лимит по умолчанию", async () => {
+    const pipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    })
+    const metadata = { type: "body", metatype: SearchBodyDto } as const
+    const author = "507f1f77bcf86cd799439014"
+    const requiredTag = "507f1f77bcf86cd799439011"
+    const body: SearchBodyDto = await pipe.transform(
+      {
+        search: "  orbit  ",
+        types: { allOf: ["items"], anyOf: ["collections"] },
+        items: {
+          tags: { allOf: [requiredTag], anyOf: ["507f1f77bcf86cd799439012"] },
+          rating: { min: 7 },
+        },
+        collections: { authorIds: { noneOf: [author] } },
+      },
+      metadata,
+    )
+
+    await expect(service.search(body)).resolves.toEqual({
+      items: [],
+      collections: [],
+      users: [],
+      nextCursor: null,
+    })
+    expect(search.search).toHaveBeenCalledTimes(2)
+    expect(search.search).toHaveBeenCalledWith(
+      SEARCH_SETTINGS.indexes.items,
+      "orbit",
+      expect.objectContaining({
+        limit: 21,
+        filter: [
+          'tagIds = "507f1f77bcf86cd799439011"',
+          'tagIds IN ["507f1f77bcf86cd799439012"]',
+          "rating IS NOT NULL",
+          "rating >= 7",
+        ],
+      }),
+    )
+    expect(search.search).toHaveBeenCalledWith(
+      SEARCH_SETTINGS.indexes.collections,
+      "orbit",
+      expect.objectContaining({
+        filter: ['authorId NOT IN ["507f1f77bcf86cd799439014"]'],
+      }),
+    )
+
+    for (const invalid of [
+      { search: "orbit", page: 1 },
+      { search: "orbit", items: { fields: [] } },
+      { search: "orbit", items: { tags: { anyOf: [] } } },
+      { search: "orbit", users: { sort: { type: "username" } } },
+      { search: "orbit", cursor: null },
+    ]) {
+      await expect(pipe.transform(invalid, metadata)).rejects.toBeInstanceOf(
+        BadRequestException,
+      )
+    }
   })
 
-  it("усекает последнюю доступную страницу на границе maxTotalHits", async () => {
-    await service.search(
-      Object.assign(new SearchBodyDto(), {
+  it("возвращает пустые группы без зависимостей при исключении всех групп или несовместимых типах коллекции", async () => {
+    const emptyResult = {
+      items: [],
+      collections: [],
+      users: [],
+      nextCursor: null,
+    }
+
+    await expect(
+      service.search({
         search: "orbit",
-        page: 204,
-        limit: 49,
+        limit: 20,
+        types: { noneOf: ["items", "collections", "users"] },
       }),
-    )
+    ).resolves.toEqual(emptyResult)
+    await expect(
+      service.search({
+        search: "orbit",
+        limit: 20,
+        types: { anyOf: ["collections"] },
+        collections: {
+          types: { allOf: [ECollectionType.CUSTOM, ECollectionType.TAG] },
+        },
+      }),
+    ).resolves.toEqual(emptyResult)
+    expect(cache.get).not.toHaveBeenCalled()
+    expect(search.search).not.toHaveBeenCalled()
+  })
+
+  it("продолжает только активные группы даже при пустой выдаче из MongoDB", async () => {
+    const hits = Array.from({ length: 12 }, () => ({
+      id: String(new Types.ObjectId()),
+    }))
+    search.search.mockImplementation(async (index, query, options) => {
+      const offset = options?.offset ?? 0
+      const limit = options?.limit ?? 10
+
+      return {
+        hits: (index === SEARCH_SETTINGS.indexes.items
+          ? hits
+          : hits.slice(0, 10)
+        ).slice(offset, offset + limit),
+        estimatedTotalHits: 999_999,
+        offset,
+        limit,
+        query,
+        processingTimeMs: 0,
+      }
+    })
+    const body = Object.assign(new SearchBodyDto(), {
+      search: "orbit",
+      limit: 10,
+      types: { allOf: ["items"], anyOf: ["users"], noneOf: ["collections"] },
+    })
+    const first = await service.search(body)
+    expect(first).toEqual({
+      items: [],
+      collections: [],
+      users: [],
+      nextCursor: expect.any(String),
+    })
+    expect(search.search).toHaveBeenCalledTimes(2)
+
+    const cursor = first.nextCursor ?? undefined
+    await expect(
+      service.search({ ...body, search: "nebula", cursor }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(
+      service.search({ ...body, limit: 20, cursor }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(
+      service.search({ ...body, items: { rating: { min: 7 } }, cursor }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(
+      service.search({ ...body, items: { sort: { type: "rating" } }, cursor }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(
+      service.search({ ...body, types: { anyOf: ["users"] }, cursor }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    await expect(
+      service.search({ ...body, cursor: "broken" }),
+    ).rejects.toBeInstanceOf(BadRequestException)
+    expect(search.search).toHaveBeenCalledTimes(2)
+
+    expect(await service.search({ ...body, cursor })).toEqual({
+      items: [],
+      collections: [],
+      users: [],
+      nextCursor: null,
+    })
     expect(search.search).toHaveBeenCalledTimes(3)
-    for (const call of search.search.mock.calls) {
-      expect(call[2]).toMatchObject({ offset: 9947, limit: 49 })
-    }
-    await service.search(
-      Object.assign(new SearchBodyDto(), {
-        search: "orbit",
-        page: 205,
-        limit: 49,
-      }),
+    expect(search.search).toHaveBeenLastCalledWith(
+      SEARCH_SETTINGS.indexes.items,
+      "orbit",
+      expect.objectContaining({ offset: 10, limit: 11 }),
     )
-    for (const call of search.search.mock.calls.slice(3)) {
-      expect(call[2]).toMatchObject({ offset: 9996, limit: 4 })
+  })
+
+  it("останавливается на 10000 совпадениях даже при завышенной оценке количества", async () => {
+    const hit = { id: String(new Types.ObjectId()) }
+    search.search.mockImplementation(async (_index, query, options) => ({
+      hits: Array.from({ length: options?.limit ?? 0 }, () => hit),
+      estimatedTotalHits: 12_000,
+      query,
+      offset: options?.offset ?? 0,
+      limit: options?.limit ?? 0,
+      processingTimeMs: 0,
+    }))
+    const body = Object.assign(new SearchBodyDto(), {
+      search: "orbit",
+      types: { anyOf: ["items"] },
+      limit: 50,
+    })
+    let cursor: string | null = null
+
+    for (let page = 0; page < 200; page += 1) {
+      const response = await service.search({
+        ...body,
+        cursor: cursor ?? undefined,
+      })
+      cursor = response.nextCursor
+      expect(cursor).toEqual(page < 199 ? expect.any(String) : null)
     }
+
+    expect(search.search).toHaveBeenCalledTimes(200)
+    expect(search.search).toHaveBeenLastCalledWith(
+      SEARCH_SETTINGS.indexes.items,
+      "orbit",
+      expect.objectContaining({ offset: 9950, limit: 50 }),
+    )
   })
 
   it.each(["cache", "index", "database"])(
@@ -339,6 +485,14 @@ describe("SiteSearchService", () => {
       } else if (source === "index") {
         search.search.mockRejectedValue(error)
       } else {
+        search.search.mockResolvedValueOnce({
+          hits: [{ id: String(new Types.ObjectId()) }],
+          estimatedTotalHits: 1,
+          query: "orbit",
+          offset: 0,
+          limit: 21,
+          processingTimeMs: 0,
+        })
         items.read.findMany.mockRejectedValue(error)
       }
       await expect(

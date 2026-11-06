@@ -1,8 +1,6 @@
-import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import { Type } from "class-transformer"
 import {
-  Allow,
   ArrayMaxSize,
   ArrayMinSize,
   ArrayUnique,
@@ -18,40 +16,188 @@ import {
   ValidateNested,
 } from "class-validator"
 
-import { EItemType } from "@entities/item/schemas/EItemType"
-import { EItemField } from "@entities/item/schemas/EItemField"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
+import { EItemType } from "@entities/item/schemas/EItemType"
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
+import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
 import { isString } from "@shared/functions/checks/isString"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-class SearchFieldBodyDto {
-  @ApiProperty({ enum: EItemField })
-  @IsEnum(EItemField)
-  field: EItemField
+import { SEARCH_GROUPS } from "../static/SEARCH_GROUPS"
+import type { TSearchGroup } from "../types/TSearchGroup"
+
+const isProvided = (_object: unknown, value: unknown) => !isUndefined(value)
+const normalizeId = (value: unknown) =>
+  isString(value) ? value.toLowerCase() : value
+
+class SearchGroupFilterDto implements IValueFilter<TSearchGroup> {
+  @ApiPropertyOptional({
+    enum: SEARCH_GROUPS,
+    isArray: true,
+    minItems: 1,
+    maxItems: 3,
+  })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  @ArrayUnique()
+  @IsIn(SEARCH_GROUPS, { each: true })
+  allOf?: TSearchGroup[]
 
   @ApiPropertyOptional({
-    oneOf: [{ type: "number" }, { type: "string", format: "date-time" }],
+    enum: SEARCH_GROUPS,
+    isArray: true,
+    minItems: 1,
+    maxItems: 3,
   })
-  @Allow()
-  min?: unknown
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  @ArrayUnique()
+  @IsIn(SEARCH_GROUPS, { each: true })
+  anyOf?: TSearchGroup[]
 
   @ApiPropertyOptional({
-    oneOf: [{ type: "number" }, { type: "string", format: "date-time" }],
+    enum: SEARCH_GROUPS,
+    isArray: true,
+    minItems: 1,
+    maxItems: 3,
   })
-  @Allow()
-  max?: unknown
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(3)
+  @ArrayUnique()
+  @IsIn(SEARCH_GROUPS, { each: true })
+  noneOf?: TSearchGroup[]
 }
 
-class SearchSortingBodyDto {
+class SearchCollectionTypeFilterDto implements IValueFilter<ECollectionType> {
+  @ApiPropertyOptional({
+    enum: Object.values(ECollectionType),
+    isArray: true,
+    minItems: 1,
+    maxItems: 4,
+  })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(4)
+  @ArrayUnique()
+  @IsIn(Object.values(ECollectionType), { each: true })
+  allOf?: ECollectionType[]
+
+  @ApiPropertyOptional({
+    enum: Object.values(ECollectionType),
+    isArray: true,
+    minItems: 1,
+    maxItems: 4,
+  })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(4)
+  @ArrayUnique()
+  @IsIn(Object.values(ECollectionType), { each: true })
+  anyOf?: ECollectionType[]
+
+  @ApiPropertyOptional({
+    enum: Object.values(ECollectionType),
+    isArray: true,
+    minItems: 1,
+    maxItems: 4,
+  })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(4)
+  @ArrayUnique()
+  @IsIn(Object.values(ECollectionType), { each: true })
+  noneOf?: ECollectionType[]
+}
+
+class SearchIdFilterDto implements IValueFilter<string> {
+  @ApiPropertyOptional({ type: [String], minItems: 1, maxItems: 100 })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique(normalizeId)
+  @IsMongoId({ each: true })
+  allOf?: string[]
+
+  @ApiPropertyOptional({ type: [String], minItems: 1, maxItems: 100 })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique(normalizeId)
+  @IsMongoId({ each: true })
+  anyOf?: string[]
+
+  @ApiPropertyOptional({ type: [String], minItems: 1, maxItems: 100 })
+  @ValidateIf(isProvided)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique(normalizeId)
+  @IsMongoId({ each: true })
+  noneOf?: string[]
+}
+
+class SearchRatingDto {
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
+  @ValidateIf(isProvided)
+  @IsNumber()
+  @Min(1)
+  @Max(10)
+  min?: number
+
+  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
+  @ValidateIf(isProvided)
+  @IsNumber()
+  @Min(1)
+  @Max(10)
+  max?: number
+}
+
+class SearchSortDto {
   @ApiPropertyOptional({ enum: ["asc", "desc"] })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @ValidateIf(isProvided)
   @IsIn(["asc", "desc"])
   direction?: "asc" | "desc"
 }
 
-class SearchItemsBodyDto extends SearchSortingBodyDto {
+class SearchTitleSortDto extends SearchSortDto {
+  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
+  @ValidateIf(isProvided)
+  @IsEnum(ELanguage)
+  language?: ELanguage
+}
+
+class SearchItemSortDto extends SearchTitleSortDto {
+  @ApiProperty({ enum: ["relevance", "title", "releaseDate", "rating"] })
+  @IsIn(["relevance", "title", "releaseDate", "rating"])
+  type: "relevance" | "title" | "releaseDate" | "rating"
+}
+
+class SearchCollectionSortDto extends SearchTitleSortDto {
+  @ApiProperty({ enum: ["relevance", "title", "updatedAt"] })
+  @IsIn(["relevance", "title", "updatedAt"])
+  type: "relevance" | "title" | "updatedAt"
+}
+
+class SearchUserSortDto extends SearchSortDto {
+  @ApiProperty({ enum: ["relevance", "displayName"] })
+  @IsIn(["relevance", "displayName"])
+  type: "relevance" | "displayName"
+}
+
+class SearchItemsBodyDto {
   @ApiPropertyOptional({ enum: EItemType, isArray: true })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @ValidateIf(isProvided)
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(7)
@@ -59,94 +205,63 @@ class SearchItemsBodyDto extends SearchSortingBodyDto {
   @IsEnum(EItemType, { each: true })
   types?: EItemType[]
 
-  @ApiPropertyOptional({ type: [String], maxItems: 100 })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(100)
-  @ArrayUnique((id: unknown) => (isString(id) ? id.toLowerCase() : id))
-  @IsMongoId({ each: true })
-  tagIds?: string[]
+  @ApiPropertyOptional({ type: SearchIdFilterDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchIdFilterDto)
+  @IsObject()
+  @ValidateNested()
+  tags?: SearchIdFilterDto
 
-  @ApiPropertyOptional({ type: [SearchFieldBodyDto] })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @Type(() => SearchFieldBodyDto)
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(9)
-  @IsObject({ each: true })
-  @ValidateNested({ each: true })
-  fields?: SearchFieldBodyDto[]
+  @ApiPropertyOptional({ type: SearchRatingDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchRatingDto)
+  @IsObject()
+  @ValidateNested()
+  rating?: SearchRatingDto
 
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsNumber()
-  @Min(1)
-  @Max(10)
-  ratingMin?: number
-
-  @ApiPropertyOptional({ type: Number, minimum: 1, maximum: 10 })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsNumber()
-  @Min(1)
-  @Max(10)
-  ratingMax?: number
-
-  @ApiPropertyOptional({
-    enum: ["relevance", "title", "releaseDate", "rating"],
-    default: "relevance",
-  })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsIn(["relevance", "title", "releaseDate", "rating"])
-  sort?: "relevance" | "title" | "releaseDate" | "rating"
-
-  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsEnum(ELanguage)
-  language?: ELanguage
+  @ApiPropertyOptional({ type: SearchItemSortDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchItemSortDto)
+  @IsObject()
+  @ValidateNested()
+  sort?: SearchItemSortDto
 }
 
-class SearchUsersBodyDto extends SearchSortingBodyDto {
-  @ApiPropertyOptional({
-    enum: ["relevance", "username", "displayName"],
-    default: "relevance",
-  })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsIn(["relevance", "username", "displayName"])
-  sort?: "relevance" | "username" | "displayName"
+class SearchUsersBodyDto {
+  @ApiPropertyOptional({ type: SearchUserSortDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchUserSortDto)
+  @IsObject()
+  @ValidateNested()
+  sort?: SearchUserSortDto
 }
 
-class SearchCollectionsBodyDto extends SearchSortingBodyDto {
-  @ApiPropertyOptional({ enum: ECollectionType, isArray: true })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(4)
-  @ArrayUnique()
-  @IsEnum(ECollectionType, { each: true })
-  types?: ECollectionType[]
+class SearchCollectionsBodyDto {
+  @ApiPropertyOptional({ type: SearchCollectionTypeFilterDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchCollectionTypeFilterDto)
+  @IsObject()
+  @ValidateNested()
+  types?: SearchCollectionTypeFilterDto
 
-  @ApiPropertyOptional({ type: [String], maxItems: 100 })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(100)
-  @ArrayUnique((id: unknown) => (isString(id) ? id.toLowerCase() : id))
-  @IsMongoId({ each: true })
-  authorIds?: string[]
+  @ApiPropertyOptional({ type: SearchIdFilterDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchIdFilterDto)
+  @IsObject()
+  @ValidateNested()
+  authorIds?: SearchIdFilterDto
 
-  @ApiPropertyOptional({
-    enum: ["relevance", "title", "updatedAt"],
-    default: "relevance",
-  })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsIn(["relevance", "title", "updatedAt"])
-  sort?: "relevance" | "title" | "updatedAt"
-
-  @ApiPropertyOptional({ enum: ELanguage, default: ELanguage.RUSSIAN })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsEnum(ELanguage)
-  language?: ELanguage
+  @ApiPropertyOptional({ type: SearchCollectionSortDto })
+  @ValidateIf(isProvided)
+  @Type(() => SearchCollectionSortDto)
+  @IsObject()
+  @ValidateNested()
+  sort?: SearchCollectionSortDto
 }
 
-export { SearchItemsBodyDto, SearchUsersBodyDto, SearchCollectionsBodyDto }
+export {
+  SearchGroupFilterDto,
+  SearchItemsBodyDto,
+  SearchUsersBodyDto,
+  SearchCollectionsBodyDto,
+}

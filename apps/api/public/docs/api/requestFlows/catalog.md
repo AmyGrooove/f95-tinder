@@ -10,30 +10,31 @@
 
 Найти произведения, пользователей и подборки одним запросом.
 
-**Пример:** `QUERY /search`, `Content-Type: application/json`, тело `{"search":"космос","page":1,"limit":10,"items":{"sort":"rating","direction":"desc"}}`. **Ответ:** 200, три группы `items`, `users`, `collections`; у каждой `hits` и `estimatedTotalHits`. Даже пустая группа присутствует. `Cache-Control: no-store`, `Accept-Query: application/json`.
+Пример тела запроса — `{"search":"космос","limit":10,"items":{"sort":{"type":"rating","direction":"desc"}}}`. Ответ `200` содержит массивы `items`, `collections`, `users` и `nextCursor` (строка или `null`). Заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
 
 ```mermaid
 flowchart TD
     accTitle: Общий поиск по сайту
-    accDescr: Проверить JSON и фильтры, проверить готовность индекса, найти ID в Meilisearch, прочитать публичные карточки в MongoDB и вернуть три группы
-    A(["QUERY /search + JSON"]):::http --> B["Проверить текст, страницу и фильтры"]:::action
-    B --> C[("Прочитать отметку синхронизации — Redis")]:::data
-    C --> D{"Индекс подготовлен?"}:::action
-    D -->|Нет| E(["503 — поиск пока недоступен"]):::http
-    D -->|Да| F[/"Найти ID и порядок трёх групп — Meilisearch"/]:::external
-    F --> G[("Прочитать карточки — Item, User, Collection")]:::data
-    G --> H["Сохранить найденный порядок, убрать исчезнувшие записи"]:::action
-    H --> I(["200 — три группы результатов"]):::http
+    accDescr: Проверить запрос и курсор, найти совпадения для активных групп и вернуть публичные карточки
+    A(["QUERY /search + JSON"]):::http --> B["Проверить текст, курсор и фильтры"]:::action
+    B --> C{"Есть активные группы?"}:::action
+    C -->|Нет| J(["200 — пустые массивы, nextCursor = null"]):::http
+    C -->|Да| D[("Прочитать отметку синхронизации — Redis")]:::data
+    D --> E{"Индекс подготовлен?"}:::action
+    E -->|Нет| F(["503 — поиск пока недоступен"]):::http
+    E -->|Да| G[/"Найти ID и проверить продолжение активных групп — Meilisearch"/]:::external
+    G --> H[("Прочитать публичные карточки — MongoDB")]:::data
+    H --> I(["200 — три массива и nextCursor"]):::http
 ```
 
-**Проверки и данные:** тело должно быть JSON-объектом; неизвестные поля запрещены. Обрезанный по краям текст — 1–200 символов, page от 1, limit 10/20/50 (по умолчанию 1 и 50). Смещение должно быть меньше 10 000. Фильтры проверяют диапазоны оценок/чисел/дат и уникальность полей. Для Item доступны relevance/title/releaseDate/rating; `recommended` не поддерживается и даёт 400. Обычные фильтры и сортировка применяются в Meilisearch до пагинации. При relevance по возрастанию сервис перебирает все совпадения пакетами и выбирает глобальную страницу; это может быть дороже обычного поиска.
+**Проверки и данные.** Тело — JSON-объект с известными полями. Текст после обрезки пробелов содержит 1–200 символов. Лимит на группу — 10, 20 или 50, по умолчанию 20. Курсор привязан к параметрам поиска и хранит отдельную позицию каждой выбранной группы. Обратная релевантность ранжирует совпадения после пакетного прохода индекса.
 
-**Границы и ошибки:** отметка готовности читается из Redis, ID — из Meilisearch, карточки — из MongoDB. Общей транзакции или единого snapshot между ними нет. Удалённые/исчезнувшие записи убираются из hits, поэтому фактическая длина страницы может быть меньше limit, а счётчик остаётся оценкой поискового индекса. 400 — тело/поля/фильтры/глубина страницы; 503 — нет отметки или ошибка Redis/Meilisearch/чтения карточек; общие 403/429. HTTP ждёт все три группы и их карточки. Сам запрос не запускает и не ждёт синхронизацию.
+**Границы и ошибки.** Глубина ограничена 10 000 совпадений на группу. Наличие следующей порции определяется дополнительным совпадением. Удалённые и исчезнувшие записи пропускаются, поэтому короткая или пустая порция может иметь курсор продолжения. Ошибки `400` относятся к телу, фильтрам и курсору, `503` — к готовности индекса или сбою Redis, Meilisearch либо MongoDB. Действуют общие `403` и `429`. Запрос ожидает все активные группы и их карточки.
 
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/itemRepository/core/item.repository.ts), [User](../../../../src/entities/user/services/userRepository/core/user.repository.ts), [Collection](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#Реализованный-общий-поиск).
+[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/searchGroup](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Вызовы идут к CacheService.get, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и read.findMany репозиториев [Item](../../../../src/entities/item/services/itemRepository/core/item.repository.ts), [User](../../../../src/entities/user/services/userRepository/core/user.repository.ts), [Collection](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts). Индексы `site_items`, `site_users`, `site_collections`; checkpoint `siteSearch:checkpoint:v2`. [Подробный контракт](../pages/search.md#реализованный-общий-поиск).
 
 </details>
 

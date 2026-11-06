@@ -34,10 +34,8 @@ class CollectionItemsTextResponseDto extends PickType(TextBlockResponseDto, [
 
 @ApiExtraModels(CollectionItemsGroupResponseDto, CollectionItemsTextResponseDto)
 class ItemCollectionsResponseDto {
-  @ApiProperty({
-    oneOf: [{ type: "string" }, { type: "boolean", enum: [false] }],
-  })
-  nextCursor: string | false
+  @ApiProperty({ type: String, nullable: true })
+  nextCursor: string | null
 
   @ApiProperty({
     type: "array",

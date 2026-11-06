@@ -45,44 +45,20 @@ class SearchCollectionResponseDto {
 
   @ApiProperty({ type: [MediaResponseDto] })
   media: MediaResponseDto[]
-
-  @ApiProperty({ type: String, nullable: true })
-  authorId: string | null
-}
-
-class SearchItemsResponseDto {
-  @ApiProperty({ type: [SearchItemResponseDto] })
-  hits: SearchItemResponseDto[]
-
-  @ApiProperty({ type: Number })
-  estimatedTotalHits: number
-}
-
-class SearchUsersResponseDto {
-  @ApiProperty({ type: [SearchUserResponseDto] })
-  hits: SearchUserResponseDto[]
-
-  @ApiProperty({ type: Number })
-  estimatedTotalHits: number
-}
-
-class SearchCollectionsResponseDto {
-  @ApiProperty({ type: [SearchCollectionResponseDto] })
-  hits: SearchCollectionResponseDto[]
-
-  @ApiProperty({ type: Number })
-  estimatedTotalHits: number
 }
 
 class SearchResponseDto {
-  @ApiProperty({ type: SearchItemsResponseDto })
-  items: SearchItemsResponseDto
+  @ApiProperty({ type: [SearchItemResponseDto] })
+  items: SearchItemResponseDto[]
 
-  @ApiProperty({ type: SearchUsersResponseDto })
-  users: SearchUsersResponseDto
+  @ApiProperty({ type: [SearchCollectionResponseDto] })
+  collections: SearchCollectionResponseDto[]
 
-  @ApiProperty({ type: SearchCollectionsResponseDto })
-  collections: SearchCollectionsResponseDto
+  @ApiProperty({ type: [SearchUserResponseDto] })
+  users: SearchUserResponseDto[]
+
+  @ApiProperty({ type: String, nullable: true })
+  nextCursor: string | null
 }
 
 export { SearchResponseDto }

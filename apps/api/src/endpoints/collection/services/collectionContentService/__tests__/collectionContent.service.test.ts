@@ -34,7 +34,7 @@ describe("CollectionContentService", () => {
     })
     readContentSlice.mockReturnValue([])
     await expect(service.getItems({ id, query: {} })).resolves.toEqual({
-      nextCursor: false,
+      nextCursor: null,
       blocks: [{ type: "text", content: { ru: "Вступление", en: null } }],
     })
     expect(readContentSlice).toHaveBeenCalledWith({

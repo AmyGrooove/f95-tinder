@@ -5,46 +5,24 @@ import {
   IsIn,
   IsString,
   Length,
-  Max,
-  Min,
   IsObject,
   ValidateIf,
   ValidateNested,
 } from "class-validator"
 
-import type { IPagePagination } from "@infrastructure/database/types/IPaginationInput"
 import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { SWAGGER_DICTIONARY } from "@entities/shared/static/SWAGGER_DICTIONARY"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
+
 import {
+  SearchGroupFilterDto,
   SearchItemsBodyDto,
   SearchUsersBodyDto,
   SearchCollectionsBodyDto,
 } from "./searchOptions.body"
 
-class SearchBodyDto implements IPagePagination {
-  @ApiPropertyOptional({ type: SearchItemsBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @Type(() => SearchItemsBodyDto)
-  @IsObject()
-  @ValidateNested()
-  items?: SearchItemsBodyDto
-
-  @ApiPropertyOptional({ type: SearchUsersBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @Type(() => SearchUsersBodyDto)
-  @IsObject()
-  @ValidateNested()
-  users?: SearchUsersBodyDto
-
-  @ApiPropertyOptional({ type: SearchCollectionsBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @Type(() => SearchCollectionsBodyDto)
-  @IsObject()
-  @ValidateNested()
-  collections?: SearchCollectionsBodyDto
-
+class SearchBodyDto {
   @ApiProperty({
     type: String,
     minLength: 1,
@@ -59,26 +37,53 @@ class SearchBodyDto implements IPagePagination {
   search: string
 
   @ApiPropertyOptional({
-    type: Number,
-    minimum: 1,
-    maximum: 10_000,
-    default: 1,
-    description: SWAGGER_DICTIONARY.search.page,
+    type: String,
+    minLength: 1,
+    maxLength: 256,
+    description: SWAGGER_DICTIONARY.search.cursor,
   })
-  @IsInt()
-  @Min(1)
-  @Max(10_000)
-  page: number = 1
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @IsString()
+  @Length(1, 256)
+  cursor?: string
 
   @ApiPropertyOptional({
     type: Number,
     enum: [10, 20, 50],
-    default: 50,
+    default: 20,
     description: SWAGGER_DICTIONARY.search.limit,
   })
   @IsInt()
   @IsIn([10, 20, 50])
-  limit: TPageSize = 50
+  limit: TPageSize = 20
+
+  @ApiPropertyOptional({ type: SearchGroupFilterDto })
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @Type(() => SearchGroupFilterDto)
+  @IsObject()
+  @ValidateNested()
+  types?: SearchGroupFilterDto
+
+  @ApiPropertyOptional({ type: SearchItemsBodyDto })
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @Type(() => SearchItemsBodyDto)
+  @IsObject()
+  @ValidateNested()
+  items?: SearchItemsBodyDto
+
+  @ApiPropertyOptional({ type: SearchCollectionsBodyDto })
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @Type(() => SearchCollectionsBodyDto)
+  @IsObject()
+  @ValidateNested()
+  collections?: SearchCollectionsBodyDto
+
+  @ApiPropertyOptional({ type: SearchUsersBodyDto })
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @Type(() => SearchUsersBodyDto)
+  @IsObject()
+  @ValidateNested()
+  users?: SearchUsersBodyDto
 }
 
 export { SearchBodyDto }

@@ -70,7 +70,7 @@ describe("CollectionReadController HTTP", () => {
     expect(response.headers["accept-query"]).toBe("application/json")
     expect(response.headers["cache-control"]).toBe("no-store")
     expect(response.json()).toEqual({
-      nextCursor: false,
+      nextCursor: null,
       blocks: [
         {
           type: "group",
@@ -148,7 +148,7 @@ describe("CollectionReadController HTTP", () => {
     })
     expect(response.statusCode).toBe(200)
     const page = response.json<ItemCollectionsResponseDto>()
-    expect(page.nextCursor).toBe(false)
+    expect(page.nextCursor).toBeNull()
     expect(page.blocks).toMatchObject([
       { type: "text", content: { ru: "Текст" } },
       { type: "group", items: [{ id: second._id.toHexString() }] },

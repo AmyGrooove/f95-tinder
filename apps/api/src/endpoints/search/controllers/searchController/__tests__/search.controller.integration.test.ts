@@ -16,8 +16,6 @@ import { Meilisearch } from "meilisearch"
 import { Types } from "mongoose"
 
 import { EItemType } from "@entities/item/schemas/EItemType"
-import { EItemField } from "@entities/item/schemas/EItemField"
-import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
@@ -153,7 +151,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     const user = {
       _id: new Types.ObjectId(),
       username: "nebula",
-      displayName: "Nebula user",
+      displayName: "Pilot",
       avatarUrl: null,
       passwordHash: "private-password",
       accessCodeHash: "private-code",
@@ -197,40 +195,31 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     expect(response.headers["accept-query"]).toBe("application/json")
     expect(response.headers["set-cookie"]).toBeUndefined()
     expect(response.json()).toEqual({
-      items: {
-        hits: [
-          {
-            id: String(item._id),
-            type: "movie",
-            title: { ru: "Актуальное название", en: "Orbit" },
-            media: [],
-          },
-        ],
-        estimatedTotalHits: 1,
-      },
-      users: {
-        hits: [
-          {
-            id: String(user._id),
-            username: "nebula",
-            displayName: "Nebula user",
-            avatarUrl: null,
-          },
-        ],
-        estimatedTotalHits: 1,
-      },
-      collections: {
-        hits: [
-          {
-            id: String(collection._id),
-            type: "custom",
-            title: collection.title,
-            media: [],
-            authorId: String(user._id),
-          },
-        ],
-        estimatedTotalHits: 1,
-      },
+      items: [
+        {
+          id: String(item._id),
+          type: "movie",
+          title: { ru: "Актуальное название", en: "Orbit" },
+          media: [],
+        },
+      ],
+      users: [
+        {
+          id: String(user._id),
+          username: "nebula",
+          displayName: "Pilot",
+          avatarUrl: null,
+        },
+      ],
+      collections: [
+        {
+          id: String(collection._id),
+          type: "custom",
+          title: collection.title,
+          media: [],
+        },
+      ],
+      nextCursor: null,
     })
     expect(
       await Promise.all(
@@ -241,183 +230,116 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     ).toEqual(before)
   })
 
-  it("совмещает все теги, тип, дату, числовое поле и оценку до подсчёта и пагинации", async () => {
-    const tags = [new Types.ObjectId(), new Types.ObjectId()]
-    await application.connection
-      .collection("Tag")
-      .insertMany(
-        tags.map((_id, index) => ({ _id, key: `searchFilter${index}` })),
-      )
-    const candidates = await Promise.all([
-      seedItem({
-        movie: { duration: 90 },
-        releaseDate: new Date("2020-01-01"),
-      }),
-      seedItem({
-        movie: { duration: 120 },
-        releaseDate: new Date("2020-12-31"),
-      }),
-      seedItem({
-        movie: { duration: 121 },
-        releaseDate: new Date("2020-01-01"),
-      }),
-      seedItem({ movie: { duration: 100 } }),
-      seedItem({
-        type: EItemType.GAME,
-        movie: { duration: 100 },
-        releaseDate: new Date("2020-01-01"),
-      }),
-      seedItem({
-        movie: { duration: 100 },
-        releaseDate: new Date("2020-01-01"),
-      }),
-      seedItem({
-        movie: { duration: 100 },
-        releaseDate: new Date("2020-01-01"),
-      }),
-    ])
-    await application.connection.collection("TagItem").insertMany(
-      candidates.flatMap((item, index) =>
-        (index === 5 ? tags.slice(0, 1) : tags).map((tag) => ({
+  it("применяет все условия по тегам, тип и рейтинг до курсорной пагинации", async () => {
+    const requiredTag = new Types.ObjectId()
+    const alternativeTag = new Types.ObjectId()
+    const excludedTag = new Types.ObjectId()
+    await application.connection.collection("Tag").insertMany(
+      [requiredTag, alternativeTag, excludedTag].map((_id, index) => ({
+        _id,
+        key: `searchFilter${index}`,
+      })),
+    )
+
+    const matched = await Promise.all(
+      Array.from({ length: 11 }, () => seedItem()),
+    )
+    const excluded = await seedItem()
+    const wrongType = await seedItem({ type: EItemType.GAME })
+    const missingRating = await seedItem()
+    const missingAlternative = await seedItem()
+    const missingRequired = await seedItem()
+    await application.connection.collection("TagItem").insertMany([
+      ...[...matched, wrongType, missingRating].flatMap((item) =>
+        [requiredTag, alternativeTag].map((tag) => ({
           item: item._id,
           tag,
           relevanceScore: 1,
         })),
       ),
-    )
+      ...[requiredTag, alternativeTag, excludedTag].map((tag) => ({
+        item: excluded._id,
+        tag,
+        relevanceScore: 1,
+      })),
+      { item: missingAlternative._id, tag: requiredTag, relevanceScore: 1 },
+      { item: missingRequired._id, tag: alternativeTag, relevanceScore: 1 },
+    ])
     await application.connection
       .collection("ItemStats")
       .insertMany(
-        candidates
-          .slice(0, 6)
-          .map((item) => ({ item: item._id, ratingAverage: 7.5 })),
+        [
+          ...matched,
+          excluded,
+          wrongType,
+          missingAlternative,
+          missingRequired,
+        ].map((item) => ({ item: item._id, ratingAverage: 7.5 })),
       )
-    const additional = await Promise.all(
-      Array.from({ length: 9 }, () =>
-        seedItem({
-          movie: { duration: 90 },
-          releaseDate: new Date("2020-01-01"),
-        }),
-      ),
-    )
-    await application.connection
-      .collection("TagItem")
-      .insertMany(
-        additional.flatMap((item) =>
-          tags.map((tag) => ({ item: item._id, tag, relevanceScore: 1 })),
-        ),
-      )
-    await application.connection
-      .collection("ItemStats")
-      .insertMany(
-        additional.map((item) => ({ item: item._id, ratingAverage: 7.5 })),
-      )
+    const collectionId = new Types.ObjectId()
+    await application.connection.collection("Collection").insertOne({
+      _id: collectionId,
+      type: "custom",
+      title: { ru: "Орбита", en: null },
+      description: { ru: null, en: null },
+      media: [],
+      author: null,
+      deletedAt: null,
+      updatedAt: new Date(),
+    })
     await synchronize()
+
     const body = {
       search: "Орбита",
       limit: 10,
+      types: {
+        allOf: ["items", "users"],
+        anyOf: ["collections"],
+        noneOf: ["users"],
+      },
       items: {
         types: ["movie"],
-        tagIds: tags.map((tag) => String(tag).toUpperCase()),
-        ratingMin: 7.5,
-        ratingMax: 7.5,
-        fields: [
-          { field: "movie.duration", min: 90, max: 120 },
-          { field: "releaseDate", min: "2020-01-01", max: "2020-12-31" },
-        ],
-        sort: "releaseDate",
-        direction: "asc",
-      },
-    }
-    for (const [page, expected] of [
-      [1, [candidates[0], ...additional]],
-      [2, [candidates[1]]],
-      [3, []],
-    ] as const) {
-      const response = await query({ ...body, page })
-      expect(response.statusCode).toBe(200)
-      expect(response.json<SearchResponseDto>().items).toMatchObject({
-        hits: expected.map((item) =>
-          expect.objectContaining({ id: String(item._id) }),
-        ),
-        estimatedTotalHits: 11,
-      })
-    }
-  })
-
-  it.each<{
-    field: EItemField
-    values: Partial<Item>
-    min: number | string
-    max: number | string
-  }>([
-    {
-      field: EItemField.EPISODE_COUNT,
-      values: { series: { episodeCount: 12, lastReleasedEpisodeAt: null } },
-      min: 12,
-      max: 12,
-    },
-    {
-      field: EItemField.RELEASED_EPISODE_COUNT,
-      values: {
-        series: { releasedEpisodeCount: 0, lastReleasedEpisodeAt: null },
-      },
-      min: 0,
-      max: 0,
-    },
-    {
-      field: EItemField.EPISODE_DURATION,
-      values: {
-        series: { episodeDuration: 24.5, lastReleasedEpisodeAt: null },
-      },
-      min: 24.5,
-      max: 24.5,
-    },
-    {
-      field: EItemField.NEXT_EPISODE_AT,
-      values: {
-        series: {
-          nextEpisodeAt: new Date("2026-10-28T09:00:00Z"),
-          lastReleasedEpisodeAt: null,
+        tags: {
+          allOf: [String(requiredTag).toUpperCase()],
+          anyOf: [String(alternativeTag), String(excludedTag)],
+          noneOf: [String(excludedTag)],
         },
+        rating: { min: 7.5, max: 7.5 },
+        sort: { type: "rating" },
       },
-      min: "2026-10-28T12:00:00+03:00",
-      max: "2026-10-28T09:00:00Z",
-    },
-    {
-      field: EItemField.MAIN_STORY_DURATION,
-      values: { game: { mainStoryDuration: 60.5 } },
-      min: 60.5,
-      max: 60.5,
-    },
-    {
-      field: EItemField.FULL_COMPLETION_DURATION,
-      values: { game: { fullCompletionDuration: 120 } },
-      min: 120,
-      max: 120,
-    },
-  ])(
-    "фильтрует поле $field по включительным границам и исключает неизвестное значение",
-    async ({ field, values, min, max }) => {
-      const matched = await seedItem({
-        ...values,
-        type: field.startsWith("game.") ? EItemType.GAME : EItemType.SERIES,
-      })
-      await seedItem()
-      await synchronize()
-      const response = await query({
-        search: "Орбита",
-        items: { fields: [{ field, min, max }] },
-      })
-      expect(response.statusCode).toBe(200)
-      expect(response.json<SearchResponseDto>().items.estimatedTotalHits).toBe(
-        1,
-      )
-      expect(
-        response.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
-      ).toEqual([String(matched._id)])
-    },
-  )
+    }
+    const expected = matched.map((item) => String(item._id)).sort()
+    const firstResponse = await query(body)
+    expect(firstResponse.statusCode).toBe(200)
+    const first = firstResponse.json<SearchResponseDto>()
+    expect(first.items.map((item) => item.id)).toEqual(expected.slice(0, 10))
+    expect(first.collections.map((collection) => collection.id)).toEqual([
+      String(collectionId),
+    ])
+    expect(first.users).toEqual([])
+    expect(first.nextCursor).toEqual(expect.any(String))
+
+    const secondResponse = await query({ ...body, cursor: first.nextCursor })
+    expect(secondResponse.statusCode).toBe(200)
+    const second = secondResponse.json<SearchResponseDto>()
+    expect(second.items.map((item) => item.id)).toEqual(expected.slice(10))
+    expect(second.collections).toEqual([])
+    expect(second.nextCursor).toBeNull()
+
+    const incompatible = await query({
+      ...body,
+      search: "Небула",
+      cursor: first.nextCursor,
+    })
+    expect(incompatible.statusCode).toBe(400)
+    expect(incompatible.json()).toMatchObject({
+      error: {
+        code: "BAD_REQUEST",
+        message: "Некорректный курсор поиска",
+        details: null,
+      },
+    })
+  })
 
   it.each(["asc", "desc"])(
     "держит неизвестные оценки и даты в конце при направлении %s",
@@ -433,11 +355,11 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       for (const sort of ["rating", "releaseDate"]) {
         const response = await query({
           search: "Орбита",
-          items: { sort, direction },
+          items: { sort: { type: sort, direction } },
         })
         expect(response.statusCode).toBe(200)
         expect(
-          response.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
+          response.json<SearchResponseDto>().items.map((hit) => hit.id),
         ).toEqual(
           [...(direction === "asc" ? [low, high] : [high, low]), unknown].map(
             (item) => String(item._id),
@@ -461,11 +383,11 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     ] as const) {
       const response = await query({
         search: "common",
-        items: { sort: "title", language },
+        items: { sort: { type: "title", language } },
       })
       expect(response.statusCode).toBe(200)
       expect(
-        response.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
+        response.json<SearchResponseDto>().items.map((hit) => hit.id),
       ).toEqual(expected.map((item) => String(item._id)))
     }
   })
@@ -495,24 +417,51 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     const response = await query({
       search: "Орбита",
       collections: {
-        types: ["custom"],
-        authorIds: [String(author).toUpperCase()],
+        types: { allOf: ["custom"] },
+        authorIds: { anyOf: [String(author).toUpperCase()] },
       },
     })
     expect(response.statusCode).toBe(200)
-    expect(response.json<SearchResponseDto>().collections).toEqual({
-      hits: [
-        {
-          id: String(collections[0]._id),
-          type: "custom",
-          title: collections[0].title,
-          media: [],
-          authorId: String(author),
-        },
-      ],
-      estimatedTotalHits: 1,
+    expect(response.json<SearchResponseDto>().collections).toEqual([
+      {
+        id: String(collections[0]._id),
+        type: "custom",
+        title: collections[0].title,
+        media: [],
+      },
+    ])
+    expect(response.json<SearchResponseDto>().items).toHaveLength(1)
+
+    const excludedAuthor = await query({
+      search: "Орбита",
+      types: { anyOf: ["collections"] },
+      collections: {
+        types: { anyOf: ["custom", "tag"], noneOf: ["tag"] },
+        authorIds: { noneOf: [String(author)] },
+      },
     })
-    expect(response.json<SearchResponseDto>().items.estimatedTotalHits).toBe(1)
+    expect(excludedAuthor.statusCode).toBe(200)
+    const excludedAuthorResult = excludedAuthor.json<SearchResponseDto>()
+    expect(
+      excludedAuthorResult.collections
+        .map((collection) => collection.id)
+        .sort(),
+    ).toEqual(
+      collections
+        .slice(2)
+        .map((collection) => String(collection._id))
+        .sort(),
+    )
+    expect(excludedAuthorResult.items).toEqual([])
+
+    for (const filters of [
+      { types: { allOf: ["custom", "tag"] } },
+      { authorIds: { allOf: [String(author), String(definitions[3].author)] } },
+    ]) {
+      const impossible = await query({ search: "Орбита", collections: filters })
+      expect(impossible.statusCode).toBe(200)
+      expect(impossible.json<SearchResponseDto>().collections).toEqual([])
+    }
   })
 
   it("не возвращает удалённые MongoDB записи из устаревшего индекса и очищает их при синхронизации", async () => {
@@ -527,23 +476,15 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
       .deleteOne({ _id: hardDeleted._id })
     const stale = await query({ search: "Орбита" })
     expect(stale.statusCode).toBe(200)
-    expect(stale.json<SearchResponseDto>().items).toEqual({
-      hits: [],
-      estimatedTotalHits: 2,
-    })
+    expect(stale.json<SearchResponseDto>().items).toEqual([])
     await synchronize()
     const refreshed = await query({ search: "Орбита" })
     expect(refreshed.statusCode).toBe(200)
-    expect(refreshed.json<SearchResponseDto>().items).toEqual({
-      hits: [],
-      estimatedTotalHits: 0,
-    })
+    expect(refreshed.json<SearchResponseDto>().items).toEqual([])
   })
 
   it("обновляет теги и метрики при неизменном updatedAt произведения и игнорирует отсутствующие теги", async () => {
-    const item = await seedItem({
-      ageRestriction: EAgeRestriction.AGE_18_PLUS_PLUS,
-    })
+    const item = await seedItem()
     const tagId = new Types.ObjectId()
     await application.connection
       .collection("TagItem")
@@ -552,12 +493,11 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     const body = {
       search: "Орбита",
       items: {
-        tagIds: [String(tagId)],
-        ratingMin: 8,
-        fields: [{ field: EItemField.AGE_RESTRICTION, min: 18, max: 18 }],
+        tags: { allOf: [String(tagId)] },
+        rating: { min: 8 },
       },
     }
-    expect((await query(body)).json<SearchResponseDto>().items.hits).toEqual([])
+    expect((await query(body)).json<SearchResponseDto>().items).toEqual([])
     await application.connection
       .collection("Tag")
       .insertOne({ _id: tagId, key: "searchUpdatedTag" })
@@ -568,13 +508,13 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     const matched = await query(body)
     expect(matched.statusCode).toBe(200)
     expect(
-      matched.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
+      matched.json<SearchResponseDto>().items.map((hit) => hit.id),
     ).toEqual([String(item._id)])
     await application.connection
       .collection("TagItem")
       .deleteMany({ item: item._id })
     await synchronize()
-    expect((await query(body)).json<SearchResponseDto>().items.hits).toEqual([])
+    expect((await query(body)).json<SearchResponseDto>().items).toEqual([])
   })
 
   it("восстанавливает потерянный индекс даже при существующей контрольной отметке", async () => {
@@ -586,7 +526,7 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     const response = await query({ search: "Орбита" })
     expect(response.statusCode).toBe(200)
     expect(
-      response.json<SearchResponseDto>().items.hits.map((hit) => hit.id),
+      response.json<SearchResponseDto>().items.map((hit) => hit.id),
     ).toEqual([String(item._id)])
   })
 
@@ -624,25 +564,24 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     await synchronize()
     const response = await query({
       search: "Orbit",
-      page: 51,
       limit: 10,
-      items: { direction: "asc" },
-      users: { direction: "asc" },
-      collections: { direction: "asc" },
+      items: { sort: { type: "relevance", direction: "asc" } },
+      users: { sort: { type: "relevance", direction: "asc" } },
+      collections: { sort: { type: "relevance", direction: "asc" } },
     })
     expect(response.statusCode).toBe(200)
     const result = response.json<SearchResponseDto>()
+    expect(result.nextCursor).toEqual(expect.any(String))
     for (const [group, records] of [
       ["items", items],
       ["users", users],
       ["collections", collections],
     ] as const) {
-      expect(result[group].estimatedTotalHits).toBe(count)
-      expect(result[group].hits.map((hit) => hit.id)).toEqual(
+      expect(result[group].map((hit) => hit.id)).toEqual(
         records
           .map((record) => String(record._id))
           .sort()
-          .slice(500),
+          .slice(0, 10),
       )
     }
   })
@@ -689,21 +628,15 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     await synchronize()
     const oldResults = await query({ search: "Orbit" })
     expect(oldResults.statusCode).toBe(200)
-    expect(oldResults.json<SearchResponseDto>().users).toEqual({
-      hits: [],
-      estimatedTotalHits: 0,
-    })
-    expect(oldResults.json<SearchResponseDto>().collections).toEqual({
-      hits: [],
-      estimatedTotalHits: 0,
-    })
+    expect(oldResults.json<SearchResponseDto>().users).toEqual([])
+    expect(oldResults.json<SearchResponseDto>().collections).toEqual([])
     const updated = await query({ search: "Nebula" })
     expect(updated.statusCode).toBe(200)
     expect(
-      updated.json<SearchResponseDto>().users.hits.map((hit) => hit.id),
+      updated.json<SearchResponseDto>().users.map((hit) => hit.id),
     ).toEqual([String(user._id)])
     expect(
-      updated.json<SearchResponseDto>().collections.hits.map((hit) => hit.id),
+      updated.json<SearchResponseDto>().collections.map((hit) => hit.id),
     ).toEqual([String(collection._id)])
     await connection.collection("User").deleteOne({ _id: user._id })
     await connection
@@ -715,14 +648,8 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     await synchronize()
     const deleted = await query({ search: "Nebula" })
     expect(deleted.statusCode).toBe(200)
-    expect(deleted.json<SearchResponseDto>().users).toEqual({
-      hits: [],
-      estimatedTotalHits: 0,
-    })
-    expect(deleted.json<SearchResponseDto>().collections).toEqual({
-      hits: [],
-      estimatedTotalHits: 0,
-    })
+    expect(deleted.json<SearchResponseDto>().users).toEqual([])
+    expect(deleted.json<SearchResponseDto>().collections).toEqual([])
   })
 
   it("возвращает пустые группы при отсутствии совпадений и 503 до первой синхронизации", async () => {
@@ -732,14 +659,12 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     await synchronize()
     const empty = await query({ search: "несуществующийзапрос" })
     expect(empty.statusCode).toBe(200)
-    expect(empty.json()).toEqual(
-      Object.fromEntries(
-        ["items", "users", "collections"].map((group) => [
-          group,
-          { hits: [], estimatedTotalHits: 0 },
-        ]),
-      ),
-    )
+    expect(empty.json()).toEqual({
+      items: [],
+      collections: [],
+      users: [],
+      nextCursor: null,
+    })
     await application.app
       .get(CacheService)
       .delete(SEARCH_SETTINGS.checkpointKey)
@@ -754,68 +679,44 @@ describe("SearchController HTTP + MongoDB + Redis + Meilisearch", () => {
     { search: " " },
     { search: "x".repeat(201) },
     { search: 12 },
-    { search: "x", page: "1" },
+    { search: "x", page: 1 },
     { search: "x", limit: "10" },
-    { search: "x", page: 0 },
-    { search: "x", page: 1.5 },
     { search: "x", limit: 51 },
-    { search: "x", page: 201, limit: 50 },
+    { search: "x", cursor: null },
+    { search: "x", cursor: "broken" },
     { search: "x", unknown: true },
+    { search: "x", types: { allOf: [] } },
+    { search: "x", types: { anyOf: ["unknown"] } },
+    { search: "x", types: { noneOf: ["items", "items"] } },
     { search: "x", items: null },
     { search: "x", users: [] },
     { search: "x", collections: "bad" },
-    { search: "x", items: { sort: "recommended" } },
-    { search: "x", items: { direction: "up" } },
-    { search: "x", items: { language: "de" } },
+    { search: "x", items: { sort: "rating" } },
+    { search: "x", items: { sort: { type: "recommended" } } },
+    { search: "x", items: { sort: { direction: "asc" } } },
+    { search: "x", items: { sort: { type: "rating", direction: "up" } } },
+    { search: "x", items: { sort: { type: "title", language: "de" } } },
     { search: "x", items: { types: [] } },
     { search: "x", items: { types: ["movie", "movie"] } },
-    { search: "x", items: { tagIds: ["bad"] } },
+    { search: "x", items: { tags: { anyOf: ["bad"] } } },
     {
       search: "x",
       items: {
-        tagIds: ["abcdefabcdefabcdefabcdef", "ABCDEFABCDEFABCDEFABCDEF"],
+        tags: {
+          allOf: ["abcdefabcdefabcdefabcdef", "ABCDEFABCDEFABCDEFABCDEF"],
+        },
       },
     },
-    { search: "x", items: { ratingMin: "8" } },
-    { search: "x", items: { ratingMin: 8, ratingMax: 7 } },
-    { search: "x", items: { fields: [] } },
-    { search: "x", items: { fields: [{ field: "movie.duration" }] } },
-    {
-      search: "x",
-      items: { fields: [{ field: "movie.duration", min: "90" }] },
-    },
-    {
-      search: "x",
-      items: { fields: [{ field: "movie.duration", min: 91, max: 90 }] },
-    },
-    {
-      search: "x",
-      items: { fields: [{ field: "releaseDate", min: "2026-02-30" }] },
-    },
-    {
-      search: "x",
-      items: { fields: [{ field: "releaseDate", min: "2026-01-01T12:00:00" }] },
-    },
-    {
-      search: "x",
-      items: {
-        fields: [
-          { field: "releaseDate", min: "2026-01-02", max: "2026-01-01" },
-        ],
-      },
-    },
-    {
-      search: "x",
-      items: {
-        fields: [
-          { field: "movie.duration", min: 1 },
-          { field: "movie.duration", max: 10 },
-        ],
-      },
-    },
-    { search: "x", collections: { authorIds: [] } },
-    { search: "x", collections: { types: ["bad"] } },
-    { search: "x", users: { sort: "rating" } },
+    { search: "x", items: { rating: { min: "8" } } },
+    { search: "x", items: { rating: { min: 8, max: 7 } } },
+    { search: "x", items: { rating: {} } },
+    { search: "x", items: { rating: { max: 11 } } },
+    { search: "x", items: { fields: [{ field: "movie.duration", min: 90 }] } },
+    { search: "x", items: { tagIds: ["abcdefabcdefabcdefabcdef"] } },
+    { search: "x", collections: { authorIds: { noneOf: [] } } },
+    { search: "x", collections: { types: { anyOf: ["bad"] } } },
+    { search: "x", users: { sort: { type: "username" } } },
+    { search: "x", users: { sort: { type: "displayName", language: "ru" } } },
   ])("отклоняет некорректный запрос без запуска поиска: %j", async (body) => {
     const search = application.app.get(SearchService)
     const searchIndex = jest.spyOn(search, "search")

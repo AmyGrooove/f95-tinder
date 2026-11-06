@@ -1,43 +1,37 @@
-import { REGEX } from "@shared/static/REGEX"
-import { ELanguage } from "@entities/shared/schemas/ELanguage"
+import { createHash } from "node:crypto"
+
 import {
   BadRequestException,
   HttpException,
   Injectable,
   ServiceUnavailableException,
 } from "@nestjs/common"
-import { isISO8601 } from "class-validator"
 import { Types } from "mongoose"
 
-import { ItemRepository } from "@entities/item/services/itemRepository"
-import { UserRepository } from "@entities/user/services/userRepository"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import type { Item } from "@entities/item/schemas/item.schema"
-import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
-import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
-import type { IItemFilter } from "@entities/item/types/IItemFilter"
-import type { TItemFieldFilter } from "@entities/item/types/TItemFieldFilter"
+import { ItemRepository } from "@entities/item/services/itemRepository"
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { UserRepository } from "@entities/user/services/userRepository"
+import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
+import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import type {
   ISearchDocument,
   ISearchMatch,
 } from "@infrastructure/search/services/searchService"
-import { isNil } from "@shared/functions/checks/isNil"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
-import { isDate } from "@shared/functions/checks/isDate"
-import { isString } from "@shared/functions/checks/isString"
+import { isArray } from "@shared/functions/checks/isArray"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
+import { isNil } from "@shared/functions/checks/isNil"
 
 import type { SearchBodyDto } from "../dto/search.body"
-import type { SearchItemsBodyDto } from "../dto/searchOptions.body"
 import type { SearchResponseDto } from "../dto/search.response"
-import { SEARCH_ITEM_FIELDS } from "@endpoints/search/static/SEARCH_ITEM_FIELDS"
+import { SEARCH_GROUPS } from "../static/SEARCH_GROUPS"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
-import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
-import type { IFindSearchItemsProps } from "../types/IFindSearchItemsProps"
+import type { TSearchGroup } from "../types/TSearchGroup"
 
 @Injectable()
 class SiteSearchService {
@@ -50,13 +44,43 @@ class SiteSearchService {
   ) {}
 
   async search(body: SearchBodyDto): Promise<SearchResponseDto> {
-    const offset = (body.page - 1) * body.limit
+    const options = this.prepareGroups(body)
+    const included = [
+      ...(body.types?.allOf ?? []),
+      ...(body.types?.anyOf ?? []),
+    ]
+    const selected = SEARCH_GROUPS.filter(
+      (group) =>
+        (included.length === 0 || included.includes(group)) &&
+        !(body.types?.noneOf ?? []).includes(group),
+    )
+    const fingerprint = createHash("sha256")
+      .update(
+        JSON.stringify([
+          body.search,
+          body.limit,
+          selected.map((group) => [group, options[group]]),
+        ]),
+      )
+      .digest("base64url")
+    const offsets = this.readOffsets({
+      cursor: body.cursor,
+      fingerprint,
+      selected,
+      limit: body.limit,
+    })
+    const active = selected.flatMap((group, index) => {
+      const offset = offsets[index]
 
-    if (offset >= SEARCH_SETTINGS.maxTotalHits) {
-      throw new BadRequestException(DICTIONARY.search.invalidPage)
+      return isNil(offset) || options[group].isImpossible === true
+        ? []
+        : [{ group, offset, props: options[group] }]
+    })
+
+    if (active.length === 0) {
+      return { items: [], collections: [], users: [], nextCursor: null }
     }
 
-    const filter = this.prepareItemFilter(body.items)
     try {
       const checkpoint = await this.cacheService.get<number>(
         SEARCH_SETTINGS.checkpointKey,
@@ -66,151 +90,37 @@ class SiteSearchService {
         throw new ServiceUnavailableException(DICTIONARY.search.unavailable)
       }
 
-      const userSort = body.users?.sort
-      const userDirection =
-        body.users?.direction ??
-        (userSort === "username" || userSort === "displayName" ? "asc" : "desc")
-      const collectionSort = body.collections?.sort
-      const collectionDirection =
-        body.collections?.direction ??
-        (collectionSort === "title" ? "asc" : "desc")
-      const collectionFilter = [
-        ...(isUndefined(body.collections?.types)
-          ? []
-          : [`type IN ${JSON.stringify(body.collections.types)}`]),
-        ...(isUndefined(body.collections?.authorIds)
-          ? []
-          : [
-              `authorId IN ${JSON.stringify(body.collections.authorIds.map((id) => id.toLowerCase()))}`,
-            ]),
-      ]
-      const [items, users, collections] = await Promise.all([
-        this.findItems({
-          body,
-          searchFilters: this.createItemFilters(filter),
-        }),
-        this.searchGroup({
-          index: SEARCH_SETTINGS.indexes.users,
-          search: body.search,
-          filter: [],
-          page: body.page,
-          limit: body.limit,
-          isAscendingRelevance:
-            (isUndefined(userSort) || userSort === "relevance") &&
-            userDirection === "asc",
-          sort:
-            userSort === "username"
-              ? [`sortUsername:${userDirection}`, "id:asc"]
-              : userSort === "displayName"
-                ? [`sortDisplayName:${userDirection}`, "id:asc"]
-                : undefined,
-        }),
-        this.searchGroup({
-          index: SEARCH_SETTINGS.indexes.collections,
-          search: body.search,
-          filter: collectionFilter,
-          page: body.page,
-          limit: body.limit,
-          isAscendingRelevance:
-            (isUndefined(collectionSort) || collectionSort === "relevance") &&
-            collectionDirection === "asc",
-          sort:
-            collectionSort === "title"
-              ? [
-                  `sortTitle.${body.collections?.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
-                  "id:asc",
-                ]
-              : collectionSort === "updatedAt"
-                ? [`updatedAt:${collectionDirection}`, "id:asc"]
-                : undefined,
-        }),
-      ])
-      const [itemDocuments, userDocuments, collectionDocuments] =
-        await Promise.all([
-          this.itemRepository.read.findMany(
-            {
-              _id: { $in: items.hits.map((hit) => new Types.ObjectId(hit.id)) },
-              deletedAt: null,
-            },
-            { _id: 1, type: 1, title: 1, media: 1 },
-          ),
-          this.userRepository.read.findMany(
-            {
-              _id: { $in: users.hits.map((hit) => new Types.ObjectId(hit.id)) },
-            },
-            { _id: 1, username: 1, displayName: 1, avatarUrl: 1 },
-          ),
-          this.collectionRepository.read.findMany(
-            {
-              _id: {
-                $in: collections.hits.map((hit) => new Types.ObjectId(hit.id)),
+      const pages = new Map(
+        await Promise.all(
+          active.map(async ({ group, offset, props }) => {
+            const hits = await this.searchGroup({ body, group, offset, props })
+
+            return [
+              group,
+              {
+                ids: hits.slice(0, body.limit).map((hit) => hit.id),
+                nextOffset:
+                  hits.length > body.limit ? offset + body.limit : null,
               },
-              deletedAt: null,
-            },
-            { _id: 1, type: 1, title: 1, media: 1, author: 1 },
-          ),
-        ])
-      const itemsById = new Map(
-        itemDocuments.map((item) => [String(item._id), item]),
-      )
-      const usersById = new Map(
-        userDocuments.map((user) => [String(user._id), user]),
-      )
-      const collectionsById = new Map(
-        collectionDocuments.map((collection) => [
-          String(collection._id),
-          collection,
-        ]),
-      )
-
-      return {
-        items: {
-          hits: items.hits.flatMap((hit) => {
-            const item = itemsById.get(hit.id)
-
-            return isUndefined(item) ? [] : [this.mapItem(item)]
+            ] as const
           }),
-          estimatedTotalHits: items.estimatedTotalHits,
-        },
-        users: {
-          hits: users.hits.flatMap((hit) => {
-            const user = usersById.get(hit.id)
+        ),
+      )
+      const nextOffsets = selected.map(
+        (group) => pages.get(group)?.nextOffset ?? null,
+      )
+      const nextCursor = nextOffsets.some((offset) => offset !== null)
+        ? Buffer.from(JSON.stringify([1, fingerprint, nextOffsets])).toString(
+            "base64url",
+          )
+        : null
+      const [items, collections, users] = await Promise.all([
+        this.loadItems(pages.get("items")?.ids ?? []),
+        this.loadCollections(pages.get("collections")?.ids ?? []),
+        this.loadUsers(pages.get("users")?.ids ?? []),
+      ])
 
-            return isUndefined(user)
-              ? []
-              : [
-                  {
-                    id: String(user._id),
-                    username: user.username,
-                    displayName: user.displayName,
-                    avatarUrl: user.avatarUrl,
-                  },
-                ]
-          }),
-          estimatedTotalHits: users.estimatedTotalHits,
-        },
-        collections: {
-          hits: collections.hits.flatMap((hit) => {
-            const collection = collectionsById.get(hit.id)
-
-            return isUndefined(collection)
-              ? []
-              : [
-                  {
-                    id: String(collection._id),
-                    type: collection.type,
-                    title: {
-                      [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
-                      [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
-                    },
-                    media: this.mapMedia(collection.media),
-                    authorId: collection.author?.toString() ?? null,
-                  },
-                ]
-          }),
-          estimatedTotalHits: collections.estimatedTotalHits,
-        },
-      }
+      return { items, collections, users, nextCursor }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
@@ -222,32 +132,207 @@ class SiteSearchService {
     }
   }
 
-  private async searchGroup(
-    props: ISearchGroupProps,
-  ): Promise<{ hits: ISearchDocument[]; estimatedTotalHits: number }> {
-    const offset = (props.page - 1) * props.limit
+  private readOffsets({
+    cursor,
+    fingerprint,
+    selected,
+    limit,
+  }: {
+    cursor: string | undefined
+    fingerprint: string
+    selected: TSearchGroup[]
+    limit: number
+  }): (number | null)[] {
+    if (isNil(cursor)) {
+      return selected.map(() => 0)
+    }
+
+    try {
+      const buffer = Buffer.from(cursor, "base64url")
+
+      if (buffer.toString("base64url") === cursor) {
+        const payload: unknown = JSON.parse(buffer.toString("utf8"))
+
+        if (isArray(payload) && payload.length === 3) {
+          const [version, hash, offsets] = payload
+
+          if (
+            version === 1 &&
+            hash === fingerprint &&
+            isArray(offsets) &&
+            offsets.length === selected.length &&
+            offsets.some((offset) => offset !== null) &&
+            offsets.every(
+              (offset): offset is number | null =>
+                offset === null ||
+                (isFiniteNumber(offset) &&
+                  offset % limit === 0 &&
+                  offset > 0 &&
+                  offset < SEARCH_SETTINGS.maxTotalHits),
+            )
+          ) {
+            return offsets
+          }
+        }
+      }
+    } catch (error) {
+      throw new BadRequestException(DICTIONARY.search.invalidCursor, {
+        cause: error,
+      })
+    }
+
+    throw new BadRequestException(DICTIONARY.search.invalidCursor)
+  }
+
+  private prepareGroups(
+    body: SearchBodyDto,
+  ): Record<TSearchGroup, ISearchGroupProps> {
+    const itemSort = body.items?.sort
+    const itemDirection =
+      itemSort?.direction ?? (itemSort?.type === "title" ? "asc" : "desc")
+    const collectionSort = body.collections?.sort
+    const collectionDirection =
+      collectionSort?.direction ??
+      (collectionSort?.type === "title" ? "asc" : "desc")
+    const userSort = body.users?.sort
+    const userDirection =
+      userSort?.direction ?? (userSort?.type === "displayName" ? "asc" : "desc")
+    const collectionTypes = body.collections?.types
+    const authorIds = body.collections?.authorIds
+
+    return {
+      items: {
+        filter: this.createItemFilters(body.items),
+        isAscendingRelevance:
+          (itemSort?.type ?? "relevance") === "relevance" &&
+          itemDirection === "asc",
+        sort:
+          itemSort?.type === "title"
+            ? [
+                `sortTitle.${itemSort.language ?? ELanguage.RUSSIAN}:${itemDirection}`,
+                "id:asc",
+              ]
+            : itemSort?.type === "releaseDate"
+              ? [
+                  "hasReleaseDate:desc",
+                  `releaseDate:${itemDirection}`,
+                  "id:asc",
+                ]
+              : itemSort?.type === "rating"
+                ? ["hasRating:desc", `rating:${itemDirection}`, "id:asc"]
+                : undefined,
+      },
+      collections: {
+        isImpossible:
+          (collectionTypes?.allOf?.length ?? 0) > 1 ||
+          (authorIds?.allOf?.length ?? 0) > 1,
+        filter: [
+          ...this.createValueFilters("type", collectionTypes),
+          ...this.createValueFilters("authorId", authorIds),
+        ],
+        isAscendingRelevance:
+          (collectionSort?.type ?? "relevance") === "relevance" &&
+          collectionDirection === "asc",
+        sort:
+          collectionSort?.type === "title"
+            ? [
+                `sortTitle.${collectionSort.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
+                "id:asc",
+              ]
+            : collectionSort?.type === "updatedAt"
+              ? [`updatedAt:${collectionDirection}`, "id:asc"]
+              : undefined,
+      },
+      users: {
+        filter: [],
+        isAscendingRelevance:
+          (userSort?.type ?? "relevance") === "relevance" &&
+          userDirection === "asc",
+        sort:
+          userSort?.type === "displayName"
+            ? [`sortDisplayName:${userDirection}`, "id:asc"]
+            : undefined,
+      },
+    }
+  }
+
+  private createItemFilters(items: SearchBodyDto["items"]) {
+    const { min, max } = items?.rating ?? {}
+
+    if (
+      (!isNil(items?.rating) && isNil(min) && isNil(max)) ||
+      (!isNil(min) && !isNil(max) && min > max)
+    ) {
+      throw new BadRequestException(DICTIONARY.search.invalidFilters)
+    }
+
+    return [
+      ...(isNil(items?.types)
+        ? []
+        : [`type IN ${JSON.stringify([...items.types].sort())}`]),
+      ...this.createValueFilters("tagIds", items?.tags),
+      ...(!isNil(min) || !isNil(max) ? ["rating IS NOT NULL"] : []),
+      ...(isNil(min) ? [] : [`rating >= ${min}`]),
+      ...(isNil(max) ? [] : [`rating <= ${max}`]),
+    ]
+  }
+
+  private createValueFilters(attribute: string, filter?: IValueFilter<string>) {
+    const normalize = (values: readonly string[]) =>
+      values.map((value) => value.toLowerCase()).sort()
+
+    return [
+      ...normalize(filter?.allOf ?? []).map(
+        (value) => `${attribute} = ${JSON.stringify(value)}`,
+      ),
+      ...(isNil(filter?.anyOf)
+        ? []
+        : [`${attribute} IN ${JSON.stringify(normalize(filter.anyOf))}`]),
+      ...(isNil(filter?.noneOf)
+        ? []
+        : [`${attribute} NOT IN ${JSON.stringify(normalize(filter.noneOf))}`]),
+    ]
+  }
+
+  private async searchGroup({
+    body,
+    group,
+    offset,
+    props,
+  }: {
+    body: SearchBodyDto
+    group: TSearchGroup
+    offset: number
+    props: ISearchGroupProps
+  }) {
+    const index = SEARCH_SETTINGS.indexes[group]
+    const limit = Math.min(
+      body.limit + 1,
+      SEARCH_SETTINGS.maxTotalHits - offset,
+    )
 
     if (!props.isAscendingRelevance) {
-      return this.searchService.search<ISearchDocument>(
-        props.index,
-        props.search,
+      const result = await this.searchService.search<ISearchDocument>(
+        index,
+        body.search,
         {
           filter: props.filter,
           sort: props.sort,
           offset,
-          limit: Math.min(props.limit, SEARCH_SETTINGS.maxTotalHits - offset),
+          limit,
           attributesToRetrieve: ["id"],
           matchingStrategy: "last",
         },
       )
+
+      return result.hits
     }
 
     let ranked: ISearchMatch[] = []
-    let total = 0
 
     for await (const batch of this.searchService.iterateMatches({
-      index: props.index,
-      query: props.search,
+      index,
+      query: body.search,
       filter: props.filter,
       batchSize: SEARCH_SETTINGS.batchSize,
     })) {
@@ -255,7 +340,6 @@ class SiteSearchService {
         throw new ServiceUnavailableException(DICTIONARY.search.unavailable)
       }
 
-      total += batch.length
       ranked = [...ranked, ...batch]
         .sort((first, second) => {
           const difference = first._rankingScore - second._rankingScore
@@ -264,174 +348,85 @@ class SiteSearchService {
             ? difference
             : first.id.localeCompare(second.id)
         })
-        .slice(0, offset + props.limit)
+        .slice(0, offset + limit)
     }
 
-    return {
-      hits: ranked.slice(
-        offset,
-        Math.min(offset + props.limit, SEARCH_SETTINGS.maxTotalHits),
-      ),
-      estimatedTotalHits: total,
-    }
+    return ranked.slice(offset)
   }
 
-  private async findItems(props: IFindSearchItemsProps) {
-    const { body, searchFilters } = props
-    const sort = body.items?.sort
+  private async loadItems(ids: string[]): Promise<SearchResponseDto["items"]> {
+    if (ids.length === 0) {
+      return []
+    }
 
-    const direction =
-      body.items?.direction ?? (sort === "title" ? "asc" : "desc")
-    const sorting =
-      sort === "title"
-        ? [
-            `sortTitle.${body.items?.language ?? ELanguage.RUSSIAN}:${direction}`,
-            "id:asc",
-          ]
-        : sort === "releaseDate"
-          ? ["hasReleaseDate:desc", `releaseDate:${direction}`, "id:asc"]
-          : sort === "rating"
-            ? ["hasRating:desc", `rating:${direction}`, "id:asc"]
-            : undefined
+    const documents = await this.itemRepository.read.findMany(
+      {
+        _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
+        deletedAt: null,
+      },
+      { _id: 1, type: 1, title: 1, media: 1 },
+    )
 
-    return this.searchGroup({
-      index: SEARCH_SETTINGS.indexes.items,
-      search: body.search,
-      filter: searchFilters,
-      sort: sorting,
-      page: body.page,
-      limit: body.limit,
-      isAscendingRelevance:
-        (isUndefined(sort) || sort === "relevance") && direction === "asc",
+    return this.orderCards(ids, documents).map((item) => this.mapItem(item))
+  }
+
+  private async loadCollections(
+    ids: string[],
+  ): Promise<SearchResponseDto["collections"]> {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const documents = await this.collectionRepository.read.findMany(
+      {
+        _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
+        deletedAt: null,
+      },
+      { _id: 1, type: 1, title: 1, media: 1 },
+    )
+
+    return this.orderCards(ids, documents).map((collection) => ({
+      id: String(collection._id),
+      type: collection.type,
+      title: {
+        [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
+        [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
+      },
+      media: this.mapMedia(collection.media),
+    }))
+  }
+
+  private async loadUsers(ids: string[]): Promise<SearchResponseDto["users"]> {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const documents = await this.userRepository.read.findMany(
+      { _id: { $in: ids.map((id) => new Types.ObjectId(id)) } },
+      { _id: 1, username: 1, displayName: 1, avatarUrl: 1 },
+    )
+
+    return this.orderCards(ids, documents).map((user) => ({
+      id: String(user._id),
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+    }))
+  }
+
+  private orderCards<T extends { _id: Types.ObjectId }>(
+    ids: string[],
+    documents: T[],
+  ) {
+    const byId = new Map(
+      documents.map((document) => [String(document._id), document]),
+    )
+
+    return ids.flatMap((id) => {
+      const document = byId.get(id)
+
+      return isNil(document) ? [] : [document]
     })
-  }
-
-  private createItemFilters(filter: IItemFilter) {
-    const expressions: string[] = [
-      ...(!isUndefined(filter.ratingMin) || !isUndefined(filter.ratingMax)
-        ? ["rating IS NOT NULL"]
-        : []),
-      ...(isUndefined(filter.types)
-        ? []
-        : [`type IN ${JSON.stringify(filter.types)}`]),
-      ...(filter.tagIds ?? []).map(
-        (id) => `tagIds = ${JSON.stringify(String(id))}`,
-      ),
-      ...(isUndefined(filter.ratingMin)
-        ? []
-        : [`rating >= ${filter.ratingMin}`]),
-      ...(isUndefined(filter.ratingMax)
-        ? []
-        : [`rating <= ${filter.ratingMax}`]),
-    ]
-
-    for (const field of filter.fields ?? []) {
-      const attribute = `fields.${SEARCH_ITEM_FIELDS[field.field]}`
-      expressions.push(`${attribute} IS NOT NULL`)
-
-      if (!isUndefined(field.min)) {
-        expressions.push(
-          `${attribute} >= ${isDate(field.min) ? field.min.getTime() : field.min}`,
-        )
-      }
-
-      if (!isUndefined(field.max)) {
-        expressions.push(
-          `${attribute} <= ${isDate(field.max) ? field.max.getTime() : field.max}`,
-        )
-      }
-    }
-
-    return expressions
-  }
-
-  private prepareItemFilter(options?: SearchItemsBodyDto): IItemFilter {
-    const { ratingMin, ratingMax, fields = [] } = options ?? {}
-
-    if (
-      (!isUndefined(ratingMin) &&
-        !isUndefined(ratingMax) &&
-        ratingMin > ratingMax) ||
-      new Set(fields.map((field) => field.field)).size !== fields.length
-    ) {
-      throw new BadRequestException(DICTIONARY.search.invalidFilters)
-    }
-
-    return {
-      types: options?.types,
-      tagIds: options?.tagIds?.map((id) => new Types.ObjectId(id)),
-      ratingMin,
-      ratingMax,
-      fields: fields.map((field): TItemFieldFilter => {
-        const definition = ITEM_FIELD_DEFINITIONS[field.field]
-
-        if (
-          isUndefined(definition) ||
-          (isUndefined(field.min) && isUndefined(field.max))
-        ) {
-          throw new BadRequestException(DICTIONARY.search.invalidFilters)
-        }
-
-        if (definition.valueType === EItemFieldValueType.NUMBER) {
-          if (
-            (!isUndefined(field.min) && !isFiniteNumber(field.min)) ||
-            (!isUndefined(field.max) && !isFiniteNumber(field.max))
-          ) {
-            throw new BadRequestException(DICTIONARY.search.invalidFilters)
-          }
-
-          const min = isFiniteNumber(field.min) ? field.min : undefined
-          const max = isFiniteNumber(field.max) ? field.max : undefined
-
-          if (!isUndefined(min) && !isUndefined(max) && min > max) {
-            throw new BadRequestException(DICTIONARY.search.invalidFilters)
-          }
-
-          return {
-            field: field.field,
-            valueType: EItemFieldValueType.NUMBER,
-            min,
-            max,
-          }
-        }
-
-        const min = this.parseDate(field.min)
-        const max = this.parseDate(field.max)
-
-        if (!isUndefined(min) && !isUndefined(max) && min > max) {
-          throw new BadRequestException(DICTIONARY.search.invalidFilters)
-        }
-
-        return {
-          field: field.field,
-          valueType: EItemFieldValueType.DATE,
-          min,
-          max,
-        }
-      }),
-    }
-  }
-
-  private parseDate(value: unknown) {
-    if (isUndefined(value)) {
-      return undefined
-    }
-
-    if (
-      !isString(value) ||
-      !isISO8601(value, { strict: true, strictSeparator: true }) ||
-      !(REGEX.ISO_DATE.test(value) || REGEX.ISO_TIMEZONE_SUFFIX.test(value))
-    ) {
-      throw new BadRequestException(DICTIONARY.search.invalidFilters)
-    }
-
-    const date = new Date(value)
-
-    if (!isDate(date)) {
-      throw new BadRequestException(DICTIONARY.search.invalidFilters)
-    }
-
-    return date
   }
 
   private mapItem(item: Pick<Item, "_id" | "type" | "title" | "media">) {

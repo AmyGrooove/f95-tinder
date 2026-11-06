@@ -28,7 +28,7 @@ describe("CollectionReadController", () => {
     const { controller, getItems } = await createController()
     const id = new Types.ObjectId()
     const query = { cursor: "YWJj", limit: 10 as const }
-    const result = { nextCursor: false as const, blocks: [] }
+    const result = { nextCursor: null, blocks: [] }
     getItems.mockResolvedValue(result)
     await expect(controller.getItems(id, query)).resolves.toEqual(result)
     expect(getItems).toHaveBeenCalledWith({ id, query })

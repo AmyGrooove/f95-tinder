@@ -51,7 +51,7 @@ class CollectionContentService {
               ":" +
               last._id.toHexString(),
           ).toString("base64url")
-        : false
+        : null
     const items = page.map((row) => this.mapItem(row))
     const itemsByGroup = new Map<string, ItemCollectionResponseDto[]>()
     for (const item of items) {
@@ -98,7 +98,7 @@ class CollectionContentService {
       })
       pendingText = []
     }
-    if (nextCursor === false) {
+    if (nextCursor === null) {
       blocks.push(...pendingText)
     }
 
