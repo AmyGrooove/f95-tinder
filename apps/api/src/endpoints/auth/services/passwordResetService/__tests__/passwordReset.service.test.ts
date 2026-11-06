@@ -19,9 +19,7 @@ describe("PasswordResetService", () => {
     const mail = { send: jest.fn() }
     const redis = {
       exists: jest.fn(async () => cooldown),
-      eval: jest
-        .fn<RedisClientType["eval"]>()
-        .mockResolvedValue(1),
+      eval: jest.fn<RedisClientType["eval"]>().mockResolvedValue(1),
     }
     const service = new PasswordResetService(
       users as unknown as UserRepository,

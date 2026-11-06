@@ -1,7 +1,4 @@
-import { execFile } from "node:child_process"
 import { randomUUID } from "node:crypto"
-import { setTimeout } from "node:timers/promises"
-import { promisify } from "node:util"
 import {
   afterAll,
   beforeAll,
@@ -12,8 +9,9 @@ import {
 } from "@jest/globals"
 import { Test } from "@nestjs/testing"
 import type { TestingModule } from "@nestjs/testing"
-import { ErrorStatusCode, Meilisearch } from "meilisearch"
+import { ErrorStatusCode, type Meilisearch } from "meilisearch"
 
+import { createTestMeilisearch } from "@infrastructure/search/__tests__/setup/createTestMeilisearch"
 import { infrastructureConfiguration } from "@infrastructure/config/config.module"
 
 import { SearchModule } from "../../../search.module"
@@ -21,9 +19,6 @@ import { SearchService } from "../core/search.service"
 import { SEARCH_CLIENT } from "../../../static/SEARCH_CLIENT"
 
 describe("SearchService", () => {
-  const docker = promisify(execFile)
-  const containerName = `bisky-search-test-${randomUUID()}`
-  const apiKey = randomUUID()
   const options = {
     displayedAttributes: ["id", "title", "genre", "year"],
     filterableAttributes: ["genre"],
@@ -49,57 +44,17 @@ describe("SearchService", () => {
     { id: "foundation", title: "Foundation", genre: "fiction", year: 1951 },
     { id: "cosmos", title: "Cosmos", genre: "science", year: 1980 },
   ]
-  let containerId: string | undefined
+  let meilisearch: Awaited<ReturnType<typeof createTestMeilisearch>> | undefined
   let moduleRef: TestingModule | undefined
   let client: Meilisearch
   let service: SearchService
   let indexName: string
 
   beforeAll(async () => {
-    const { stdout } = await docker(
-      "docker",
-      [
-        "run",
-        "--detach",
-        "--rm",
-        "--name",
-        containerName,
-        "--publish",
-        "127.0.0.1::7700",
-        "--env",
-        `MEILI_MASTER_KEY=${apiKey}`,
-        "--env",
-        "MEILI_NO_ANALYTICS=true",
-        "getmeili/meilisearch:v1.12.8",
-      ],
-      { timeout: 180_000 },
-    )
-    containerId = stdout.trim()
-    const { stdout: port } = await docker("docker", [
-      "port",
-      containerId,
-      "7700/tcp",
-    ])
-    const host = `http://${port.trim()}`
-    client = new Meilisearch({ host, apiKey, timeout: 1_000 })
-    const deadline = Date.now() + 30_000
-
-    while (true) {
-      try {
-        await client.health()
-        break
-      } catch (error) {
-        if (Date.now() >= deadline) {
-          throw error
-        }
-
-        await setTimeout(100)
-      }
-    }
-
+    meilisearch = await createTestMeilisearch()
     moduleRef = await Test.createTestingModule({ imports: [SearchModule] })
       .overrideProvider(infrastructureConfiguration.KEY)
-      .useValue({ search: { host, apiKey } })
+      .useValue({ search: meilisearch.configuration })
       .compile()
     await moduleRef.init()
     service = moduleRef.get(SearchService)
@@ -114,11 +69,7 @@ describe("SearchService", () => {
     try {
       await moduleRef?.close()
     } finally {
-      if (containerId !== undefined) {
-        await docker("docker", ["rm", "--force", containerId], {
-          timeout: 30_000,
-        })
-      }
+      await meilisearch?.close()
     }
   }, 60_000)
 

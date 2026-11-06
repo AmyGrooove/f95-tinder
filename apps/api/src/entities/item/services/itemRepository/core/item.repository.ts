@@ -18,11 +18,17 @@ import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATI
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
 import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
 import { Tag } from "@entities/tag/schemas/tag.schema"
-import type { IReadPopularItemIdsProps } from "../types/IReadPopularItemIdsProps"
+import { createItemTagFilterPipeline } from "../functions/createItemTagFilterPipeline"
+import type {
+  IItemReleaseWindow,
+  IReadNewItemIdsProps,
+  IReadPopularItemIdsProps,
+} from "../types/IReadPopularItemIdsProps"
 import type { IReadSearchIndexBatchProps } from "../types/IReadSearchIndexBatchProps"
 
 @Injectable()
@@ -126,7 +132,18 @@ class ItemRepository {
     return this.aggregation.aggregate<IItemSearchIndexEntry>(pipeline)
   }
 
-  async readPopularItemIds(props: IReadPopularItemIdsProps) {
+  readPopularItemIds(props: IReadPopularItemIdsProps) {
+    return this.readRecommendationItemIds(props)
+  }
+
+  readNewItemIds(props: IReadNewItemIdsProps) {
+    return this.readRecommendationItemIds(props, props.releaseWindow)
+  }
+
+  private async readRecommendationItemIds(
+    props: IReadPopularItemIdsProps,
+    releaseWindow?: IItemReleaseWindow,
+  ) {
     const {
       type,
       limit,
@@ -134,7 +151,19 @@ class ItemRepository {
       userId,
       country,
       library = { anyOf: ["outside"] },
+      tags = [],
+      rating,
     } = props
+    const { min, max } = rating ?? {}
+
+    if (
+      (!isUndefined(min) && (!isFiniteNumber(min) || min < 1 || min > 10)) ||
+      (!isUndefined(max) && (!isFiniteNumber(max) || max < 1 || max > 10)) ||
+      (!isUndefined(min) && !isUndefined(max) && min > max)
+    ) {
+      throw new RangeError("Invalid item rating range")
+    }
+
     const { allOf = [], anyOf, noneOf = [] } = library
     const allowedStatuses = (
       [...USER_ITEM_LIBRARY_STATUSES, "outside"] as const
@@ -151,8 +180,21 @@ class ItemRepository {
 
     const { priorWeight, defaultSiteRatingAverage } = ITEM_RATING_SCORE_SETTINGS
     const baseline = siteRatingAverage ?? defaultSiteRatingAverage
+    const isNew = !isUndefined(releaseWindow)
+    const isUnratedAllowed = isNew && isUndefined(min) && isUndefined(max)
     const pipeline = new AggregationBuilder()
-      .match({ type, deletedAt: null })
+      .match({
+        type,
+        deletedAt: null,
+        ...(isNew
+          ? {
+              releaseDate: {
+                $gte: releaseWindow.from,
+                $lte: releaseWindow.through,
+              },
+            }
+          : {}),
+      })
       .use({
         $lookup: {
           from: ItemStats.name,
@@ -162,7 +204,11 @@ class ItemRepository {
             {
               $match: {
                 ratingsCount: { $gt: 0 },
-                ratingAverage: { $type: "number" },
+                ratingAverage: {
+                  $type: "number",
+                  ...(!isUndefined(min) ? { $gte: min } : {}),
+                  ...(!isUndefined(max) ? { $lte: max } : {}),
+                },
               },
             },
             { $project: { _id: 0, ratingsCount: 1, ratingAverage: 1 } },
@@ -170,7 +216,12 @@ class ItemRepository {
           as: "metrics",
         },
       })
-      .use({ $unwind: "$metrics" })
+      .use({
+        $unwind: {
+          path: "$metrics",
+          preserveNullAndEmptyArrays: isUnratedAllowed,
+        },
+      })
       .use({
         $lookup: {
           from: UserItem.name,
@@ -221,7 +272,9 @@ class ItemRepository {
         },
       })
       .match({ "activeBans.0": { $exists: false } })
+      .use(...createItemTagFilterPipeline(tags))
       .project({
+        releaseDate: 1,
         ratingsCount: "$metrics.ratingsCount",
         ratingScore: {
           $divide: [
@@ -240,7 +293,11 @@ class ItemRepository {
           ],
         },
       })
-      .sort({ ratingScore: -1, ratingsCount: -1, _id: 1 })
+      .sort(
+        isNew
+          ? { releaseDate: -1, ratingScore: -1, _id: 1 }
+          : { ratingScore: -1, ratingsCount: -1, _id: 1 },
+      )
       .limit(limit)
       .project({ _id: 1 })
       .build()

@@ -1,0 +1,194 @@
+[
+  {
+    "key": "previousPart",
+    "group": "all",
+    "name": {
+      "ru": "Предыдущая часть",
+      "en": "Previous part"
+    },
+    "description": {
+      "ru": "Произведение, непосредственно продолжаемое противоположным Item",
+      "en": "The work directly continued by the opposite Item"
+    }
+  },
+  {
+    "key": "sequel",
+    "group": "all",
+    "name": {
+      "ru": "Продолжение",
+      "en": "Sequel"
+    },
+    "description": {
+      "ru": "Прямое продолжение противоположного Item, включая следующий соседний сезон",
+      "en": "A direct continuation of the opposite Item, including its next adjacent season"
+    }
+  },
+  {
+    "key": "prequelBase",
+    "group": "all",
+    "name": {
+      "ru": "Основа приквела",
+      "en": "Prequel base"
+    },
+    "description": {
+      "ru": "Произведение, предысторию которого раскрывает противоположный Item",
+      "en": "The work whose earlier story is explored by the opposite Item"
+    }
+  },
+  {
+    "key": "prequel",
+    "group": "all",
+    "name": {
+      "ru": "Приквел",
+      "en": "Prequel"
+    },
+    "description": {
+      "ru": "Самостоятельная предыстория противоположного Item; не просто предыдущий выпуск",
+      "en": "A distinct earlier story of the opposite Item; more than a prior release"
+    }
+  },
+  {
+    "key": "mainWork",
+    "group": "all",
+    "name": {
+      "ru": "Основное произведение",
+      "en": "Main work"
+    },
+    "description": {
+      "ru": "Произведение, от которого произошло самостоятельное ответвление",
+      "en": "The work from which a distinct spin-off originated"
+    }
+  },
+  {
+    "key": "spinOff",
+    "group": "all",
+    "name": {
+      "ru": "Ответвление",
+      "en": "Spin-off"
+    },
+    "description": {
+      "ru": "Самостоятельное ответвление противоположного Item с другим центром истории",
+      "en": "A distinct offshoot of the opposite Item with a different narrative focus"
+    }
+  },
+  {
+    "key": "adaptationSource",
+    "group": "all",
+    "name": {
+      "ru": "Основа адаптации",
+      "en": "Adaptation source"
+    },
+    "description": {
+      "ru": "Конкретное произведение, адаптированное противоположным Item",
+      "en": "The specific work adapted by the opposite Item"
+    }
+  },
+  {
+    "key": "adaptation",
+    "group": "all",
+    "name": {
+      "ru": "Адаптация",
+      "en": "Adaptation"
+    },
+    "description": {
+      "ru": "Самостоятельное переложение конкретного противоположного Item",
+      "en": "A distinct adaptation of the specific opposite Item"
+    }
+  },
+  {
+    "key": "recapSource",
+    "group": "video",
+    "name": {
+      "ru": "Основа пересказа",
+      "en": "Recap source"
+    },
+    "description": {
+      "ru": "Произведение, события которого кратко пересказывает противоположный Item",
+      "en": "The work whose events are summarized by the opposite Item"
+    }
+  },
+  {
+    "key": "recap",
+    "group": "video",
+    "name": {
+      "ru": "Пересказ",
+      "en": "Recap"
+    },
+    "description": {
+      "ru": "Самостоятельный краткий пересказ событий противоположного Item",
+      "en": "A distinct short retelling of the opposite Item's events"
+    }
+  },
+  {
+    "key": "compilationSource",
+    "group": "video",
+    "name": {
+      "ru": "Основа компиляции",
+      "en": "Compilation source"
+    },
+    "description": {
+      "ru": "Произведение, материал которого входит в самостоятельный фильм-компиляцию",
+      "en": "The work supplying material to a distinct compilation film"
+    }
+  },
+  {
+    "key": "compilation",
+    "group": "video",
+    "name": {
+      "ru": "Компиляция",
+      "en": "Compilation"
+    },
+    "description": {
+      "ru": "Самостоятельный фильм-компиляция из материала противоположного Item",
+      "en": "A distinct compilation film using material from the opposite Item"
+    }
+  },
+  {
+    "key": "remakeSource",
+    "group": "all",
+    "name": {
+      "ru": "Основа ремейка",
+      "en": "Remake source"
+    },
+    "description": {
+      "ru": "Произведение, непосредственно пересозданное противоположным Item",
+      "en": "The work directly recreated by the opposite Item"
+    }
+  },
+  {
+    "key": "remake",
+    "group": "all",
+    "name": {
+      "ru": "Ремейк",
+      "en": "Remake"
+    },
+    "description": {
+      "ru": "Самостоятельное пересоздание конкретного противоположного Item",
+      "en": "A distinct recreation of the specific opposite Item"
+    }
+  },
+  {
+    "key": "remasterSource",
+    "group": "game",
+    "name": {
+      "ru": "Основа ремастера",
+      "en": "Remaster source"
+    },
+    "description": {
+      "ru": "Исходная игра, технически улучшенной версией которой является противоположный Item",
+      "en": "The original game of which the opposite Item is a technically improved version"
+    }
+  },
+  {
+    "key": "remaster",
+    "group": "game",
+    "name": {
+      "ru": "Ремастер",
+      "en": "Remaster"
+    },
+    "description": {
+      "ru": "Технически улучшенная версия той же игры с сохранением основы произведения, без пересоздания как в ремейке",
+      "en": "A technically improved version of the same game preserving the underlying work rather than recreating it as a remake"
+    }
+  }
+]

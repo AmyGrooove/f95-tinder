@@ -1,6 +1,6 @@
 # Подборки
 
-[← Все эндпоинты](../endpoints.md) · [Контракт подборок](../collectionsSpec.md) · [Обозначения](readme.md)
+[← Все эндпоинты](../endpoints.md) · [Контракт подборок](../contracts/collectionsSpec.md) · [Обозначения](readme.md)
 
 Публичные чтения не проверяют cookies и не возвращают UserItem. Создание, редактирование, удаление и личные реакции требуют access cookie: JWT → активная собственная UserSession + существующий User. Для изменения/удаления подборки проверяется также author. Все `:id` — ObjectId подборки. JSON — с `Content-Type: application/json`; неизвестные поля запрещены. Все ответы имеют `Cache-Control: no-store`. Общие ошибки: 400 — входные данные/ID, 401 — доступ защищённых операций, 403 — CSRF, 429 — throttling.
 

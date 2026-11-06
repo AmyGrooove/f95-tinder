@@ -114,6 +114,7 @@ button {
   width: 100%;
   min-width: 0;
   padding: 12px;
+  padding-inline-end: 64px;
   border: 0;
   border-radius: 10px;
   background: transparent;
@@ -136,11 +137,11 @@ button {
   padding: 10px 0;
   border-color: var(--border);
 }
-.sidebar .search .matching-post h2 {
+.sidebar .search .matching-post .title {
   margin: 0 0 6px;
   font-size: 14px;
 }
-.sidebar .search .matching-post p {
+.sidebar .search .matching-post .content {
   margin: 0;
   font-size: 12px;
   line-height: 1.6;
@@ -200,7 +201,7 @@ body[data-page="home"] .app-sub-sidebar {
 .sidebar-toggle {
   display: none;
 }
-.content {
+main > .content {
   position: relative;
   margin-left: calc(var(--sidebar-width) + 40px);
   padding: 24px 42px 36px;
@@ -798,7 +799,7 @@ body[data-page="article"] li {
 }
 
 @media (min-width: 1600px) {
-  .content {
+  main > .content {
     padding-left: 64px;
     padding-right: 64px;
   }
@@ -807,7 +808,7 @@ body[data-page="article"] li {
   :root {
     --sidebar-width: 230px;
   }
-  .content {
+  main > .content {
     padding-left: 24px;
     padding-right: 24px;
   }
@@ -825,7 +826,7 @@ body[data-page="article"] li {
     max-height: 300px;
     margin: 16px 20px 0;
   }
-  .content {
+  main > .content {
     margin-left: 0;
     padding: 24px 20px 30px;
   }
@@ -893,7 +894,7 @@ body[data-page="article"] li {
   }
 }
 @media (max-width: 480px) {
-  .content {
+  main > .content {
     padding-right: 16px;
     padding-left: 16px;
   }

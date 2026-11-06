@@ -1,6 +1,6 @@
 # Личная библиотека
 
-[← Все эндпоинты](../endpoints.md) · [Контракт библиотеки](../librarySpec.md) · [Обозначения](readme.md)
+[← Все эндпоинты](../endpoints.md) · [Контракт библиотеки](../contracts/librarySpec.md) · [Обозначения](readme.md)
 
 Все восемь операций проверяют access cookie: JWT → активную принадлежащую пользователю UserSession и существующий User. `:id` — **ID UserItem**, а `itemId` в создании — ID произведения Item. JSON передаётся с `Content-Type: application/json`; неизвестные поля запрещены. Общие ошибки: 400 — DTO/формат ObjectId; 401 — доступ; 403 — CSRF; 429 — throttling. Все ответы — `Cache-Control: no-store`.
 

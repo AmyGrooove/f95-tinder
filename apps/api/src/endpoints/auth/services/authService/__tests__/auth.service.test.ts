@@ -16,8 +16,7 @@ describe("AuthService", () => {
   const setup = () => {
     const jwt = { verifyAccessToken: jest.fn(async () => ({ sub, sessionId })) }
     const sessions = {
-      findActive:
-        jest.fn<UserSessionRepository["findActive"]>(),
+      findActive: jest.fn<UserSessionRepository["findActive"]>(),
     }
     const service = new AuthService(
       {} as UserRepository,

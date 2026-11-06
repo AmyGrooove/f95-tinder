@@ -14,6 +14,24 @@ interface IReadPopularItemIdsProps {
   country: ECountry
 
   library?: IValueFilter<TLibraryStatus | "outside">
+  tags?: readonly IValueFilter<Types.ObjectId>[]
+  rating?: {
+    min?: number
+    max?: number
+  }
 }
 
-export type { IReadPopularItemIdsProps }
+interface IItemReleaseWindow {
+  from: Date
+  through: Date
+}
+
+interface IReadNewItemIdsProps extends IReadPopularItemIdsProps {
+  releaseWindow: IItemReleaseWindow
+}
+
+export type {
+  IItemReleaseWindow,
+  IReadNewItemIdsProps,
+  IReadPopularItemIdsProps,
+}

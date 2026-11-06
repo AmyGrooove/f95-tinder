@@ -1,18 +1,11 @@
 import type { Types } from "mongoose"
 
+import type { IRecommendationCandidateFilter } from "@endpoints/recommendations/services/recommendationCandidatesService"
 import type { EItemType } from "@entities/item/schemas/EItemType"
-import type { TLibraryStatus } from "@entities/userItem/types/TLibraryStatus"
 import type { ICursorPagination } from "@infrastructure/database/types/IPaginationInput"
-import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
 
-interface IRecommendationFilter {
+interface IRecommendationFilter extends IRecommendationCandidateFilter {
   types?: readonly EItemType[]
-  tags?: readonly IValueFilter<Types.ObjectId>[]
-  library?: IValueFilter<TLibraryStatus | "outside">
-  rating?: {
-    min?: number
-    max?: number
-  }
 }
 
 interface IFindRecommendationsProps extends ICursorPagination {

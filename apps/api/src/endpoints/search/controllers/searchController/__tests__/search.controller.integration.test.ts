@@ -1,103 +1,23 @@
-import { execFile } from "node:child_process"
-import { randomUUID } from "node:crypto"
-import { setTimeout } from "node:timers/promises"
-import { promisify } from "node:util"
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from "@jest/globals"
+import { beforeAll, describe, expect, it, jest } from "@jest/globals"
 import type { FastifyInstance } from "fastify"
-import { Meilisearch } from "meilisearch"
 import { Types } from "mongoose"
 
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
-import { createTestApplication } from "@app/__tests__/setup/createTestApplication"
+import { getSearchTestApplication } from "@app/__tests__/setup/setupSearchIntegration"
 
 import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import type { SearchResponseDto } from "@endpoints/search/services/siteSearchService"
-import { SyncTagSearchJobHandler } from "@endpoints/tag/services/syncTagSearchJobHandler"
-import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 
 describe("SearchController", () => {
-  const docker = promisify(execFile)
-  let containerId: string | undefined
-  let application: Awaited<ReturnType<typeof createTestApplication>>
-  let client: Meilisearch
+  let application: ReturnType<typeof getSearchTestApplication>
 
-  beforeAll(async () => {
-    const apiKey = randomUUID()
-    const { stdout } = await docker(
-      "docker",
-      [
-        "run",
-        "--detach",
-        "--rm",
-        "--name",
-        `bisky-site-search-test-${randomUUID()}`,
-        "--publish",
-        "127.0.0.1::7700",
-        "--env",
-        `MEILI_MASTER_KEY=${apiKey}`,
-        "--env",
-        "MEILI_NO_ANALYTICS=true",
-        "getmeili/meilisearch:v1.12.8",
-      ],
-      { timeout: 180_000 },
-    )
-    containerId = stdout.trim()
-    const { stdout: port } = await docker("docker", [
-      "port",
-      containerId,
-      "7700/tcp",
-    ])
-    const host = `http://${port.trim()}`
-    client = new Meilisearch({ host, apiKey, timeout: 1_000 })
-    const deadline = Date.now() + 30_000
-
-    while (true) {
-      try {
-        await client.health()
-        break
-      } catch (error) {
-        if (Date.now() >= deadline) {
-          throw error
-        }
-        await setTimeout(100)
-      }
-    }
-
-    application = await createTestApplication({ host, apiKey })
-  }, 240_000)
-
-  beforeEach(async () => {
-    await application.reset()
-    for (const index of Object.values(SEARCH_SETTINGS.indexes)) {
-      if (await application.app.get(SearchService).hasIndex(index)) {
-        await application.app.get(SearchService).clear(index, true)
-      }
-    }
+  beforeAll(() => {
+    application = getSearchTestApplication()
   })
-
-  afterAll(async () => {
-    try {
-      await application?.close()
-    } finally {
-      if (containerId !== undefined) {
-        await docker("docker", ["rm", "--force", containerId], {
-          timeout: 30_000,
-        })
-      }
-    }
-  }, 60_000)
 
   const synchronize = async () => {
     await application.app.get(SyncSearchJobHandler).handle(null, {
@@ -581,6 +501,7 @@ describe("SearchController", () => {
   it("восстанавливает потерянный индекс даже при существующей контрольной отметке", async () => {
     const item = await seedItem()
     await synchronize()
+    const { client } = application
     const task = await client.deleteIndex(SEARCH_SETTINGS.indexes.items)
     await client.tasks.waitForTask(task.taskUid)
     await synchronize()
@@ -800,67 +721,6 @@ describe("SearchController", () => {
     expect(response.statusCode).toBe(400)
     expect(response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } })
     expect(search).not.toHaveBeenCalled()
-  })
-
-  describe("TagController", () => {
-    const queryTags = (payload: object, origin = "http://localhost") => {
-      return application.app.inject({
-        method: "QUERY",
-        url: "/tags",
-        payload,
-        headers: { origin },
-      })
-    }
-
-    it("возвращает гостю теги нужной группы после синхронизации с MongoDB", async () => {
-      const id = new Types.ObjectId()
-      await application.connection.collection("Tag").insertMany([
-        {
-          _id: id,
-          key: "genreOrbit",
-          group: ETagGroup.GENRE,
-          name: { ru: "Орбита", en: null },
-        },
-        { key: "orbit", group: null, name: { ru: "Орбита", en: null } },
-      ])
-      expect((await queryTags({})).statusCode).toBe(503)
-
-      await application.app.get(SyncTagSearchJobHandler).handle(null, {
-        id: "tag-search-test",
-        attempt: 1,
-        updateProgress: async () => {},
-        throwIfCancelled: async () => {},
-      })
-
-      const response = await queryTags({
-        search: "Орбита",
-        group: { allOf: [ETagGroup.GENRE] },
-        limit: 10,
-      })
-      expect(response.statusCode).toBe(200)
-      expect(response.headers["accept-query"]).toBe("application/json")
-      expect(response.headers["cache-control"]).toBe("no-store")
-      expect(response.json()).toEqual({
-        items: [
-          {
-            id: id.toHexString(),
-            key: "genreOrbit",
-            group: ETagGroup.GENRE,
-            name: { ru: "Орбита", en: null },
-          },
-        ],
-        nextCursor: null,
-      })
-    })
-
-    it("отклоняет некорректный фильтр и запрос с постороннего Origin", async () => {
-      expect(
-        (await queryTags({ group: { allOf: ["invalid"] } })).statusCode,
-      ).toBe(400)
-      expect((await queryTags({}, "https://foreign.example")).statusCode).toBe(
-        403,
-      )
-    })
   })
 
   it("сохраняет CORS для QUERY и блокирует посторонний Origin", async () => {

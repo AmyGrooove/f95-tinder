@@ -16,7 +16,7 @@ Swagger uses OpenAPI 3.2.0 so QUERY operations remain in the generated schema. I
 
 Global validation transforms input, whitelists DTO fields and rejects non-whitelisted fields. Multipart limits allow one file up to 25 MiB, 20 fields, 64 KiB per field and 21 parts. Image processing applies additional limits; see [storage](storage.md).
 
-[AppModule](../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement 19 routes in [the account/auth specification](../public/docs/api/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../src/endpoints/userItem/userItem.module.ts), exposing seven mutation routes and QUERY /userItems for summaries by UserItem ID. It does not provide lookup by Item or full library reads.
+[AppModule](../src/app/app.module.ts) imports AuthModule and AccountModule. Their controllers implement 19 routes in [the account/auth specification](../public/docs/api/contracts/accountAndAuthSpec.md); see [security](security.md) for cookie authorization and session contracts. AppModule also imports [UserItemEndpointModule](../src/endpoints/userItem/userItem.module.ts), exposing seven mutation routes and QUERY /userItems for summaries by UserItem ID. It does not provide lookup by Item or full library reads.
 
 CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled; allowed methods include QUERY. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
 

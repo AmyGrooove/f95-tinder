@@ -28,16 +28,12 @@
 | `POST /auth/password/reset`       | Запрос восстановления по email                       |
 | `PATCH /auth/password/reset`      | Подтверждение восстановления и новый пароль          |
 
-Точки проверки: [account controllers](../../../../src/endpoints/account/controllers), [account services](../../../../src/endpoints/account/services), [auth controllers](../../../../src/endpoints/auth/controllers), [auth services](../../../../src/endpoints/auth/services). Подробные правила подтверждений и завершения сессий — в [действующем контракте](../accountAndAuthSpec.md).
+Точки проверки: [account controllers](../../../../src/endpoints/account/controllers), [account services](../../../../src/endpoints/account/services), [auth controllers](../../../../src/endpoints/auth/controllers), [auth services](../../../../src/endpoints/auth/services). Подробные правила подтверждений и завершения сессий — в [действующем контракте](../contracts/accountAndAuthSpec.md).
 
 `GET /account/whoami` возвращает `user.avatarUrl`, но маршрутов его загрузки и удаления нет. Регистрация и перевыпуск отвечают 204 без тела. Сгенерированный секретный код остаётся на сервере. Список сессий уже позволяет выделить текущую; устройство/браузер можно представить по доступному userAgent, география и лимит сессий не входят в требования.
 
 ## Дальнейшая работа
 
-[Задачи и вопросы](../../todos/pages.md#настройки)
+[Задачи и вопросы](../../todos/pages/accountAndLibrary.md#settings)
 
 Сохранение отображаемого имени и логина выполняется отдельными маршрутами. Повтор пароля, предпросмотр и предупреждение о несохранённом относятся к клиенту. OAuth, удаление аккаунта и уведомления выходят за рамки описанной страницы.
-
-## Результаты проверок
-
-Наличие кода существующих маршрутов не подтверждает доставку писем, работу cookies или Redis в окружении; runtime-проверки не выполнялись.

@@ -5,6 +5,7 @@ window.$docsify = {
   basePath: "/knowledge/content/",
   relativePath: true,
   loadSidebar: true,
+  skipLink: false,
   alias: {
     "/_sidebar.md": `${window.location.origin}/knowledge/sidebar.md`,
     "/.*/_sidebar.md": `${window.location.origin}/knowledge/sidebar.md`,
@@ -18,7 +19,7 @@ window.$docsify = {
     placeholder: "Найти в документации…",
     noData: "Ничего не найдено",
     depth: 3,
-    namespace: "bisky-knowledge-endpoints",
+    namespace: "bisky-knowledge-sections",
   },
   plugins: [
     (hook, vm) => {
