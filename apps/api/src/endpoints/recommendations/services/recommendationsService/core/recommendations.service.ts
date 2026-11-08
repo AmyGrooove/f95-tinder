@@ -31,6 +31,11 @@ interface IFallbackCursorPosition {
   offset: number
 }
 
+interface IFallbackSnapshot {
+  recommendationVersion: string | null
+  itemIds: string[]
+}
+
 @Injectable()
 class RecommendationsService {
   constructor(
@@ -117,30 +122,50 @@ class RecommendationsService {
       .digest("base64url")
     const { namespace, ttlMs } = FALLBACK_PAGE_SETTINGS
     const cacheKey = `${namespace}:${viewer.userId.toHexString()}:${scopeHash}:${listId}`
-    const itemIds = isFirstPage
-      ? (
-          await this.buildFallbackItemIds(
-            await this.candidatesService.prepareContextForViewer(viewer),
-            filter,
-          )
-        ).map((id) => id.toHexString())
-      : await this.cacheService.get<string[]>(cacheKey)
+    const snapshot: IFallbackSnapshot | null = isFirstPage
+      ? {
+          recommendationVersion: viewer.recommendationVersion,
+          itemIds: (
+            await this.buildFallbackItemIds(
+              await this.candidatesService.prepareContextForViewer(viewer),
+              filter,
+            )
+          ).map((id) => id.toHexString()),
+        }
+      : await this.cacheService.get<IFallbackSnapshot>(cacheKey)
 
-    if (itemIds === null) {
+    if (
+      snapshot === null ||
+      snapshot.recommendationVersion !== viewer.recommendationVersion
+    ) {
       throw new RecommendationCursorExpiredError()
     }
 
+    const { itemIds } = snapshot
     if (!isFirstPage && offset >= itemIds.length) {
       throw new BadRequestException(invalidCursor)
     }
 
     const nextOffset = offset + limit
-    const items = await this.itemRepository.readPosterCardsByIds(
-      itemIds.slice(offset, nextOffset).map((id) => new Types.ObjectId(id)),
-    )
+    const items = await this.itemRepository.readRecommendationPosterCards({
+      ...filter,
+      userId: viewer.userId,
+      country: viewer.country,
+      ids: itemIds
+        .slice(offset, nextOffset)
+        .map((id) => new Types.ObjectId(id)),
+    })
 
     if (isFirstPage) {
-      await this.cacheService.set(cacheKey, itemIds, ttlMs)
+      if (!(await this.candidatesService.checkIsViewerCurrent(viewer))) {
+        throw new RecommendationCursorExpiredError()
+      }
+
+      await this.cacheService.set(cacheKey, snapshot, ttlMs)
+
+      if (!(await this.candidatesService.checkIsViewerCurrent(viewer))) {
+        throw new RecommendationCursorExpiredError()
+      }
     }
 
     const nextCursor =

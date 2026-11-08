@@ -4,7 +4,7 @@
 
 Публичные чтения не проверяют cookies и не возвращают UserItem. Создание, редактирование, удаление и личные реакции требуют access cookie: JWT → активная собственная UserSession + существующий User. Для изменения/удаления подборки проверяется также author. Все `:id` — ObjectId подборки. JSON — с `Content-Type: application/json`; неизвестные поля запрещены. Все ответы имеют `Cache-Control: no-store`. Общие ошибки: 400 — входные данные/ID, 401 — доступ защищённых операций, 403 — CSRF, 429 — throttling.
 
-Ни один из этих одиннадцати HTTP-потоков не публикует событий, не ставит джоб и не обращается к внешним сервисам. Включение Item в подборку не меняет UserItem и вкус пользователя. Отдельный обработчик изменений TagItem поддерживает автоматические подборки, но эти маршруты его **не вызывают**. Обновление поиска происходит [независимым фоном](catalog.md#search-sync).
+Эти восемь HTTP-потоков не публикуют событий и не ставят джоб. Загрузка обложки обращается к S3 и обрабатывает изображение; остальные операции работают с MongoDB. Включение Item в подборку не меняет UserItem и вкус пользователя. Отдельный обработчик изменений TagItem поддерживает автоматические подборки, но эти маршруты его **не вызывают**. Обновление поиска происходит [независимым фоном](catalog.md#search-sync).
 
 <a id="get"></a>
 
@@ -18,10 +18,11 @@ flowchart TD
     accDescr: Проверить ID и прочитать неудалённую Collection, вернуть метаданные и блоки или 404
     A(["GET /collections/:id"]):::http --> B["Проверить формат ID"]:::action
     B --> C[("Прочитать неудалённую Collection")]:::data
-    C --> D(["200 — метаданные и блоки; если нет — 404"]):::http
+    C --> U[("Если указан author — прочитать публичные поля User")]:::data
+    U --> D(["200 — метаданные, автор и блоки; нет Collection — 404"]):::http
 ```
 
-Одна выборка Collection без транзакции, Items/реакции/пользователь не читаются. Отсутствующая и soft-deleted подборка дают одинаковый 404. Даты — ISO, языковые значения и nullable поля отображаются явно. HTTP ждёт чтения и маппинга, записей нет.
+Чтение Collection и, при указанном author, публичных полей User без транзакции. Items и личные реакции не читаются. Если запись автора отсутствует, author в ответе равен null. Отсутствующая и soft-deleted подборка дают одинаковый 404. Даты — ISO, языковые значения и nullable поля отображаются явно. HTTP ждёт чтения и маппинга, записей нет.
 
 **Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/services/collectionService/dto/collection.response.ts).
 
@@ -84,7 +85,7 @@ flowchart TD
     F -->|Commit| G(["204 — без тела"]):::http
 ```
 
-Чужая, автоматическая (author=null), отсутствующая или удалённая Collection — одинаковый 404. Устаревшая версия или предел Number.MAX_SAFE_INTEGER — 409. Проверяются итоговый порядок блоков, уникальность, отсутствие конфликтующих добавлений/удалений, доступные группы, наличие удаляемых memberships и неудалённые добавляемые Item. Невалидная структура/пустое изменение — 400; нет Item — 404. Удаление группы удаляет связанные ItemCollection, кроме перенесённых в сохранённые группы. Все чтения/записи состава и условная запись версии используют одну session; сбой откатывает их вместе. HTTP ждёт commit, очередей и postcommit-вызовов нет.
+Чужая, принадлежащая сайту (author=null), отсутствующая или удалённая Collection — одинаковый 404. Устаревшая версия или предел Number.MAX_SAFE_INTEGER — 409. Проверяются итоговый порядок блоков, уникальность, отсутствие конфликтующих добавлений/удалений, доступные группы, наличие удаляемых memberships и неудалённые добавляемые Item. Невалидная структура/пустое изменение — 400; нет Item — 404. Удаление группы удаляет связанные ItemCollection, кроме перенесённых в сохранённые группы. Все чтения/записи состава и условная запись версии используют одну session; сбой откатывает их вместе. HTTP ждёт commit, очередей и postcommit-вызовов нет.
 
 **Технические подробности:** CollectionController.update → CollectionService.update/prepareUpdatedBlocks → [CollectionRepository.updateVersioned](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [ItemCollectionRepository.findByCollectionAndItems/upsertForCollection/removeForCollection](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts), ItemRepository.findNotDeletedByIds. [Сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [DTO](../../../../src/endpoints/collection/services/collectionService/dto/updateCollection.body.ts).
 
