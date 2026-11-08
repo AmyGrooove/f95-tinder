@@ -73,10 +73,10 @@ class SiteSearchService {
           isPosition: (value): value is (number | null)[] =>
             isArray(value) &&
             value.length === selected.length &&
-            value.some((offset) => offset !== null) &&
+            value.some((offset) => !isNil(offset)) &&
             value.every(
               (offset) =>
-                offset === null ||
+                isNil(offset) ||
                 (isFiniteNumber(offset) &&
                   offset % body.limit === 0 &&
                   offset > 0 &&
@@ -125,7 +125,7 @@ class SiteSearchService {
       const nextOffsets = selected.map(
         (group) => pages.get(group)?.nextOffset ?? null,
       )
-      const nextCursor = nextOffsets.some((offset) => offset !== null)
+      const nextCursor = nextOffsets.some((offset) => !isNil(offset))
         ? this.cursorService.create({ scope, position: nextOffsets })
         : null
       const [items, collections, users] = await Promise.all([

@@ -21,6 +21,7 @@ import type { IItemDetails } from "../types/IItemDetails"
 import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATING_SCORE_SETTINGS"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
 import type { IItemPosterCard } from "../types/IItemPosterCard"
@@ -155,7 +156,7 @@ class ItemRepository {
       isNew ? "optional" : "required",
     )
 
-    if (eligibility === null) {
+    if (isNil(eligibility)) {
       return []
     }
 
@@ -219,7 +220,7 @@ class ItemRepository {
     const { ids, types } = props
     const eligibility = createRecommendationEligibilityPipeline(props)
 
-    if (eligibility === null) {
+    if (isNil(eligibility)) {
       return []
     }
 

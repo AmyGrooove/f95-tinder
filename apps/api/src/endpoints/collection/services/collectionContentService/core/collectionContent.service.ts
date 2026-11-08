@@ -12,6 +12,8 @@ import { ItemCollectionRepository } from "@entities/itemCollection/services/item
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import type { IItemCollectionCard } from "@entities/itemCollection/services/itemCollectionRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -104,7 +106,7 @@ class CollectionContentService {
       })
       pendingText = []
     }
-    if (nextCursor === null) {
+    if (isNil(nextCursor)) {
       blocks.push(...pendingText)
     }
 
@@ -128,11 +130,11 @@ class CollectionContentService {
       !decoded.startsWith(scope) ||
       group !== String(groupOrder) ||
       offset !== String(position) ||
-      !Number.isSafeInteger(groupOrder) ||
-      groupOrder < 0 ||
+      !isInt(groupOrder) ||
+      !isNonNegativeSafe(groupOrder) ||
       groupOrder >= groupCount ||
-      !Number.isSafeInteger(position) ||
-      position < 0 ||
+      !isInt(position) ||
+      !isNonNegativeSafe(position) ||
       isUndefined(id) ||
       !REGEX.MONGO_OBJECT_ID.test(id) ||
       !isUndefined(extra)

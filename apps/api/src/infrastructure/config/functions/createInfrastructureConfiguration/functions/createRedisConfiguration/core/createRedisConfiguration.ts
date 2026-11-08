@@ -1,3 +1,5 @@
+import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { REGEX } from "@shared/static/REGEX"
 import { getEnvironmentUrl } from "../../getEnvironmentUrl"
 
@@ -13,7 +15,7 @@ const createRedisConfiguration = () => {
 
   const database = databaseValue === "" ? 0 : Number(databaseValue)
 
-  if (!Number.isSafeInteger(database)) {
+  if (!isInt(database) || !isNonNegativeSafe(database)) {
     throw new Error(CONFIG_ERROR_MESSAGES.REDIS_DATABASE)
   }
 

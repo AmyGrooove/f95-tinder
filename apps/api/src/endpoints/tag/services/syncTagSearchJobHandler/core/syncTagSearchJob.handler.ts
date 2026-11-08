@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import type { Types } from "mongoose"
 
+import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { TagRepository } from "@entities/tag/services/tagRepository"
@@ -37,7 +38,7 @@ class SyncTagSearchJobHandler implements IJobHandler<null> {
 
     if (
       isIndexPresent &&
-      checkpoint !== null &&
+      !isNil(checkpoint) &&
       checkpoint >= weekStart.getTime()
     ) {
       return
@@ -45,7 +46,7 @@ class SyncTagSearchJobHandler implements IJobHandler<null> {
 
     await context.throwIfCancelled()
 
-    if (!isIndexPresent && checkpoint !== null) {
+    if (!isIndexPresent && !isNil(checkpoint)) {
       await this.cacheService.delete(checkpointKey)
     }
 

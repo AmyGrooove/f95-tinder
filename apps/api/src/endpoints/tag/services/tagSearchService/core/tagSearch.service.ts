@@ -5,7 +5,8 @@ import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isInt } from "@shared/functions/checks/isInt"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { TAG_SEARCH_SETTINGS } from "../../../static/TAG_SEARCH_SETTINGS"
@@ -38,8 +39,7 @@ class TagSearchService {
           scope,
           invalidCursorMessage: DICTIONARY.tag.invalidCursor,
           isPosition: (value): value is number =>
-            isNumber(value) &&
-            Number.isSafeInteger(value) &&
+            isInt(value) &&
             value >= limit &&
             value < maxTotalHits &&
             value % limit === 0,
@@ -89,7 +89,7 @@ class TagSearchService {
         TAG_SEARCH_SETTINGS.checkpointKey,
       )
 
-      if (checkpoint !== null) {
+      if (!isNil(checkpoint)) {
         const result = await this.searchService.search<ITagSearchDocument>(
           TAG_SEARCH_SETTINGS.index,
           search,

@@ -2,11 +2,7 @@ import { isNil } from "@shared/functions/checks/isNil"
 
 import { ITEM_RATING_SCORE_SETTINGS } from "../../../static/ITEM_RATING_SCORE_SETTINGS"
 
-interface ICalculateItemRatingScoreProps {
-  ratingAverage: number | null
-  ratingsCount: number
-  siteRatingAverage: number | null
-}
+import type { ICalculateItemRatingScoreProps } from "../types/ICalculateItemRatingScoreProps"
 
 const calculateItemRatingScore = (props: ICalculateItemRatingScoreProps) => {
   const { ratingAverage, ratingsCount, siteRatingAverage } = props

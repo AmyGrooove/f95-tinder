@@ -1,6 +1,7 @@
 import { TAG_GROUP_RULES } from "../../../static/TAG_GROUP_RULES"
 import type { TTagGroupRule } from "../../../types/TTagGroupRule"
 import type { ICheckIsTagKeyAllowedProps } from "../types/ICheckIsTagKeyAllowedProps"
+import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
 
@@ -42,7 +43,7 @@ const checkIsTagKeyAllowed = (props: ICheckIsTagKeyAllowedProps) => {
 
       return (
         String(value) === suffix &&
-        Number.isSafeInteger(value) &&
+        isInt(value) &&
         value >= rule.min &&
         value <= rule.max
       )

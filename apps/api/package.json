@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "nest start --watch",
-    "tunnel": "node --env-file=.env.tunnel scripts/tunnel.mjs",
+    "tunnel": "node --env-file=.env.tunnel tools/scripts/tunnel.mjs",
     "start": "node dist/main.js",
     "build": "nest build",
     "type-check": "tsc --project tsconfig.test.json",

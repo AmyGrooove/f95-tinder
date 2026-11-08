@@ -15,7 +15,9 @@ import { ItemRepository } from "@entities/item/services/itemRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
-import { isNumber } from "@shared/functions/checks/isNumber"
+import { isNil } from "@shared/functions/checks/isNil"
+import { isInt } from "@shared/functions/checks/isInt"
+import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -23,18 +25,10 @@ import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { RecommendationCursorExpiredError } from "../errors/RecommendationCursorExpiredError"
 import { createFallbackCursorScope } from "../functions/createFallbackCursorScope"
 import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"
+import type { IFallbackCursorPosition } from "../types/IFallbackCursorPosition"
+import type { IFallbackSnapshot } from "../types/IFallbackSnapshot"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
 import type { TFindRecommendationsResult } from "../types/TFindRecommendationsResult"
-
-interface IFallbackCursorPosition {
-  listId: string
-  offset: number
-}
-
-interface IFallbackSnapshot {
-  recommendationVersion: string | null
-  itemIds: string[]
-}
 
 @Injectable()
 class RecommendationsService {
@@ -112,8 +106,8 @@ class RecommendationsService {
             isString(value.listId) &&
             isUUID(value.listId, "4") &&
             "offset" in value &&
-            isNumber(value.offset) &&
-            Number.isSafeInteger(value.offset) &&
+            isInt(value.offset) &&
+            isNonNegativeSafe(value.offset) &&
             value.offset > 0 &&
             value.offset % limit === 0,
         })
@@ -124,7 +118,6 @@ class RecommendationsService {
     const cacheKey = `${namespace}:${viewer.userId.toHexString()}:${scopeHash}:${listId}`
     const snapshot: IFallbackSnapshot | null = isFirstPage
       ? {
-          recommendationVersion: viewer.recommendationVersion,
           itemIds: (
             await this.buildFallbackItemIds(
               await this.candidatesService.prepareContextForViewer(viewer),
@@ -134,10 +127,7 @@ class RecommendationsService {
         }
       : await this.cacheService.get<IFallbackSnapshot>(cacheKey)
 
-    if (
-      snapshot === null ||
-      snapshot.recommendationVersion !== viewer.recommendationVersion
-    ) {
+    if (isNil(snapshot)) {
       throw new RecommendationCursorExpiredError()
     }
 
@@ -157,15 +147,7 @@ class RecommendationsService {
     })
 
     if (isFirstPage) {
-      if (!(await this.candidatesService.checkIsViewerCurrent(viewer))) {
-        throw new RecommendationCursorExpiredError()
-      }
-
       await this.cacheService.set(cacheKey, snapshot, ttlMs)
-
-      if (!(await this.candidatesService.checkIsViewerCurrent(viewer))) {
-        throw new RecommendationCursorExpiredError()
-      }
     }
 
     const nextCursor =
