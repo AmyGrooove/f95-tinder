@@ -1,0 +1,5 @@
+implicit==0.7.3
+numpy==2.5.4
+pymongo==4.19.0
+scipy==1.18.1
+threadpoolctl==3.8.0
