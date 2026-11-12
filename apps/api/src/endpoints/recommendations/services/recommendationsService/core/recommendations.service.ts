@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
 
-import { BadRequestException, Injectable } from "@nestjs/common"
+import { BadRequestException, Inject, Injectable } from "@nestjs/common"
 import { isUUID } from "class-validator"
 import { Types } from "mongoose"
 
@@ -12,6 +12,7 @@ import type {
 } from "@endpoints/recommendations/services/recommendationCandidatesService"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import { RecommendationModelRepository } from "@entities/recommendationModel/services/recommendationModelRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
@@ -24,14 +25,19 @@ import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { RecommendationCursorExpiredError } from "../errors/RecommendationCursorExpiredError"
 import { createFallbackCursorScope } from "../functions/createFallbackCursorScope"
+import { decodeRecommendationModel } from "../functions/decodeRecommendationModel"
 import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"
 import type { IFallbackCursorPosition } from "../types/IFallbackCursorPosition"
 import type { IFallbackSnapshot } from "../types/IFallbackSnapshot"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
+import type { IRecommendationModel } from "../types/IRecommendationModel"
 import type { TFindRecommendationsResult } from "../types/TFindRecommendationsResult"
 
 @Injectable()
 class RecommendationsService {
+  @Inject(RecommendationModelRepository)
+  private readonly recommendationModelRepository: RecommendationModelRepository
+
   constructor(
     private readonly candidatesService: RecommendationCandidatesService,
     private readonly fallbackService: FallbackRecommendationsService,
@@ -39,6 +45,11 @@ class RecommendationsService {
     private readonly cacheService: CacheService,
     private readonly cursorService: CursorService,
   ) {}
+
+  async loadLatestModel(): Promise<IRecommendationModel | null> {
+    const document = await this.recommendationModelRepository.readLatest()
+    return document === null ? null : decodeRecommendationModel(document)
+  }
 
   async readPopularItemIds(
     accessToken: unknown,
