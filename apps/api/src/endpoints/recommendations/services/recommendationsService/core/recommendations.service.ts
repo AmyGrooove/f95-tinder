@@ -23,7 +23,7 @@ import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-import { RecommendationCursorExpiredError } from "../static/RecommendationCursorExpiredError"
+import { RecommendationCursorExpiredError } from "../static/errors/RecommendationCursorExpiredError"
 import { createFallbackCursorScope } from "../functions/createFallbackCursorScope"
 import { decodeRecommendationModel } from "../functions/decodeRecommendationModel"
 import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"

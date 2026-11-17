@@ -1,5 +1,5 @@
 export { RecommendationsService } from "./core/recommendations.service"
-export { RecommendationCursorExpiredError } from "./static/RecommendationCursorExpiredError"
+export { RecommendationCursorExpiredError } from "./static/errors/RecommendationCursorExpiredError"
 export { calculateAlsCandidates } from "./functions/calculateAlsCandidates"
 export { calculateItemCfCandidates } from "./functions/calculateItemCfCandidates"
 export type { IFindRecommendationsProps } from "./types/IFindRecommendationsProps"
