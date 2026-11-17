@@ -1,4 +1,4 @@
-import { ApiError, ERROR_CODES } from '@shared/errors/ApiError'
+import { ApiError, ERROR_CODES } from '@shared/static/ApiError'
 import { isArray } from '@shared/functions/checks/isArray'
 import { isNil } from '@shared/functions/checks/isNil'
 import { isObject } from '@shared/functions/checks/isObject'
@@ -6,7 +6,7 @@ import { isString } from '@shared/functions/checks/isString'
 import { ENV } from '@shared/static/ENV'
 
 import type { IFetchDataProps } from '../types/IFetchDataProps'
-import type { IApiErrorResponse } from '@shared/errors/ApiError'
+import type { IApiErrorResponse } from '@shared/static/ApiError'
 
 const getApiErrorResponse = async (
   response: Response,

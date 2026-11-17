@@ -15,9 +15,9 @@ Reuse [fetchData](../src/shared/functions/api/fetchData/index.ts) for the existi
 
 ## Error contract
 
-Non-OK HTTP responses throw [ApiError](../src/shared/errors/ApiError/index.ts), whose [class](../src/shared/errors/ApiError/core/ApiError.ts) retains `code`, `details`, `status` and Error's `message`.
+Non-OK HTTP responses throw [ApiError](../src/shared/static/ApiError/index.ts), whose [class](../src/shared/static/ApiError/core/ApiError.ts) retains `code`, `details`, `status` and Error's `message`.
 
-The helper accepts an error body only when its code belongs to [ERROR_CODES](../src/shared/errors/ApiError/static/ERROR_CODES.ts), message is a string, and details is null or an object. Invalid or unreadable error bodies fall back to `INTERNAL_ERROR`, null details and `Network error: <status>`. Fetch failures themselves are not converted into ApiError.
+The helper accepts an error body only when its code belongs to [ERROR_CODES](../src/shared/static/ApiError/static/ERROR_CODES.ts), message is a string, and details is null or an object. Invalid or unreadable error bodies fall back to `INTERNAL_ERROR`, null details and `Network error: <status>`. Fetch failures themselves are not converted into ApiError.
 
 ## Query cache
 
