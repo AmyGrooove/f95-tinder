@@ -9,6 +9,7 @@ import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBl
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { SYNCHRONIZE_TAG_COLLECTIONS_JOB } from "@endpoints/collection/static/SYNCHRONIZE_TAG_COLLECTIONS_JOB"
@@ -71,7 +72,11 @@ class SynchronizeTagCollectionsJobHandler implements IJobHandler<string> {
       )
 
       if (isNil(group)) {
-        throw new Error(`Tag collection has no group: ${collection._id}`)
+        throw new Error(
+          DICTIONARY.collection.tagCollectionGroupMissing(
+            String(collection._id),
+          ),
+        )
       }
 
       await this.itemCollections.write.updateByFilter(

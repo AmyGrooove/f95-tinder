@@ -63,7 +63,7 @@ const TagSchema = SchemaFactory.createForClass(Tag)
 
 TagSchema.pre("validate", function () {
   if (!checkIsTagKeyAllowed({ key: this.key, group: this.group })) {
-    this.invalidate("key", "Tag key does not match its group rule")
+    this.invalidate("key", DICTIONARY.tag.invalidGroupKey)
   }
 })
 

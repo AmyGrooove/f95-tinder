@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common"
 import type { CanActivate, ExecutionContext } from "@nestjs/common"
 import { Types } from "mongoose"
 import type { FastifyRequest } from "fastify"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { REGEX } from "@shared/static/REGEX"
 import { CollectionService } from "@endpoints/collection/services/collectionService"
 
@@ -17,9 +18,7 @@ class CollectionPosterGuard implements CanActivate {
       !REGEX.MONGO_OBJECT_ID.test(request.params.id) ||
       !request.isMultipart()
     ) {
-      throw new BadRequestException(
-        "Требуются ID подборки и multipart/form-data",
-      )
+      throw new BadRequestException(DICTIONARY.collection.invalidPosterRequest)
     }
     const accessToken = /(?:^|;\s*)__Host-accessToken=([^;]*)/.exec(
       request.headers.cookie ?? "",

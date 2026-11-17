@@ -1,3 +1,5 @@
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+
 import type { IRecommendationModel } from "../../../types/IRecommendationModel"
 import { rankRecommendationCandidates } from "../../rankRecommendationCandidates"
 
@@ -54,7 +56,7 @@ const calculateAlsCandidates = (
 
         if (row === column) {
           if (value <= 0 || !Number.isFinite(value)) {
-            throw new Error("Невозможно вычислить вектор пользователя ALS")
+            throw new Error(DICTIONARY.recommendation.alsFoldInFailed)
           }
           matrix[index] = Math.sqrt(value)
         } else {

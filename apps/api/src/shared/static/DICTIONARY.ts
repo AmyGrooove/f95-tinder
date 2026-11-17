@@ -113,6 +113,10 @@ const DICTIONARY = {
   database: {
     invalidObjectId: "Некорректный идентификатор",
     unavailable: "Соединение с MongoDB недоступно",
+    transactionRequiredForCallbacks:
+      "Transaction callbacks require MongoTransactionService.run",
+    transactionFinalizationRequired:
+      "Transactions with after-commit callbacks must be finalized by MongoTransactionService.run",
   },
 
   cache: {
@@ -175,6 +179,19 @@ const DICTIONARY = {
     operationFailed: (operation: string, path: string) => {
       return `Не удалось выполнить операцию хранилища '${operation}' для '${path}'`
     },
+  },
+
+  homePage: {
+    title: "Bisky API",
+    brand: "Bisky",
+    apiLabel: "API",
+    linksLabel: "Ссылки API",
+    mainSite: "Основной сайт",
+    swagger: "Swagger",
+    knowledge: "База знаний",
+    services: "Сервисы",
+    serviceUp: "Работает",
+    serviceDown: "Недоступен",
   },
 } as const
 

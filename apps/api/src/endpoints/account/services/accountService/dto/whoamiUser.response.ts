@@ -11,13 +11,13 @@ class WhoamiUserResponseDto {
 
   @ApiProperty({
     description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.username,
-    example: "quietfox042",
+    example: SWAGGER_DICTIONARY.examples.username,
   })
   username: string
 
   @ApiProperty({
     description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.displayName,
-    example: "quietFox042",
+    example: SWAGGER_DICTIONARY.examples.displayUsername,
   })
   displayName: string
 

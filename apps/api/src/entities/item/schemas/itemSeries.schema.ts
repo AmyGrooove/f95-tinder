@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -30,7 +31,7 @@ ItemSeriesSchema.pre("validate", function () {
   ) {
     this.invalidate(
       "releasedEpisodeCount",
-      "Released episode count must not exceed total episode count",
+      DICTIONARY.item.releasedEpisodeCountExceedsTotal,
     )
   }
 })

@@ -1,5 +1,6 @@
 import { Types } from "mongoose"
 
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
@@ -46,7 +47,7 @@ const decodeRecommendationModel = (
     document
 
   if (formatVersion !== 1) {
-    throw new Error("Версия формата модели рекомендаций не поддерживается")
+    throw new Error(DICTIONARY.recommendation.unsupportedModelVersion)
   }
 
   if (
@@ -59,11 +60,11 @@ const decodeRecommendationModel = (
     itemIds.some((id) => id.length === 0) ||
     new Set(itemIds).size !== itemIds.length
   ) {
-    throw new Error("Некорректные метаданные модели рекомендаций")
+    throw new Error(DICTIONARY.recommendation.invalidModelMetadata)
   }
 
   if (!checkIsRecord(itemCF) || !checkIsRecord(als)) {
-    throw new Error("В модели отсутствуют данные ItemCF или ALS")
+    throw new Error(DICTIONARY.recommendation.missingModelData)
   }
 
   const itemCount = itemIds.length
@@ -80,7 +81,7 @@ const decodeRecommendationModel = (
     !Buffer.isBuffer(weights) ||
     weights.length !== (indices.length / intSize) * floatSize
   ) {
-    throw new Error("Некорректные размеры массивов ItemCF")
+    throw new Error(DICTIONARY.recommendation.invalidItemCfArraySizes)
   }
 
   if (
@@ -94,14 +95,14 @@ const decodeRecommendationModel = (
     !Buffer.isBuffer(itemFactors) ||
     itemFactors.length !== itemCount * factors * floatSize
   ) {
-    throw new Error("Некорректные параметры или размеры массивов ALS")
+    throw new Error(DICTIONARY.recommendation.invalidAlsData)
   }
 
   if (
     !Buffer.isBuffer(popularity) ||
     popularity.length !== itemCount * floatSize
   ) {
-    throw new Error("Некорректный размер массива популярности")
+    throw new Error(DICTIONARY.recommendation.invalidPopularityArraySize)
   }
 
   const cfOffsets = readInt32Array(offsets)
@@ -114,7 +115,7 @@ const decodeRecommendationModel = (
     ) ||
     cfIndices.some((index) => index < 0 || index >= itemCount)
   ) {
-    throw new Error("Некорректные индексы соседей ItemCF")
+    throw new Error(DICTIONARY.recommendation.invalidItemCfNeighbors)
   }
 
   const cfWeights = readFloat32Array(weights)
@@ -125,7 +126,7 @@ const decodeRecommendationModel = (
     alsItemFactors.some((factor) => !Number.isFinite(factor)) ||
     itemPopularity.some((count) => !Number.isInteger(count) || count < 0)
   ) {
-    throw new Error("Некорректные числовые значения модели рекомендаций")
+    throw new Error(DICTIONARY.recommendation.invalidModelNumbers)
   }
 
   return {

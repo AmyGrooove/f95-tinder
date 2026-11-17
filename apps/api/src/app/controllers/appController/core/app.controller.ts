@@ -1,3 +1,4 @@
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 import { REGEX } from "@shared/static/REGEX"
 import { randomUUID } from "node:crypto"
 
@@ -79,7 +80,12 @@ class AppController {
         )
           .replace("{{serviceName}}", serviceName)
           .replace("{{icon}}", SERVICE_HEALTH_ICONS[serviceName])
-          .replace("{{status}}", isHealthy ? "Работает" : "Недоступен")
+          .replace(
+            "{{status}}",
+            isHealthy
+              ? DICTIONARY.homePage.serviceUp
+              : DICTIONARY.homePage.serviceDown,
+          )
       })
       .join("")
 

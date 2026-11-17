@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { InjectConnection } from "@nestjs/mongoose"
 import type { ClientSession, Connection } from "mongoose"
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
 @Injectable()
@@ -17,9 +18,7 @@ class MongoTransactionService {
       session?.inTransaction() === true &&
       !this.commitCallbacks.has(session)
     ) {
-      throw new Error(
-        "Transaction callbacks require MongoTransactionService.run",
-      )
+      throw new Error(DICTIONARY.database.transactionRequiredForCallbacks)
     }
   }
 
@@ -52,9 +51,7 @@ class MongoTransactionService {
           (this.commitCallbacks.get(session)?.length ?? 0) > 0 &&
           !session.inTransaction()
         ) {
-          throw new Error(
-            "Transactions with after-commit callbacks must be finalized by MongoTransactionService.run",
-          )
+          throw new Error(DICTIONARY.database.transactionFinalizationRequired)
         }
 
         return result

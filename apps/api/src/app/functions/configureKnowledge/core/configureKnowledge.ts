@@ -42,7 +42,7 @@ const configureKnowledge = (app: NestFastifyApplication) => {
         return reply
           .header(
             "WWW-Authenticate",
-            'Basic realm="Bisky knowledge", charset="UTF-8"',
+            `Basic realm="${DICTIONARY.knowledge.realm}", charset="UTF-8"`,
           )
           .code(401)
           .send({ message: DICTIONARY.knowledge.unauthorized })

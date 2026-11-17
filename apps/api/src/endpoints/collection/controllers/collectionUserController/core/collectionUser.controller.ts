@@ -73,8 +73,11 @@ class CollectionUserController {
   })
   @ApiEndpoint({
     operationId: "CollectionUserController_updateReaction",
-    summary: "Изменить личную реакцию",
-    response: { status: 204, description: "Реакция сохранена" },
+    summary: SWAGGER_DICTIONARY.collection.updateReaction,
+    response: {
+      status: 204,
+      description: SWAGGER_DICTIONARY.collection.updateReactionResponse,
+    },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },

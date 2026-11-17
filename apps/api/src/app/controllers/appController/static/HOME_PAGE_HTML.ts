@@ -1,10 +1,11 @@
+import { DICTIONARY } from "@shared/static/DICTIONARY"
 const HOME_PAGE_HTML = `<!doctype html>
       <html lang="ru">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <meta name="color-scheme" content="dark">
-          <title>Bisky API</title>
+          <title>${DICTIONARY.homePage.title}</title>
           <style>
             :root {
               --color-dark-deepest: #170e19;
@@ -108,16 +109,16 @@ const HOME_PAGE_HTML = `<!doctype html>
         <body>
           <main>
             <header class="header">
-              <h1><span class="brand">Bisky</span> <span class="api-label">API</span></h1>
-              <nav class="links" aria-label="Ссылки API">
-                <a class="link" href="https://bisky.one/">Основной сайт</a>
-                <a class="link" href="/docs">Swagger</a>
-                  <a class="link" href="/knowledge/">База знаний</a>
+              <h1><span class="brand">${DICTIONARY.homePage.brand}</span> <span class="api-label">${DICTIONARY.homePage.apiLabel}</span></h1>
+              <nav class="links" aria-label="${DICTIONARY.homePage.linksLabel}">
+                <a class="link" href="https://bisky.one/">${DICTIONARY.homePage.mainSite}</a>
+                <a class="link" href="/docs">${DICTIONARY.homePage.swagger}</a>
+                  <a class="link" href="/knowledge/">${DICTIONARY.homePage.knowledge}</a>
               </nav>
             </header>
             <img class="background" src="/background?request={{backgroundRequest}}" alt="">
             <section class="services" aria-labelledby="services-title">
-              <h2 id="services-title">Сервисы</h2>
+              <h2 id="services-title">${DICTIONARY.homePage.services}</h2>
               <ul class="service-list">{{healthStatuses}}</ul>
             </section>
           </main>

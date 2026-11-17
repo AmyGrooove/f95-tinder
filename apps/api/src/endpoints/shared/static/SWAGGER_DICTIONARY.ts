@@ -1,5 +1,9 @@
 const SWAGGER_DICTIONARY = {
-  examples: { displayName: "Иван" },
+  examples: {
+    displayName: "Иван",
+    username: "quietfox042",
+    displayUsername: "quietFox042",
+  },
   tags: {
     tag: "Теги",
     search: "Поиск",
@@ -104,6 +108,14 @@ const SWAGGER_DICTIONARY = {
       "Возвращает основные данные подборки и её блоки в авторском порядке",
     response: "Основные данные и полная структура блоков подборки",
     notFound: "Подборка не найдена или удалена",
+    createResponse: "ID созданной подборки",
+    updateResponse: "Изменения подборки сохранены",
+    replacePoster: "Загрузить обложку подборки",
+    replacePosterResponse: "Обложка сохранена",
+    posterTooLarge: "Файл превышает допустимый размер",
+    posterStorageUnavailable: "Хранилище обложек недоступно",
+    updateReaction: "Изменить личную реакцию",
+    updateReactionResponse: "Реакция сохранена",
   },
   userItem: {
     query: "Получить краткие личные записи по ID",

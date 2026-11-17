@@ -20,6 +20,7 @@ const SWAGGER_DICTIONARY = {
     details:
       "Дополнительные сведения или null. При ошибке валидации содержит errors — массив сообщений",
     requestId: "Идентификатор запроса для поиска в логах",
+    requestIdExample: "req-1",
   },
 } as const
 

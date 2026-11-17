@@ -3,6 +3,7 @@ import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -22,7 +23,7 @@ const createRecommendationEligibilityPipeline = (
     (!isUndefined(max) && (!isFiniteNumber(max) || max < 1 || max > 10)) ||
     (!isUndefined(min) && !isUndefined(max) && min > max)
   ) {
-    throw new RangeError("Invalid item rating range")
+    throw new RangeError(DICTIONARY.item.invalidRatingRange)
   }
 
   const allowedStatuses = resolveRecommendationLibraryStatuses(library)

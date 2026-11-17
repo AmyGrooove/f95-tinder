@@ -1,4 +1,5 @@
 import { ETagKey } from "../schemas/ETagKey"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
 import { EUnit } from "@entities/shared/schemas/EUnit"
@@ -11,69 +12,63 @@ const TAG_GROUP_RULES = {
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Жанры; совпадающие названия с разным смыслом остаются отдельными понятиями",
+    description: DICTIONARY.tagGroupDescriptions.genre,
   },
   [ETagGroup.SUBGENRE]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Поджанры со связями с родительскими жанрами; родители не назначаются автоматически и не учитываются как независимые подтверждения вкуса",
+    description: DICTIONARY.tagGroupDescriptions.subgenre,
   },
   [ETagGroup.KEYWORD]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Темы, мотивы и содержательные признаки, кроме игровых механик",
+    description: DICTIONARY.tagGroupDescriptions.keyword,
   },
   [ETagGroup.FORMAT]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description: "Форматы произведений без дублирования Item.type",
+    description: DICTIONARY.tagGroupDescriptions.format,
   },
   [ETagGroup.STYLE]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description: "Атмосфера, темп, стиль повествования и визуальные техники",
+    description: DICTIONARY.tagGroupDescriptions.style,
   },
   [ETagGroup.AUDIENCE]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Целевая аудитория; не заменяет возрастные ограничения и не выводится из них",
+    description: DICTIONARY.tagGroupDescriptions.audience,
   },
   [ETagGroup.COUNTRY]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Страны производства, кроме регионов, городов и вымышленных стран",
+    description: DICTIONARY.tagGroupDescriptions.country,
   },
   [ETagGroup.ORIGINAL_LANGUAGE]: {
     kind: "dictionary",
     itemTypes: Object.values(EItemType),
     cardinality: "many",
     isApprovalRequired: true,
-    description: "Только языки оригинала, без языков перевода",
+    description: DICTIONARY.tagGroupDescriptions.originalLanguage,
   },
   [ETagGroup.PLATFORM]: {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
     isApprovalRequired: true,
-    description:
-      "Доступные игровые платформы, кроме магазинов и устройств пользователя; порты используют общий Item",
+    description: DICTIONARY.tagGroupDescriptions.platform,
   },
   [ETagGroup.DURATION]: {
     kind: "range",
@@ -84,8 +79,7 @@ const TAG_GROUP_RULES = {
     ],
     cardinality: "one",
     isApprovalRequired: true,
-    description:
-      "Длительность фильма по точному положительному значению в минутах",
+    description: DICTIONARY.tagGroupDescriptions.duration,
     sourceField: "movie.duration",
     unit: EUnit.MINUTE,
     bounds: "[)",
@@ -108,8 +102,7 @@ const TAG_GROUP_RULES = {
     ],
     cardinality: "one",
     isApprovalRequired: true,
-    description:
-      "Ориентировочная длительность обычной серии по положительному значению в минутах",
+    description: DICTIONARY.tagGroupDescriptions.episodeDuration,
     sourceField: "series.episodeDuration",
     unit: EUnit.MINUTE,
     bounds: "[)",
@@ -131,8 +124,7 @@ const TAG_GROUP_RULES = {
     ],
     cardinality: "one",
     isApprovalRequired: true,
-    description:
-      "Общее количество серий сезона по положительному целому значению",
+    description: DICTIONARY.tagGroupDescriptions.episodeCount,
     sourceField: "series.episodeCount",
     unit: EUnit.EPISODE,
     bounds: "[)",
@@ -150,8 +142,7 @@ const TAG_GROUP_RULES = {
     itemTypes: [EItemType.GAME],
     cardinality: "one",
     isApprovalRequired: true,
-    description:
-      "Оценка времени прохождения основной истории базовой игры в минутах, без DLC",
+    description: DICTIONARY.tagGroupDescriptions.mainStoryDuration,
     sourceField: "game.mainStoryDuration",
     isDefinedEndRequired: true,
     unit: EUnit.MINUTE,
@@ -171,8 +162,7 @@ const TAG_GROUP_RULES = {
     itemTypes: [EItemType.GAME],
     cardinality: "one",
     isApprovalRequired: true,
-    description:
-      "Оценка времени полного прохождения базовой игры в минутах, включая необязательный контент, но без DLC",
+    description: DICTIONARY.tagGroupDescriptions.fullCompletionDuration,
     sourceField: "game.fullCompletionDuration",
     isDefinedEndRequired: true,
     unit: EUnit.MINUTE,
@@ -193,8 +183,7 @@ const TAG_GROUP_RULES = {
     cardinality: "one",
     isApprovalRequired: true,
     values: ["shortGame", "longGame"],
-    description:
-      "Оценка длины игры как короткой или длинной по данным источника, без фиксированных порогов времени прохождения",
+    description: DICTIONARY.tagGroupDescriptions.gameLength,
   },
   [ETagGroup.RELEASE_STATUS]: {
     kind: "enum",
@@ -207,8 +196,7 @@ const TAG_GROUP_RULES = {
       { key: "releaseStatusReleased", value: "released" },
       { key: "releaseStatusCancelled", value: "cancelled" },
     ],
-    description:
-      "Состояние выпуска произведения или сезона; обновления выпущенной игры не означают продолжающийся выпуск",
+    description: DICTIONARY.tagGroupDescriptions.releaseStatus,
   },
   [ETagGroup.HAS_DEFINED_END]: {
     kind: "enum",
@@ -219,7 +207,7 @@ const TAG_GROUP_RULES = {
       { key: "hasDefinedEndTrue", value: true },
       { key: ETagKey.HAS_DEFINED_END_FALSE, value: false },
     ],
-    description: "Наличие предусмотренного конечного прохождения базовой игры",
+    description: DICTIONARY.tagGroupDescriptions.hasDefinedEnd,
   },
   [ETagGroup.AGE_RESTRICTION]: {
     kind: "enum",
@@ -234,8 +222,7 @@ const TAG_GROUP_RULES = {
       value,
     })),
     sourceField: "ageRestriction",
-    description:
-      "Нормализованное возрастное ограничение; 18++ только для порнографических игр, не по одному внешнему рейтингу; преобразование ESRB и PEGI требует отдельно согласованной таблицы соответствий",
+    description: DICTIONARY.tagGroupDescriptions.ageRestriction,
   },
   [ETagGroup.RELEASE_YEAR]: {
     kind: "integer",
@@ -252,8 +239,7 @@ const TAG_GROUP_RULES = {
       { key: "releaseYear1950To1980", from: 1950, to: 1980 },
       { key: "releaseYear1980To1990", from: 1980, to: 1990 },
     ],
-    description:
-      "Год первого выпуска, включая будущие годы; диапазоны до 1990 года включают нижнюю и исключают верхнюю границу; известная точная дата имеет приоритет над тегом с отдельно указанным годом",
+    description: DICTIONARY.tagGroupDescriptions.releaseYear,
   },
   [ETagGroup.GAME_MODE]: {
     kind: "dictionary",
@@ -268,15 +254,14 @@ const TAG_GROUP_RULES = {
       "playerVsEnvironment",
       "splitScreen",
     ],
-    description:
-      "Режимы игры; сотрудничество, соперничество, игра против окружения и разделение экрана описываются отдельно",
+    description: DICTIONARY.tagGroupDescriptions.gameMode,
   },
   [ETagGroup.GAME_MECHANIC]: {
     kind: "dictionary",
     itemTypes: [EItemType.GAME],
     cardinality: "many",
     isApprovalRequired: true,
-    description: "Игровые действия и системы, отдельно от сюжетных тем",
+    description: DICTIONARY.tagGroupDescriptions.gameMechanic,
   },
   [ETagGroup.PERSPECTIVE]: {
     kind: "dictionary",
@@ -291,7 +276,7 @@ const TAG_GROUP_RULES = {
       "isometric",
       "fixedCamera",
     ],
-    description: "Ракурсы камеры; VR не является ракурсом камеры",
+    description: DICTIONARY.tagGroupDescriptions.perspective,
   },
 } satisfies Record<ETagGroup, TTagGroupRule>
 

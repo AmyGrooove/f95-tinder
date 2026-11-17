@@ -10,7 +10,7 @@ import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 class UsernameBodyDto {
   @ApiProperty({
     description: SWAGGER_DICTIONARY.account.dto.usernameBody.username,
-    example: "quietfox042",
+    example: SWAGGER_DICTIONARY.examples.username,
     minLength: 1,
     maxLength: 32,
     pattern: REGEX.USERNAME.source,

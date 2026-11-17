@@ -5,7 +5,7 @@ import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 class RegisterResponseDto {
   @ApiProperty({
     description: SWAGGER_DICTIONARY.auth.dto.registerResponse.username,
-    example: "quietfox042",
+    example: SWAGGER_DICTIONARY.examples.username,
   })
   username: string
 

@@ -6,6 +6,7 @@ import { TagRepository } from "@entities/tag/services/tagRepository"
 import type { Tag } from "@entities/tag/schemas/tag.schema"
 import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import tagDictionary from "../../../../../../public/import/main/tags/tags.json" with { type: "json" }
@@ -48,7 +49,7 @@ class TagCollectionsInitializationService implements OnModuleInit {
       const definition = definitions.get(key)
 
       if (isNil(definition) || resolving.has(key)) {
-        throw new Error(`Invalid tag dictionary parent: ${key}`)
+        throw new Error(DICTIONARY.tag.invalidDictionaryParent(key))
       }
 
       const group = Object.values(ETagGroup).find(
@@ -56,7 +57,7 @@ class TagCollectionsInitializationService implements OnModuleInit {
       )
 
       if (isNil(group)) {
-        throw new Error(`Invalid tag dictionary group: ${definition.group}`)
+        throw new Error(DICTIONARY.tag.invalidDictionaryGroup(definition.group))
       }
 
       resolving.add(key)

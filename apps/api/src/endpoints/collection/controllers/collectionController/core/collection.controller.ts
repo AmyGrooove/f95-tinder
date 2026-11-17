@@ -56,7 +56,7 @@ class CollectionController {
         required: ["id"],
         properties: { id: { type: "string" } },
       },
-      description: "ID созданной подборки",
+      description: SWAGGER_DICTIONARY.collection.createResponse,
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
@@ -88,7 +88,7 @@ class CollectionController {
     description: SWAGGER_DICTIONARY.collection.updateDescription,
     response: {
       status: 204,
-      description: "Изменения подборки сохранены",
+      description: SWAGGER_DICTIONARY.collection.updateResponse,
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
@@ -139,8 +139,11 @@ class CollectionController {
   })
   @ApiEndpoint({
     operationId: "CollectionController_replacePoster",
-    summary: "Загрузить обложку подборки",
-    response: { status: 204, description: "Обложка сохранена" },
+    summary: SWAGGER_DICTIONARY.collection.replacePoster,
+    response: {
+      status: 204,
+      description: SWAGGER_DICTIONARY.collection.replacePosterResponse,
+    },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
@@ -153,9 +156,15 @@ class CollectionController {
         status: 409,
         description: SWAGGER_DICTIONARY.collection.versionConflict,
       },
-      { status: 413, description: "Файл превышает допустимый размер" },
+      {
+        status: 413,
+        description: SWAGGER_DICTIONARY.collection.posterTooLarge,
+      },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
-      { status: 503, description: "Хранилище обложек недоступно" },
+      {
+        status: 503,
+        description: SWAGGER_DICTIONARY.collection.posterStorageUnavailable,
+      },
     ],
   })
   async replacePoster(

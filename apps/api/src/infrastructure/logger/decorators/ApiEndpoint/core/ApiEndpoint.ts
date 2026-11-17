@@ -50,7 +50,7 @@ const ApiEndpoint = (options: IApiEndpointOptions) => {
                 requestId: {
                   type: "string",
                   description: SWAGGER_DICTIONARY.errorEnvelope.requestId,
-                  example: "req-1",
+                  example: SWAGGER_DICTIONARY.errorEnvelope.requestIdExample,
                 },
               },
             },

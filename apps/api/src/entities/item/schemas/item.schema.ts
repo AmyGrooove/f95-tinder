@@ -16,6 +16,7 @@ import type { ItemSeries } from "./itemSeries.schema"
 import { ItemSeriesSchema } from "./itemSeries.schema"
 import type { ItemGame } from "./itemGame.schema"
 import { ItemGameSchema } from "./itemGame.schema"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
 @Schema({ collection: "Item" })
@@ -84,7 +85,7 @@ ItemSchema.pre("validate", function () {
     this.ageRestriction === EAgeRestriction.AGE_18_PLUS_PLUS &&
     this.type !== EItemType.GAME
   ) {
-    this.invalidate("ageRestriction", "18++ requires a game Item type")
+    this.invalidate("ageRestriction", DICTIONARY.item.adultGameTypeRequired)
   }
 
   if (
@@ -93,7 +94,7 @@ ItemSchema.pre("validate", function () {
     this.type !== EItemType.ANIMATED_MOVIE &&
     this.type !== EItemType.ANIME_MOVIE
   ) {
-    this.invalidate("movie", "Movie details require a movie Item type")
+    this.invalidate("movie", DICTIONARY.item.movieTypeRequired)
   }
 
   if (
@@ -102,11 +103,11 @@ ItemSchema.pre("validate", function () {
     this.type !== EItemType.ANIMATED_SERIES &&
     this.type !== EItemType.ANIME_SERIES
   ) {
-    this.invalidate("series", "Series details require a series Item type")
+    this.invalidate("series", DICTIONARY.item.seriesTypeRequired)
   }
 
   if (!isNil(this.game) && this.type !== EItemType.GAME) {
-    this.invalidate("game", "Game details require a game Item type")
+    this.invalidate("game", DICTIONARY.item.gameTypeRequired)
   }
 })
 

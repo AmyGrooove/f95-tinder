@@ -284,7 +284,7 @@ class CollectionService {
 
     if (isNil(src)) {
       throw new ServiceUnavailableException(
-        "Публичный адрес хранилища недоступен",
+        DICTIONARY.collection.posterPublicUrlUnavailable,
       )
     }
     if (collection.version === Number.MAX_SAFE_INTEGER) {

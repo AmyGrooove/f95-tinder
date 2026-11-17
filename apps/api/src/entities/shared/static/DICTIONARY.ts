@@ -10,14 +10,32 @@ const DICTIONARY = {
   knowledge: {
     unavailable: "Доступ к базе знаний не настроен",
     unauthorized: "Для доступа к базе знаний требуется авторизация",
+    realm: "Bisky knowledge",
   },
   item: {
     notFound: "Произведение не найдено или удалено",
+    adultGameTypeRequired: "18++ requires a game Item type",
+    movieTypeRequired: "Movie details require a movie Item type",
+    seriesTypeRequired: "Series details require a series Item type",
+    gameTypeRequired: "Game details require a game Item type",
+    releasedEpisodeCountExceedsTotal:
+      "Released episode count must not exceed total episode count",
+    invalidRatingRange: "Invalid item rating range",
   },
   recommendation: {
     invalidCursor: "Некорректный курсор рекомендаций",
     cursorExpired: "Список рекомендаций устарел, начните выдачу заново",
     invalidLimit: "Размер порции рекомендаций должен быть 10, 20 или 50",
+    unsupportedModelVersion:
+      "Версия формата модели рекомендаций не поддерживается",
+    invalidModelMetadata: "Некорректные метаданные модели рекомендаций",
+    missingModelData: "В модели отсутствуют данные ItemCF или ALS",
+    invalidItemCfArraySizes: "Некорректные размеры массивов ItemCF",
+    invalidAlsData: "Некорректные параметры или размеры массивов ALS",
+    invalidPopularityArraySize: "Некорректный размер массива популярности",
+    invalidItemCfNeighbors: "Некорректные индексы соседей ItemCF",
+    invalidModelNumbers: "Некорректные числовые значения модели рекомендаций",
+    alsFoldInFailed: "Невозможно вычислить вектор пользователя ALS",
   },
   userItem: {
     invalidDate: "Некорректная дата",
@@ -71,6 +89,11 @@ const DICTIONARY = {
     groupContent: "Текст группы задаётся в названии и описании",
     textContentRequired: "Текстовый блок требует хотя бы один непустой перевод",
     textGroupFields: "Название и описание допустимы только для группы",
+    invalidPosterRequest: "Требуются ID подборки и multipart/form-data",
+    posterPublicUrlUnavailable: "Публичный адрес хранилища недоступен",
+    tagCollectionGroupMissing: (id: string) => {
+      return `Tag collection has no group: ${id}`
+    },
   },
   tag: {
     invalidCursor: "Недействительный курсор тегов",
@@ -82,6 +105,13 @@ const DICTIONARY = {
     invalidParents: "Родители должны быть массивом ObjectId тегов",
     unsupportedParentsWrite:
       "Используйте создание тега, сохранение документа или полную замену parents по конкретному _id без upsert",
+    invalidDictionaryParent: (key: string) => {
+      return `Invalid tag dictionary parent: ${key}`
+    },
+    invalidDictionaryGroup: (group: string) => {
+      return `Invalid tag dictionary group: ${group}`
+    },
+    invalidGroupKey: "Tag key does not match its group rule",
   },
   account: {
     emailConfirmationInvalid:
@@ -130,6 +160,67 @@ const DICTIONARY = {
     sessionNotFound: "Сессия не найдена",
     usernameUnavailable:
       "Не удалось создать уникальный логин, повторите запрос",
+  },
+
+  tagGroupDescriptions: {
+    genre:
+      "Жанры; совпадающие названия с разным смыслом остаются отдельными понятиями",
+    subgenre:
+      "Поджанры со связями с родительскими жанрами; родители не назначаются автоматически и не учитываются как независимые подтверждения вкуса",
+    keyword: "Темы, мотивы и содержательные признаки, кроме игровых механик",
+    format: "Форматы произведений без дублирования Item.type",
+    style: "Атмосфера, темп, стиль повествования и визуальные техники",
+    audience:
+      "Целевая аудитория; не заменяет возрастные ограничения и не выводится из них",
+    country: "Страны производства, кроме регионов, городов и вымышленных стран",
+    originalLanguage: "Только языки оригинала, без языков перевода",
+    platform:
+      "Доступные игровые платформы, кроме магазинов и устройств пользователя; порты используют общий Item",
+    duration:
+      "Длительность фильма по точному положительному значению в минутах",
+    episodeDuration:
+      "Ориентировочная длительность обычной серии по положительному значению в минутах",
+    episodeCount:
+      "Общее количество серий сезона по положительному целому значению",
+    mainStoryDuration:
+      "Оценка времени прохождения основной истории базовой игры в минутах, без DLC",
+    fullCompletionDuration:
+      "Оценка времени полного прохождения базовой игры в минутах, включая необязательный контент, но без DLC",
+    gameLength:
+      "Оценка длины игры как короткой или длинной по данным источника, без фиксированных порогов времени прохождения",
+    releaseStatus:
+      "Состояние выпуска произведения или сезона; обновления выпущенной игры не означают продолжающийся выпуск",
+    hasDefinedEnd:
+      "Наличие предусмотренного конечного прохождения базовой игры",
+    ageRestriction:
+      "Нормализованное возрастное ограничение; 18++ только для порнографических игр, не по одному внешнему рейтингу; преобразование ESRB и PEGI требует отдельно согласованной таблицы соответствий",
+    releaseYear:
+      "Год первого выпуска, включая будущие годы; диапазоны до 1990 года включают нижнюю и исключают верхнюю границу; известная точная дата имеет приоритет над тегом с отдельно указанным годом",
+    gameMode:
+      "Режимы игры; сотрудничество, соперничество, игра против окружения и разделение экрана описываются отдельно",
+    gameMechanic: "Игровые действия и системы, отдельно от сюжетных тем",
+    perspective: "Ракурсы камеры; VR не является ракурсом камеры",
+  },
+
+  itemFieldNames: {
+    releaseDate: { ru: "Дата выпуска", en: "Release date" },
+    ageRestriction: { ru: "Возрастное ограничение", en: "Age restriction" },
+    duration: { ru: "Продолжительность", en: "Duration" },
+    episodeCount: { ru: "Количество серий", en: "Episode count" },
+    releasedEpisodeCount: {
+      ru: "Вышедшие серии",
+      en: "Released episode count",
+    },
+    episodeDuration: { ru: "Продолжительность серии", en: "Episode duration" },
+    nextEpisodeAt: { ru: "Следующая серия", en: "Next episode" },
+    mainStoryDuration: {
+      ru: "Время основной истории",
+      en: "Main story duration",
+    },
+    fullCompletionDuration: {
+      ru: "Время полного прохождения",
+      en: "Full completion duration",
+    },
   },
 } as const
 
