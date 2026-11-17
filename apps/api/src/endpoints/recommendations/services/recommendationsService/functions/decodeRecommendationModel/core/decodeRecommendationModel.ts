@@ -24,6 +24,21 @@ const readFloat32Array = (buffer: Buffer) => {
   )
 }
 
+const calculateGram = (itemFactors: Float32Array, factors: number) => {
+  const gram = new Float64Array(factors * factors)
+
+  for (let start = 0; start < itemFactors.length; start += factors) {
+    for (let row = 0; row < factors; row += 1) {
+      const itemFactor = itemFactors[start + row]
+      for (let column = 0; column <= row; column += 1) {
+        gram[row * factors + column] += itemFactor * itemFactors[start + column]
+      }
+    }
+  }
+
+  return gram
+}
+
 const decodeRecommendationModel = (
   document: Record<string, unknown>,
 ): IRecommendationModel => {
@@ -118,7 +133,13 @@ const decodeRecommendationModel = (
     trainedAt,
     itemIds,
     itemCF: { offsets: cfOffsets, indices: cfIndices, weights: cfWeights },
-    als: { factors, alpha, regularization, itemFactors: alsItemFactors },
+    als: {
+      factors,
+      alpha,
+      regularization,
+      itemFactors: alsItemFactors,
+      gram: calculateGram(alsItemFactors, factors),
+    },
     popularity: itemPopularity,
   }
 }

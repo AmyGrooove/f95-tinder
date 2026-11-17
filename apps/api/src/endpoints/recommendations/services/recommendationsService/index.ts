@@ -1,6 +1,9 @@
 export { RecommendationsService } from "./core/recommendations.service"
-export { RecommendationCursorExpiredError } from "./errors/RecommendationCursorExpiredError"
+export { RecommendationCursorExpiredError } from "./static/RecommendationCursorExpiredError"
+export { calculateAlsCandidates } from "./functions/calculateAlsCandidates"
+export { calculateItemCfCandidates } from "./functions/calculateItemCfCandidates"
 export type { IFindRecommendationsProps } from "./types/IFindRecommendationsProps"
+export type { IRecommendationFeedSources } from "./types/IRecommendationFeedSources"
 export type {
   IReadRecommendationCandidatesProps,
   IReadRecommendationCandidatesProps as IReadPopularRecommendationsProps,

@@ -7,7 +7,12 @@ import { normalizeValueFilter } from "../functions/normalizeValueFilter"
 import type { ICreateFallbackCursorScopeProps } from "../types/ICreateFallbackCursorScopeProps"
 
 const createFallbackCursorScope = (props: ICreateFallbackCursorScopeProps) => {
-  const { viewer, limit, filter } = props
+  const {
+    viewer,
+    limit,
+    filter,
+    namespace = FALLBACK_PAGE_SETTINGS.namespace,
+  } = props
   const {
     types,
     tags = [],
@@ -23,7 +28,7 @@ const createFallbackCursorScope = (props: ICreateFallbackCursorScopeProps) => {
     .map((group) => JSON.stringify(group))
 
   return [
-    FALLBACK_PAGE_SETTINGS.namespace,
+    namespace,
     viewer.userId.toHexString(),
     viewer.country,
     limit,

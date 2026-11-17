@@ -33,7 +33,7 @@ import type {
   IReadNewItemIdsProps,
   IReadPopularItemIdsProps,
 } from "../types/IReadPopularItemIdsProps"
-import type { IReadRecommendationPosterCardsProps } from "../types/IRecommendationEligibilityProps"
+import type { IReadEligibleRecommendationItemsProps } from "../types/IRecommendationEligibilityProps"
 import type { IReadSearchIndexBatchProps } from "../types/IReadSearchIndexBatchProps"
 
 @Injectable()
@@ -214,8 +214,31 @@ class ItemRepository {
     return this.readOrderedPosterCards(ids)
   }
 
+  async readEligibleRecommendationItems(
+    props: IReadEligibleRecommendationItemsProps,
+  ) {
+    const { ids, types } = props
+    const eligibility = createRecommendationEligibilityPipeline(props)
+
+    if (ids.length === 0 || isNil(eligibility)) {
+      return []
+    }
+
+    const pipeline = new AggregationBuilder()
+      .match({
+        _id: { $in: ids },
+        deletedAt: null,
+        ...(isUndefined(types) ? {} : { type: { $in: types } }),
+      })
+      .use(...eligibility)
+      .project({ _id: 1, type: 1 })
+      .build()
+
+    return this.aggregation.aggregate<Pick<Item, "_id" | "type">>(pipeline)
+  }
+
   async readRecommendationPosterCards(
-    props: IReadRecommendationPosterCardsProps,
+    props: IReadEligibleRecommendationItemsProps,
   ) {
     const { ids, types } = props
     const eligibility = createRecommendationEligibilityPipeline(props)

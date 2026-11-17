@@ -12,6 +12,7 @@ interface IRecommendationModel {
     alpha: number
     regularization: number
     itemFactors: Float32Array
+    gram: Float64Array
   }
   popularity: Float32Array
 }

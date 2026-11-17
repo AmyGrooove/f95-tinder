@@ -8,6 +8,7 @@ interface ICreateFallbackCursorScopeProps {
   limit: TPageSize
 
   filter?: IFindRecommendationsProps["filter"]
+  namespace?: string
 }
 
 export type { ICreateFallbackCursorScopeProps }

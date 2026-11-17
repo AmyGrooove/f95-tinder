@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
 
-import { BadRequestException, Inject, Injectable } from "@nestjs/common"
+import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common"
 import { isUUID } from "class-validator"
 import { Types } from "mongoose"
 
@@ -23,13 +23,14 @@ import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-import { RecommendationCursorExpiredError } from "../errors/RecommendationCursorExpiredError"
+import { RecommendationCursorExpiredError } from "../static/RecommendationCursorExpiredError"
 import { createFallbackCursorScope } from "../functions/createFallbackCursorScope"
 import { decodeRecommendationModel } from "../functions/decodeRecommendationModel"
 import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"
 import type { IFallbackCursorPosition } from "../types/IFallbackCursorPosition"
 import type { IFallbackSnapshot } from "../types/IFallbackSnapshot"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
+import type { TReadRecommendationFeedSources } from "../types/IRecommendationFeedSources"
 import type { IRecommendationModel } from "../types/IRecommendationModel"
 import type { TFindRecommendationsResult } from "../types/TFindRecommendationsResult"
 
@@ -46,9 +47,24 @@ class RecommendationsService {
     private readonly cursorService: CursorService,
   ) {}
 
-  async loadLatestModel(): Promise<IRecommendationModel | null> {
+  async loadLatestModel({
+    isInvalidModelIgnored = false,
+  } = {}): Promise<IRecommendationModel | null> {
     const document = await this.recommendationModelRepository.readLatest()
-    return document === null ? null : decodeRecommendationModel(document)
+    if (document === null) {
+      return null
+    }
+
+    try {
+      return decodeRecommendationModel(document)
+    } catch (error) {
+      if (!isInvalidModelIgnored) {
+        throw error
+      }
+
+      Logger.warn(error, RecommendationsService.name)
+      return null
+    }
   }
 
   async readPopularItemIds(
@@ -75,7 +91,7 @@ class RecommendationsService {
   ) {
     const context = await this.candidatesService.prepareContext(accessToken)
 
-    return this.buildFallbackItemIds(context, filter)
+    return this.buildItemIds(context, filter)
   }
 
   async readFallbackItems(
@@ -87,9 +103,35 @@ class RecommendationsService {
     return this.itemRepository.readPosterCardsByIds(itemIds)
   }
 
-  async readFallbackPage(
+  readFallbackPage(
     accessToken: unknown,
     props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit"> = {},
+  ): Promise<TFindRecommendationsResult> {
+    return this.readSnapshotPage(
+      accessToken,
+      props,
+      FALLBACK_PAGE_SETTINGS.namespace,
+    )
+  }
+
+  readFeedPage(
+    accessToken: unknown,
+    props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
+    readSources: TReadRecommendationFeedSources,
+  ): Promise<TFindRecommendationsResult> {
+    return this.readSnapshotPage(
+      accessToken,
+      props,
+      FALLBACK_PAGE_SETTINGS.feedNamespace,
+      readSources,
+    )
+  }
+
+  private async readSnapshotPage(
+    accessToken: unknown,
+    props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
+    namespace: string,
+    readSources?: TReadRecommendationFeedSources,
   ): Promise<TFindRecommendationsResult> {
     const {
       cursor,
@@ -103,7 +145,12 @@ class RecommendationsService {
     }
 
     const viewer = await this.candidatesService.prepareViewer(accessToken)
-    const scope = createFallbackCursorScope({ viewer, limit, filter })
+    const scope = createFallbackCursorScope({
+      viewer,
+      limit,
+      filter,
+      namespace,
+    })
     const isFirstPage = isUndefined(cursor)
     const { listId, offset } = isFirstPage
       ? { listId: randomUUID(), offset: 0 }
@@ -125,14 +172,15 @@ class RecommendationsService {
     const scopeHash = createHash("sha256")
       .update(JSON.stringify(scope))
       .digest("base64url")
-    const { namespace, ttlMs } = FALLBACK_PAGE_SETTINGS
+    const { ttlMs } = FALLBACK_PAGE_SETTINGS
     const cacheKey = `${namespace}:${viewer.userId.toHexString()}:${scopeHash}:${listId}`
     const snapshot: IFallbackSnapshot | null = isFirstPage
       ? {
           itemIds: (
-            await this.buildFallbackItemIds(
+            await this.buildItemIds(
               await this.candidatesService.prepareContextForViewer(viewer),
               filter,
+              readSources,
             )
           ).map((id) => id.toHexString()),
         }
@@ -172,20 +220,24 @@ class RecommendationsService {
     return { items, count: items.length, nextCursor }
   }
 
-  private async buildFallbackItemIds(
+  private async buildItemIds(
     context: IRecommendationCandidateContext,
     filter?: IFindRecommendationsProps["filter"],
+    readSources?: TReadRecommendationFeedSources,
   ) {
     const { types, ...candidateFilter } = filter ?? {}
     const selectedTypes = Object.values(EItemType).filter(
       (type) => types?.includes(type) ?? true,
     )
+    const { plannedIds, personalByType } =
+      (await readSources?.(context, selectedTypes)) ?? {}
     const lists = await Promise.all(
       selectedTypes.map((type) =>
-        this.fallbackService.readItemIds(context, {
-          type,
-          filter: candidateFilter,
-        }),
+        this.fallbackService.readItemIds(
+          context,
+          { type, filter: candidateFilter },
+          { plannedIds, personal: personalByType?.get(type) },
+        ),
       ),
     )
     const items: Types.ObjectId[] = []

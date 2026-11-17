@@ -18,7 +18,7 @@ interface IRecommendationEligibilityProps {
   }
 }
 
-interface IReadRecommendationPosterCardsProps extends IRecommendationEligibilityProps {
+interface IReadEligibleRecommendationItemsProps extends IRecommendationEligibilityProps {
   ids: readonly Types.ObjectId[]
 
   types?: readonly EItemType[]
@@ -26,5 +26,5 @@ interface IReadRecommendationPosterCardsProps extends IRecommendationEligibility
 
 export type {
   IRecommendationEligibilityProps,
-  IReadRecommendationPosterCardsProps,
+  IReadEligibleRecommendationItemsProps,
 }

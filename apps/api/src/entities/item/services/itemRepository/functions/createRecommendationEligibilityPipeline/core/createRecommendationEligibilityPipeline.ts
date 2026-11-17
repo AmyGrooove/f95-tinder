@@ -2,25 +2,19 @@ import { ItemBan } from "@entities/itemBan/schemas/itemBan.schema"
 import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItem } from "@entities/userItem/schemas/userItem.schema"
-import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import type { IRecommendationEligibilityProps } from "../../../types/IRecommendationEligibilityProps"
 import { createItemTagFilterPipeline } from "../../createItemTagFilterPipeline"
+import { resolveRecommendationLibraryStatuses } from "../../resolveRecommendationLibraryStatuses"
 
 const createRecommendationEligibilityPipeline = (
   props: IRecommendationEligibilityProps,
   ratingMode?: "required" | "optional",
 ) => {
-  const {
-    userId,
-    country,
-    library = { anyOf: ["outside"] },
-    tags = [],
-    rating,
-  } = props
+  const { userId, country, library, tags = [], rating } = props
   const { min, max } = rating ?? {}
 
   if (
@@ -31,15 +25,7 @@ const createRecommendationEligibilityPipeline = (
     throw new RangeError("Invalid item rating range")
   }
 
-  const { allOf = [], anyOf, noneOf = [] } = library
-  const allowedStatuses = (
-    [...USER_ITEM_LIBRARY_STATUSES, "outside"] as const
-  ).filter(
-    (status) =>
-      allOf.every((value) => value === status) &&
-      (anyOf?.includes(status) ?? true) &&
-      !noneOf.includes(status),
-  )
+  const allowedStatuses = resolveRecommendationLibraryStatuses(library)
 
   if (allowedStatuses.length === 0) {
     return null
