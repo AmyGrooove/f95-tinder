@@ -1,1 +1,1 @@
-export { RecommendationModelRepository } from "./core/RecommendationModel.repository"
+export { RecommendationModelRepository } from "./core/recommendationModel.repository"

@@ -49,7 +49,12 @@ const EXTERNAL_BOOLEAN_PROPERTIES = [
 
 export default [
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**"],
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "tools/recommendationTrainer/.venv/**",
+    ],
   },
   {
     linterOptions: {
@@ -68,7 +73,7 @@ export default [
     },
   },
   {
-    files: ["scripts/**/*.mjs", "__tests__/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "tools/scripts/**/*.mjs", "__tests__/**/*.mjs"],
     languageOptions: {
       globals: {
         ...globals.node,
