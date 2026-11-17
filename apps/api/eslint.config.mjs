@@ -54,6 +54,7 @@ export default [
       "coverage/**",
       "node_modules/**",
       "tools/recommendationTrainer/.venv/**",
+      "tools/recommendationTrainer/__pycache__/**",
     ],
   },
   {
