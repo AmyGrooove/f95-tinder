@@ -1,5 +1,7 @@
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
 
+import { RecommendationAlsFoldInError } from "../../../static/errors/RecommendationAlsFoldInError"
 import type { IRecommendationModel } from "../../../types/IRecommendationModel"
 import { rankRecommendationCandidates } from "../../rankRecommendationCandidates"
 
@@ -55,8 +57,10 @@ const calculateAlsCandidates = (
         }
 
         if (row === column) {
-          if (value <= 0 || !Number.isFinite(value)) {
-            throw new Error(DICTIONARY.recommendation.alsFoldInFailed)
+          if (value <= 0 || !isFiniteNumber(value)) {
+            throw new RecommendationAlsFoldInError(
+              DICTIONARY.recommendation.alsFoldInFailed,
+            )
           }
           matrix[index] = Math.sqrt(value)
         } else {

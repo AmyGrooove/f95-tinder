@@ -1,14 +1,19 @@
 import { Types } from "mongoose"
 
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { isArray } from "@shared/functions/checks/isArray"
+import { isDate } from "@shared/functions/checks/isDate"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
+import { isInt } from "@shared/functions/checks/isInt"
 import { isObject } from "@shared/functions/checks/isObject"
 import { isString } from "@shared/functions/checks/isString"
 
+import { InvalidRecommendationModelError } from "../../../static/errors/InvalidRecommendationModelError"
+import { MAX_ALS_FACTORS } from "../../../static/MAX_ALS_FACTORS"
 import type { IRecommendationModel } from "../../../types/IRecommendationModel"
 
 const checkIsRecord = (value: unknown): value is Record<string, unknown> => {
-  return isObject(value) && !Array.isArray(value)
+  return isObject(value) && !isArray(value)
 }
 
 const readInt32Array = (buffer: Buffer) => {
@@ -47,24 +52,29 @@ const decodeRecommendationModel = (
     document
 
   if (formatVersion !== 1) {
-    throw new Error(DICTIONARY.recommendation.unsupportedModelVersion)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.unsupportedModelVersion,
+    )
   }
 
   if (
     !(_id instanceof Types.ObjectId) ||
-    !(trainedAt instanceof Date) ||
-    !Number.isFinite(trainedAt.getTime()) ||
-    !Array.isArray(itemIds) ||
+    !isDate(trainedAt) ||
+    !isArray(itemIds) ||
     itemIds.length === 0 ||
     !itemIds.every(isString) ||
     itemIds.some((id) => id.length === 0) ||
     new Set(itemIds).size !== itemIds.length
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidModelMetadata)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidModelMetadata,
+    )
   }
 
   if (!checkIsRecord(itemCF) || !checkIsRecord(als)) {
-    throw new Error(DICTIONARY.recommendation.missingModelData)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.missingModelData,
+    )
   }
 
   const itemCount = itemIds.length
@@ -81,13 +91,15 @@ const decodeRecommendationModel = (
     !Buffer.isBuffer(weights) ||
     weights.length !== (indices.length / intSize) * floatSize
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidItemCfArraySizes)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidItemCfArraySizes,
+    )
   }
 
   if (
-    !isFiniteNumber(factors) ||
-    !Number.isSafeInteger(factors) ||
+    !isInt(factors) ||
     factors <= 0 ||
+    factors > MAX_ALS_FACTORS ||
     !isFiniteNumber(alpha) ||
     alpha <= 0 ||
     !isFiniteNumber(regularization) ||
@@ -95,14 +107,18 @@ const decodeRecommendationModel = (
     !Buffer.isBuffer(itemFactors) ||
     itemFactors.length !== itemCount * factors * floatSize
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidAlsData)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidAlsData,
+    )
   }
 
   if (
     !Buffer.isBuffer(popularity) ||
     popularity.length !== itemCount * floatSize
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidPopularityArraySize)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidPopularityArraySize,
+    )
   }
 
   const cfOffsets = readInt32Array(offsets)
@@ -115,18 +131,22 @@ const decodeRecommendationModel = (
     ) ||
     cfIndices.some((index) => index < 0 || index >= itemCount)
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidItemCfNeighbors)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidItemCfNeighbors,
+    )
   }
 
   const cfWeights = readFloat32Array(weights)
   const alsItemFactors = readFloat32Array(itemFactors)
   const itemPopularity = readFloat32Array(popularity)
   if (
-    cfWeights.some((weight) => !Number.isFinite(weight) || weight < 0) ||
-    alsItemFactors.some((factor) => !Number.isFinite(factor)) ||
-    itemPopularity.some((count) => !Number.isInteger(count) || count < 0)
+    cfWeights.some((weight) => !isFiniteNumber(weight) || weight < 0) ||
+    alsItemFactors.some((factor) => !isFiniteNumber(factor)) ||
+    itemPopularity.some((count) => !isInt(count) || count < 0)
   ) {
-    throw new Error(DICTIONARY.recommendation.invalidModelNumbers)
+    throw new InvalidRecommendationModelError(
+      DICTIONARY.recommendation.invalidModelNumbers,
+    )
   }
 
   return {

@@ -42,7 +42,7 @@ import { getTestRedis } from "@infrastructure/cache/__tests__/setup/setupRedis"
 import { TagCollectionsInitializationService } from "@endpoints/collection/services/tagCollectionsInitializationService"
 import { TagCollectionsSynchronizationService } from "@endpoints/collection/services/tagCollectionsSynchronizationService"
 import { SynchronizeTagCollectionsJobHandler } from "@endpoints/collection/services/synchronizeTagCollectionsJobHandler"
-import dictionary from "../../../../public/import/tags/tags.json" with { type: "json" }
+import dictionary from "../../../../public/import/main/tags/tags.json" with { type: "json" }
 
 describe("Синхронизация подборок по тегам", () => {
   let moduleRef: TestingModule | undefined

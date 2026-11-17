@@ -25,11 +25,12 @@ describe("RecommendationFeedService", () => {
     const types = [EItemType.MOVIE, EItemType.GAME]
     const positiveIds = Array.from({ length: 5 }, () => new Types.ObjectId())
     const plannedId = new Types.ObjectId()
-    const findMany = jest.fn(async (filter: { status: unknown }) =>
-      filter.status === EUserItemStatus.PLANNED
-        ? [{ item: plannedId }]
-        : positiveIds.map((item) => ({ item })),
-    )
+    const readPositiveRecommendationItemIds = jest
+      .fn<UserItemRepository["readPositiveRecommendationItemIds"]>()
+      .mockResolvedValue(positiveIds)
+    const readPlannedItemIds = jest
+      .fn<UserItemRepository["readPlannedItemIds"]>()
+      .mockResolvedValue([plannedId])
     const findNotDeletedByIds = jest
       .fn<ItemRepository["findNotDeletedByIds"]>()
       .mockImplementation(
@@ -55,7 +56,10 @@ describe("RecommendationFeedService", () => {
       })
     const service = new RecommendationFeedService(
       { readFeedPage, loadLatestModel } as unknown as RecommendationsService,
-      { read: { findMany } } as unknown as UserItemRepository,
+      {
+        readPositiveRecommendationItemIds,
+        readPlannedItemIds,
+      } as unknown as UserItemRepository,
       {
         findNotDeletedByIds,
         readEligibleRecommendationItems,
@@ -71,7 +75,9 @@ describe("RecommendationFeedService", () => {
 
     return {
       read,
-      findMany,
+      userId: context.userId,
+      readPositiveRecommendationItemIds,
+      readPlannedItemIds,
       readEligibleRecommendationItems,
       findRelation,
       readRelatedItemIds,
@@ -82,27 +88,98 @@ describe("RecommendationFeedService", () => {
   }
 
   it.each([
-    { anyOf: [EUserItemStatus.PLANNED], isPromoted: false, queries: 1 },
+    {
+      anyOf: [EUserItemStatus.PLANNED],
+      isPromoted: false,
+      isHistoryRead: true,
+    },
     {
       anyOf: ["outside", EUserItemStatus.PLANNED],
       isPromoted: true,
-      queries: 2,
+      isHistoryRead: true,
     },
-    { anyOf: ["outside"], isPromoted: false, queries: 1 },
-    { anyOf: [], isPromoted: false, queries: 0 },
+    { anyOf: ["outside"], isPromoted: false, isHistoryRead: true },
+    { anyOf: [], isPromoted: false, isHistoryRead: false },
   ] as const)(
     "читает planned для бонуса только в смешанном режиме $anyOf",
-    async ({ anyOf, isPromoted, queries }) => {
-      const { read, findMany, loadLatestModel, plannedId } = setup()
+    async ({ anyOf, isPromoted, isHistoryRead }) => {
+      const {
+        read,
+        userId,
+        readPositiveRecommendationItemIds,
+        readPlannedItemIds,
+        loadLatestModel,
+        plannedId,
+      } = setup()
       loadLatestModel.mockResolvedValue(null)
 
       const sources = await read({ filter: { library: { anyOf: [...anyOf] } } })
 
-      expect(findMany).toHaveBeenCalledTimes(queries)
+      expect(readPositiveRecommendationItemIds.mock.calls).toEqual(
+        isHistoryRead ? [[userId]] : [],
+      )
+      expect(readPlannedItemIds.mock.calls).toEqual(
+        isPromoted ? [[userId]] : [],
+      )
       expect(sources?.plannedIds?.has(plannedId.toHexString()) ?? false).toBe(
         isPromoted,
       )
       expect(sources?.personalByType).toBeUndefined()
+    },
+  )
+
+  it.each([
+    { failure: "неразложимая матрица ALS", isUnexpectedError: false },
+    { failure: "неожиданная ошибка вычисления", isUnexpectedError: true },
+  ])(
+    "обрабатывает сбой персонального ранжирования: $failure",
+    async ({ isUnexpectedError }) => {
+      const {
+        read,
+        positiveIds,
+        loadLatestModel,
+        readEligibleRecommendationItems,
+        plannedId,
+      } = setup()
+      const itemIds = positiveIds.map(String)
+      const gram = Float64Array.of(0)
+      const failure = new Error("Ошибка доступа к матрице")
+      if (isUnexpectedError) {
+        jest.spyOn(gram, "slice").mockImplementation(() => {
+          throw failure
+        })
+      }
+      loadLatestModel.mockResolvedValue({
+        id: new Types.ObjectId().toHexString(),
+        trainedAt: new Date(),
+        itemIds,
+        itemCF: {
+          offsets: new Int32Array(itemIds.length + 1),
+          indices: new Int32Array(),
+          weights: new Float32Array(),
+        },
+        als: {
+          factors: 1,
+          alpha: 2,
+          regularization: 0,
+          itemFactors: new Float32Array(itemIds.length),
+          gram,
+        },
+        popularity: new Float32Array(itemIds.length),
+      })
+
+      const result = read({
+        filter: { library: { anyOf: ["outside", EUserItemStatus.PLANNED] } },
+      })
+
+      if (isUnexpectedError) {
+        await expect(result).rejects.toBe(failure)
+      } else {
+        await expect(result).resolves.toEqual({
+          plannedIds: new Set([plannedId.toHexString()]),
+        })
+      }
+      expect(readEligibleRecommendationItems).not.toHaveBeenCalled()
     },
   )
 

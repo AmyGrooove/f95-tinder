@@ -1,8 +1,8 @@
 import { setTimeout } from "node:timers/promises"
 import { describe, expect, it } from "@jest/globals"
 
-import { JobCancelledError } from "../../../errors/JobCancelledError"
-import { NonRetryableJobError } from "../../../errors/NonRetryableJobError"
+import { JobCancelledError } from "../../../static/errors/JobCancelledError"
+import { NonRetryableJobError } from "../../../static/errors/NonRetryableJobError"
 import { JOB_CANCELLED_RESULT } from "../../../static/JOB_CANCELLED_RESULT"
 import type { IJobData } from "../../../types/IJobData"
 import type { TJobState } from "@infrastructure/jobs/services/jobService"

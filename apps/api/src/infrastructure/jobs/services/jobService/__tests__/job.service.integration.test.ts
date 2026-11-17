@@ -1,7 +1,7 @@
 import { setTimeout } from "node:timers/promises"
 import { describe, expect, it } from "@jest/globals"
 
-import { NonRetryableJobError } from "../../../errors/NonRetryableJobError"
+import { NonRetryableJobError } from "../../../static/errors/NonRetryableJobError"
 import { defineJob } from "../../../functions/defineJob"
 import { JOB_CANCELLED_RESULT } from "../../../static/JOB_CANCELLED_RESULT"
 

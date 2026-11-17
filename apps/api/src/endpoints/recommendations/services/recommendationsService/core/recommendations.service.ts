@@ -27,6 +27,7 @@ import { RecommendationCursorExpiredError } from "../static/errors/Recommendatio
 import { createFallbackCursorScope } from "../functions/createFallbackCursorScope"
 import { decodeRecommendationModel } from "../functions/decodeRecommendationModel"
 import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"
+import { InvalidRecommendationModelError } from "../static/errors/InvalidRecommendationModelError"
 import type { IFallbackCursorPosition } from "../types/IFallbackCursorPosition"
 import type { IFallbackSnapshot } from "../types/IFallbackSnapshot"
 import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
@@ -58,7 +59,10 @@ class RecommendationsService {
     try {
       return decodeRecommendationModel(document)
     } catch (error) {
-      if (!isInvalidModelIgnored) {
+      if (
+        !isInvalidModelIgnored ||
+        !(error instanceof InvalidRecommendationModelError)
+      ) {
         throw error
       }
 

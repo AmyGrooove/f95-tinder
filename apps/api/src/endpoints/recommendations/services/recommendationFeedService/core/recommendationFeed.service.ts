@@ -3,6 +3,7 @@ import { Types } from "mongoose"
 
 import type { IRecommendationCandidateContext } from "@endpoints/recommendations/services/recommendationCandidatesService"
 import {
+  RecommendationAlsFoldInError,
   RecommendationsService,
   calculateAlsCandidates,
   calculateItemCfCandidates,
@@ -58,35 +59,18 @@ class RecommendationFeedService {
       return {}
     }
 
-    const { PLANNED, SKIPPED } = EUserItemStatus
     const isPlannedBonusEnabled =
-      libraryStatuses.length > 1 && libraryStatuses.includes(PLANNED)
-    const projection = { _id: 0, item: 1 } as const
-    const [interactions, planned] = await Promise.all([
-      this.userItemRepository.read.findMany(
-        {
-          user: userId,
-          status: { $ne: SKIPPED },
-          $or: [
-            { rating: { $gte: 8, $lte: 10 } },
-            { isFavorite: true, rating: null },
-            { isFavorite: true, rating: { $gte: 5, $lte: 10 } },
-          ],
-        },
-        projection,
-        { lean: true },
-      ),
+      libraryStatuses.length > 1 &&
+      libraryStatuses.includes(EUserItemStatus.PLANNED)
+    const [positiveItemIds, plannedItemIds] = await Promise.all([
+      this.userItemRepository.readPositiveRecommendationItemIds(userId),
       isPlannedBonusEnabled
-        ? this.userItemRepository.read.findMany(
-            { user: userId, status: PLANNED },
-            projection,
-            { lean: true },
-          )
+        ? this.userItemRepository.readPlannedItemIds(userId)
         : [],
     ])
-    const plannedIds = new Set(planned.map(({ item }) => item.toHexString()))
+    const plannedIds = new Set(plannedItemIds.map((id) => id.toHexString()))
     const positiveIds = new Map(
-      interactions.map(({ item }) => [item.toHexString(), item]),
+      positiveItemIds.map((id) => [id.toHexString(), id]),
     )
     const {
       minPositiveItems,
@@ -123,6 +107,10 @@ class RecommendationFeedService {
     try {
       als = calculateAlsCandidates(model, knownPositiveIds, scoreOptions)
     } catch (error) {
+      if (!(error instanceof RecommendationAlsFoldInError)) {
+        throw error
+      }
+
       Logger.warn(error, RecommendationFeedService.name)
       return { plannedIds }
     }

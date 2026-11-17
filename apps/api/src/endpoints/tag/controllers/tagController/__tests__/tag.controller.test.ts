@@ -15,6 +15,7 @@ import { Test } from "@nestjs/testing"
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
 import { CacheService } from "@infrastructure/cache/services/cacheService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 
 import { TagSearchService } from "../../../services/tagSearchService"
@@ -61,6 +62,7 @@ describe("TagController", () => {
       controllers: [TagController],
       providers: [
         TagSearchService,
+        CursorService,
         { provide: CacheService, useValue: { get: getCheckpoint } },
         { provide: SearchService, useValue: { search } },
       ],

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model } from "mongoose"
+import type { HydratedDocument, Model, Types } from "mongoose"
 
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
@@ -8,6 +8,7 @@ import { MongoPaginationRepository } from "@infrastructure/database/services/mon
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
+import { EUserItemStatus } from "../../../schemas/EUserItemStatus"
 import { UserItem } from "../../../schemas/userItem.schema"
 import type { TCreateUserItem } from "../../../schemas/userItem.schema"
 
@@ -53,6 +54,34 @@ class UserItemRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<UserItem>
     >(model)
+  }
+
+  async readPositiveRecommendationItemIds(userId: Types.ObjectId) {
+    const records = await this.read.findMany(
+      {
+        user: userId,
+        status: { $ne: EUserItemStatus.SKIPPED },
+        $or: [
+          { rating: { $gte: 8, $lte: 10 } },
+          { isFavorite: true, rating: null },
+          { isFavorite: true, rating: { $gte: 5, $lte: 10 } },
+        ],
+      },
+      { _id: 0, item: 1 },
+      { lean: true },
+    )
+
+    return records.map(({ item }) => item)
+  }
+
+  async readPlannedItemIds(userId: Types.ObjectId) {
+    const records = await this.read.findMany(
+      { user: userId, status: EUserItemStatus.PLANNED },
+      { _id: 0, item: 1 },
+      { lean: true },
+    )
+
+    return records.map(({ item }) => item)
   }
 }
 

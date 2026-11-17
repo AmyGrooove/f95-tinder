@@ -8,6 +8,7 @@ import {
 } from "@jest/globals"
 
 import { createAppConfiguration } from "../core/createAppConfiguration"
+import { CONFIG_ERROR_MESSAGES } from "../../../static/CONFIG_ERROR_MESSAGES"
 import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 describe("createAppConfiguration", () => {
@@ -30,6 +31,7 @@ describe("createAppConfiguration", () => {
 
     expect(createAppConfiguration()).toStrictEqual({
       environment: "development",
+      siteVariant: "main",
       name: "test-api",
       version: "1.2.3",
       description: "Test API",
@@ -37,6 +39,26 @@ describe("createAppConfiguration", () => {
       corsOrigins: ["https://app.example.test", "http://localhost:3001"],
     })
   })
+
+  it.each(["main", "adult"])(
+    "принимает вариант сайта %s после обрезки пробелов",
+    (siteVariant) => {
+      process.env.SITE_VARIANT = ` ${siteVariant} `
+
+      expect(createAppConfiguration().siteVariant).toBe(siteVariant)
+    },
+  )
+
+  it.each(["", "unknown"])(
+    "отклоняет неизвестный вариант сайта %j",
+    (siteVariant) => {
+      process.env.SITE_VARIANT = siteVariant
+
+      expect(() => createAppConfiguration()).toThrow(
+        CONFIG_ERROR_MESSAGES.INVALID_SITE_VARIANT,
+      )
+    },
+  )
 
   it("принимает production с явными источниками CORS", () => {
     process.env.NODE_ENV = " production "

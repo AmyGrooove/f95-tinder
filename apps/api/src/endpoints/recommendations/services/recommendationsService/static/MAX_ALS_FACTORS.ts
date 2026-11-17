@@ -1,0 +1,3 @@
+const MAX_ALS_FACTORS = 128
+
+export { MAX_ALS_FACTORS }

@@ -1,5 +1,9 @@
 import { describe, expect, it, jest } from "@jest/globals"
-import { BadRequestException, UnauthorizedException } from "@nestjs/common"
+import {
+  BadRequestException,
+  Logger,
+  UnauthorizedException,
+} from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 import { Test } from "@nestjs/testing"
 import { Types, mongo, type HydratedDocument, type Model } from "mongoose"
@@ -28,7 +32,9 @@ import { requestContext } from "@shared/functions/context/requestContext"
 import { RecommendationsService } from "../core/recommendations.service"
 import { calculateAlsCandidates } from "../functions/calculateAlsCandidates"
 import { calculateItemCfCandidates } from "../functions/calculateItemCfCandidates"
-import { RecommendationCursorExpiredError } from "../static/RecommendationCursorExpiredError"
+import { InvalidRecommendationModelError } from "../static/errors/InvalidRecommendationModelError"
+import { MAX_ALS_FACTORS } from "../static/MAX_ALS_FACTORS"
+import { RecommendationCursorExpiredError } from "../static/errors/RecommendationCursorExpiredError"
 
 describe("RecommendationsService", () => {
   const setup = () => {
@@ -562,6 +568,76 @@ describe("RecommendationsService", () => {
       await expect(service.loadLatestModel()).rejects.toThrow(
         "Некорректные параметры или размеры массивов ALS",
       )
+    } finally {
+      await moduleRef.close()
+    }
+  })
+
+  it("принимает предельную размерность ALS и переходит на fallback только для невалидного артефакта", async () => {
+    const itemIds = [new Types.ObjectId().toHexString()]
+    const document = {
+      _id: new Types.ObjectId(),
+      trainedAt: new Date(),
+      formatVersion: 1,
+      itemIds,
+      itemCF: {
+        offsets: Buffer.alloc(8),
+        indices: Buffer.alloc(0),
+        weights: Buffer.alloc(0),
+      },
+      popularity: Buffer.alloc(4),
+    }
+    const createModelDocument = (factors: number) => ({
+      ...document,
+      als: {
+        factors,
+        alpha: 20,
+        regularization: 0.05,
+        itemFactors: Buffer.alloc(4 * factors),
+      },
+    })
+    const readLatest = jest.fn<RecommendationModelRepository["readLatest"]>()
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        RecommendationsService,
+        { provide: RecommendationModelRepository, useValue: { readLatest } },
+        { provide: RecommendationCandidatesService, useValue: {} },
+        { provide: FallbackRecommendationsService, useValue: {} },
+        { provide: ItemRepository, useValue: {} },
+        { provide: CacheService, useValue: {} },
+        { provide: CursorService, useValue: {} },
+      ],
+    }).compile()
+    const warn = jest.spyOn(Logger, "warn").mockImplementation(() => undefined)
+
+    try {
+      const service = moduleRef.get(RecommendationsService)
+      const options = { isInvalidModelIgnored: true }
+      readLatest.mockResolvedValueOnce(createModelDocument(MAX_ALS_FACTORS))
+      const model = await service.loadLatestModel()
+      expect(model?.als.gram).toHaveLength(MAX_ALS_FACTORS ** 2)
+
+      const tooLarge = createModelDocument(MAX_ALS_FACTORS + 1)
+      readLatest.mockResolvedValueOnce(tooLarge).mockResolvedValueOnce(tooLarge)
+      await expect(service.loadLatestModel()).rejects.toThrow(
+        InvalidRecommendationModelError,
+      )
+      await expect(service.loadLatestModel(options)).resolves.toBeNull()
+      expect(warn).toHaveBeenCalledTimes(1)
+
+      const failure = new Error("Ошибка чтения поля модели")
+      const unexpected = {
+        ...document,
+        get als() {
+          throw failure
+        },
+      }
+      readLatest
+        .mockResolvedValueOnce(unexpected)
+        .mockRejectedValueOnce(failure)
+      await expect(service.loadLatestModel(options)).rejects.toBe(failure)
+      await expect(service.loadLatestModel(options)).rejects.toBe(failure)
+      expect(warn).toHaveBeenCalledTimes(1)
     } finally {
       await moduleRef.close()
     }

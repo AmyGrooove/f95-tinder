@@ -42,6 +42,7 @@ describe("createInfrastructureConfiguration", () => {
     expect(createInfrastructureConfiguration()).toStrictEqual({
       app: {
         environment: "development",
+        siteVariant: "main",
         name: "test-api",
         version: "1.0.0",
         description: "Test API",

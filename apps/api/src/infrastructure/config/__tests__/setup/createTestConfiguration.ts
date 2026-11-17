@@ -8,6 +8,7 @@ const createTestConfiguration = (mongoUri: string, redisUrl: string) => {
   return {
     app: {
       environment: "development",
+      siteVariant: "main",
       name: "bisky-test",
       version: "1.0.0",
       description: "API integration tests",
