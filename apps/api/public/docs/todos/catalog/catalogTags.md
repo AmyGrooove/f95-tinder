@@ -1,11 +1,13 @@
-# Tag dictionary follow-up
+# Словарь тегов каталога
 
-- [ ] Choose and approve catalogue sources for video and games in a separate chat; Kodik and IGDB are candidates, not an approved source selection
-- [ ] Inspect available source values for every controlled dictionary group and prepare an initial dictionary for approval
-- [ ] Resolve synonyms, aliases, ambiguous meanings and parent/subgenre relations before creating canonical tags
-- [ ] Define keys for remaining dictionary concepts and Russian/English names, then populate approved Tag records; fixed/range keys are already defined in TAG_GROUP_RULES
-- [ ] Define how import marks unknown values for review and resumes after approval; unknown values must not automatically create tags
-- [ ] Approve ESRB/PEGI conversion into 0+, 6+, 12+, 16+, 18+ and precedence when sources disagree; preserve source classifications and do not guess unknown mappings
-- [ ] Implement synchronization of derived tags with Item fields, including date/year consistency and removal of outdated range tags
+Справочник уже доступен через [QUERY /tags](../../api/contracts/searchSpec.md#tags). Здесь собраны задачи по его наполнению и связи с данными произведений.
 
-Agreed group rules: [TAG_GROUP_RULES.ts](../../../../src/entities/tag/static/TAG_GROUP_RULES.ts)
+- [ ] В отдельном обсуждении выбрать источники для видео и игр. Среди кандидатов — Kodik и IGDB.
+- [ ] Собрать значения источников по каждой группе с контролируемым словарём и подготовить начальный словарь на согласование.
+- [ ] До создания канонических тегов разобрать синонимы, алиасы, неоднозначные значения и отношения жанров с поджанрами.
+- [ ] Определить ключи оставшихся понятий и названия на русском и английском, затем создать согласованные записи Tag. Ключи для фиксированных значений и диапазонов заданы в [TAG_GROUP_RULES](../../../../src/entities/tag/static/TAG_GROUP_RULES.ts).
+- [ ] Определить, как импорт передаёт неизвестное значение на проверку и продолжается после решения. Создание нового тега требует согласования.
+- [ ] Согласовать соответствия ESRB и PEGI категориям 0+, 6+, 12+, 16+ и 18+, а также приоритет при расхождении источников. Сохранять исходную классификацию и оставлять неизвестные соответствия на разбор.
+- [ ] Синхронизировать производные теги с полями Item, включая соответствие года дате и удаление устаревших тегов диапазона.
+
+[Задачи каталога](readme.md)
