@@ -2,31 +2,35 @@
 
 [← Все эндпоинты](../endpoints.md) · [Контракт библиотеки](../contracts/librarySpec.md) · [Обозначения](readme.md)
 
-Все восемь операций проверяют access cookie: JWT → активную принадлежащую пользователю UserSession и существующий User. `:id` — **ID UserItem**, а `itemId` в создании — ID произведения Item. JSON передаётся с `Content-Type: application/json`; неизвестные поля запрещены. Общие ошибки: 400 — DTO/формат ObjectId; 401 — доступ; 403 — CSRF; 429 — throttling. Все ответы — `Cache-Control: no-store`.
+Семь операций под `/userItems` проверяют access-cookie, активную UserSession и существующий User. Для них `:id` — **ID UserItem**, а `itemId` в создании — ID произведения Item. JSON передаётся с `Content-Type: application/json`; неизвестные поля запрещены. Общие ошибки: 400 — DTO/формат ObjectId; 401 — доступ к `/userItems`; 403 — CSRF; 429 — throttling. Успешные ответы содержат `Cache-Control: no-store`.
 
 Изменения UserItem и его статистики выполняются одной MongoDB-транзакцией. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы/числа оценок. Старая подсистема рекомендаций удалена; очереди вкуса нет. HTTP ждёт завершения транзакции.
 
-Изменяющие операции отвечают 204 без тела. Для чтения кратких записей используется QUERY.
+Изменяющие операции отвечают 204 без тела.
 
-<a id="query"></a>
+<a id="user-library"></a>
 
-## QUERY /userItems
+## QUERY /users/:id/library
 
-Получить краткие собственные записи по их ID. **Пример:** `QUERY /userItems`, `{"ids":["507f1f77bcf86cd799439011"]}`, access cookie. **Ответ:** 200, массив id/itemId/rating/isFavorite/status; заголовок `Accept-Query: application/json`.
+Публичная страница из пяти библиотечных статусов с поиском, фильтрами, сортировкой и курсором. ID в пути принадлежит владельцу библиотеки. Для первой порции на главной передай статус из [continue](account.md#library-continue) и те же типы. Например, `QUERY /users/507f1f77bcf86cd799439011/library` с access-cookie и телом `{"statuses":{"anyOf":["inProgress"]},"types":["movie","series"],"limit":10}`.
 
 ```mermaid
 flowchart TD
-    accTitle: Краткие записи личной библиотеки
-    accDescr: Проверить пользователя и список ID, прочитать только собственные неистёкшие записи и вернуть их в порядке запроса
-    A(["QUERY /userItems"]):::http --> B["Проверить список ID и доступ"]:::action
-    B --> C[("Прочитать свои UserItem по ID")]:::data
-    C --> D["Убрать отсутствующие и истёкшие skipped; сохранить порядок"]:::action
-    D --> E(["200 — краткие записи"]):::http
+    accTitle: Страница библиотеки пользователя
+    accDescr: Проверить владельца и режим доступа, прочитать подходящие карточки из MongoDB и вернуть страницу
+    A(["QUERY /users/:id/library"]):::http --> B["Проверить ID и параметры, вычислить допустимые статусы"]:::action
+    B --> C[("Найти User")]:::data
+    C --> D{"Владелец существует?"}:::action
+    D -->|Нет| E(["404 — пользователь не найден"]):::http
+    D -->|Да| F["Проверить cookie и при совпадении владельца прочитать активную UserSession"]:::action
+    F --> G["Проверить курсор для выбранного режима доступа"]:::action
+    G --> H[("Прочитать страницу UserItem с Item и ItemStats")]:::data
+    H --> I(["200 — карточки и следующий курсор"]):::http
 ```
 
-1–60 уникальных ObjectId, регистр hex не делает ID различными. Чужие/отсутствующие записи и skipped с истёкшим expiresAt пропускаются без 404; порядок оставшихся совпадает с запросом. Item не читается. Нет транзакции, записей, событий, очередей и внешних вызовов; HTTP ждёт чтения и маппинга. Это не чтение всей библиотеки и не поиск по itemId.
+Публично `progress` и `userItemId` равны `null`. Владелец с действующей сессией получает ID записи и значение прогресса последней попытки, если оно задано. Пустая страница — `200 {"items":[],"nextCursor":null}`. Страницы отражают текущие данные. Запрос не меняет БД и не запускает фоновые задачи.
 
-**Технические подробности:** [UserItemController.query](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) → [UserItemService.query/authenticate](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts) → UserItemRepository.read.findMany. [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/queryUserItems.body.ts), [summary DTO](../../../../src/endpoints/userItem/services/userItemService/dto/userItemSummary.response.ts).
+**Технические подробности.** [Контракт](../contracts/librarySpec.md#публичный-список-библиотеки) · [UserReadController](../../../../src/endpoints/user/controllers/userReadController/core/userRead.controller.ts) · [UserLibraryService](../../../../src/endpoints/user/services/userLibraryService/core/userLibrary.service.ts) · [UserItemRepository](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts)
 
 <a id="create"></a>
 

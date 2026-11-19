@@ -36,17 +36,6 @@ const NAMING_CONVENTION = [
   },
 ]
 
-const EXTERNAL_BOOLEAN_PROPERTIES = [
-  {
-    file: "src/infrastructure/database/services/mongoBulkRepository/core/mongoBulk.repository.ts",
-    properties: ["rawResult", "lean"],
-  },
-  {
-    file: "src/infrastructure/jobs/types/IJobAddOptions.ts",
-    properties: ["extend", "replace", "keepLastIfActive"],
-  },
-]
-
 export default [
   {
     ignores: [
@@ -194,19 +183,4 @@ export default [
       },
     },
   },
-  ...EXTERNAL_BOOLEAN_PROPERTIES.map(({ file, properties }) => ({
-    files: [file],
-    rules: {
-      "@typescript-eslint/naming-convention": [
-        "error",
-        ...NAMING_CONVENTION,
-        {
-          selector: "typeProperty",
-          types: ["boolean"],
-          filter: { regex: `^(${properties.join("|")})$`, match: true },
-          format: null,
-        },
-      ],
-    },
-  })),
 ]

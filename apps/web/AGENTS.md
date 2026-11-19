@@ -7,7 +7,7 @@ This package is `@bisky/web`, the Bisky frontend built with Next.js App Router, 
 - [App Router entrypoints](src/app) delegate rendering to [route components](src/routes). The current `/` page renders an empty `MainPage`; dictionary entries alone do not establish implemented product pages.
 - [AppProviders](src/routes/layout/RootLayout/core/AppProviders/core/AppProviders.tsx) composes tooltips, TanStack Query, toasts and dialogs. Reuse these providers and the [shared UI](src/shared/ui) before introducing another mechanism.
 - [fetchData](src/shared/functions/api/fetchData) is the existing JSON HTTP helper. Read [data and errors](agents/data.md) before connecting API consumers or changing environment handling.
-- The source currently has `app`, `routes`, `providers` and `shared`. The `@entities/*` alias is configured, but there is no current `src/entities` directory. Follow the actual source and configured dependency boundaries when extending the application.
+- The source has `app`, `routes`, `entities`, `providers` and `shared`. Follow the configured dependency boundaries when extending the application.
 
 ## Working boundaries
 

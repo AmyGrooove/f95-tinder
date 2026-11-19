@@ -7,7 +7,7 @@ class CacheService {
   constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
   async get<TValue>(key: string) {
-    const value = await this.cache.get<TValue>(key)
+    const value = await this.cache.stores[0].get<TValue>(key)
 
     return value ?? null
   }

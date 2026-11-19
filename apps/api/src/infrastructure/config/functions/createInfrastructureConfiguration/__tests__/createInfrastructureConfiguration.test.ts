@@ -1,96 +1,119 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from "@jest/globals"
+import { beforeEach, describe, expect, it, jest } from "@jest/globals"
 
 import { createInfrastructureConfiguration } from "../core/createInfrastructureConfiguration"
-import { DICTIONARY } from "@shared/static/DICTIONARY"
+import { CONFIG_ERROR_MESSAGES } from "../static/CONFIG_ERROR_MESSAGES"
+import { TEST_ENVIRONMENT } from "./static/TEST_ENVIRONMENT"
 
 describe("createInfrastructureConfiguration", () => {
   beforeEach(() => {
-    jest.replaceProperty(process, "env", {
-      APP_NAME: "test-api",
-      APP_VERSION: "1.0.0",
-      APP_DESCRIPTION: "Test API",
-      PORT: "3000",
-      CORS_ORIGINS: "https://app.example.test",
-      MONGO_URL: "mongodb://localhost/test",
-      REDIS_URL: "redis://localhost/0",
-      JWT_ACCESS_SECRET: "a".repeat(32),
-      JWT_REFRESH_SECRET: "r".repeat(32),
-      GARAGE_URL: "https://storage.example.test",
-      GARAGE_REGION: "test-region",
-      GARAGE_ACCESS_KEY_ID: "test-access",
-      GARAGE_SECRET_ACCESS_KEY: "test-secret",
-      GARAGE_PUBLIC_URL: "https://cdn.example.test",
-      MEILISEARCH_URL: "http://localhost:7700",
-      MEILISEARCH_ACCESS_SECRET: "test-search",
-      RESEND_ACCESS_SECRET: "test-mail",
-      MAIL_DOMAIN: "mail.example.test",
-      KODIK_API_TOKEN: "test-kodik",
-    })
-  })
-  afterEach(() => {
-    jest.restoreAllMocks()
+    jest.replaceProperty(process, "env", { ...TEST_ENVIRONMENT })
   })
 
-  it("собирает все разделы из изолированного окружения", () => {
+  it("собирает конфигурацию приложения и всех подключений из окружения", () => {
     expect(createInfrastructureConfiguration()).toStrictEqual({
       app: {
         environment: "development",
         siteVariant: "main",
         name: "test-api",
-        version: "1.0.0",
+        version: "1.2.3",
         description: "Test API",
         port: 3000,
         corsOrigins: ["https://app.example.test"],
       },
       knowledge: { username: "", password: "" },
-      database: { uri: "mongodb://localhost/test" },
+      database: { uri: TEST_ENVIRONMENT.MONGO_URL },
       redis: {
-        url: "redis://localhost/0",
-        host: "localhost",
-        port: undefined,
-        database: 0,
-        isTls: false,
+        url: TEST_ENVIRONMENT.REDIS_URL,
+        host: "redis.example.test",
+        port: 6380,
+        database: 2,
+        isTls: true,
         username: undefined,
         password: undefined,
       },
-      jwt: { accessSecret: "a".repeat(32), refreshSecret: "r".repeat(32) },
-      storage: {
-        endpoint: "https://storage.example.test/",
-        region: "test-region",
-        accessKey: "test-access",
-        secretKey: "test-secret",
-        publicUrl: "https://cdn.example.test/",
+      jwt: {
+        accessSecret: TEST_ENVIRONMENT.JWT_ACCESS_SECRET,
+        refreshSecret: TEST_ENVIRONMENT.JWT_REFRESH_SECRET,
       },
-      search: { host: "http://localhost:7700/", apiKey: "test-search" },
-      mail: { apiKey: "test-mail", domain: "mail.example.test" },
-      sources: { kodikApiToken: "test-kodik" },
+      storage: {
+        endpoint: "http://storage.example.test/",
+        region: TEST_ENVIRONMENT.GARAGE_REGION,
+        accessKey: TEST_ENVIRONMENT.GARAGE_ACCESS_KEY_ID,
+        secretKey: TEST_ENVIRONMENT.GARAGE_SECRET_ACCESS_KEY,
+        publicUrl: TEST_ENVIRONMENT.GARAGE_PUBLIC_URL,
+      },
+      search: {
+        host: "https://search.example.test/",
+        apiKey: TEST_ENVIRONMENT.MEILISEARCH_ACCESS_SECRET,
+      },
+      mail: {
+        apiKey: TEST_ENVIRONMENT.RESEND_ACCESS_SECRET,
+        domain: TEST_ENVIRONMENT.MAIL_DOMAIN,
+      },
+      sources: { kodikApiToken: TEST_ENVIRONMENT.KODIK_API_TOKEN },
     })
   })
 
-  it("читает учётные данные базы знаний из окружения", () => {
-    process.env.KNOWLEDGE_USERNAME = "test-knowledge"
+  it("сохраняет заданные учётные данные базы знаний", () => {
+    process.env.KNOWLEDGE_USERNAME = "reader"
     process.env.KNOWLEDGE_PASSWORD = "test-password"
 
     expect(createInfrastructureConfiguration().knowledge).toStrictEqual({
-      username: "test-knowledge",
+      username: "reader",
       password: "test-password",
     })
   })
 
-  it.each(["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"])(
-    "требует минимум 32 символа в %s",
-    (key) => {
-      process.env[key] = "a".repeat(31)
+  it("принимает Redis без TLS, HTTPS для Garage и HTTP для Meilisearch", () => {
+    process.env.REDIS_URL = "redis://localhost/0"
+    process.env.GARAGE_URL = "https://storage.example.test"
+    process.env.GARAGE_PUBLIC_URL = "https://cdn.example.test"
+    process.env.MEILISEARCH_URL = "http://localhost:7700"
 
-      expect(() => createInfrastructureConfiguration()).toThrow(
-        DICTIONARY.config.JWT_SECRET_LENGTH,
+    const configuration = createInfrastructureConfiguration()
+
+    expect(configuration.redis).toStrictEqual({
+      url: "redis://localhost/0",
+      host: "localhost",
+      port: undefined,
+      database: 0,
+      isTls: false,
+      username: undefined,
+      password: undefined,
+    })
+    expect(configuration.storage.endpoint).toBe("https://storage.example.test/")
+    expect(configuration.storage.publicUrl).toBe("https://cdn.example.test/")
+    expect(configuration.search.host).toBe("http://localhost:7700/")
+  })
+
+  it("принимает адрес MongoDB с протоколом mongodb+srv", () => {
+    const uri = "mongodb+srv://db.example.test/catalog"
+    process.env.MONGO_URL = uri
+
+    expect(createInfrastructureConfiguration().database.uri).toBe(uri)
+  })
+
+  it.each([
+    "MONGO_URL",
+    "REDIS_URL",
+    "GARAGE_URL",
+    "GARAGE_PUBLIC_URL",
+    "MEILISEARCH_URL",
+  ])("отклоняет неподдерживаемый протокол в %s", (key) => {
+    process.env[key] = "ftp://service.example.test"
+
+    expect(createInfrastructureConfiguration).toThrow(
+      `${CONFIG_ERROR_MESSAGES.INVALID_URL_PROTOCOL}: ${key}`,
+    )
+  })
+
+  it.each(["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"])(
+    "отклоняет 31 символ в %s",
+    (key) => {
+      process.env[key] = "x".repeat(31)
+
+      expect(createInfrastructureConfiguration).toThrow(
+        CONFIG_ERROR_MESSAGES.JWT_SECRET_LENGTH,
       )
     },
   )
@@ -100,59 +123,39 @@ describe("createInfrastructureConfiguration", () => {
     "-mail.example.test",
     "mail_.example.test",
     "https://mail.example.test",
+    "sender@example.test",
   ])("отклоняет некорректный почтовый домен %s", (domain) => {
     process.env.MAIL_DOMAIN = domain
 
-    expect(() => createInfrastructureConfiguration()).toThrow(
-      DICTIONARY.config.INVALID_MAIL_DOMAIN,
+    expect(createInfrastructureConfiguration).toThrow(
+      CONFIG_ERROR_MESSAGES.INVALID_MAIL_DOMAIN,
     )
   })
 
+  it.each(Object.keys(TEST_ENVIRONMENT))(
+    "отклоняет конфигурацию без обязательной переменной %s",
+    (key) => {
+      delete process.env[key]
+
+      expect(createInfrastructureConfiguration).toThrow(key)
+    },
+  )
+
   it.each([
-    "MONGO_URL",
-    "REDIS_URL",
     "JWT_ACCESS_SECRET",
     "JWT_REFRESH_SECRET",
-    "APP_NAME",
-    "APP_VERSION",
-    "APP_DESCRIPTION",
-    "PORT",
-    "CORS_ORIGINS",
-    "GARAGE_URL",
+    "MAIL_DOMAIN",
     "GARAGE_REGION",
     "GARAGE_ACCESS_KEY_ID",
     "GARAGE_SECRET_ACCESS_KEY",
-    "GARAGE_PUBLIC_URL",
-    "MEILISEARCH_URL",
     "MEILISEARCH_ACCESS_SECRET",
     "RESEND_ACCESS_SECRET",
-    "MAIL_DOMAIN",
     "KODIK_API_TOKEN",
-  ])("отклоняет конфигурацию без обязательной переменной %s", (key) => {
-    delete process.env[key]
+  ])("отклоняет пустую обязательную переменную %s", (key) => {
+    process.env[key] = " "
 
-    expect(() => createInfrastructureConfiguration()).toThrow(key)
-  })
-
-  it.each([
-    "MONGO_URL",
-    "REDIS_URL",
-    "GARAGE_URL",
-    "GARAGE_PUBLIC_URL",
-    "MEILISEARCH_URL",
-  ])("проверяет допустимость протокола %s", (key) => {
-    process.env[key] = "ftp://example.test"
-
-    expect(() => createInfrastructureConfiguration()).toThrow(
-      `${DICTIONARY.config.INVALID_URL_PROTOCOL}: ${key}`,
-    )
-  })
-
-  it("принимает MongoDB SRV", () => {
-    process.env.MONGO_URL = "mongodb+srv://mongo.example.test/test"
-
-    expect(createInfrastructureConfiguration().database.uri).toBe(
-      "mongodb+srv://mongo.example.test/test",
+    expect(createInfrastructureConfiguration).toThrow(
+      `${CONFIG_ERROR_MESSAGES.MISSING_REQUIRED_ENVIRONMENT_VALUE}: ${key}`,
     )
   })
 })

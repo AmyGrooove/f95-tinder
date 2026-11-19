@@ -2,7 +2,7 @@
 
 [← Все эндпоинты](../endpoints.md) · [Авторизация и сессии](auth.md) · [Обозначения](readme.md)
 
-Все восемь операций используют access cookie, проверяют подпись/срок JWT, принадлежащую пользователю активную UserSession и существование User. Передаётся cookie `__Host-accessToken`; Bearer-токен не заменяет его. JSON — с `Content-Type: application/json`, неизвестные поля запрещены. Общие ошибки: 400 — входные данные, 401 — нет действующего доступа, 403 — CSRF для изменяющих запросов, 429 — throttling. Все ответы имеют `Cache-Control: no-store`. Событий в этих потоках нет.
+Все девять операций используют cookie `__Host-accessToken`, проверяют подпись и срок JWT, активную сессию пользователя и существование User. JSON передаётся с `Content-Type: application/json`. Неизвестные поля запрещены. Общие ошибки — 400 для неверных входных данных, 401 при отсутствии действующего доступа, 403 при проверке CSRF изменяющих запросов, 429 при превышении лимита. Успешные ответы имеют `Cache-Control: no-store`. Событий в этих потоках нет.
 
 <a id="whoami"></a>
 
@@ -23,6 +23,32 @@ flowchart TD
 Чтения User и UserSession параллельные, без транзакции и общего snapshot; нет записей, внешних вызовов или фоновой работы. Нет пользователя или сессии — 401. HTTP ждёт обоих чтений и маппинга.
 
 **Технические подробности:** [AccountController.whoami](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.whoami](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → AuthService.getSession/UserRepository.read.findById. [Response DTO](../../../../src/endpoints/account/services/accountService/dto/whoami.response.ts).
+
+<a id="library-continue"></a>
+
+## GET /account/library/continue
+
+Выбирает раздел «Продолжить просмотр» для текущего пользователя. Параметров пути и тела нет. Пример с access cookie — `GET /account/library/continue?types=movie&types=series`. Успешный ответ — `200`, `Cache-Control: no-store`, `{"status":"onHold"}`.
+
+`types` — необязательный повторяемый query-параметр. Допустимы `movie`, `series`, `animatedMovie`, `animatedSeries`, `animeSeries`, `animeMovie`, `game`. При отсутствии `types` участвуют все типы. При наличии требуется хотя бы одно допустимое значение. Дубликаты допустимы. Пустые значения, CSV, `types[]` и неизвестные параметры дают 400.
+
+```mermaid
+flowchart TD
+    accTitle: Выбор раздела «Продолжить просмотр»
+    accDescr: Проверить типы, JWT, пользователя и сессию, затем выбрать первый непустой статус по приоритету
+    A(["GET /account/library/continue"]):::http --> B["Проверить типы и access JWT"]:::action
+    B --> C[("Прочитать User и активную UserSession")]:::data
+    C --> D{"Пользователь и сессия найдены?"}
+    D -->|Нет| E(["401 — нет доступа"]):::http
+    D -->|Да| F[("Найти первый подходящий статус UserItem по данным Item")]:::data
+    F --> G(["200 — статус или null"]):::http
+```
+
+Одна агрегация `UserItem` учитывает существующие `Item` с `deletedAt: null`, применяет фильтр типов и выбирает первый непустой статус в порядке `inProgress → onHold → planned`. Если совпадений нет, возвращается `{"status":null}`. Ответ не содержит карточек или полей пагинации. Чтения проходят без общей транзакции.
+
+Ошибки используют `{"error":{"code":"…","message":"…","details":null,"requestId":"…"}}`. Для 400 код `BAD_REQUEST`, в `details` передаётся `{"errors":["…"]}`. Остальные ответы используют `details: null`. Недействительная авторизация даёт `401 UNAUTHORIZED`, превышение лимита 100 запросов в минуту на IP — `429 TOO_MANY_REQUESTS` с `Retry-After`, необработанный сбой — `500 INTERNAL_ERROR`.
+
+**Технические подробности.** [AccountController.readLibraryContinue](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.readLibraryContinue](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → [UserItemRepository.readLibraryContinueStatus](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts). [Запрос](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.query.ts) и [ответ](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.response.ts).
 
 <a id="display-name"></a>
 

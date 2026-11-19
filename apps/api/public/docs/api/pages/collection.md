@@ -15,7 +15,7 @@
 
 Код: [CollectionReadController](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [CollectionContentService](../../../../src/endpoints/collection/services/collectionContentService/core/collectionContent.service.ts), [CollectionService](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [CollectionUserService](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts).
 
-Чтение состава публичное: возвращает только Item и данные включения в подборку, без userItem. Cookie авторизации не проверяется. Краткий QUERY /userItems читает состояние по известным ID UserItem; для карточек состава, где доступны только ID Item, поиск личной записи по Item ещё нужен (LIB-01).
+Публичное чтение состава возвращает Item, данные включения, общую оценку и личные поля зрителя. При наличии cookie сервер проверяет сессию. Поиск полной личной записи по ID Item относится к LIB-01.
 
 Состав возвращается в сохранённом порядке. Для подгрузки передаётся nextCursor предыдущего ответа; при изменении версии подборки чтение начинают заново. Доступны только cursor и limit: фильтры и режим grouped/flat из требований страницы пока не реализованы.
 

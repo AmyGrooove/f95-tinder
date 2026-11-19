@@ -5,13 +5,13 @@
 Reuse [fetchData](../src/shared/functions/api/fetchData/index.ts) for the existing JSON transport contract; its [implementation](../src/shared/functions/api/fetchData/core/fetchData.ts) accepts [IFetchDataProps](../src/shared/functions/api/fetchData/types/IFetchDataProps.ts): `path`, optional `body`, `method`, `query` and `signal`.
 
 - Defaults to GET. Supported method literals are DELETE, GET, PATCH and POST; custom `QUERY` is not currently part of this interface.
-- Reads `ENV.API_URL`, removes trailing slashes, appends `/v1` and normalizes the leading slash of `path`. Missing or empty API_URL throws an ordinary Error before fetching.
+- Joins `ENV.API_URL` and `path`, removing trailing slashes from the base URL and adding a leading slash to the path when needed. Pass the actual route as `path`, such as `/facts/<id>` for an unversioned fact read or `/v1/...` for a versioned route. Missing or empty API_URL throws an ordinary Error before fetching.
 - Omits null/undefined query values, joins array values with commas and serializes other values through `URLSearchParams`.
 - JSON-serializes non-null bodies and sets Content-Type only for those bodies. Passes the AbortSignal through to fetch.
 - Returns `undefined` for status 204; otherwise returns parsed JSON as the requested generic response type. The generic is not runtime response validation.
 - The request options do not explicitly set credentials, authorization headers, caching or cookie forwarding. Inspect the required authentication and server/client boundary before connecting a consumer.
 
-[ENV](../src/shared/static/ENV.ts) currently reads `process.env.API_URL`. Neither this module nor [next.config.ts](../next.config.ts) configures a public client variable or proxy. Do not assume browser access to that value when introducing client-side requests. The current source search finds no application consumer of `fetchData` beyond its public export.
+[ENV](../src/shared/static/ENV.ts) reads `process.env.API_URL`. Neither this module nor [next.config.ts](../next.config.ts) configures a public client variable or proxy. Check where the request runs before adding a browser consumer.
 
 ## Error contract
 

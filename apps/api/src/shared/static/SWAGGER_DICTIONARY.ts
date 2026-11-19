@@ -1,4 +1,7 @@
 const SWAGGER_DICTIONARY = {
+  valueFilter: {
+    caseInsensitiveIds: "Идентификаторы уникальны без учёта регистра",
+  },
   health: {
     tag: "Работоспособность",
     getHealth: {

@@ -1,39 +1,59 @@
-import type { PipelineStage } from "mongoose"
+import type { PipelineStage, UpdateAggregationStage } from "mongoose"
 
-class AggregationBuilder {
-  private readonly stages: PipelineStage[] = []
+class AggregationBuilder<TStage extends PipelineStage = PipelineStage> {
+  private readonly stages: TStage[] = []
 
-  match(filter: PipelineStage.Match["$match"]) {
-    this.stages.push({ $match: filter })
-
-    return this
+  static forLookup() {
+    return new AggregationBuilder<
+      NonNullable<PipelineStage.Lookup["$lookup"]["pipeline"]>[number]
+    >()
   }
 
-  sort(fields: PipelineStage.Sort["$sort"]) {
-    this.stages.push({ $sort: fields })
-
-    return this
+  static forFacet() {
+    return new AggregationBuilder<PipelineStage.FacetPipelineStage>()
   }
 
-  limit(count: number) {
-    this.stages.push({ $limit: count })
-
-    return this
+  static forUpdate() {
+    return new AggregationBuilder<
+      Extract<PipelineStage, UpdateAggregationStage>
+    >()
   }
 
-  project(fields: PipelineStage.Project["$project"]) {
-    this.stages.push({ $project: fields })
-
-    return this
+  match<TBuilder>(
+    this: { use: (stage: PipelineStage.Match) => TBuilder },
+    filter: PipelineStage.Match["$match"],
+  ) {
+    return this.use({ $match: filter })
   }
 
-  use(...stages: PipelineStage[]) {
+  sort<TBuilder>(
+    this: { use: (stage: PipelineStage.Sort) => TBuilder },
+    fields: PipelineStage.Sort["$sort"],
+  ) {
+    return this.use({ $sort: fields })
+  }
+
+  limit<TBuilder>(
+    this: { use: (stage: PipelineStage.Limit) => TBuilder },
+    count: number,
+  ) {
+    return this.use({ $limit: count })
+  }
+
+  project<TBuilder>(
+    this: { use: (stage: PipelineStage.Project) => TBuilder },
+    fields: PipelineStage.Project["$project"],
+  ) {
+    return this.use({ $project: fields })
+  }
+
+  use = (...stages: TStage[]) => {
     this.stages.push(...stages)
 
     return this
   }
 
-  build(): PipelineStage[] {
+  build(): TStage[] {
     return [...this.stages]
   }
 }

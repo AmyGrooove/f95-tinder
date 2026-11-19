@@ -71,7 +71,7 @@ const fetchData = async <TResponse>(props: IFetchDataProps) => {
   }
 
   const response = await fetch(
-    `${apiUrl}/v1${path.startsWith('/') ? path : `/${path}`}${
+    `${apiUrl}${path.startsWith('/') ? path : `/${path}`}${
       queryString !== '' ? `?${queryString}` : ''
     }`,
     {

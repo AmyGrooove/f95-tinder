@@ -4,11 +4,12 @@
 
 ## Реализовано
 
-Все восемь операций [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) вызывают [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts):
+[`QUERY /users/:id/library`](../contracts/librarySpec.md#публичный-список-библиотеки) возвращает постраничный список по ID пользователя. ID записи и краткий прогресс в карточке доступны владельцу.
+
+Все семь операций [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) вызывают [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts):
 
 | Маршрут                                    | Покрываемое действие                                                                      |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `QUERY /userItems`                         | Краткие собственные записи по 1–60 ID UserItem в JSON-теле { ids }; без заметки и попыток |
 | `POST /userItems`                          | Создать библиотечную запись по `{ itemId, status }`                                       |
 | `POST /userItems/skip`                     | Создать skipped на 90 дней по `{ itemId }`                                                |
 | `POST /userItems/block`                    | Создать blocked по `{ itemId }`                                                           |
@@ -40,4 +41,4 @@ PATCH `/userItems/:id` принимает одно или несколько п�
 | Collection      | Метаданные, состав и реакция на подборку                     |
 | Блок Collection | PATCH структуры и указание группы включения                  |
 
-Эти ID не взаимозаменяемы. Сейчас POST /userItems не возвращает созданный ID, а QUERY /userItems принимает только уже известные ID UserItem. Поэтому клиент с одним Item ID не может замкнуть сценарий «создать → прочитать → редактировать» через существующие ответы. Недостающее чтение по Item относится к LIB-01; его контракт ещё предстоит определить.
+POST /userItems не возвращает ID созданной записи. Чтобы начать редактирование с одного ID Item, клиенту ещё нужен способ получить личную запись по этому Item. Недостающее чтение по Item относится к LIB-01; его контракт ещё предстоит определить.

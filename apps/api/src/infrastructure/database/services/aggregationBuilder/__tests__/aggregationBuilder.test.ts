@@ -42,4 +42,14 @@ describe("AggregationBuilder", () => {
     expect(builder.build()).toEqual([{ $limit: 1 }, { $sort: { key: 1 } }])
     expect(builder.build()).not.toBe(builder.build())
   })
+
+  it("собирает отдельные наборы стадий для вложенных и обновляющих pipeline", () => {
+    const lookup = AggregationBuilder.forLookup().match({ isActive: true })
+    const facet = AggregationBuilder.forFacet().use({ $count: "total" })
+    const update = AggregationBuilder.forUpdate().use({ $set: { score: 1 } })
+
+    expect(lookup.build()).toStrictEqual([{ $match: { isActive: true } }])
+    expect(facet.build()).toStrictEqual([{ $count: "total" }])
+    expect(update.build()).toStrictEqual([{ $set: { score: 1 } }])
+  })
 })
