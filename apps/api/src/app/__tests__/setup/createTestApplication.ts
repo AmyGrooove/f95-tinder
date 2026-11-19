@@ -19,6 +19,7 @@ import { AccountModule } from "@endpoints/account/account.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { TagCollectionsInitializationService } from "@endpoints/collection/services/tagCollectionsInitializationService"
 import { AuthModule } from "@endpoints/auth/auth.module"
+import { UserEndpointModule } from "@endpoints/user/user.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { TagEndpointModule } from "@endpoints/tag/tag.module"
@@ -127,6 +128,7 @@ const createTestApplication = async (search?: {
       imports: [
         AuthModule,
         AccountModule,
+        UserEndpointModule,
         UserItemEndpointModule,
         CollectionEndpointModule,
         ...(search === undefined

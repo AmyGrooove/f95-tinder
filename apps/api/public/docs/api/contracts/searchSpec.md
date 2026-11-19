@@ -71,11 +71,11 @@
 }
 ```
 
-| Группа          | Поля карточки                                                            |
-| --------------- | ------------------------------------------------------------------------ |
+| Группа          | Поля карточки                                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
 | `items[]`       | `id`, `type`, `title: {ru,en}`, `media: [{src,language,type: "poster"}]`, `rating`, `userRating`, `userStatus` |
-| `collections[]` | `id`, `type`, `title: {ru,en}`, `media: [{src,language,type}]`           |
-| `users[]`       | `id`, `username`, `displayName`, `avatarUrl: string \| null`             |
+| `collections[]` | `id`, `type`, `title: {ru,en}`, `media: [{src,language,type}]`                                                 |
+| `users[]`       | `id`, `username`, `displayName`, `avatarUrl: string \| null`                                                   |
 
 В `items[].media` возвращаются все постеры произведения в сохранённом порядке. Если постеров нет, `media` — пустой массив. `rating` — средний балл сайта или `null`, `userRating` — личная целая оценка 1–10 или `null`, `userStatus` — `planned`, `inProgress`, `onHold`, `completed`, `dropped` или `null`. У гостя личные поля равны `null`. Для `blocked` и `skipped` статус равен `null`. Оценка записи `blocked` доступна её владельцу при выключенном личном фильтре.
 

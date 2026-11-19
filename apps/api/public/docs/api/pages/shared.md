@@ -8,15 +8,15 @@
 
 Все семь операций [UserItemController](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts) вызывают [UserItemService](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts):
 
-| Маршрут                                    | Покрываемое действие                                                                      |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `POST /userItems`                          | Создать библиотечную запись по `{ itemId, status }`                                       |
-| `POST /userItems/skip`                     | Создать skipped на 90 дней по `{ itemId }`                                                |
-| `POST /userItems/block`                    | Создать blocked по `{ itemId }`                                                           |
-| `PATCH /userItems/:id`                     | Сохранить переданные статус, оценку, избранное и заметку одной операцией                  |
-| `DELETE /userItems/:id`                    | Удалить запись вместе с попытками и личными полями                                        |
-| `POST /userItems/:id/attempts`             | Добавить попытку, в том числе повторный просмотр                                          |
-| `PATCH /userItems/:id/attempts/:attemptId` | Изменить isCompleted, прогресс и даты попытки                                             |
+| Маршрут                                    | Покрываемое действие                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `POST /userItems`                          | Создать библиотечную запись по `{ itemId, status }`                      |
+| `POST /userItems/skip`                     | Создать skipped на 90 дней по `{ itemId }`                               |
+| `POST /userItems/block`                    | Создать blocked по `{ itemId }`                                          |
+| `PATCH /userItems/:id`                     | Сохранить переданные статус, оценку, избранное и заметку одной операцией |
+| `DELETE /userItems/:id`                    | Удалить запись вместе с попытками и личными полями                       |
+| `POST /userItems/:id/attempts`             | Добавить попытку, в том числе повторный просмотр                         |
+| `PATCH /userItems/:id/attempts/:attemptId` | Изменить isCompleted, прогресс и даты попытки                            |
 
 PATCH `/userItems/:id` принимает одно или несколько полей; пропущенные сохраняются. Оценка — целое число 1–10 или `null` для очистки; заметку также можно очистить через `null`.
 

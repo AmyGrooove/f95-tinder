@@ -4,10 +4,13 @@ import { APP_FILTER } from "@nestjs/core"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
+import { UserEndpointModule } from "@endpoints/user/user.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { TagEndpointModule } from "@endpoints/tag/tag.module"
+import { FactEndpointModule } from "@endpoints/fact/fact.module"
+import { HomeEndpointModule } from "@endpoints/home/home.module"
 
 import { ItemModule } from "@entities/item/item.module"
 import { CollectionModule } from "@entities/collection/collection.module"
@@ -51,6 +54,7 @@ import { AppController } from "./controllers/appController"
     AuthModule,
     AccountModule,
     UserItemEndpointModule,
+    UserEndpointModule,
     CollectionEndpointModule,
     RecommendationsModule,
     ItemModule,
@@ -71,6 +75,8 @@ import { AppController } from "./controllers/appController"
     UserSessionModule,
     SearchEndpointModule,
     TagEndpointModule,
+    FactEndpointModule,
+    HomeEndpointModule,
   ],
   controllers: [AppController],
   providers: [

@@ -95,7 +95,7 @@ ratingScore = (n*R+20*C)/(n+20), иначе C
 
 ### 2.4. Eligibility и порядок работы
 
-[Первый match](../../../../src/entities/item/functions/createItemFilterPipeline/core/createItemFilterPipeline.ts) уже ограничивает candidateItemIds, deletedAt, type и excludeItemIds. Значит, возможность ограничить работу существует без новой коллекции. Далее идут точные поля/даты, AND назначенных tagIds, optional collection/group, UserItem, ItemBan, ItemStats/rating range, taste, relations, полный sort и facet.
+В исследованной реализации первый match ограничивал candidateItemIds, deletedAt, type и excludeItemIds. Это позволяло сузить выборку без новой коллекции. Затем проверялись поля и даты, наличие всех назначенных tagIds, принадлежность к collection/group при заданном фильтре, UserItem, ItemBan и диапазон рейтинга из ItemStats. После фильтров учитывались вкусы и связи, затем применялись сортировка и facet.
 
 По умолчанию исключаются blocked, активный skipped и подходящие ItemBan. Skipped с истёкшим expiresAt доступен до TTL-очистки; null/missing expiry остаётся исключением. `isIncludingExcluded=true` сохраняет рекомендательно исключённые Items в последней сортировочной группе. Это внутренний диагностический контракт; такой флаг не следует автоматически открывать публичному feed.
 

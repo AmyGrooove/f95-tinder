@@ -103,13 +103,13 @@ CollectionRepository.softDeleteByAuthor одним условным обновл
 
 `QUERY /collections/:id/items` принимает JSON-объект, включая `{}` для первой страницы. `id` в пути — ObjectId из 24 шестнадцатеричных символов. Параметров строки запроса нет. Все поля тела необязательны. Неизвестные поля и явный `null` дают 400.
 
-| Поле | Правило |
-| --- | --- |
-| `cursor` | Строка base64url длиной 1–150 символов. Передайте `nextCursor` для продолжения |
-| `limit` | Целое число 10, 20 или 50. По умолчанию 50 |
-| `types` | От 1 до 7 уникальных значений `EItemType`. Без поля участвуют все типы |
-| `isPersonalFilteringEnabled` | Boolean, по умолчанию false |
-| `isMetadataIncluded` | Boolean, по умолчанию false |
+| Поле                         | Правило                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `cursor`                     | Строка base64url длиной 1–150 символов. Передайте `nextCursor` для продолжения |
+| `limit`                      | Целое число 10, 20 или 50. По умолчанию 50                                     |
+| `types`                      | От 1 до 7 уникальных значений `EItemType`. Без поля участвуют все типы         |
+| `isPersonalFilteringEnabled` | Boolean, по умолчанию false                                                    |
+| `isMetadataIncluded`         | Boolean, по умолчанию false                                                    |
 
 Ответ 200 содержит `{nextCursor, blocks, isHidden}`, заголовки `Accept-Query: application/json` и `Cache-Control: no-store`. `nextCursor` — строка для продолжения или null. При `isMetadataIncluded: true` на каждой странице дополнительно возвращается `metadata: {label, description}` из названия и описания подборки. Оба объекта содержат `ru` и `en` со строкой или null в каждом поле. `count` и `total` не возвращаются.
 
