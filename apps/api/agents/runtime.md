@@ -18,9 +18,9 @@ Global validation transforms input, whitelists DTO fields and rejects non-whitel
 
 [AppModule](../src/app/app.module.ts) imports AuthModule and AccountModule. See [the account/auth specification](../public/docs/api/contracts/accountAndAuthSpec.md) and [security](security.md) for cookie authorization and session contracts. [UserItemEndpointModule](../src/endpoints/userItem/userItem.module.ts) exposes seven mutation routes. [UserEndpointModule](../src/endpoints/user/user.module.ts) exposes QUERY /users/:id/library for paged library reads by owner ID.
 
-CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled; allowed methods include QUERY. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
+CORS allows origins dynamically outside production and uses configured origins in production, with credentials enabled and GET, HEAD, POST, PUT, PATCH, DELETE and QUERY allowed. Shutdown hooks are enabled. Request metadata is initialized before handling; see [observability](observability.md).
 
-Bootstrap enables NestJS `enableCsrfProtection()` for the application before registering request hooks and before listening. It checks Fetch Metadata with an Origin/Host fallback for state-changing requests. Explicit `CORS_ORIGINS` entries are also passed as `trustedOrigins`; a development `*` entry is omitted because CSRF trust requires exact origins. Development CORS reflection does not grant CSRF trust. There are no route exclusions or required `X-Requested-With` headers.
+Bootstrap enables NestJS `enableCsrfProtection()` for the application before registering request hooks and before listening. NestJS applies Fetch Metadata checks with an Origin/Host fallback to methods other than GET, HEAD and OPTIONS, including QUERY. Explicit `CORS_ORIGINS` entries are also passed as `trustedOrigins`; a development `*` entry is omitted because CSRF trust requires exact origins. Development CORS reflection does not grant CSRF trust. There are no route exclusions or required `X-Requested-With` headers.
 
 ## Configuration authority
 

@@ -61,7 +61,7 @@ class ImageUploadInterceptor implements NestInterceptor {
     let input: Buffer | undefined
     let mimeType: string | undefined
 
-    for await (const part of request.parts()) {
+    for await (const part of this.readParts(request)) {
       if (this.checkIsMultipartFile(part)) {
         if (!isNil(input) || part.fieldname !== metadata.field) {
           part.file.resume()
@@ -125,6 +125,41 @@ class ImageUploadInterceptor implements NestInterceptor {
         })
       }),
     )
+  }
+
+  private async *readParts(request: IFastifyMultipartRequest) {
+    try {
+      yield* request.parts()
+    } catch (error) {
+      const {
+        FieldsLimitError,
+        FilesLimitError,
+        InvalidMultipartContentTypeError,
+        PartsLimitError,
+        RequestFileTooLargeError,
+      } = request.server.multipartErrors
+
+      if (error instanceof FilesLimitError) {
+        throw new BadRequestException(DICTIONARY.image.exactlyOneFileRequired)
+      }
+
+      if (error instanceof RequestFileTooLargeError) {
+        throw new PayloadTooLargeException(DICTIONARY.image.byteLimitExceeded)
+      }
+
+      if (
+        error instanceof FieldsLimitError ||
+        error instanceof PartsLimitError ||
+        error instanceof InvalidMultipartContentTypeError ||
+        (error instanceof Error &&
+          (error.message === "Multipart: Boundary not found" ||
+            error.message === "Unexpected end of multipart data"))
+      ) {
+        throw new BadRequestException(DICTIONARY.image.invalidMultipart)
+      }
+
+      throw error
+    }
   }
 
   private createProcessingOptions(

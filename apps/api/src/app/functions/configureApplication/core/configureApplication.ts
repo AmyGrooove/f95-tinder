@@ -49,7 +49,7 @@ const configureApplication = async (app: NestFastifyApplication) => {
   app.enableCors({
     origin: corsOrigin,
     credentials: true,
-    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "QUERY"],
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "QUERY"],
   })
 
   app.enableVersioning({

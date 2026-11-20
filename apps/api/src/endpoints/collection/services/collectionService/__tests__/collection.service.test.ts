@@ -4,6 +4,7 @@ import { Types } from "mongoose"
 
 import type { StorageService } from "@infrastructure/storage/services/storageService"
 import type { UserRepository } from "@entities/user/services/userRepository"
+import type { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import type { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
 import type { ItemRepository } from "@entities/item/services/itemRepository"
@@ -33,6 +34,7 @@ describe("CollectionService", () => {
       transactions as unknown as MongoTransactionService,
       {} as UserRepository,
       {} as StorageService,
+      {} as UserCollectionRepository,
     )
     return { collections, transactions, service }
   }

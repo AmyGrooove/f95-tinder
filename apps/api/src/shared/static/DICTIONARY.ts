@@ -150,6 +150,7 @@ const DICTIONARY = {
     dimensionLimitExceeded: "Размеры изображения превышают допустимый лимит",
     processingFailed: "Не удалось обработать загруженное изображение",
     exactlyOneFileRequired: "Требуется ровно один файл изображения",
+    invalidMultipart: "Некорректные данные multipart/form-data",
     missingField: (field: string) => {
       return `Отсутствует поле изображения '${field}'`
     },

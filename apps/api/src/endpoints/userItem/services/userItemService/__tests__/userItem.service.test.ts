@@ -13,6 +13,7 @@ import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemSchema } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItemRepository } from "@entities/userItem/services/userItemRepository"
+import type { UserItemHistoryRepository } from "@entities/userItemHistory/services/userItemHistoryRepository"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 
 import { UserItemService } from "../core/userItem.service"
@@ -67,6 +68,11 @@ describe("UserItemService", () => {
       update: updateMetrics,
       getState: UserItemStatsService.prototype.getState,
     } as unknown as UserItemStatsService,
+    {
+      append: jest
+        .fn<UserItemHistoryRepository["append"]>()
+        .mockResolvedValue(undefined),
+    } as unknown as UserItemHistoryRepository,
   )
 
   beforeEach(() => {

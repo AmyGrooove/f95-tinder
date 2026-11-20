@@ -39,6 +39,7 @@ const NAMING_CONVENTION = [
 export default [
   {
     ignores: [
+      ".temp/**",
       "dist/**",
       "coverage/**",
       "node_modules/**",

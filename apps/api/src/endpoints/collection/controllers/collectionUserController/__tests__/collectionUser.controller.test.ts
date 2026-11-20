@@ -21,7 +21,12 @@ describe("CollectionUserController", () => {
   it("возвращает личную реакцию и передаёт cookie и ID сервису", async () => {
     const { controller, service } = await createController()
     const id = new Types.ObjectId()
-    const reaction = { isFavorite: true, rating: null, isHidden: false }
+    const reaction = {
+      isFavorite: true,
+      rating: null,
+      isHidden: false,
+      progress: { completed: 1, total: 3 },
+    }
     service.getUser.mockResolvedValue(reaction)
     await expect(controller.getUser("token", id)).resolves.toEqual(reaction)
     expect(service.getUser).toHaveBeenCalledWith("token", id)

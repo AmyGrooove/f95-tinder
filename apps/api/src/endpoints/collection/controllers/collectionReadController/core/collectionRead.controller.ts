@@ -83,10 +83,17 @@ class CollectionReadController {
       status: 200,
       type: ItemCollectionsResponseDto,
       description: SWAGGER_DICTIONARY.collection.itemsResponse,
+      headers: {
+        "Accept-Query": {
+          schema: { type: "string", enum: ["application/json"] },
+        },
+        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
+      },
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       { status: 404, description: SWAGGER_DICTIONARY.collection.notFound },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
     ],

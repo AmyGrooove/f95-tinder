@@ -4,6 +4,7 @@ import { Types } from "mongoose"
 
 import type { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
 import type { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import type { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import type { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 
 import { CollectionUserService } from "../core/collectionUser.service"
@@ -15,7 +16,9 @@ describe("CollectionUserService", () => {
   const setup = () => {
     const auth = { authenticate: jest.fn(async () => userId) }
     const collections = {
-      checkIsNotDeleted: jest.fn(async () => true),
+      findNotDeletedById: jest
+        .fn<() => Promise<{ blocks: [] } | null>>()
+        .mockResolvedValue({ blocks: [] }),
       findNotDeletedAuthorById: jest
         .fn<() => Promise<{ author: Types.ObjectId } | null>>()
         .mockResolvedValue({ author: new Types.ObjectId() }),
@@ -25,10 +28,16 @@ describe("CollectionUserService", () => {
         jest.fn<UserCollectionRepository["findByUserAndCollection"]>(),
       upsertReaction: jest.fn<UserCollectionRepository["upsertReaction"]>(),
     }
+    const items = {
+      readAvailableCounts: jest
+        .fn<ItemCollectionRepository["readAvailableCounts"]>()
+        .mockResolvedValue({ completed: 0, total: 0 }),
+    }
     const service = new CollectionUserService(
       auth as unknown as CollectionAuthService,
       collections as unknown as CollectionRepository,
       reactions as unknown as UserCollectionRepository,
+      items as unknown as ItemCollectionRepository,
     )
     return { collections, reactions, service }
   }
@@ -41,13 +50,14 @@ describe("CollectionUserService", () => {
       isFavorite: false,
       isHidden: false,
       rating: null,
+      progress: { completed: 0, total: 0 },
     })
     expect(reactions.findByUserAndCollection).toHaveBeenCalledWith(userId, id)
   })
 
   it("не читает реакцию для недоступной подборки", async () => {
     const { collections, reactions, service } = setup()
-    collections.checkIsNotDeleted.mockResolvedValueOnce(false)
+    collections.findNotDeletedById.mockResolvedValueOnce(null)
 
     await expect(service.getUser("token", id)).rejects.toThrow(
       NotFoundException,

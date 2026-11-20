@@ -37,6 +37,12 @@ class SearchController {
       status: 200,
       type: SearchResponseDto,
       description: SWAGGER_DICTIONARY.search.response,
+      headers: {
+        "Accept-Query": {
+          schema: { type: "string", enum: ["application/json"] },
+        },
+        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
+      },
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },

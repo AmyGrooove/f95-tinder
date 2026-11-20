@@ -12,7 +12,7 @@ Public APIs are `upload`, `download`, `delete`, `deleteMany`, `isExists`, `presi
 
 Use [ImageUpload(field, options)](../src/infrastructure/storage/decorators/ImageUpload/core/ImageUpload.ts) with an explicit object path and [UploadedImage](../src/infrastructure/storage/decorators/UploadedImage/core/UploadedImage.ts) to obtain processed metadata. The former applies [ImageUploadInterceptor](../src/infrastructure/storage/services/imageUploadInterceptor/core/imageUpload.interceptor.ts); ensure the consuming module can resolve the relevant providers.
 
-The interceptor requires exactly one file under the selected field, reads it with a byte limit, normalizes multipart text fields and processes the image before the controller runs. Defaults are 5 MiB, width/height 4,000 and 16,000,000 pixels. Bootstrap multipart limits remain an additional boundary.
+The interceptor requires exactly one file under the selected field, reads it with a byte limit, normalizes multipart text fields and processes the image before the controller runs. Defaults are 5 MiB, width/height 4,000 and 16,000,000 pixels. Invalid multipart input such as a missing boundary or an extra file returns 400. Exceeding the file-size limit returns 413. Bootstrap multipart limits remain an additional boundary.
 
 [ImageProcessingService](../src/infrastructure/storage/services/imageProcessingService/core/imageProcessing.service.ts) checks declared and decoded MIME types, requires a match, validates dimensions/pixel count, rotates according to metadata, resizes without enlargement and emits WebP. Supported MIME types and quality are maintained in existing storage constants.
 
