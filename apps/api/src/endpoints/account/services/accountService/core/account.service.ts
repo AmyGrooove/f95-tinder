@@ -8,6 +8,7 @@ import { mongo, Types } from "mongoose"
 import { AuthService } from "@endpoints/auth/services/authService"
 
 import { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
+import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
@@ -17,6 +18,8 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { WhoamiResponseDto } from "../dto/whoami.response"
+import type { LibraryContinueQueryDto } from "../dto/libraryContinue.query"
+import type { LibraryContinueResponseDto } from "../dto/libraryContinue.response"
 import type { UsernameBodyDto } from "../dto/username.body"
 import type { DisplayNameBodyDto } from "../dto/displayName.body"
 import type { PasswordBodyDto } from "../dto/password.body"
@@ -28,6 +31,7 @@ class AccountService {
     private readonly userSessionRepository: UserSessionRepository,
     private readonly authService: AuthService,
     private readonly transactionService: MongoTransactionService,
+    private readonly userItemRepository: UserItemRepository,
   ) {}
 
   async updatePassword(accessToken: unknown, body: PasswordBodyDto) {
@@ -196,6 +200,31 @@ class AccountService {
         expiresAt: session.expiresAt.toISOString(),
       },
     }
+  }
+
+  async readLibraryContinue(
+    accessToken: unknown,
+    query: LibraryContinueQueryDto,
+  ): Promise<LibraryContinueResponseDto> {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, { _id: 1 }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", user._id.toHexString())
+
+    const status = await this.userItemRepository.readLibraryContinueStatus(
+      user._id,
+      query.types,
+    )
+
+    return { status }
   }
 }
 

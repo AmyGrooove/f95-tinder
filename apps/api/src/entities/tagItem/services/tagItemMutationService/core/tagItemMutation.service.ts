@@ -3,7 +3,9 @@ import { InjectModel } from "@nestjs/mongoose"
 import { isObjectIdOrHexString, Types } from "mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
+import { LoggerService } from "@infrastructure/logger/services/loggerService"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isObject } from "@shared/functions/checks/isObject"
@@ -18,6 +20,7 @@ class TagItemMutationService {
     private readonly model: Model<HydratedDocument<TagItem>>,
     private readonly events: TagItemEventsService,
     private readonly transactionService: MongoTransactionService,
+    private readonly loggerService?: LoggerService,
   ) {}
 
   async run<TResult>(props: ITagItemMutationProps<TResult>) {
@@ -65,9 +68,17 @@ class TagItemMutationService {
         isPartialWritePossible === true &&
         session?.inTransaction() !== true
       ) {
-        await publish(
-          isObject(error) && "result" in error ? error.result : undefined,
-        )
+        try {
+          await publish(
+            isObject(error) && "result" in error ? error.result : undefined,
+          )
+        } catch (publishError) {
+          this.loggerService?.error(
+            DICTIONARY.tagItem.partialWritePublishFailed,
+            publishError,
+            { context: TagItemMutationService.name },
+          )
+        }
       }
 
       throw error

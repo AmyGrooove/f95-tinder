@@ -8,45 +8,43 @@ import type {
   Types,
 } from "mongoose"
 
+import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATING_SCORE_SETTINGS"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
-import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
-
-import { Item } from "../../../schemas/item.schema"
-import type { TCreateItem } from "../../../schemas/item.schema"
-import type { IItemDetails } from "../types/IItemDetails"
-import { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
-import { ITEM_RATING_SCORE_SETTINGS } from "@entities/itemStats/static/ITEM_RATING_SCORE_SETTINGS"
-import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
-import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
+
+import type { EItemType } from "../../../schemas/EItemType"
+import { Item } from "../../../schemas/item.schema"
+import type { TCreateItem } from "../../../schemas/item.schema"
+import { createPosterCardProjection } from "../functions/aggregationPipelines/createPosterCardProjection"
+import { createRecommendationEligibilityPipeline } from "../functions/aggregationPipelines/createRecommendationEligibilityPipeline"
+import { createRecommendationScoreProjection } from "../functions/aggregationPipelines/createRecommendationScoreProjection"
+import { createSearchIndexMetricsLookup } from "../functions/aggregationPipelines/createSearchIndexMetricsLookup"
+import { createSearchIndexProjection } from "../functions/aggregationPipelines/createSearchIndexProjection"
+import { createSearchIndexTagsLookup } from "../functions/aggregationPipelines/createSearchIndexTagsLookup"
 import type { IItemPosterCard } from "../types/IItemPosterCard"
-import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
-import { Tag } from "@entities/tag/schemas/tag.schema"
-import { createRecommendationEligibilityPipeline } from "../functions/createRecommendationEligibilityPipeline"
+import type { IItemSearchIndexEntry } from "../types/IItemSearchIndexEntry"
 import type {
   IItemReleaseWindow,
   IReadNewItemIdsProps,
   IReadPopularItemIdsProps,
 } from "../types/IReadPopularItemIdsProps"
-import type { IReadEligibleRecommendationItemsProps } from "../types/IRecommendationEligibilityProps"
 import type { IReadSearchIndexBatchProps } from "../types/IReadSearchIndexBatchProps"
+import type { IRecommendationCard } from "../types/IRecommendationCard"
+import type { IReadEligibleRecommendationItemsProps } from "../types/IRecommendationEligibilityProps"
 
 @Injectable()
 class ItemRepository {
-  readonly read: MongoReadRepository<Item, HydratedDocument<Item>>
-  readonly write: MongoWriteRepository<
-    Item,
-    HydratedDocument<Item>,
-    TCreateItem
-  >
-  readonly pagination: MongoPaginationRepository<Item, HydratedDocument<Item>>
-  readonly bulk: MongoBulkRepository<Item, HydratedDocument<Item>, TCreateItem>
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<Item>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(@InjectModel(Item.name) model: Model<HydratedDocument<Item>>) {
     this.read = new MongoReadRepository<Item, HydratedDocument<Item>>(model)
@@ -69,6 +67,21 @@ class ItemRepository {
     )
   }
 
+  findNotDeletedByIds(
+    ids: Types.ObjectId[],
+    options?: Pick<QueryOptions<Item>, "session">,
+  ) {
+    return this.read.findMany(
+      { _id: { $in: ids }, deletedAt: null },
+      { _id: 1 },
+      options,
+    )
+  }
+
+  readPosterCardsByIds(ids: readonly Types.ObjectId[]) {
+    return this.readOrderedPosterCards(ids)
+  }
+
   readSearchIndexBatch(props: IReadSearchIndexBatchProps) {
     const { limit, afterId } = props
 
@@ -76,62 +89,8 @@ class ItemRepository {
       .match(!isUndefined(afterId) ? { _id: { $gt: afterId } } : {})
       .sort({ _id: 1 })
       .limit(limit)
-      .use(
-        {
-          $lookup: {
-            from: TagItem.name,
-            localField: "_id",
-            foreignField: "item",
-            pipeline: [
-              {
-                $lookup: {
-                  from: Tag.name,
-                  localField: "tag",
-                  foreignField: "_id",
-                  pipeline: [{ $project: { _id: 1 } }],
-                  as: "existingTag",
-                },
-              },
-              { $match: { "existingTag.0": { $exists: true } } },
-              { $project: { tag: 1 } },
-            ],
-            as: "searchTags",
-          },
-        },
-        {
-          $lookup: {
-            from: ItemStats.name,
-            localField: "_id",
-            foreignField: "item",
-            pipeline: [{ $project: { ratingAverage: 1, ratingsCount: 1 } }],
-            as: "searchMetrics",
-          },
-        },
-      )
-      .project({
-        _id: 1,
-        type: 1,
-        title: 1,
-        aliases: 1,
-        description: 1,
-        media: 1,
-        releaseDate: 1,
-        ageRestriction: 1,
-        movie: 1,
-        series: 1,
-        game: 1,
-        deletedAt: 1,
-        tagIds: "$searchTags.tag",
-        ratingsCount: {
-          $ifNull: [{ $arrayElemAt: ["$searchMetrics.ratingsCount", 0] }, 0],
-        },
-        rating: {
-          $ifNull: [
-            { $arrayElemAt: ["$searchMetrics.ratingAverage", 0] },
-            null,
-          ],
-        },
-      })
+      .use(createSearchIndexTagsLookup(), createSearchIndexMetricsLookup())
+      .project(createSearchIndexProjection())
       .build()
 
     return this.aggregation.aggregate<IItemSearchIndexEntry>(pipeline)
@@ -143,75 +102,6 @@ class ItemRepository {
 
   readNewItemIds(props: IReadNewItemIdsProps) {
     return this.readRecommendationItemIds(props, props.releaseWindow)
-  }
-
-  private async readRecommendationItemIds(
-    props: IReadPopularItemIdsProps,
-    releaseWindow?: IItemReleaseWindow,
-  ) {
-    const { type, limit, siteRatingAverage } = props
-    const isNew = !isUndefined(releaseWindow)
-    const eligibility = createRecommendationEligibilityPipeline(
-      props,
-      isNew ? "optional" : "required",
-    )
-
-    if (isNil(eligibility)) {
-      return []
-    }
-
-    const { priorWeight, defaultSiteRatingAverage } = ITEM_RATING_SCORE_SETTINGS
-    const baseline = siteRatingAverage ?? defaultSiteRatingAverage
-    const pipeline = new AggregationBuilder()
-      .match({
-        type,
-        deletedAt: null,
-        ...(isNew
-          ? {
-              releaseDate: {
-                $gte: releaseWindow.from,
-                $lte: releaseWindow.through,
-              },
-            }
-          : {}),
-      })
-      .use(...eligibility)
-      .project({
-        releaseDate: 1,
-        ratingsCount: "$metrics.ratingsCount",
-        ratingScore: {
-          $divide: [
-            {
-              $add: [
-                {
-                  $multiply: [
-                    "$metrics.ratingsCount",
-                    "$metrics.ratingAverage",
-                  ],
-                },
-                priorWeight * baseline,
-              ],
-            },
-            { $add: ["$metrics.ratingsCount", priorWeight] },
-          ],
-        },
-      })
-      .sort(
-        isNew
-          ? { releaseDate: -1, ratingScore: -1, _id: 1 }
-          : { ratingScore: -1, ratingsCount: -1, _id: 1 },
-      )
-      .limit(limit)
-      .project({ _id: 1 })
-      .build()
-
-    const items = await this.aggregation.aggregate<Pick<Item, "_id">>(pipeline)
-
-    return items.map((item) => item._id)
-  }
-
-  readPosterCardsByIds(ids: readonly Types.ObjectId[]) {
-    return this.readOrderedPosterCards(ids)
   }
 
   async readEligibleRecommendationItems(
@@ -247,37 +137,109 @@ class ItemRepository {
       return []
     }
 
-    return this.readOrderedPosterCards(ids, [
-      ...(!isUndefined(types) ? [{ $match: { type: { $in: types } } }] : []),
-      ...eligibility,
-    ])
+    return this.readOrderedPosterCards(ids, { types, eligibility })
   }
 
-  private async readOrderedPosterCards(
+  async readRecommendationCards(props: IReadEligibleRecommendationItemsProps) {
+    const { ids, types } = props
+    const eligibility = createRecommendationEligibilityPipeline(props, {
+      ratingMode: "optional",
+      isUserRatingIncluded: true,
+    })
+
+    if (isNil(eligibility)) {
+      return []
+    }
+
+    return this.readOrderedPosterCards<IRecommendationCard>(ids, {
+      types,
+      eligibility,
+      details: {
+        ratingAverage: { $ifNull: ["$metrics.ratingAverage", null] },
+        userRating: {
+          $ifNull: [{ $arrayElemAt: ["$libraryEntry.rating", 0] }, null],
+        },
+        userStatus: {
+          $ifNull: [{ $arrayElemAt: ["$libraryEntry.status", 0] }, null],
+        },
+      },
+    })
+  }
+
+  private async readRecommendationItemIds(
+    props: IReadPopularItemIdsProps,
+    releaseWindow?: IItemReleaseWindow,
+  ) {
+    const { type, limit, siteRatingAverage } = props
+    const isNew = !isUndefined(releaseWindow)
+    const eligibility = createRecommendationEligibilityPipeline(props, {
+      ratingMode: isNew ? "optional" : "required",
+    })
+
+    if (isNil(eligibility)) {
+      return []
+    }
+
+    const { priorWeight, defaultSiteRatingAverage } = ITEM_RATING_SCORE_SETTINGS
+    const baseline = siteRatingAverage ?? defaultSiteRatingAverage
+    const pipeline = new AggregationBuilder()
+      .match({
+        type,
+        deletedAt: null,
+        ...(isNew
+          ? {
+              releaseDate: {
+                $gte: releaseWindow.from,
+                $lte: releaseWindow.through,
+              },
+            }
+          : {}),
+      })
+      .use(...eligibility)
+      .project(createRecommendationScoreProjection(priorWeight, baseline))
+      .sort(
+        isNew
+          ? { releaseDate: -1, ratingScore: -1, _id: 1 }
+          : { ratingScore: -1, ratingsCount: -1, _id: 1 },
+      )
+      .limit(limit)
+      .project({ _id: 1 })
+      .build()
+
+    const items = await this.aggregation.aggregate<Pick<Item, "_id">>(pipeline)
+
+    return items.map((item) => item._id)
+  }
+
+  private async readOrderedPosterCards<
+    TCard extends IItemPosterCard = IItemPosterCard,
+  >(
     ids: readonly Types.ObjectId[],
-    eligibility: PipelineStage[] = [],
+    options: {
+      types?: readonly EItemType[]
+      eligibility?: PipelineStage[]
+      details?: PipelineStage.Project["$project"]
+    } = {},
   ) {
     if (ids.length === 0) {
       return []
     }
 
-    const pipeline = new AggregationBuilder()
-      .match({ _id: { $in: ids }, deletedAt: null })
+    const { types, eligibility = [], details = {} } = options
+    const builder = new AggregationBuilder().match({
+      _id: { $in: ids },
+      deletedAt: null,
+    })
+
+    if (!isUndefined(types)) {
+      builder.match({ type: { $in: types } })
+    }
+
+    const pipeline = builder
       .use(...eligibility)
-      .project({
-        _id: 1,
-        type: 1,
-        title: 1,
-        media: {
-          $filter: {
-            input: { $ifNull: ["$media", []] },
-            as: "media",
-            cond: { $eq: ["$$media.type", EMediaType.POSTER] },
-          },
-        },
-      })
+      .project(createPosterCardProjection(details))
       .build()
-    const cards = await this.aggregation.aggregate<IItemPosterCard>(pipeline)
+    const cards = await this.aggregation.aggregate<TCard>(pipeline)
     const cardsById = new Map(
       cards.map((card) => [card._id.toHexString(), card]),
     )
@@ -287,114 +249,6 @@ class ItemRepository {
 
       return isUndefined(card) ? [] : [card]
     })
-  }
-
-  findNotDeletedByIds(
-    ids: Types.ObjectId[],
-    options?: Pick<QueryOptions<Item>, "session">,
-  ) {
-    return this.read.findMany(
-      { _id: { $in: ids }, deletedAt: null },
-      { _id: 1 },
-      options,
-    )
-  }
-
-  async findDetailsById(id: Types.ObjectId): Promise<IItemDetails | null> {
-    const pipeline = new AggregationBuilder()
-      .match({ _id: id, deletedAt: null })
-      .project({
-        _id: 1,
-        type: 1,
-        title: 1,
-        description: 1,
-        aliases: 1,
-        media: 1,
-        releaseDate: 1,
-        ageRestriction: 1,
-        movie: 1,
-        series: 1,
-        game: 1,
-      })
-      .use({
-        $lookup: {
-          from: "TagItem",
-          localField: "_id",
-          foreignField: "item",
-          pipeline: [
-            {
-              $lookup: {
-                from: "Tag",
-                localField: "tag",
-                foreignField: "_id",
-                pipeline: [{ $project: { _id: 1, key: 1, group: 1, name: 1 } }],
-                as: "tag",
-              },
-            },
-            { $unwind: "$tag" },
-            { $sort: { relevanceScore: -1, "tag._id": 1 } },
-            { $replaceWith: "$tag" },
-          ],
-          as: "tags",
-        },
-      })
-      .use({
-        $lookup: {
-          from: "ItemRelation",
-          pipeline: [
-            {
-              $match: {
-                $or: [{ "first.item": id }, { "second.item": id }],
-              },
-            },
-            {
-              $project: {
-                side: {
-                  $cond: [{ $eq: ["$first.item", id] }, "$second", "$first"],
-                },
-              },
-            },
-            {
-              $lookup: {
-                from: "Item",
-                localField: "side.item",
-                foreignField: "_id",
-                pipeline: [
-                  { $match: { deletedAt: null } },
-                  { $project: { _id: 1, type: 1, title: 1, media: 1 } },
-                ],
-                as: "item",
-              },
-            },
-            { $unwind: "$item" },
-            {
-              $lookup: {
-                from: "Relation",
-                localField: "side.role",
-                foreignField: "_id",
-                pipeline: [{ $project: { _id: 1, key: 1, name: 1 } }],
-                as: "role",
-              },
-            },
-            { $unwind: "$role" },
-            { $sort: { _id: 1 } },
-            {
-              $project: {
-                _id: 0,
-                item: 1,
-                role: 1,
-                roleNameOverride: "$side.roleNameOverride",
-              },
-            },
-          ],
-          as: "relations",
-        },
-      })
-      .build()
-
-    const [item] = await this.aggregation.aggregate<IItemDetails>(pipeline)
-
-    return item ?? null
   }
 }
 

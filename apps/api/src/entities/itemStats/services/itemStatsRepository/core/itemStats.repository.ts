@@ -2,36 +2,24 @@ import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
-import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 
 import { ItemStats } from "../../../schemas/itemStats.schema"
 import type { TCreateItemStats } from "../../../schemas/itemStats.schema"
-import { RATING_DISTRIBUTION_VALUES } from "../../../static/RATING_DISTRIBUTION_VALUES"
+import { createItemStatsUpdatePipeline } from "../functions/aggregationPipelines/createItemStatsUpdatePipeline"
 import type { IUpdateItemStatsProps } from "../types/IUpdateItemStatsProps"
 
 @Injectable()
 class ItemStatsRepository {
-  readonly read: MongoReadRepository<ItemStats, HydratedDocument<ItemStats>>
-  readonly write: MongoWriteRepository<
-    ItemStats,
-    HydratedDocument<ItemStats>,
-    TCreateItemStats
-  >
-  readonly pagination: MongoPaginationRepository<
-    ItemStats,
-    HydratedDocument<ItemStats>
-  >
-  readonly bulk: MongoBulkRepository<
-    ItemStats,
-    HydratedDocument<ItemStats>,
-    TCreateItemStats
-  >
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<ItemStats>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(ItemStats.name)
@@ -60,81 +48,12 @@ class ItemStatsRepository {
   }
 
   async applyChanges(props: IUpdateItemStatsProps) {
-    const {
-      ratingsCount,
-      favoritesCount,
-      completedAttemptsCount,
-      ratingDistribution,
-      statusCounts,
-      itemId,
-      session,
-    } = props
+    const { itemId, session } = props
 
-    const increments = {
-      ratingsCount,
-      favoritesCount,
-      completedAttemptsCount,
-      ...Object.fromEntries(
-        Object.keys(RATING_DISTRIBUTION_VALUES).map((key) => [
-          `ratingDistribution.${key}`,
-          0,
-        ]),
-      ),
-      ...Object.fromEntries(
-        USER_ITEM_LIBRARY_STATUSES.map((status) => [
-          `statusCounts.${status}`,
-          0,
-        ]),
-      ),
-      ...Object.fromEntries(
-        Object.entries(ratingDistribution).map(([key, value]) => [
-          `ratingDistribution.${key}`,
-          value,
-        ]),
-      ),
-      ...Object.fromEntries(
-        Object.entries(statusCounts).map(([key, value]) => [
-          `statusCounts.${key}`,
-          value,
-        ]),
-      ),
-    }
     const metric = await this.model
       .findOneAndUpdate(
         { item: itemId },
-        [
-          {
-            $set: Object.fromEntries(
-              Object.entries(increments).map(([key, value]) => [
-                key,
-                { $add: [{ $ifNull: [`$${key}`, 0] }, value] },
-              ]),
-            ),
-          },
-          {
-            $set: {
-              createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
-              ratingAverage: {
-                $cond: [
-                  { $gt: ["$ratingsCount", 0] },
-                  {
-                    $divide: [
-                      {
-                        $add: Object.entries(RATING_DISTRIBUTION_VALUES).map(
-                          ([key, value]) => ({
-                            $multiply: [`$ratingDistribution.${key}`, value],
-                          }),
-                        ),
-                      },
-                      "$ratingsCount",
-                    ],
-                  },
-                  null,
-                ],
-              },
-            },
-          },
-        ],
+        createItemStatsUpdatePipeline(props),
         {
           session,
           upsert: true,

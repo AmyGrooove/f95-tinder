@@ -170,16 +170,12 @@ describe("Синхронизация подборок по тегам", () => {
     handler = moduleRef.get(SynchronizeTagCollectionsJobHandler)
     await queue.pause()
     await moduleRef.init()
-    await Promise.all([
-      tags.initialize(),
-      collections.initialize(),
-      ...["Item", "TagItem", "ItemCollection"].map(async (name) => {
-        await moduleRef
-          ?.get<Connection>(getConnectionToken())
-          .model(name)
-          .init()
-      }),
-    ])
+    const connection = moduleRef.get<Connection>(getConnectionToken())
+    await Promise.all(
+      ["Item", "TagItem", "ItemCollection"].map((name) =>
+        connection.model(name).init(),
+      ),
+    )
   })
 
   afterEach(async () => {

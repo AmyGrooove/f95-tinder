@@ -9,7 +9,6 @@ import {
   Param,
   Patch,
   Post,
-  QueryMethod,
 } from "@nestjs/common"
 import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
@@ -24,8 +23,6 @@ import {
   CreateAttemptBodyDto,
   UpdateAttemptBodyDto,
   UserItemService,
-  QueryUserItemsBodyDto,
-  UserItemSummaryResponseDto,
 } from "@endpoints/userItem/services/userItemService"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { USER_ITEM_ERRORS } from "../static/USER_ITEM_ERRORS"
@@ -35,31 +32,6 @@ import { USER_ITEM_ERRORS } from "../static/USER_ITEM_ERRORS"
 @Controller("userItems")
 class UserItemController {
   constructor(private readonly userItemService: UserItemService) {}
-
-  @QueryMethod()
-  @HttpCode(200)
-  @Header("Cache-Control", "no-store")
-  @Header("Accept-Query", "application/json")
-  @ApiEndpoint({
-    operationId: "UserItemController_query",
-    summary: SWAGGER_DICTIONARY.userItem.query,
-    description: SWAGGER_DICTIONARY.userItem.queryDescription,
-    response: {
-      status: 200,
-      type: UserItemSummaryResponseDto,
-      isArray: true,
-      description: SWAGGER_DICTIONARY.userItem.summaryResponse,
-    },
-    errors: USER_ITEM_ERRORS.filter(
-      (error) => error.status !== 404 && error.status !== 409,
-    ),
-  })
-  query(
-    @Cookies("__Host-accessToken") accessToken: unknown,
-    @Body() body: QueryUserItemsBodyDto,
-  ) {
-    return this.userItemService.query(accessToken, body)
-  }
 
   @Post()
   @HttpCode(204)

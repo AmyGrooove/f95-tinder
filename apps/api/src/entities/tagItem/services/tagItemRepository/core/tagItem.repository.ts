@@ -1,29 +1,26 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type { AggregateOptions, HydratedDocument, Model } from "mongoose"
-import { Tag } from "@entities/tag/schemas/tag.schema"
-import type { ICheckTagItemKeysProps } from "../types/ICheckTagItemKeysProps"
 
-import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
-import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
-
-import { TagItem } from "../../../schemas/tagItem.schema"
-import { TagItemWriteRepository } from "@entities/tagItem/services/tagItemWriteRepository"
 import { TagItemBulkRepository } from "@entities/tagItem/services/tagItemBulkRepository"
 import { TagItemMutationService } from "@entities/tagItem/services/tagItemMutationService"
+import { TagItemWriteRepository } from "@entities/tagItem/services/tagItemWriteRepository"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
+import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
+
+import { TagItem } from "../../../schemas/tagItem.schema"
+import { createMatchedTagKeysLookup } from "../functions/aggregationPipelines/createMatchedTagKeysLookup"
+import type { ICheckTagItemKeysProps } from "../types/ICheckTagItemKeysProps"
 
 @Injectable()
 class TagItemRepository {
-  readonly read: MongoReadRepository<TagItem, HydratedDocument<TagItem>>
-  readonly write: TagItemWriteRepository
-  readonly pagination: MongoPaginationRepository<
-    TagItem,
-    HydratedDocument<TagItem>
-  >
-  readonly bulk: TagItemBulkRepository
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<TagItem>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(TagItem.name) model: Model<HydratedDocument<TagItem>>,
@@ -42,6 +39,7 @@ class TagItemRepository {
       HydratedDocument<TagItem>
     >(model)
   }
+
   async checkHasTagKeys(
     props: ICheckTagItemKeysProps,
     options?: Pick<AggregateOptions, "session">,
@@ -50,18 +48,7 @@ class TagItemRepository {
 
     const pipeline = new AggregationBuilder()
       .match({ item: itemId })
-      .use({
-        $lookup: {
-          from: Tag.name,
-          localField: "tag",
-          foreignField: "_id",
-          pipeline: [
-            { $match: { group, key: { $in: keys } } },
-            { $project: { _id: 1 } },
-          ],
-          as: "matchedTag",
-        },
-      })
+      .use(createMatchedTagKeysLookup(group, keys))
       .match({ "matchedTag.0": { $exists: true } })
       .limit(1)
       .project({ _id: 1 })

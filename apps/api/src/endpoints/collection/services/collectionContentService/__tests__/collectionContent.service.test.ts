@@ -4,6 +4,9 @@ import { Test } from "@nestjs/testing"
 import { Types } from "mongoose"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
+import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
+import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
+import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { CollectionContentService } from "../core/collectionContent.service"
 
 describe("CollectionContentService", () => {
@@ -15,6 +18,9 @@ describe("CollectionContentService", () => {
         CollectionContentService,
         { provide: CollectionRepository, useValue: { findNotDeletedById } },
         { provide: ItemCollectionRepository, useValue: { readContentSlice } },
+        { provide: UserCollectionRepository, useValue: {} },
+        { provide: CollectionAuthService, useValue: {} },
+        CursorService,
       ],
     }).compile()
     return {
@@ -36,16 +42,20 @@ describe("CollectionContentService", () => {
     await expect(service.getItems({ id, query: {} })).resolves.toEqual({
       nextCursor: null,
       blocks: [{ type: "text", content: { ru: "Вступление", en: null } }],
+      isHidden: false,
     })
     expect(readContentSlice).toHaveBeenCalledWith({
       collectionId: id,
       groupIds: [],
       after: undefined,
       limit: 51,
+      types: undefined,
+      userId: undefined,
+      isPersonalFilterApplied: false,
     })
   })
 
-  it("отклоняет чужой курсор и отсутствующую подборку до чтения состава", async () => {
+  it("отклоняет некорректный курсор и отсутствующую подборку до чтения состава", async () => {
     const { service, findNotDeletedById, readContentSlice } =
       await createService()
     const id = new Types.ObjectId()

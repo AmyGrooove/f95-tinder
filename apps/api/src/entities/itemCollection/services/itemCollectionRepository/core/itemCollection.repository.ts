@@ -1,6 +1,3 @@
-import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
-import { ITEM_FIELD_DEFINITIONS } from "@entities/item/static/ITEM_FIELD_DEFINITIONS"
-import { EItemFieldValueType } from "@entities/item/schemas/EItemFieldValueType"
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type {
@@ -8,58 +5,39 @@ import type {
   InsertManyOptions,
   Model,
   MongooseBulkWriteOptions,
-  PipelineStage,
 } from "mongoose"
 
-import { Item } from "@entities/item/schemas/item.schema"
-import { TagItem } from "@entities/tagItem/schemas/tagItem.schema"
-import { Tag } from "@entities/tag/schemas/tag.schema"
+import type { EItemType } from "@entities/item/schemas/EItemType"
+import type { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
 import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
-
+import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
-import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { ItemCollection } from "../../../schemas/itemCollection.schema"
 import type { TCreateItemCollection } from "../../../schemas/itemCollection.schema"
+import { createCollectionCardItemLookup } from "../functions/aggregationPipelines/createCollectionCardItemLookup"
+import { createCollectionCardMetricsLookup } from "../functions/aggregationPipelines/createCollectionCardMetricsLookup"
+import { createCollectionViewerItemLookup } from "../functions/aggregationPipelines/createCollectionViewerItemLookup"
+import type { ICollectionContentSelectionProps } from "../types/ICollectionContentSelectionProps"
 import type { ICreateItemCollectionsProps } from "../types/ICreateItemCollectionsProps"
+import type { IItemCollectionCard } from "../types/IItemCollectionCard"
 import type { IItemCollectionsSelectionProps } from "../types/IItemCollectionsSelectionProps"
 import type { IRemoveItemCollectionsProps } from "../types/IRemoveItemCollectionsProps"
-import type { ICollectionContentSelectionProps } from "../types/ICollectionContentSelectionProps"
-import type { ICollectionFilterOptions } from "../types/ICollectionFilterOptions"
-import type { IReadItemCollectionsProps } from "../types/IReadItemCollectionsProps"
-import type { IItemCollectionCard } from "../types/IItemCollectionCard"
-import type { IItemCollectionsAggregationResult } from "../types/IItemCollectionsAggregationResult"
-import type { ICollectionGroupCount } from "../types/ICollectionGroupCount"
-import { createItemCollectionsPipeline } from "../functions/createItemCollectionsPipeline"
 
 @Injectable()
 class ItemCollectionRepository {
-  readonly read: MongoReadRepository<
-    ItemCollection,
-    HydratedDocument<ItemCollection>
-  >
-  readonly write: MongoWriteRepository<
-    ItemCollection,
-    HydratedDocument<ItemCollection>,
-    TCreateItemCollection
-  >
-  readonly pagination: MongoPaginationRepository<
-    ItemCollection,
-    HydratedDocument<ItemCollection>
-  >
-  readonly bulk: MongoBulkRepository<
-    ItemCollection,
-    HydratedDocument<ItemCollection>,
-    TCreateItemCollection
-  >
-  readonly aggregation: MongoAggregationRepository<
-    HydratedDocument<ItemCollection>
-  >
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(ItemCollection.name)
@@ -88,18 +66,17 @@ class ItemCollectionRepository {
     >(model)
   }
 
-  async readContentPage(props: IReadItemCollectionsProps) {
-    const { sort, language } = props
+  findByCollectionAndItems(
+    props: IItemCollectionsSelectionProps,
+    options?: Pick<MongooseBulkWriteOptions, "session">,
+  ) {
+    const { collectionId, itemIds } = props
 
-    const [result] =
-      await this.aggregation.aggregate<IItemCollectionsAggregationResult>(
-        createItemCollectionsPipeline(props),
-        sort === "title"
-          ? { collation: { locale: language, strength: 2 } }
-          : undefined,
-      )
-
-    return { items: result?.items ?? [], total: result?.count[0]?.total ?? 0 }
+    return this.read.findMany(
+      { collectionId, item: { $in: itemIds } },
+      { _id: 1, item: 1 },
+      options,
+    )
   }
 
   readContentSlice(
@@ -110,9 +87,20 @@ class ItemCollectionRepository {
         position: number
         id: ItemCollection["_id"]
       }
+      types?: readonly EItemType[]
+      userId?: UserItem["user"]
+      isPersonalFilterApplied: boolean
     },
   ) {
-    const { after, collectionId, groupIds, limit } = props
+    const {
+      after,
+      collectionId,
+      groupIds,
+      types,
+      userId,
+      isPersonalFilterApplied,
+      limit,
+    } = props
     const builder = new AggregationBuilder()
       .match({ collectionId, groupId: { $in: groupIds } })
       .use({ $set: { groupOrder: { $indexOfArray: [groupIds, "$groupId"] } } })
@@ -134,224 +122,66 @@ class ItemCollectionRepository {
       })
     }
 
-    const pipeline = builder
+    builder
       .sort({ groupOrder: 1, position: 1, _id: 1 })
-      .use(
-        {
-          $lookup: {
-            from: Item.name,
-            localField: "item",
-            foreignField: "_id",
-            as: "item",
-            pipeline: [
-              { $match: { deletedAt: null } },
-              { $project: { _id: 1, type: 1, title: 1, media: 1 } },
+      .use(createCollectionCardItemLookup(types), { $unwind: "$item" })
+
+    if (!isUndefined(userId)) {
+      builder.use(createCollectionViewerItemLookup(userId), {
+        $set: { viewerItem: { $first: "$viewerItem" } },
+      })
+
+      if (isPersonalFilterApplied) {
+        builder.match({
+          "viewerItem.status": {
+            $nin: [
+              EUserItemStatus.COMPLETED,
+              EUserItemStatus.DROPPED,
+              EUserItemStatus.BLOCKED,
             ],
           },
-        },
-        { $unwind: "$item" },
-      )
-      .limit(limit)
-      .project({ groupOrder: 1, groupId: 1, position: 1, note: 1, item: 1 })
+        })
+      }
+    }
+
+    builder.limit(limit).use(createCollectionCardMetricsLookup(), {
+      $set: { ratingAverage: { $first: "$metrics.ratingAverage" } },
+    })
+
+    const pipeline = builder
+      .project({
+        groupOrder: 1,
+        groupId: 1,
+        position: 1,
+        note: 1,
+        item: 1,
+        ratingAverage: 1,
+        viewerItem: 1,
+      })
       .build()
 
     return this.aggregation.aggregate<
-      IItemCollectionCard & { _id: ItemCollection["_id"]; groupOrder: number }
+      IItemCollectionCard & {
+        _id: ItemCollection["_id"]
+        groupOrder: number
+        ratingAverage?: ItemStats["ratingAverage"]
+        viewerItem?: Pick<UserItem, "status" | "rating">
+      }
     >(pipeline)
   }
 
-  countAvailableItemsByGroup(props: ICollectionContentSelectionProps) {
-    const { collectionId, groupIds } = props
-
-    const pipeline = new AggregationBuilder()
-      .match({
-        collectionId,
-        groupId: { $in: groupIds },
-      })
-      .use({
-        $lookup: {
-          from: Item.name,
-          localField: "item",
-          foreignField: "_id",
-          pipeline: [{ $match: { deletedAt: null } }, { $project: { _id: 1 } }],
-          as: "itemDocument",
-        },
-      })
-      .match({ "itemDocument.0": { $exists: true } })
-      .use({ $group: { _id: "$groupId", total: { $sum: 1 } } })
-      .project({ _id: 0, groupId: "$_id", total: 1 })
-      .build()
-
-    return this.aggregation.aggregate<ICollectionGroupCount>(pipeline)
-  }
-
-  async getFilterOptions(props: ICollectionContentSelectionProps) {
-    const { groupId, collectionId, groupIds } = props
-
-    const scope: PipelineStage.FacetPipelineStage[] = isUndefined(groupId)
-      ? []
-      : [{ $match: { groupId } }]
-    const pipeline = new AggregationBuilder()
-      .match({
-        collectionId,
-        groupId: { $in: groupIds },
-      })
-      .use({
-        $lookup: {
-          from: Item.name,
-          localField: "item",
-          foreignField: "_id",
-          pipeline: [
-            { $match: { deletedAt: null } },
-            {
-              $project: {
-                _id: 1,
-                releaseDate: 1,
-                ageRestriction: {
-                  $convert: {
-                    input: {
-                      $cond: [
-                        {
-                          $eq: [
-                            "$ageRestriction",
-                            EAgeRestriction.AGE_18_PLUS_PLUS,
-                          ],
-                        },
-                        EAgeRestriction.AGE_18,
-                        "$ageRestriction",
-                      ],
-                    },
-                    to: "int",
-                    onError: null,
-                    onNull: null,
-                  },
-                },
-                movie: 1,
-                series: 1,
-                game: 1,
-              },
-            },
-          ],
-          as: "itemDocument",
-        },
-      })
-      .use({ $unwind: "$itemDocument" })
-      .use({
-        $facet: {
-          nonEmptyGroups: [{ $group: { _id: "$groupId" } }, { $limit: 2 }],
-          tags: [
-            ...scope,
-            {
-              $lookup: {
-                from: TagItem.name,
-                localField: "item",
-                foreignField: "item",
-                pipeline: [{ $project: { tag: 1 } }],
-                as: "tagItems",
-              },
-            },
-            { $unwind: "$tagItems" },
-            { $group: { _id: "$tagItems.tag" } },
-            {
-              $lookup: {
-                from: Tag.name,
-                localField: "_id",
-                foreignField: "_id",
-                pipeline: [{ $project: { _id: 1, key: 1, group: 1, name: 1 } }],
-                as: "tag",
-              },
-            },
-            { $unwind: "$tag" },
-            { $replaceRoot: { newRoot: "$tag" } },
-            { $sort: { key: 1, _id: 1 } },
-          ],
-          fields: [
-            ...scope,
-            {
-              $project: {
-                fields: Object.entries(ITEM_FIELD_DEFINITIONS).map(
-                  ([field, definition]) => ({
-                    field,
-                    valueType: definition.valueType,
-                    value: `$itemDocument.${field}`,
-                  }),
-                ),
-              },
-            },
-            { $unwind: "$fields" },
-            {
-              $match: {
-                $expr: {
-                  $or: [
-                    {
-                      $and: [
-                        {
-                          $eq: [
-                            "$fields.valueType",
-                            EItemFieldValueType.NUMBER,
-                          ],
-                        },
-                        { $isNumber: "$fields.value" },
-                        { $gte: ["$fields.value", -Number.MAX_VALUE] },
-                        { $lte: ["$fields.value", Number.MAX_VALUE] },
-                      ],
-                    },
-                    {
-                      $and: [
-                        {
-                          $eq: ["$fields.valueType", EItemFieldValueType.DATE],
-                        },
-                        { $eq: [{ $type: "$fields.value" }, "date"] },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: "$fields.field",
-                valueType: { $first: "$fields.valueType" },
-                min: { $min: "$fields.value" },
-                max: { $max: "$fields.value" },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                field: "$_id",
-                valueType: 1,
-                min: 1,
-                max: 1,
-              },
-            },
-            { $sort: { field: 1 } },
-          ],
-        },
-      })
-      .project({
-        nonEmptyGroupIds: "$nonEmptyGroups._id",
-        tags: 1,
-        fields: 1,
-      })
-      .build()
-
-    const [result] =
-      await this.aggregation.aggregate<ICollectionFilterOptions>(pipeline)
-
-    return result ?? { nonEmptyGroupIds: [], tags: [], fields: [] }
-  }
-
-  findByCollectionAndItems(
-    props: IItemCollectionsSelectionProps,
-    options?: Pick<MongooseBulkWriteOptions, "session">,
+  createForCollection(
+    props: ICreateItemCollectionsProps,
+    options?: Pick<InsertManyOptions, "session">,
   ) {
-    const { collectionId, itemIds } = props
+    const { items, collectionId } = props
 
-    return this.read.findMany(
-      { collectionId, item: { $in: itemIds } },
-      { _id: 1, item: 1 },
-      options,
+    return this.bulk.createMany(
+      items.map((item) => ({
+        ...item,
+        collectionId,
+      })),
+      options ?? {},
     )
   }
 
@@ -402,21 +232,6 @@ class ItemCollectionRepository {
         $or: [{ item: { $in: itemIds } }, { groupId: { $in: groupIds } }],
       },
       options,
-    )
-  }
-
-  createForCollection(
-    props: ICreateItemCollectionsProps,
-    options?: Pick<InsertManyOptions, "session">,
-  ) {
-    const { items, collectionId } = props
-
-    return this.bulk.createMany(
-      items.map((item) => ({
-        ...item,
-        collectionId,
-      })),
-      options ?? {},
     )
   }
 }

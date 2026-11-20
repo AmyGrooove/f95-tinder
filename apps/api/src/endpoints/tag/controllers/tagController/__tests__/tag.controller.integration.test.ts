@@ -38,7 +38,7 @@ describe("TagController", () => {
 
     const response = await queryTags({
       search: "Орбита",
-      group: { allOf: [ETagGroup.GENRE] },
+      groups: { allOf: [ETagGroup.GENRE] },
       limit: 10,
     })
     expect(response.statusCode).toBe(200)
@@ -59,7 +59,7 @@ describe("TagController", () => {
 
   it("отклоняет некорректный фильтр и запрос с постороннего Origin", async () => {
     expect(
-      (await queryTags({ group: { allOf: ["invalid"] } })).statusCode,
+      (await queryTags({ groups: { allOf: ["invalid"] } })).statusCode,
     ).toBe(400)
     expect((await queryTags({}, "https://foreign.example")).statusCode).toBe(
       403,

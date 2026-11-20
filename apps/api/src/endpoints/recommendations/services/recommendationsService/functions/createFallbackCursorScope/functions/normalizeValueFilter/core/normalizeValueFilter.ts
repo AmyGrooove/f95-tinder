@@ -1,13 +1,11 @@
 import type { Types } from "mongoose"
 
-import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
+import type { ValueFilter } from "@entities/shared/types/ValueFilter"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
 import { normalizeValues } from "../../normalizeValues"
 
-const normalizeValueFilter = (
-  filter: IValueFilter<string | Types.ObjectId>,
-) => {
+const normalizeValueFilter = (filter: ValueFilter<string | Types.ObjectId>) => {
   return [
     normalizeValues(filter.allOf ?? []),
     isUndefined(filter.anyOf) ? null : normalizeValues(filter.anyOf),

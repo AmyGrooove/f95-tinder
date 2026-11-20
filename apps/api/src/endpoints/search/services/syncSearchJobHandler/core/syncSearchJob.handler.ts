@@ -4,6 +4,7 @@ import { Types } from "mongoose"
 
 import type { IItemSearchIndexEntry } from "@entities/item/services/itemRepository"
 import { EAgeRestriction } from "@entities/item/schemas/EAgeRestriction"
+import { EItemType } from "@entities/item/schemas/EItemType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { calculateItemRatingScore } from "@entities/itemStats/functions/calculateItemRatingScore"
@@ -15,6 +16,7 @@ import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { isDate } from "@shared/functions/checks/isDate"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { SEARCH_ITEM_FIELDS } from "@endpoints/search/static/SEARCH_ITEM_FIELDS"
@@ -148,6 +150,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             "type",
             "tagIds",
             "rating",
+            "latestReleaseDate",
             ...Object.values(SEARCH_ITEM_FIELDS).map(
               (field) => `fields.${field}`,
             ),
@@ -158,6 +161,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             `sortTitle.${ELanguage.ENGLISH}`,
             "releaseDate",
             "hasReleaseDate",
+            "latestReleaseDate",
             "ratingScore",
             "ratingsCount",
             "hasRating",
@@ -331,6 +335,13 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     siteRatingAverage: number | null,
   ) {
     const { rating, ratingsCount } = item
+    const isSeries =
+      item.type === EItemType.SERIES ||
+      item.type === EItemType.ANIMATED_SERIES ||
+      item.type === EItemType.ANIME_SERIES
+    const latestReleaseDate = isSeries
+      ? (item.series?.lastReleasedEpisodeAt ?? item.releaseDate)
+      : item.releaseDate
     const ratingScore = calculateItemRatingScore({
       ratingAverage: rating,
       ratingsCount,
@@ -361,6 +372,10 @@ class SyncSearchJobHandler implements IJobHandler<null> {
       hasRating: isNil(ratingScore) ? 0 : 1,
       releaseDate: item.releaseDate?.getTime() ?? null,
       hasReleaseDate: isNil(item.releaseDate) ? 0 : 1,
+      latestReleaseDate:
+        item.type !== EItemType.GAME && isDate(latestReleaseDate)
+          ? latestReleaseDate.getTime()
+          : null,
       sortTitle: this.mapSortTitle(item.title),
       fields: {
         releaseDate: item.releaseDate?.getTime() ?? null,

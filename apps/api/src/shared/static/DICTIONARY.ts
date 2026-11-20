@@ -120,6 +120,8 @@ const DICTIONARY = {
   },
 
   cache: {
+    redisStoreRequired: "Для условной записи требуется хранилище Redis",
+    invalidSerializedValue: "Недопустимый формат значения кеша",
     unexpectedHealthValue:
       "Проверка работоспособности кеша вернула неожиданное значение",
     healthAndCleanupFailed:

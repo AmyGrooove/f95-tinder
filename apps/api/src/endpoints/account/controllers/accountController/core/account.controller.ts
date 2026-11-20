@@ -6,6 +6,7 @@ import {
   HttpCode,
   Patch,
   Get,
+  Query,
 } from "@nestjs/common"
 import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 
@@ -17,6 +18,8 @@ import {
   UsernameBodyDto,
   WhoamiResponseDto,
   AccountService,
+  LibraryContinueQueryDto,
+  LibraryContinueResponseDto,
 } from "@endpoints/account/services/accountService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.account)
@@ -108,6 +111,35 @@ class AccountController {
   })
   whoami(@Cookies("__Host-accessToken") accessToken: unknown) {
     return this.accountService.whoami(accessToken)
+  }
+
+  @Get("library/continue")
+  @Header("Cache-Control", "no-store")
+  @ApiCookieAuth("accessCookie")
+  @ApiEndpoint({
+    operationId: "AccountController_readLibraryContinue",
+    summary: SWAGGER_DICTIONARY.account.libraryContinue.summary,
+    description: SWAGGER_DICTIONARY.account.libraryContinue.description,
+    response: {
+      status: 200,
+      type: LibraryContinueResponseDto,
+      description: SWAGGER_DICTIONARY.account.libraryContinue.response,
+    },
+    errors: [
+      { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
+      {
+        status: 500,
+        description: SWAGGER_DICTIONARY.account.libraryContinue.internalError,
+      },
+    ],
+  })
+  readLibraryContinue(
+    @Cookies("__Host-accessToken") accessToken: unknown,
+    @Query() query: LibraryContinueQueryDto,
+  ) {
+    return this.accountService.readLibraryContinue(accessToken, query)
   }
 }
 

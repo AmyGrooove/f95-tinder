@@ -14,8 +14,9 @@ describe("SearchController", () => {
       search,
     } as unknown as SiteSearchService)
     const body = { search: "Орбита", limit: 10 } as const
+    const accessToken = "access-token"
 
-    await expect(controller.search(body)).resolves.toBe(result)
-    expect(search).toHaveBeenCalledWith(body)
+    await expect(controller.search(body, accessToken)).resolves.toBe(result)
+    expect(search).toHaveBeenCalledWith(body, accessToken)
   })
 })

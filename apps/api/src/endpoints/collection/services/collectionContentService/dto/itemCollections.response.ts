@@ -1,9 +1,14 @@
 import {
   ApiExtraModels,
   ApiProperty,
+  ApiPropertyOptional,
   getSchemaPath,
   PickType,
 } from "@nestjs/swagger"
+import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageText.response"
+import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import type { TLibraryStatus } from "@entities/userItem/types/TLibraryStatus"
+import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import {
   GroupBlockResponseDto,
   TextBlockResponseDto,
@@ -16,6 +21,37 @@ class CollectionGroupItemResponseDto extends PickType(
 ) {
   @ApiProperty({ type: String, nullable: true })
   note: string | null
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: SWAGGER_DICTIONARY.collection.itemsRatingAverage,
+  })
+  ratingAverage: number | null
+
+  @ApiProperty({
+    type: "integer",
+    minimum: 1,
+    maximum: 10,
+    nullable: true,
+    description: SWAGGER_DICTIONARY.collection.itemsUserRating,
+  })
+  userRating: number | null
+
+  @ApiProperty({
+    enum: USER_ITEM_LIBRARY_STATUSES,
+    nullable: true,
+    description: SWAGGER_DICTIONARY.collection.itemsUserStatus,
+  })
+  userStatus: TLibraryStatus | null
+}
+
+class CollectionItemsMetadataResponseDto {
+  @ApiProperty({ type: LanguageTextResponseDto })
+  label: LanguageTextResponseDto
+
+  @ApiProperty({ type: LanguageTextResponseDto })
+  description: LanguageTextResponseDto
 }
 
 class CollectionItemsGroupResponseDto extends PickType(GroupBlockResponseDto, [
@@ -47,6 +83,18 @@ class ItemCollectionsResponseDto {
     },
   })
   blocks: (CollectionItemsGroupResponseDto | CollectionItemsTextResponseDto)[]
+
+  @ApiPropertyOptional({
+    type: CollectionItemsMetadataResponseDto,
+    description: SWAGGER_DICTIONARY.collection.itemsMetadata,
+  })
+  metadata?: CollectionItemsMetadataResponseDto
+
+  @ApiProperty({
+    type: Boolean,
+    description: SWAGGER_DICTIONARY.collection.itemsHidden,
+  })
+  isHidden: boolean
 }
 
-export { ItemCollectionsResponseDto }
+export { CollectionGroupItemResponseDto, ItemCollectionsResponseDto }

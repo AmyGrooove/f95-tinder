@@ -12,6 +12,7 @@ import type {
 } from "@endpoints/recommendations/services/recommendationCandidatesService"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import type { IReadEligibleRecommendationItemsProps } from "@entities/item/services/itemRepository"
 import { RecommendationModelRepository } from "@entities/recommendationModel/services/recommendationModelRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
@@ -111,32 +112,37 @@ class RecommendationsService {
     accessToken: unknown,
     props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit"> = {},
   ): Promise<TFindRecommendationsResult> {
-    return this.readSnapshotPage(
-      accessToken,
-      props,
-      FALLBACK_PAGE_SETTINGS.namespace,
-    )
+    return this.readSnapshotPage(accessToken, props, {
+      namespace: FALLBACK_PAGE_SETTINGS.namespace,
+      readCards: (query) =>
+        this.itemRepository.readRecommendationPosterCards(query),
+    })
   }
 
   readFeedPage(
     accessToken: unknown,
     props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
     readSources: TReadRecommendationFeedSources,
-  ): Promise<TFindRecommendationsResult> {
-    return this.readSnapshotPage(
-      accessToken,
-      props,
-      FALLBACK_PAGE_SETTINGS.feedNamespace,
+  ) {
+    return this.readSnapshotPage(accessToken, props, {
+      namespace: FALLBACK_PAGE_SETTINGS.feedNamespace,
+      readCards: (query) => this.itemRepository.readRecommendationCards(query),
       readSources,
-    )
+    })
   }
 
-  private async readSnapshotPage(
+  private async readSnapshotPage<TCard>(
     accessToken: unknown,
     props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
-    namespace: string,
-    readSources?: TReadRecommendationFeedSources,
-  ): Promise<TFindRecommendationsResult> {
+    options: {
+      namespace: string
+      readCards: (
+        props: IReadEligibleRecommendationItemsProps,
+      ) => Promise<TCard[]>
+      readSources?: TReadRecommendationFeedSources
+    },
+  ) {
+    const { namespace, readCards, readSources } = options
     const {
       cursor,
       filter,
@@ -176,7 +182,7 @@ class RecommendationsService {
     const scopeHash = createHash("sha256")
       .update(JSON.stringify(scope))
       .digest("base64url")
-    const { ttlMs } = FALLBACK_PAGE_SETTINGS
+    const { ttl } = FALLBACK_PAGE_SETTINGS
     const cacheKey = `${namespace}:${viewer.userId.toHexString()}:${scopeHash}:${listId}`
     const snapshot: IFallbackSnapshot | null = isFirstPage
       ? {
@@ -200,7 +206,7 @@ class RecommendationsService {
     }
 
     const nextOffset = offset + limit
-    const items = await this.itemRepository.readRecommendationPosterCards({
+    const items = await readCards({
       ...filter,
       userId: viewer.userId,
       country: viewer.country,
@@ -210,7 +216,7 @@ class RecommendationsService {
     })
 
     if (isFirstPage) {
-      await this.cacheService.set(cacheKey, snapshot, ttlMs)
+      await this.cacheService.set(cacheKey, snapshot, ttl)
     }
 
     const nextCursor =

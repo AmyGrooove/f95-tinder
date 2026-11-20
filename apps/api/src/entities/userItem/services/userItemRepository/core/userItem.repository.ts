@@ -1,35 +1,39 @@
 import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
-import type { HydratedDocument, Model, Types } from "mongoose"
+import type { HydratedDocument, Model, PipelineStage, Types } from "mongoose"
 
+import type { EItemType } from "@entities/item/schemas/EItemType"
+import { ESort } from "@entities/shared/types/ESort"
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+import { escapeRegex } from "@shared/functions/regex/escapeRegex"
 
 import { EUserItemStatus } from "../../../schemas/EUserItemStatus"
 import { UserItem } from "../../../schemas/userItem.schema"
 import type { TCreateUserItem } from "../../../schemas/userItem.schema"
+import { LIBRARY_CONTINUE_STATUSES } from "../../../static/LIBRARY_CONTINUE_STATUSES"
+import { createLibraryContinueItemLookup } from "../functions/aggregationPipelines/createLibraryContinueItemLookup"
+import { createLibraryEntryProjection } from "../functions/aggregationPipelines/createLibraryEntryProjection"
+import { createLibraryItemStatsLookup } from "../functions/aggregationPipelines/createLibraryItemStatsLookup"
+import { createLibraryPageItemLookup } from "../functions/aggregationPipelines/createLibraryPageItemLookup"
+import { createLibraryTitleSortStage } from "../functions/aggregationPipelines/createLibraryTitleSortStage"
+import type {
+  ILibraryEntry,
+  IReadLibraryPageProps,
+} from "../types/ILibraryPage"
 
 @Injectable()
 class UserItemRepository {
-  readonly read: MongoReadRepository<UserItem, HydratedDocument<UserItem>>
-  readonly write: MongoWriteRepository<
-    UserItem,
-    HydratedDocument<UserItem>,
-    TCreateUserItem
-  >
-  readonly pagination: MongoPaginationRepository<
-    UserItem,
-    HydratedDocument<UserItem>
-  >
-  readonly bulk: MongoBulkRepository<
-    UserItem,
-    HydratedDocument<UserItem>,
-    TCreateUserItem
-  >
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<UserItem>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(UserItem.name) model: Model<HydratedDocument<UserItem>>,
@@ -54,6 +58,111 @@ class UserItemRepository {
     this.aggregation = new MongoAggregationRepository<
       HydratedDocument<UserItem>
     >(model)
+  }
+
+  async readLibraryContinueStatus(
+    userId: Types.ObjectId,
+    types?: readonly EItemType[],
+  ) {
+    const pipeline = new AggregationBuilder()
+      .match({ user: userId, status: { $in: LIBRARY_CONTINUE_STATUSES } })
+      .project({ _id: 0, item: 1, status: 1 })
+      .use(createLibraryContinueItemLookup(types))
+      .match({ "visibleItem.0": { $exists: true } })
+      .project({
+        status: 1,
+        priority: { $indexOfArray: [LIBRARY_CONTINUE_STATUSES, "$status"] },
+      })
+      .sort({ priority: 1 })
+      .limit(1)
+      .project({ status: 1 })
+      .build()
+
+    const [record] = await this.aggregation.aggregate<{
+      status: (typeof LIBRARY_CONTINUE_STATUSES)[number]
+    }>(pipeline)
+
+    return record?.status ?? null
+  }
+
+  readLibraryPage(props: IReadLibraryPageProps) {
+    const {
+      userId,
+      statuses,
+      types,
+      isFavorite,
+      search,
+      sort,
+      direction,
+      language,
+      offset,
+      limit,
+      isProgressVisible,
+    } = props
+    const isTitleSort = sort === ESort.TITLE
+    const itemFilter: PipelineStage.Match["$match"] = {
+      deletedAt: null,
+      type: { $in: types },
+    }
+
+    if (!isUndefined(search)) {
+      const text = { $regex: escapeRegex(search), $options: "i" }
+
+      itemFilter.$or = [
+        { "title.ru": text },
+        { "title.en": text },
+        { aliases: text },
+      ]
+    }
+
+    const pipeline = new AggregationBuilder()
+      .match({
+        user: userId,
+        status: { $in: statuses },
+        ...(!isUndefined(isFavorite) && { isFavorite }),
+      })
+      .project({
+        item: 1,
+        status: 1,
+        isFavorite: 1,
+        rating: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        ...(isProgressVisible && {
+          latestAttempt: { $arrayElemAt: ["$attempts", -1] },
+        }),
+      })
+      .use(createLibraryPageItemLookup(itemFilter), { $unwind: "$visibleItem" })
+
+    if (isTitleSort) {
+      pipeline
+        .use(createLibraryTitleSortStage(language))
+        .sort({ sortTitle: direction, _id: 1 })
+    } else if (sort === ESort.RATING) {
+      pipeline
+        .use({
+          $set: { hasRating: { $ne: [{ $ifNull: ["$rating", null] }, null] } },
+        })
+        .sort({ hasRating: -1, rating: direction, _id: 1 })
+    } else {
+      pipeline.sort({ [sort]: direction, _id: 1 })
+    }
+
+    if (offset > 0) {
+      pipeline.use({ $skip: offset })
+    }
+
+    pipeline
+      .limit(limit + 1)
+      .use(createLibraryItemStatsLookup())
+      .project(createLibraryEntryProjection(isProgressVisible))
+
+    return this.aggregation.aggregate<ILibraryEntry>(
+      pipeline.build(),
+      isTitleSort
+        ? { collation: { locale: language, strength: 2 } }
+        : undefined,
+    )
   }
 
   async readPositiveRecommendationItemIds(userId: Types.ObjectId) {

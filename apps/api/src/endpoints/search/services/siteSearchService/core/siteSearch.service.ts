@@ -3,37 +3,47 @@ import {
   HttpException,
   Injectable,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from "@nestjs/common"
 import { Types } from "mongoose"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import type { IItemPosterCard } from "@entities/item/services/itemRepository"
+import { EItemType } from "@entities/item/schemas/EItemType"
+import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
+import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
+import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
+import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
+import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { AuthService } from "@endpoints/auth/services/authService"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
-import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
+import type { ValueFilter } from "@entities/shared/types/ValueFilter"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import type {
   ISearchDocument,
   ISearchMatch,
 } from "@infrastructure/search/services/searchService"
-import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
+import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isFiniteNumber } from "@shared/functions/checks/isFiniteNumber"
+import { isInt } from "@shared/functions/checks/isInt"
 import { isNil } from "@shared/functions/checks/isNil"
+import { isUndefined } from "@shared/functions/checks/isUndefined"
+import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { SearchBodyDto } from "../dto/search.body"
 import type { SearchResponseDto } from "../dto/search.response"
-import { ESearchCollectionSort } from "../types/ESearchCollectionSort"
+import { ESort } from "@entities/shared/types/ESort"
 import { ESearchGroup } from "../types/ESearchGroup"
-import { ESearchItemSort } from "../types/ESearchItemSort"
-import { ESearchUserSort } from "../types/ESearchUserSort"
+import type { IReadSearchGroupPageProps } from "../types/IReadSearchGroupPageProps"
 import type { ISearchGroupOptions } from "../types/ISearchGroupOptions"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
 
@@ -46,56 +56,105 @@ class SiteSearchService {
     private readonly userRepository: UserRepository,
     private readonly collectionRepository: CollectionRepository,
     private readonly cursorService: CursorService,
+    private readonly authService: AuthService,
+    private readonly userItemRepository: UserItemRepository,
+    private readonly userCollectionRepository: UserCollectionRepository,
+    private readonly itemStatsRepository: ItemStatsRepository,
   ) {}
 
-  async search(body: SearchBodyDto): Promise<SearchResponseDto> {
-    const options = this.prepareGroups(body)
-    const included = [
-      ...(body.types?.allOf ?? []),
-      ...(body.types?.anyOf ?? []),
-    ]
-    const selected = Object.values(ESearchGroup).filter(
-      (group) =>
-        (included.length === 0 || included.includes(group)) &&
-        !(body.types?.noneOf ?? []).includes(group),
-    )
-    const scope = [
-      body.search,
-      body.limit,
-      selected.map((group) => [group, options[group]]),
-    ]
-    const offsets = isNil(body.cursor)
-      ? selected.map(() => 0)
-      : this.cursorService.read({
-          cursor: body.cursor,
-          scope,
-          invalidCursorMessage: DICTIONARY.search.invalidCursor,
-          isPosition: (value): value is (number | null)[] =>
-            isArray(value) &&
-            value.length === selected.length &&
-            value.some((offset) => !isNil(offset)) &&
-            value.every(
-              (offset) =>
-                isNil(offset) ||
-                (isFiniteNumber(offset) &&
-                  offset % body.limit === 0 &&
-                  offset > 0 &&
-                  offset < SEARCH_SETTINGS.maxTotalHits),
-            ),
-        })
-    const active = selected.flatMap((group, index) => {
-      const offset = offsets[index]
+  async search(
+    body: SearchBodyDto,
+    accessToken?: unknown,
+  ): Promise<SearchResponseDto> {
+    const limit = body.limit ?? 20
+    const isPersonalFilteringEnabled = body.isPersonalFilteringEnabled === true
+    const selected = this.selectGroups(body)
+    const isLatestRelease =
+      selected.includes(ESearchGroup.ITEMS) &&
+      body.items?.sort === ESort.LATEST_RELEASE_DATE
 
-      return isNil(offset) || options[group].isImpossible === true
-        ? []
-        : [{ group, offset, props: options[group] }]
-    })
-
-    if (active.length === 0) {
-      return { items: [], collections: [], users: [], nextCursor: null }
+    if (
+      body.items?.sort === ESort.LATEST_RELEASE_DATE &&
+      body.items.direction === ESortDirection.ASC
+    ) {
+      throw new BadRequestException(
+        DICTIONARY.search.invalidLatestReleaseDirection,
+      )
     }
 
+    const options = this.prepareGroups(body)
+
     try {
+      const viewerId = isUndefined(accessToken)
+        ? undefined
+        : await this.authenticateViewer(accessToken)
+      const filterViewerId = isPersonalFilteringEnabled ? viewerId : undefined
+      const isItemCandidatePage =
+        isLatestRelease ||
+        (isUndefined(body.search) && body.items?.sort === ESort.RATING) ||
+        !isUndefined(filterViewerId)
+      const isCollectionCandidatePage = !isUndefined(filterViewerId)
+      const candidateGroups = new Set<ESearchGroup>([
+        ...(isItemCandidatePage ? [ESearchGroup.ITEMS] : []),
+        ...(isCollectionCandidatePage ? [ESearchGroup.COLLECTIONS] : []),
+      ])
+      const scope = [
+        "search",
+        body.search ?? null,
+        limit,
+        selected.map((group) => [group, options[group]]),
+        viewerId?.toHexString() ?? null,
+        !isUndefined(filterViewerId),
+      ]
+      const now = Date.now()
+      const position = isUndefined(body.cursor)
+        ? [...(isLatestRelease ? [now] : []), ...selected.map(() => 0)]
+        : this.cursorService.read({
+            cursor: body.cursor,
+            scope,
+            invalidCursorMessage: DICTIONARY.search.invalidCursor,
+            isPosition: (value): value is (number | null)[] => {
+              if (
+                !isArray(value) ||
+                value.length !== selected.length + Number(isLatestRelease)
+              ) {
+                return false
+              }
+
+              const offsets = isLatestRelease ? value.slice(1) : value
+
+              return (
+                (!isLatestRelease ||
+                  (isInt(value[0]) && value[0] > 0 && value[0] <= now)) &&
+                offsets.some((offset) => !isNil(offset)) &&
+                offsets.every(
+                  (offset, index) =>
+                    offset === null ||
+                    (isInt(offset) &&
+                      offset > 0 &&
+                      offset < SEARCH_SETTINGS.maxTotalHits &&
+                      (candidateGroups.has(selected[index]) ||
+                        offset % limit === 0)),
+                )
+              )
+            },
+          })
+      const cutoff = isLatestRelease ? position[0] : null
+      const offsets = new Map(
+        selected.map((group, index) => [
+          group,
+          position[index + Number(isLatestRelease)],
+        ]),
+      )
+      const isAnyGroupActive = selected.some(
+        (group) =>
+          !isNil(offsets.get(group)) && options[group].isImpossible !== true,
+      )
+
+      if (!isAnyGroupActive) {
+        return { items: [], collections: [], users: [], nextCursor: null }
+      }
+
       const checkpoint = await this.cacheService.get<number>(
         SEARCH_SETTINGS.checkpointKey,
       )
@@ -104,37 +163,63 @@ class SiteSearchService {
         throw new ServiceUnavailableException(DICTIONARY.search.unavailable)
       }
 
-      const pages = new Map(
-        await Promise.all(
-          active.map(async (activeGroup) => {
-            const { group, offset, props } = activeGroup
-
-            const hits = await this.searchGroup({ body, group, offset, props })
-
-            return [
-              group,
-              {
-                ids: hits.slice(0, body.limit).map((hit) => hit.id),
-                nextOffset:
-                  hits.length > body.limit ? offset + body.limit : null,
-              },
-            ] as const
-          }),
-        ),
-      )
-      const nextOffsets = selected.map(
-        (group) => pages.get(group)?.nextOffset ?? null,
-      )
-      const nextCursor = nextOffsets.some((offset) => !isNil(offset))
-        ? this.cursorService.create({ scope, position: nextOffsets })
-        : null
       const [items, collections, users] = await Promise.all([
-        this.loadItems(pages.get(ESearchGroup.ITEMS)?.ids ?? []),
-        this.loadCollections(pages.get(ESearchGroup.COLLECTIONS)?.ids ?? []),
-        this.loadUsers(pages.get(ESearchGroup.USERS)?.ids ?? []),
+        this.readGroupPage({
+          body,
+          limit,
+          group: ESearchGroup.ITEMS,
+          offset: offsets.get(ESearchGroup.ITEMS),
+          props: isNil(cutoff)
+            ? options.items
+            : {
+                ...options.items,
+                filter: [
+                  ...options.items.filter,
+                  `latestReleaseDate <= ${cutoff}`,
+                ],
+              },
+          isCandidatePage: candidateGroups.has(ESearchGroup.ITEMS),
+          load: (ids) =>
+            this.loadItems(ids, viewerId, !isUndefined(filterViewerId)),
+        }),
+        this.readGroupPage({
+          body,
+          limit,
+          group: ESearchGroup.COLLECTIONS,
+          offset: offsets.get(ESearchGroup.COLLECTIONS),
+          props: options.collections,
+          isCandidatePage: candidateGroups.has(ESearchGroup.COLLECTIONS),
+          load: (ids) => this.loadCollections(ids, filterViewerId),
+        }),
+        this.readGroupPage({
+          body,
+          limit,
+          group: ESearchGroup.USERS,
+          offset: offsets.get(ESearchGroup.USERS),
+          props: options.users,
+          isCandidatePage: false,
+          load: (ids) => this.loadUsers(ids),
+        }),
       ])
+      const nextByGroup = {
+        items: items.nextOffset,
+        collections: collections.nextOffset,
+        users: users.nextOffset,
+      }
+      const nextOffsets = selected.map((group) => nextByGroup[group])
+      const nextCursor = nextOffsets.some((offset) => !isNil(offset))
+        ? this.cursorService.create({
+            scope,
+            position: [...(isLatestRelease ? [cutoff] : []), ...nextOffsets],
+          })
+        : null
 
-      return { items, collections, users, nextCursor }
+      return {
+        items: items.cards,
+        collections: collections.cards,
+        users: users.cards,
+        nextCursor,
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
@@ -146,88 +231,110 @@ class SiteSearchService {
     }
   }
 
+  private selectGroups({ entities }: SearchBodyDto) {
+    const included = [...(entities?.allOf ?? []), ...(entities?.anyOf ?? [])]
+
+    return Object.values(ESearchGroup).filter(
+      (group) =>
+        (included.length === 0 || included.includes(group)) &&
+        !(entities?.noneOf ?? []).includes(group),
+    )
+  }
+
+  private async authenticateViewer(accessToken: unknown) {
+    const payload = await this.authService.verifyAccessToken(accessToken)
+    const [session, user] = await Promise.all([
+      this.authService.getSession(payload),
+      this.userRepository.read.findById(payload.sub, { _id: 1 }),
+    ])
+
+    if (isNil(session) || isNil(user)) {
+      throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
+    }
+
+    requestContext.set("userId", payload.sub)
+    return user._id
+  }
+
   private prepareGroups(
     body: SearchBodyDto,
   ): Record<ESearchGroup, ISearchGroupOptions> {
-    const itemSort = body.items?.sort
+    const { items, collections, users } = body
+    const itemSort = items?.sort ?? ESort.RELEVANCE
     const itemDirection =
-      itemSort?.direction ??
-      (itemSort?.type === ESearchItemSort.TITLE
-        ? ESearchSortDirection.ASC
-        : ESearchSortDirection.DESC)
-    const collectionSort = body.collections?.sort
+      items?.direction ??
+      (itemSort === ESort.TITLE ? ESortDirection.ASC : ESortDirection.DESC)
+    const collectionSort = collections?.sort ?? ESort.RELEVANCE
     const collectionDirection =
-      collectionSort?.direction ??
-      (collectionSort?.type === ESearchCollectionSort.TITLE
-        ? ESearchSortDirection.ASC
-        : ESearchSortDirection.DESC)
-    const userSort = body.users?.sort
+      collections?.direction ??
+      (collectionSort === ESort.TITLE
+        ? ESortDirection.ASC
+        : ESortDirection.DESC)
+    const userSort = users?.sort ?? ESort.RELEVANCE
     const userDirection =
-      userSort?.direction ??
-      (userSort?.type === ESearchUserSort.DISPLAY_NAME
-        ? ESearchSortDirection.ASC
-        : ESearchSortDirection.DESC)
-    const collectionTypes = body.collections?.types
-    const authorIds = body.collections?.authorIds
+      users?.direction ??
+      (userSort === ESort.DISPLAY_NAME
+        ? ESortDirection.ASC
+        : ESortDirection.DESC)
+    const collectionTypes = collections?.collectionTypes
 
     return {
       items: {
         filter: this.createItemFilters(body.items),
+        ...(itemSort === ESort.LATEST_RELEASE_DATE
+          ? {
+              isImpossible:
+                body.items?.types?.every((type) => type === EItemType.GAME) ??
+                false,
+            }
+          : {}),
         isAscendingRelevance:
-          (itemSort?.type ?? ESearchItemSort.RELEVANCE) ===
-            ESearchItemSort.RELEVANCE &&
-          itemDirection === ESearchSortDirection.ASC,
+          itemSort === ESort.RELEVANCE && itemDirection === ESortDirection.ASC,
         sort:
-          itemSort?.type === ESearchItemSort.TITLE
-            ? [
-                `sortTitle.${itemSort.language ?? ELanguage.RUSSIAN}:${itemDirection}`,
-                "id:asc",
-              ]
-            : itemSort?.type === ESearchItemSort.RELEASE_DATE
+          itemSort === ESort.LATEST_RELEASE_DATE
+            ? ["latestReleaseDate:desc", "id:asc"]
+            : itemSort === ESort.TITLE
               ? [
-                  "hasReleaseDate:desc",
-                  `releaseDate:${itemDirection}`,
+                  `sortTitle.${items?.language ?? ELanguage.RUSSIAN}:${itemDirection}`,
                   "id:asc",
                 ]
-              : itemSort?.type === ESearchItemSort.RATING
+              : itemSort === ESort.RELEASE_DATE
                 ? [
-                    "hasRating:desc",
-                    `ratingScore:${itemDirection}`,
-                    "ratingsCount:desc",
+                    "hasReleaseDate:desc",
+                    `releaseDate:${itemDirection}`,
                     "id:asc",
                   ]
-                : undefined,
+                : itemSort === ESort.RATING
+                  ? [
+                      "hasRating:desc",
+                      `ratingScore:${itemDirection}`,
+                      "ratingsCount:desc",
+                      "id:asc",
+                    ]
+                  : undefined,
       },
       collections: {
-        isImpossible:
-          (collectionTypes?.allOf?.length ?? 0) > 1 ||
-          (authorIds?.allOf?.length ?? 0) > 1,
-        filter: [
-          ...this.createValueFilters("type", collectionTypes),
-          ...this.createValueFilters("authorId", authorIds),
-        ],
+        isImpossible: (collectionTypes?.allOf?.length ?? 0) > 1,
+        filter: this.createValueFilters("type", collectionTypes),
         isAscendingRelevance:
-          (collectionSort?.type ?? ESearchCollectionSort.RELEVANCE) ===
-            ESearchCollectionSort.RELEVANCE &&
-          collectionDirection === ESearchSortDirection.ASC,
+          collectionSort === ESort.RELEVANCE &&
+          collectionDirection === ESortDirection.ASC,
         sort:
-          collectionSort?.type === ESearchCollectionSort.TITLE
+          collectionSort === ESort.TITLE
             ? [
-                `sortTitle.${collectionSort.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
+                `sortTitle.${collections?.language ?? ELanguage.RUSSIAN}:${collectionDirection}`,
                 "id:asc",
               ]
-            : collectionSort?.type === ESearchCollectionSort.UPDATED_AT
+            : collectionSort === ESort.UPDATED_AT
               ? [`updatedAt:${collectionDirection}`, "id:asc"]
               : undefined,
       },
       users: {
         filter: [],
         isAscendingRelevance:
-          (userSort?.type ?? ESearchUserSort.RELEVANCE) ===
-            ESearchUserSort.RELEVANCE &&
-          userDirection === ESearchSortDirection.ASC,
+          userSort === ESort.RELEVANCE && userDirection === ESortDirection.ASC,
         sort:
-          userSort?.type === ESearchUserSort.DISPLAY_NAME
+          userSort === ESort.DISPLAY_NAME
             ? [`sortDisplayName:${userDirection}`, "id:asc"]
             : undefined,
       },
@@ -236,6 +343,12 @@ class SiteSearchService {
 
   private createItemFilters(items: SearchBodyDto["items"]) {
     const { min, max } = items?.rating ?? {}
+    const isLatestRelease = items?.sort === ESort.LATEST_RELEASE_DATE
+    const types = isLatestRelease
+      ? (items.types ?? Object.values(EItemType)).filter(
+          (type) => type !== EItemType.GAME,
+        )
+      : items?.types
 
     if (
       (!isNil(items?.rating) && isNil(min) && isNil(max)) ||
@@ -245,9 +358,8 @@ class SiteSearchService {
     }
 
     return [
-      ...(isNil(items?.types)
-        ? []
-        : [`type IN ${JSON.stringify([...items.types].sort())}`]),
+      ...(isNil(types) ? [] : [`type IN ${JSON.stringify([...types].sort())}`]),
+      ...(isLatestRelease ? ["latestReleaseDate IS NOT NULL"] : []),
       ...this.createValueFilters("tagIds", items?.tags),
       ...(!isNil(min) || !isNil(max) ? ["rating IS NOT NULL"] : []),
       ...(isNil(min) ? [] : [`rating >= ${min}`]),
@@ -255,7 +367,7 @@ class SiteSearchService {
     ]
   }
 
-  private createValueFilters(attribute: string, filter?: IValueFilter<string>) {
+  private createValueFilters(attribute: string, filter?: ValueFilter<string>) {
     const normalize = (values: readonly string[]) =>
       values.map((value) => value.toLowerCase()).sort()
 
@@ -272,19 +384,43 @@ class SiteSearchService {
     ]
   }
 
-  private async searchGroup(props: ISearchGroupProps) {
+  private async readGroupPage<TCard extends { id: string }>(
+    page: IReadSearchGroupPageProps<TCard>,
+  ): Promise<{ cards: TCard[]; nextOffset: number | null }> {
+    const { body, group, offset, props, isCandidatePage, limit, load } = page
+    if (isNil(offset) || props.isImpossible === true) {
+      return { cards: [], nextOffset: null }
+    }
+
+    const size = isCandidatePage ? SEARCH_SETTINGS.candidatePageSize : limit
+    const hits = await this.searchGroup(
+      { body, group, offset, props },
+      Math.min(size + 1, SEARCH_SETTINGS.maxTotalHits - offset),
+    )
+    const ids = hits.slice(0, size).map((hit) => hit.id)
+    const cards = await load(ids)
+    const visible = cards.slice(0, limit)
+    const consumed =
+      isCandidatePage && visible.length === limit
+        ? ids.indexOf(visible[visible.length - 1].id) + 1
+        : ids.length
+
+    return {
+      cards: visible,
+      nextOffset: consumed < hits.length ? offset + consumed : null,
+    }
+  }
+
+  private async searchGroup(props: ISearchGroupProps, limit: number) {
     const { body, group, offset, props: options } = props
 
     const index = SEARCH_SETTINGS.indexes[group]
-    const limit = Math.min(
-      body.limit + 1,
-      SEARCH_SETTINGS.maxTotalHits - offset,
-    )
+    const query = body.search ?? ""
 
     if (!options.isAscendingRelevance) {
       const result = await this.searchService.search<ISearchDocument>(
         index,
-        body.search,
+        query,
         {
           filter: options.filter,
           sort: options.sort,
@@ -302,7 +438,7 @@ class SiteSearchService {
 
     for await (const batch of this.searchService.iterateMatches({
       index,
-      query: body.search,
+      query,
       filter: options.filter,
       batchSize: SEARCH_SETTINGS.batchSize,
     })) {
@@ -324,30 +460,97 @@ class SiteSearchService {
     return ranked.slice(offset)
   }
 
-  private async loadItems(ids: string[]): Promise<SearchResponseDto["items"]> {
-    const cards = await this.itemRepository.readPosterCardsByIds(
-      ids.map((id) => new Types.ObjectId(id)),
+  private async loadItems(
+    ids: string[],
+    viewerId: Types.ObjectId | undefined,
+    isPersonalFilterEnabled: boolean,
+  ): Promise<SearchResponseDto["items"]> {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const itemIds = ids.map((id) => new Types.ObjectId(id))
+    const [cards, userItems, stats] = await Promise.all([
+      this.itemRepository.readPosterCardsByIds(itemIds),
+      !isUndefined(viewerId)
+        ? this.userItemRepository.read.findMany(
+            { user: viewerId, item: { $in: itemIds } },
+            { _id: 0, item: 1, status: 1, rating: 1 },
+          )
+        : [],
+      this.itemStatsRepository.read.findMany(
+        { item: { $in: itemIds } },
+        { _id: 0, item: 1, ratingAverage: 1 },
+      ),
+    ])
+    const userItemsById = new Map(
+      userItems.map((item) => [String(item.item), item]),
+    )
+    const ratingsById = new Map(
+      stats.map((item) => [String(item.item), item.ratingAverage]),
     )
 
-    return cards.map((item) => this.mapItem(item))
+    return cards.flatMap((item) => {
+      const card = this.mapItem(item)
+      const userItem = userItemsById.get(card.id)
+      const status = userItem?.status
+      if (
+        isPersonalFilterEnabled &&
+        (status === EUserItemStatus.COMPLETED ||
+          status === EUserItemStatus.DROPPED ||
+          status === EUserItemStatus.BLOCKED)
+      ) {
+        return []
+      }
+
+      return [
+        {
+          ...card,
+          rating: ratingsById.get(card.id) ?? null,
+          userRating:
+            status === EUserItemStatus.SKIPPED
+              ? null
+              : (userItem?.rating ?? null),
+          userStatus:
+            USER_ITEM_LIBRARY_STATUSES.find(
+              (libraryStatus) => libraryStatus === status,
+            ) ?? null,
+        },
+      ]
+    })
   }
 
   private async loadCollections(
     ids: string[],
+    viewerId?: Types.ObjectId,
   ): Promise<SearchResponseDto["collections"]> {
     if (ids.length === 0) {
       return []
     }
 
-    const documents = await this.collectionRepository.read.findMany(
-      {
-        _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
-        deletedAt: null,
-      },
-      { _id: 1, type: 1, title: 1, media: 1 },
-    )
+    const collectionIds = ids.map((id) => new Types.ObjectId(id))
+    const [documents, hidden] = await Promise.all([
+      this.collectionRepository.read.findMany(
+        { _id: { $in: collectionIds }, deletedAt: null },
+        { _id: 1, type: 1, title: 1, media: 1 },
+      ),
+      isUndefined(viewerId)
+        ? []
+        : this.userCollectionRepository.read.findMany(
+            {
+              user: viewerId,
+              collectionId: { $in: collectionIds },
+              isHidden: true,
+            },
+            { _id: 0, collectionId: 1 },
+          ),
+    ])
+    const hiddenIds = new Set(hidden.map((entry) => String(entry.collectionId)))
 
-    return this.orderCards(ids, documents).map((collection) => ({
+    return this.orderCards(
+      ids.filter((id) => !hiddenIds.has(id)),
+      documents,
+    ).map((collection) => ({
       id: String(collection._id),
       type: collection.type,
       title: {

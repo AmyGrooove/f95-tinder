@@ -6,9 +6,10 @@ import type {
   QueryFilter,
 } from "mongoose"
 
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import type { TagItem, TCreateTagItem } from "../../../schemas/tagItem.schema"
 import type { TagItemMutationService } from "@entities/tagItem/services/tagItemMutationService"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+
+import type { TagItem, TCreateTagItem } from "../../../schemas/tagItem.schema"
 
 class TagItemBulkRepository extends MongoBulkRepository<
   TagItem,

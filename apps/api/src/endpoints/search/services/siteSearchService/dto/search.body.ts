@@ -1,88 +1,66 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
-import { Transform, Type } from "class-transformer"
+import { ApiPropertyOptional, PickType } from "@nestjs/swagger"
+import { Type } from "class-transformer"
 import {
-  IsInt,
-  IsIn,
-  IsString,
-  Length,
+  IsBoolean,
   IsObject,
   ValidateIf,
   ValidateNested,
 } from "class-validator"
 
-import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
-import { isString } from "@shared/functions/checks/isString"
+import { ValueFilterProperty } from "@entities/shared/decorators/ValueFilterProperty"
+import { QueryFieldsDto } from "@entities/shared/dto/query/queryFields.dto"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
+import type { ValueFilter } from "@entities/shared/types/ValueFilter"
 
+import { ESearchGroup } from "../types/ESearchGroup"
 import {
-  SearchGroupFilterDto,
+  SearchCollectionsBodyDto,
   SearchItemsBodyDto,
   SearchUsersBodyDto,
-  SearchCollectionsBodyDto,
 } from "./searchOptions.body"
-import type { ITransformProps } from "@endpoints/shared/types/ITransformProps"
 
-class SearchBodyDto {
-  @ApiProperty({
-    type: String,
-    minLength: 1,
-    maxLength: 200,
-    description: SWAGGER_DICTIONARY.search.text,
-  })
-  @Transform((props: ITransformProps) => {
-    const { value } = props
+const isProvided = (_object: unknown, value: unknown) => !isUndefined(value)
 
-    return isString(value) ? value.trim() : value
-  })
-  @IsString()
-  @Length(1, 200)
-  search: string
-
+class SearchBodyDto extends PickType(QueryFieldsDto, [
+  "search",
+  "limit",
+  "cursor",
+]) {
   @ApiPropertyOptional({
-    type: String,
-    minLength: 1,
-    maxLength: 256,
-    description: SWAGGER_DICTIONARY.search.cursor,
-  })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @IsString()
-  @Length(1, 256)
-  cursor?: string
-
-  @ApiPropertyOptional({
-    type: Number,
-    enum: [10, 20, 50],
     default: 20,
     description: SWAGGER_DICTIONARY.search.limit,
   })
-  @IsInt()
-  @IsIn([10, 20, 50])
-  limit: TPageSize = 20
+  declare limit?: QueryFieldsDto["limit"]
 
-  @ApiPropertyOptional({ type: SearchGroupFilterDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
-  @Type(() => SearchGroupFilterDto)
-  @IsObject()
-  @ValidateNested()
-  types?: SearchGroupFilterDto
+  @ValueFilterProperty({ values: Object.values(ESearchGroup) })
+  entities?: ValueFilter<ESearchGroup>
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    default: false,
+    description: SWAGGER_DICTIONARY.search.isPersonalFilteringEnabled,
+  })
+  @ValidateIf(isProvided)
+  @IsBoolean()
+  isPersonalFilteringEnabled?: boolean
 
   @ApiPropertyOptional({ type: SearchItemsBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @ValidateIf(isProvided)
   @Type(() => SearchItemsBodyDto)
   @IsObject()
   @ValidateNested()
   items?: SearchItemsBodyDto
 
   @ApiPropertyOptional({ type: SearchCollectionsBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @ValidateIf(isProvided)
   @Type(() => SearchCollectionsBodyDto)
   @IsObject()
   @ValidateNested()
   collections?: SearchCollectionsBodyDto
 
   @ApiPropertyOptional({ type: SearchUsersBodyDto })
-  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @ValidateIf(isProvided)
   @Type(() => SearchUsersBodyDto)
   @IsObject()
   @ValidateNested()

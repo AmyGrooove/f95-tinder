@@ -11,40 +11,27 @@ import type {
   mongo,
 } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 import { JWT_REFRESH_EXPIRATION } from "@infrastructure/security/static/JWT_REFRESH_EXPIRATION"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { UserSession } from "../../../schemas/userSession.schema"
 import type { TCreateUserSession } from "../../../schemas/userSession.schema"
 import type { ICreateUserSessionProps } from "../types/ICreateUserSessionProps"
-import type { IUserSessionOwnerProps } from "../types/IUserSessionOwnerProps"
 import type { IUpdateUserSessionRefreshTokenProps } from "../types/IUpdateUserSessionRefreshTokenProps"
+import type { IUserSessionOwnerProps } from "../types/IUserSessionOwnerProps"
 
 @Injectable()
 class UserSessionRepository {
-  readonly read: MongoReadRepository<UserSession, HydratedDocument<UserSession>>
-  readonly write: MongoWriteRepository<
-    UserSession,
-    HydratedDocument<UserSession>,
-    TCreateUserSession
-  >
-  readonly pagination: MongoPaginationRepository<
-    UserSession,
-    HydratedDocument<UserSession>
-  >
-  readonly bulk: MongoBulkRepository<
-    UserSession,
-    HydratedDocument<UserSession>,
-    TCreateUserSession
-  >
-  readonly aggregation: MongoAggregationRepository<
-    HydratedDocument<UserSession>
-  >
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(UserSession.name) model: Model<HydratedDocument<UserSession>>,
@@ -100,30 +87,25 @@ class UserSessionRepository {
     )
   }
 
-  deleteActive(props: IUserSessionOwnerProps) {
-    const { id, userId } = props
+  createNew(props: ICreateUserSessionProps, options?: CreateOptions) {
+    const { refreshToken, id, userId, userAgent = null, country } = props
 
-    return this.write.deleteByFilter({
-      _id: id,
-      user: userId,
-      expiresAt: { $gt: new Date() },
-    })
-  }
+    const refreshTokenHash = createHash("sha256")
+      .update(refreshToken)
+      .digest("hex")
+    const expiresAt = new Date(Date.now() + JWT_REFRESH_EXPIRATION * 1000)
 
-  deleteOthers(
-    props: IUserSessionOwnerProps,
-    options?: Pick<mongo.DeleteOptions, "session">,
-  ) {
-    const { userId, id } = props
-
-    return this.bulk.deleteMany({ user: userId, _id: { $ne: id } }, options)
-  }
-
-  deleteByUser(
-    userId: Types.ObjectId,
-    options?: Pick<mongo.DeleteOptions, "session">,
-  ) {
-    return this.bulk.deleteMany({ user: userId }, options)
+    return this.write.create(
+      {
+        _id: id,
+        user: userId,
+        refreshTokenHash,
+        userAgent,
+        country,
+        expiresAt,
+      },
+      options,
+    )
   }
 
   updateRefreshToken(
@@ -160,25 +142,30 @@ class UserSessionRepository {
     )
   }
 
-  createNew(props: ICreateUserSessionProps, options?: CreateOptions) {
-    const { refreshToken, id, userId, userAgent = null, country } = props
+  deleteActive(props: IUserSessionOwnerProps) {
+    const { id, userId } = props
 
-    const refreshTokenHash = createHash("sha256")
-      .update(refreshToken)
-      .digest("hex")
-    const expiresAt = new Date(Date.now() + JWT_REFRESH_EXPIRATION * 1000)
+    return this.write.deleteByFilter({
+      _id: id,
+      user: userId,
+      expiresAt: { $gt: new Date() },
+    })
+  }
 
-    return this.write.create(
-      {
-        _id: id,
-        user: userId,
-        refreshTokenHash,
-        userAgent,
-        country,
-        expiresAt,
-      },
-      options,
-    )
+  deleteOthers(
+    props: IUserSessionOwnerProps,
+    options?: Pick<mongo.DeleteOptions, "session">,
+  ) {
+    const { userId, id } = props
+
+    return this.bulk.deleteMany({ user: userId, _id: { $ne: id } }, options)
+  }
+
+  deleteByUser(
+    userId: Types.ObjectId,
+    options?: Pick<mongo.DeleteOptions, "session">,
+  ) {
+    return this.bulk.deleteMany({ user: userId }, options)
   }
 }
 

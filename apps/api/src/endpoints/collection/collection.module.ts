@@ -8,6 +8,7 @@ import { UserModule } from "@entities/user/user.module"
 import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
+import { CacheModule } from "@infrastructure/cache/cache.module"
 import { JobsModule } from "@infrastructure/jobs/jobs.module"
 import { TagModule } from "@entities/tag/tag.module"
 import { TagItemModule } from "@entities/tagItem/tagItem.module"
@@ -33,6 +34,7 @@ import { SynchronizeTagCollectionsJobHandler } from "@endpoints/collection/servi
     UserCollectionModule,
     AuthModule,
     DatabaseModule,
+    CacheModule,
     JobsModule,
     TagModule,
     TagItemModule,

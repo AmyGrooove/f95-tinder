@@ -2,12 +2,12 @@ import type { Types } from "mongoose"
 
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { TLibraryStatus } from "@entities/userItem/types/TLibraryStatus"
-import type { IValueFilter } from "@infrastructure/database/types/IValueFilter"
+import type { ValueFilter } from "@entities/shared/types/ValueFilter"
 import type { TPageSize } from "@infrastructure/database/types/TPageSize"
 
 interface IRecommendationCandidateFilter {
-  tags?: readonly IValueFilter<Types.ObjectId>[]
-  library?: IValueFilter<TLibraryStatus | "outside">
+  tags?: readonly ValueFilter<Types.ObjectId>[]
+  library?: ValueFilter<TLibraryStatus | "outside">
   rating?: {
     min?: number
     max?: number

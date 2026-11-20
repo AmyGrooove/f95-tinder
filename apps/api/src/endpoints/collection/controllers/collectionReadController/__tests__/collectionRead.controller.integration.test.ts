@@ -75,7 +75,7 @@ describe("CollectionReadController", () => {
     expect(response.json()).toHaveProperty("author", null)
   })
 
-  it("возвращает только блоки и курсор, одинаково для гостя и владельца", async () => {
+  it("возвращает состав без личных оценок и статусов гостю и владельцу без записей в библиотеке", async () => {
     const { collection, first, second, owner } = await createCollection()
     const response = await query(collection.id)
     expect(response.statusCode).toBe(200)
@@ -83,6 +83,7 @@ describe("CollectionReadController", () => {
     expect(response.headers["cache-control"]).toBe("no-store")
     expect(response.json()).toEqual({
       nextCursor: null,
+      isHidden: false,
       blocks: [
         {
           type: "group",
@@ -95,6 +96,9 @@ describe("CollectionReadController", () => {
               title: { ru: "Альфа", en: "Alpha" },
               media: [],
               note: "Заметка",
+              ratingAverage: null,
+              userRating: null,
+              userStatus: null,
             },
           ],
         },
@@ -110,14 +114,17 @@ describe("CollectionReadController", () => {
               title: { ru: "Бета", en: "Beta" },
               media: [],
               note: null,
+              ratingAverage: null,
+              userRating: null,
+              userStatus: null,
             },
           ],
         },
       ],
     })
-    expect((await query(collection.id, {}, owner.headers)).json()).toEqual(
-      response.json(),
-    )
+    const authenticated = await query(collection.id, {}, owner.headers)
+    expect(authenticated.statusCode).toBe(200)
+    expect(authenticated.json()).toEqual(response.json())
   })
 
   it("подгружает состав без пропусков, исключает удалённые Item и не повторяет текст", async () => {
@@ -195,7 +202,13 @@ describe("CollectionReadController", () => {
     })
     expect(
       document.components?.schemas?.ItemCollectionsResponseDto,
-    ).toMatchObject({ required: ["nextCursor", "blocks"] })
+    ).toMatchObject({
+      required: expect.arrayContaining(["nextCursor", "blocks", "isHidden"]),
+      properties: {
+        isHidden: { type: "boolean" },
+        metadata: expect.any(Object),
+      },
+    })
     expect(
       document.components?.schemas?.ItemCollectionsResponseDto,
     ).not.toHaveProperty("properties.items")

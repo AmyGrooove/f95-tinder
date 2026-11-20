@@ -1,5 +1,10 @@
 const DICTIONARY = {
+  home: {
+    prepareFeedFailed: "Не удалось подготовить дневную ленту",
+  },
   search: {
+    invalidLatestReleaseDirection:
+      "Новинки сортируются только по убыванию даты последнего релиза",
     bodyRequired: "Тело поиска должно быть JSON-объектом",
     invalidFilters:
       "Некорректные фильтры поиска: проверьте поля, типы значений и границы",
@@ -23,6 +28,10 @@ const DICTIONARY = {
     invalidRatingRange: "Invalid item rating range",
   },
   recommendation: {
+    bodyRequired: "Тело запроса рекомендаций должно быть JSON-объектом",
+    invalidContentType: "Запрос рекомендаций принимает application/json",
+    invalidRatingRange:
+      "Укажите хотя бы одну границу рейтинга, минимальная не должна превышать максимальную",
     invalidCursor: "Некорректный курсор рекомендаций",
     cursorExpired: "Список рекомендаций устарел, начните выдачу заново",
     invalidLimit: "Размер порции рекомендаций должен быть 10, 20 или 50",
@@ -36,6 +45,16 @@ const DICTIONARY = {
     invalidItemCfNeighbors: "Некорректные индексы соседей ItemCF",
     invalidModelNumbers: "Некорректные числовые значения модели рекомендаций",
     alsFoldInFailed: "Невозможно вычислить вектор пользователя ALS",
+  },
+  user: {
+    library: {
+      notFound: "Пользователь не найден",
+      bodyRequired: "Тело запроса библиотеки должно быть JSON-объектом",
+      queryNotAllowed: "Фильтры библиотеки передаются в теле запроса",
+      unsupportedMediaType: "Для запроса библиотеки требуется application/json",
+      sortLanguage: "Язык указывается только при сортировке по названию",
+      invalidCursor: "Некорректный курсор библиотеки",
+    },
   },
   userItem: {
     invalidDate: "Некорректная дата",
@@ -57,9 +76,12 @@ const DICTIONARY = {
     emptyUpdate: "Укажите хотя бы одно поле для изменения",
     invalidDates: "Дата завершения не может предшествовать дате начала",
   },
+  fact: {
+    notFound: "Факт не найден",
+  },
   collection: {
     queryBodyRequired: "Тело запроса подборок должно быть JSON-объектом",
-    invalidPagination: "Слишком большое смещение страницы",
+    invalidItemsCursor: "Недействительный курсор состава подборки",
     invalidRatingRange: "Минимальная оценка не может превышать максимальную",
     unavailableMode: "Режим grouped недоступен для этой подборки",
     unavailableSort:
@@ -94,6 +116,10 @@ const DICTIONARY = {
     tagCollectionGroupMissing: (id: string) => {
       return `Tag collection has no group: ${id}`
     },
+  },
+  tagItem: {
+    partialWritePublishFailed:
+      "Не удалось уведомить об изменениях после частичной записи тегов произведений",
   },
   tag: {
     invalidCursor: "Недействительный курсор тегов",

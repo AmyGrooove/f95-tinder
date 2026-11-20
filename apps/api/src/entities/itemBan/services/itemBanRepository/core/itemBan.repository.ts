@@ -2,33 +2,22 @@ import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
 import { ItemBan } from "../../../schemas/itemBan.schema"
 import type { TCreateItemBan } from "../../../schemas/itemBan.schema"
 
 @Injectable()
 class ItemBanRepository {
-  readonly read: MongoReadRepository<ItemBan, HydratedDocument<ItemBan>>
-  readonly write: MongoWriteRepository<
-    ItemBan,
-    HydratedDocument<ItemBan>,
-    TCreateItemBan
-  >
-  readonly pagination: MongoPaginationRepository<
-    ItemBan,
-    HydratedDocument<ItemBan>
-  >
-  readonly bulk: MongoBulkRepository<
-    ItemBan,
-    HydratedDocument<ItemBan>,
-    TCreateItemBan
-  >
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<ItemBan>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(ItemBan.name) model: Model<HydratedDocument<ItemBan>>,

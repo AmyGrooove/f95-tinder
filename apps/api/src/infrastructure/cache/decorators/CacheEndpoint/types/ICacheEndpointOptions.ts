@@ -1,5 +1,5 @@
 interface ICacheEndpointOptions {
-  ttlMs?: number
+  ttl?: number
 }
 
 export type { ICacheEndpointOptions }

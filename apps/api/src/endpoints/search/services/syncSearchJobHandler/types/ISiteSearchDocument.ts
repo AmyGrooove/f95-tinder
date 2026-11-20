@@ -19,6 +19,7 @@ interface IItemSearchDocument {
   hasRating: number
   releaseDate: number | null
   hasReleaseDate: number
+  latestReleaseDate: number | null
   sortTitle: Record<ELanguage, string>
 }
 

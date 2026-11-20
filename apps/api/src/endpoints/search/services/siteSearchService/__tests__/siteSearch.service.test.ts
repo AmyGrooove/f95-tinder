@@ -14,26 +14,28 @@ import {
 import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 
+import { AuthService } from "@endpoints/auth/services/authService"
+import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
+import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
+import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import type { Collection } from "@entities/collection/schemas/collection.schema"
 import type { User } from "@entities/user/schemas/user.schema"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
+import { ESort } from "@entities/shared/types/ESort"
+import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
-import { SearchService } from "@infrastructure/search/services/searchService"
-import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
-
-import { SearchBodyDto } from "../dto/search.body"
-import { ESearchCollectionSort } from "../types/ESearchCollectionSort"
-import { ESearchGroup } from "../types/ESearchGroup"
-import { ESearchItemSort } from "../types/ESearchItemSort"
-import { ESearchUserSort } from "../types/ESearchUserSort"
-import { SiteSearchService } from "../core/siteSearch.service"
-import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
+import { SearchService } from "@infrastructure/search/services/searchService"
+
+import { SiteSearchService } from "../core/siteSearch.service"
+import { SearchBodyDto } from "../dto/search.body"
+import { ESearchGroup } from "../types/ESearchGroup"
 
 describe("SiteSearchService", () => {
   const cache = { get: jest.fn<CacheService["get"]>() }
@@ -48,6 +50,9 @@ describe("SiteSearchService", () => {
   }
   const items = {
     readPosterCardsByIds: jest.fn<ItemRepository["readPosterCardsByIds"]>(),
+  }
+  const itemStats = {
+    read: { findMany: jest.fn<ItemStatsRepository["read"]["findMany"]>() },
   }
   const users = {
     read: {
@@ -87,6 +92,10 @@ describe("SiteSearchService", () => {
         { provide: ItemRepository, useValue: items },
         { provide: UserRepository, useValue: users },
         { provide: CollectionRepository, useValue: collections },
+        { provide: AuthService, useValue: {} },
+        { provide: UserItemRepository, useValue: {} },
+        { provide: UserCollectionRepository, useValue: {} },
+        { provide: ItemStatsRepository, useValue: itemStats },
       ],
     }).compile()
     service = module.get(SiteSearchService)
@@ -100,6 +109,7 @@ describe("SiteSearchService", () => {
       processingTimeMs: 0,
     }))
     items.readPosterCardsByIds.mockResolvedValue([])
+    itemStats.read.findMany.mockResolvedValue([])
     users.read.findMany.mockResolvedValue([])
     collections.read.findMany.mockResolvedValue([])
   })
@@ -112,10 +122,11 @@ describe("SiteSearchService", () => {
         search: "orbit",
         limit: 10,
         items: {
-          sort: { type: ESearchItemSort.TITLE, language: ELanguage.ENGLISH },
+          sort: ESort.TITLE,
+          language: ELanguage.ENGLISH,
         },
-        users: { sort: { type: ESearchUserSort.DISPLAY_NAME } },
-        collections: { sort: { type: ESearchCollectionSort.UPDATED_AT } },
+        users: { sort: ESort.DISPLAY_NAME },
+        collections: { sort: ESort.UPDATED_AT },
       }),
     )
     expect(search.search).toHaveBeenCalledWith(
@@ -197,6 +208,9 @@ describe("SiteSearchService", () => {
         type: "movie",
         title: { ru: "Актуальное название", en: null },
         media: [],
+        rating: null,
+        userRating: null,
+        userStatus: null,
       })),
       users: [first, last].map((id) => ({
         id: String(id),
@@ -244,10 +258,8 @@ describe("SiteSearchService", () => {
         search: "orbit",
         limit: 10,
         items: {
-          sort: {
-            type: ESearchItemSort.RELEVANCE,
-            direction: ESearchSortDirection.ASC,
-          },
+          sort: ESort.RELEVANCE,
+          direction: ESortDirection.ASC,
         },
       }),
     )
@@ -294,12 +306,10 @@ describe("SiteSearchService", () => {
     const body = Object.assign(new SearchBodyDto(), {
       search: "orbit",
       limit: 10,
-      types: { anyOf: [ESearchGroup.ITEMS] },
+      entities: { anyOf: [ESearchGroup.ITEMS] },
       items: {
-        sort: {
-          type: ESearchItemSort.RELEVANCE,
-          direction: ESearchSortDirection.ASC,
-        },
+        sort: ESort.RELEVANCE,
+        direction: ESortDirection.ASC,
       },
     })
 
@@ -338,10 +348,8 @@ describe("SiteSearchService", () => {
           Object.assign(new SearchBodyDto(), {
             search: "orbit",
             users: {
-              sort: {
-                type: ESearchUserSort.RELEVANCE,
-                direction: ESearchSortDirection.ASC,
-              },
+              sort: ESort.RELEVANCE,
+              direction: ESortDirection.ASC,
             },
           }),
         ),
@@ -365,17 +373,16 @@ describe("SiteSearchService", () => {
       forbidNonWhitelisted: true,
     })
     const metadata = { type: "body", metatype: SearchBodyDto } as const
-    const author = "507f1f77bcf86cd799439014"
     const requiredTag = "507f1f77bcf86cd799439011"
     const body: SearchBodyDto = await pipe.transform(
       {
         search: "  orbit  ",
-        types: { allOf: ["items"], anyOf: ["collections"] },
+        entities: { allOf: ["items"], anyOf: ["collections"] },
         items: {
           tags: { allOf: [requiredTag], anyOf: ["507f1f77bcf86cd799439012"] },
           rating: { min: 7 },
         },
-        collections: { authorIds: { noneOf: [author] } },
+        collections: { collectionTypes: { noneOf: [ECollectionType.TAG] } },
       },
       metadata,
     )
@@ -404,7 +411,7 @@ describe("SiteSearchService", () => {
       SEARCH_SETTINGS.indexes.collections,
       "orbit",
       expect.objectContaining({
-        filter: ['authorId NOT IN ["507f1f77bcf86cd799439014"]'],
+        filter: ['type NOT IN ["tag"]'],
       }),
     )
 
@@ -412,7 +419,7 @@ describe("SiteSearchService", () => {
       { search: "orbit", page: 1 },
       { search: "orbit", items: { fields: [] } },
       { search: "orbit", items: { tags: { anyOf: [] } } },
-      { search: "orbit", users: { sort: { type: "username" } } },
+      { search: "orbit", users: { sort: "username" } },
       { search: "orbit", cursor: null },
     ]) {
       await expect(pipe.transform(invalid, metadata)).rejects.toBeInstanceOf(
@@ -433,7 +440,7 @@ describe("SiteSearchService", () => {
       service.search({
         search: "orbit",
         limit: 20,
-        types: {
+        entities: {
           noneOf: [
             ESearchGroup.ITEMS,
             ESearchGroup.COLLECTIONS,
@@ -446,9 +453,11 @@ describe("SiteSearchService", () => {
       service.search({
         search: "orbit",
         limit: 20,
-        types: { anyOf: [ESearchGroup.COLLECTIONS] },
+        entities: { anyOf: [ESearchGroup.COLLECTIONS] },
         collections: {
-          types: { allOf: [ECollectionType.CUSTOM, ECollectionType.TAG] },
+          collectionTypes: {
+            allOf: [ECollectionType.CUSTOM, ECollectionType.TAG],
+          },
         },
       }),
     ).resolves.toEqual(emptyResult)
@@ -479,7 +488,7 @@ describe("SiteSearchService", () => {
     const body = Object.assign(new SearchBodyDto(), {
       search: "orbit",
       limit: 10,
-      types: {
+      entities: {
         allOf: [ESearchGroup.ITEMS],
         anyOf: [ESearchGroup.USERS],
         noneOf: [ESearchGroup.COLLECTIONS],
@@ -507,14 +516,14 @@ describe("SiteSearchService", () => {
     await expect(
       service.search({
         ...body,
-        items: { sort: { type: ESearchItemSort.RATING } },
+        items: { sort: ESort.RATING },
         cursor,
       }),
     ).rejects.toBeInstanceOf(BadRequestException)
     await expect(
       service.search({
         ...body,
-        types: { anyOf: [ESearchGroup.USERS] },
+        entities: { anyOf: [ESearchGroup.USERS] },
         cursor,
       }),
     ).rejects.toBeInstanceOf(BadRequestException)
@@ -549,7 +558,7 @@ describe("SiteSearchService", () => {
     }))
     const body = Object.assign(new SearchBodyDto(), {
       search: "orbit",
-      types: { anyOf: [ESearchGroup.ITEMS] },
+      entities: { anyOf: [ESearchGroup.ITEMS] },
       limit: 50,
     })
     let cursor: string | null = null

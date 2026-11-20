@@ -10,9 +10,11 @@ import { UserModule } from "@entities/user/user.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
 
+import { RecommendationsController } from "./controllers/recommendationsController"
 import { FallbackRecommendationsService } from "./services/fallbackRecommendationsService"
 import { RecommendationCandidatesService } from "./services/recommendationCandidatesService"
 import { RecommendationFeedService } from "./services/recommendationFeedService"
+import { RecommendationsHttpService } from "./services/recommendationsHttpService"
 import { RecommendationsService } from "./services/recommendationsService"
 
 @Module({
@@ -27,11 +29,13 @@ import { RecommendationsService } from "./services/recommendationsService"
     ItemRelationModule,
     RelationModule,
   ],
+  controllers: [RecommendationsController],
   providers: [
     RecommendationCandidatesService,
     FallbackRecommendationsService,
     RecommendationsService,
     RecommendationFeedService,
+    RecommendationsHttpService,
   ],
   exports: [RecommendationsService, RecommendationFeedService],
 })

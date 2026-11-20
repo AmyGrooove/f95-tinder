@@ -4,17 +4,18 @@ import type { Model } from "mongoose"
 
 import { ESiteStatsKey } from "../../../schemas/ESiteStatsKey"
 import { SiteRatingsStats } from "../../../schemas/siteRatingsStats.schema"
+import { createSiteRatingsStatsUpdatePipeline } from "../functions/aggregationPipelines/createSiteRatingsStatsUpdatePipeline"
 import type { IUpdateSiteRatingsStatsProps } from "../types/IUpdateSiteRatingsStatsProps"
 
 @Injectable()
 class SiteRatingsStatsRepository {
   constructor(
     @InjectModel(SiteRatingsStats.name)
-    private readonly ratingsModel: Model<SiteRatingsStats>,
+    private readonly model: Model<SiteRatingsStats>,
   ) {}
 
   async readAverage() {
-    const metric = await this.ratingsModel
+    const metric = await this.model
       .findOne({ key: ESiteStatsKey.RATINGS }, { average: 1 })
       .lean()
       .exec()
@@ -25,29 +26,10 @@ class SiteRatingsStatsRepository {
   async applyChanges(props: IUpdateSiteRatingsStatsProps) {
     const { sum, count, session } = props
 
-    const metric = await this.ratingsModel
+    const metric = await this.model
       .findOneAndUpdate(
         { key: ESiteStatsKey.RATINGS },
-        [
-          {
-            $set: {
-              createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
-              sum: { $add: [{ $ifNull: ["$sum", 0] }, sum] },
-              count: { $add: [{ $ifNull: ["$count", 0] }, count] },
-            },
-          },
-          {
-            $set: {
-              average: {
-                $cond: [
-                  { $gt: ["$count", 0] },
-                  { $divide: ["$sum", "$count"] },
-                  null,
-                ],
-              },
-            },
-          },
-        ],
+        createSiteRatingsStatsUpdatePipeline(sum, count),
         {
           session,
           upsert: true,

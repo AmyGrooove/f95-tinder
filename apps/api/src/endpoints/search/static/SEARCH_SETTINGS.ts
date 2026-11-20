@@ -4,8 +4,9 @@ const SEARCH_SETTINGS = {
     users: "site_users",
     collections: "site_collections",
   },
-  checkpointKey: "siteSearch:checkpoint:v3",
+  checkpointKey: "siteSearch:checkpoint:v4",
   batchSize: 500,
+  candidatePageSize: 200,
   maxTotalHits: 10_000,
 } as const
 

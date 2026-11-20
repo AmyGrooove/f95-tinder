@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common"
+import { ConsoleLogger, Injectable } from "@nestjs/common"
 import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isString } from "@shared/functions/checks/isString"
@@ -13,6 +13,8 @@ import { DICTIONARY } from "@shared/static/DICTIONARY"
 
 @Injectable()
 class LoggerService {
+  private readonly consoleLogger = new ConsoleLogger({ structuredParams: true })
+
   constructor(
     private readonly infrastructureConfigService: InfrastructureConfigService,
   ) {}
@@ -44,13 +46,7 @@ class LoggerService {
       ...additionalContext
     } = currentRequest ?? {}
 
-    const record: ILogRecord = {
-      _timestamp: new Date().toISOString(),
-      level,
-      service: this.infrastructureConfigService.app.name,
-      environment: this.infrastructureConfigService.app.environment ?? "",
-      message,
-      context,
+    const details = {
       requestId: currentRequestId ?? requestId,
       method: isString(method) ? method : undefined,
       path: isString(path) ? path : undefined,
@@ -66,6 +62,35 @@ class LoggerService {
     let output: string
 
     try {
+      const { name, environment } = this.infrastructureConfigService.app
+
+      if (environment === "development") {
+        const consoleLevel = level === "info" ? "log" : level
+        const params = Object.entries(details).filter(
+          ([, value]) => value !== undefined,
+        )
+        const consoleParams =
+          params.length > 0 ? [redactLogValue(Object.fromEntries(params))] : []
+
+        this.consoleLogger[consoleLevel](
+          message,
+          ...consoleParams,
+          context ?? LoggerService.name,
+        )
+
+        return
+      }
+
+      const record: ILogRecord = {
+        _timestamp: new Date().toISOString(),
+        level,
+        service: name,
+        environment: environment ?? "",
+        message,
+        context,
+        ...details,
+      }
+
       output = JSON.stringify(redactLogValue(record))
     } catch {
       process.stderr.write(DICTIONARY.logger.serializationFailedRecord)

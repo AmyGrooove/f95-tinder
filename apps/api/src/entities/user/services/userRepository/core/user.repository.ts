@@ -9,11 +9,11 @@ import type {
   QueryOptions,
 } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
 import { User } from "../../../schemas/user.schema"
 import type { TCreateUser } from "../../../schemas/user.schema"
@@ -24,15 +24,11 @@ import type { IReplacePasswordProps } from "../types/IReplacePasswordProps"
 
 @Injectable()
 class UserRepository {
-  readonly read: MongoReadRepository<User, HydratedDocument<User>>
-  readonly write: MongoWriteRepository<
-    User,
-    HydratedDocument<User>,
-    TCreateUser
-  >
-  readonly pagination: MongoPaginationRepository<User, HydratedDocument<User>>
-  readonly bulk: MongoBulkRepository<User, HydratedDocument<User>, TCreateUser>
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<User>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(@InjectModel(User.name) model: Model<HydratedDocument<User>>) {
     this.read = new MongoReadRepository<User, HydratedDocument<User>>(model)
@@ -63,6 +59,28 @@ class UserRepository {
       },
       { _id: 1, role: 1 },
     )
+  }
+
+  async createNew(options?: CreateOptions) {
+    const accessCode = randomBytes(24).toString("base64url")
+    const accessCodeHash = createHash("sha256").update(accessCode).digest("hex")
+
+    const adjective = USERNAME_ADJECTIVES[randomInt(USERNAME_ADJECTIVES.length)]
+    const noun = USERNAME_NOUNS[randomInt(USERNAME_NOUNS.length)]
+    const digits = randomInt(1000).toString().padStart(3, "0")
+    const displayName = `${adjective}${noun.charAt(0).toUpperCase()}${noun.slice(1)}${digits}`
+    const username = displayName.toLowerCase()
+
+    const user = await this.write.create(
+      {
+        username,
+        displayName,
+        accessCodeHash,
+      },
+      options,
+    )
+
+    return { user, accessCode }
   }
 
   async reissueAccessCode(
@@ -106,28 +124,6 @@ class UserRepository {
       { $set: { passwordHash } },
       { ...options, projection: { _id: 1 } },
     )
-  }
-
-  async createNew(options?: CreateOptions) {
-    const accessCode = randomBytes(24).toString("base64url")
-    const accessCodeHash = createHash("sha256").update(accessCode).digest("hex")
-
-    const adjective = USERNAME_ADJECTIVES[randomInt(USERNAME_ADJECTIVES.length)]
-    const noun = USERNAME_NOUNS[randomInt(USERNAME_NOUNS.length)]
-    const digits = randomInt(1000).toString().padStart(3, "0")
-    const displayName = `${adjective}${noun.charAt(0).toUpperCase()}${noun.slice(1)}${digits}`
-    const username = displayName.toLowerCase()
-
-    const user = await this.write.create(
-      {
-        username,
-        displayName,
-        accessCodeHash,
-      },
-      options,
-    )
-
-    return { user, accessCode }
   }
 }
 

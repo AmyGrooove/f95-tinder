@@ -1,46 +1,32 @@
 import { Injectable } from "@nestjs/common"
+import type { OnModuleInit } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import { mongo, Types } from "mongoose"
 import type { HydratedDocument, Model, QueryOptions } from "mongoose"
 
-import { ItemCollection } from "@entities/itemCollection/schemas/itemCollection.schema"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
-
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
-import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import { Collection } from "../../../schemas/collection.schema"
 import type { TCreateCollection } from "../../../schemas/collection.schema"
-import type { IUpdateCollectionProps } from "../types/IUpdateCollectionProps"
-import type { IQueryCollectionsProps } from "../types/IQueryCollectionsProps"
-import type { ICollectionSummariesPage } from "../types/ICollectionSummariesPage"
-import { ECollectionType } from "../../../schemas/ECollectionType"
 import { ECollectionBlockType } from "../../../schemas/ECollectionBlockType"
+import { ECollectionType } from "../../../schemas/ECollectionType"
+import { createAvailableCollectionMembershipLookup } from "../functions/aggregationPipelines/createAvailableCollectionMembershipLookup"
+import type { IUpdateCollectionProps } from "../types/IUpdateCollectionProps"
 
 @Injectable()
-class CollectionRepository {
-  readonly read: MongoReadRepository<Collection, HydratedDocument<Collection>>
-  readonly write: MongoWriteRepository<
-    Collection,
-    HydratedDocument<Collection>,
-    TCreateCollection
-  >
-  readonly pagination: MongoPaginationRepository<
-    Collection,
-    HydratedDocument<Collection>
-  >
-  readonly bulk: MongoBulkRepository<
-    Collection,
-    HydratedDocument<Collection>,
-    TCreateCollection
-  >
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<Collection>>
+class CollectionRepository implements OnModuleInit {
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(Collection.name)
@@ -69,12 +55,63 @@ class CollectionRepository {
     >(model)
   }
 
-  async initialize() {
+  async onModuleInit() {
     await this.model.init()
+  }
+
+  findNotDeletedById(
+    id: Types.ObjectId,
+    options?: Pick<QueryOptions<Collection>, "session">,
+  ) {
+    return this.read.findOne(
+      { _id: id, deletedAt: null },
+      {
+        _id: 1,
+        version: 1,
+        title: 1,
+        description: 1,
+        media: 1,
+        author: 1,
+        type: 1,
+        blocks: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      options,
+    )
+  }
+
+  findNotDeletedAuthorById(id: Types.ObjectId) {
+    return this.read.findOne(
+      { _id: id, deletedAt: null },
+      { _id: 1, author: 1 },
+    )
+  }
+
+  checkIsNotDeleted(id: Types.ObjectId) {
+    return this.read.checkIsExists({ _id: id, deletedAt: null })
+  }
+
+  sampleAvailableSiteCollectionIds(limit: number) {
+    return this.aggregation.aggregate<Pick<Collection, "_id">>(
+      new AggregationBuilder()
+        .match({
+          author: null,
+          deletedAt: null,
+          type: { $in: [ECollectionType.TAG, ECollectionType.FEATURE] },
+        })
+        .project({ _id: 1, blocks: 1 })
+        .use(createAvailableCollectionMembershipLookup())
+        .match({ "availableMembership.0": { $exists: true } })
+        .project({ _id: 1 })
+        .use({ $sample: { size: limit } })
+        .build(),
+    )
   }
 
   async ensureForTag(tag: Types.ObjectId, title: LanguageText) {
     const filter = { tag, type: ECollectionType.TAG, author: null }
+    const now = new Date()
 
     try {
       return await this.write.updateByFilter(
@@ -83,12 +120,14 @@ class CollectionRepository {
           $setOnInsert: {
             ...filter,
             title,
+            createdAt: now,
+            updatedAt: now,
             blocks: [
               { id: new Types.ObjectId(), type: ECollectionBlockType.GROUP },
             ],
           },
         },
-        { upsert: true },
+        { upsert: true, timestamps: false },
       )
     } catch (error) {
       if (
@@ -105,78 +144,6 @@ class CollectionRepository {
 
       throw error
     }
-  }
-
-  async querySummaries(
-    props: IQueryCollectionsProps,
-  ): Promise<ICollectionSummariesPage> {
-    const { type, itemIds, page, limit } = props
-
-    const builder = new AggregationBuilder().match({
-      deletedAt: null,
-      ...(isUndefined(type) ? {} : { type }),
-      ...(type === ECollectionType.FRANCHISE ? { author: null } : {}),
-    })
-
-    if (!isUndefined(itemIds)) {
-      builder
-        .use({
-          $lookup: {
-            from: ItemCollection.name,
-            let: { collectionId: "$_id" },
-            pipeline: [
-              {
-                $match: {
-                  item: { $in: itemIds },
-                  $expr: { $eq: ["$collectionId", "$$collectionId"] },
-                },
-              },
-              { $limit: 1 },
-              { $project: { _id: 1 } },
-            ],
-            as: "matchingItems",
-          },
-        })
-        .match({ "matchingItems.0": { $exists: true } })
-    }
-
-    builder.use({
-      $facet: {
-        items: [
-          { $sort: { createdAt: -1, _id: -1 } },
-          { $skip: (page - 1) * limit },
-          { $limit: limit },
-          { $project: { _id: 1, type: 1, author: 1, title: 1, media: 1 } },
-        ],
-        count: [{ $count: "total" }],
-      },
-    })
-
-    const [result] = await this.aggregation.aggregate<{
-      items: ICollectionSummariesPage["items"]
-      count: { total: number }[]
-    }>(builder.build())
-
-    return { items: result?.items ?? [], total: result?.count[0]?.total ?? 0 }
-  }
-
-  checkIsNotDeleted(id: Types.ObjectId) {
-    return this.read.checkIsExists({ _id: id, deletedAt: null })
-  }
-
-  findNotDeletedAuthorById(id: Types.ObjectId) {
-    return this.read.findOne(
-      { _id: id, deletedAt: null },
-      { _id: 1, author: 1 },
-    )
-  }
-
-  softDeleteByAuthor(id: Types.ObjectId, authorId: Types.ObjectId) {
-    return this.write.updateByFilter(
-      { _id: id, author: authorId, deletedAt: null },
-      { $set: { deletedAt: new Date() } },
-      { projection: { _id: 1 } },
-    )
   }
 
   updateVersioned(
@@ -199,25 +166,11 @@ class CollectionRepository {
     )
   }
 
-  findNotDeletedById(
-    id: Types.ObjectId,
-    options?: Pick<QueryOptions<Collection>, "session">,
-  ) {
-    return this.read.findOne(
-      { _id: id, deletedAt: null },
-      {
-        _id: 1,
-        version: 1,
-        title: 1,
-        description: 1,
-        media: 1,
-        author: 1,
-        type: 1,
-        blocks: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      },
-      options,
+  softDeleteByAuthor(id: Types.ObjectId, authorId: Types.ObjectId) {
+    return this.write.updateByFilter(
+      { _id: id, author: authorId, deletedAt: null },
+      { $set: { deletedAt: new Date() } },
+      { projection: { _id: 1 } },
     )
   }
 }

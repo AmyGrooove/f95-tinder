@@ -1,12 +1,13 @@
 import {
   Body,
   Controller,
+  Cookies,
   Header,
   HttpCode,
   QueryMethod,
   UseInterceptors,
 } from "@nestjs/common"
-import { ApiTags } from "@nestjs/swagger"
+import { ApiOperation, ApiTags } from "@nestjs/swagger"
 
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
@@ -39,13 +40,18 @@ class SearchController {
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
+      { status: 401, description: SWAGGER_DICTIONARY.search.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
       { status: 503, description: SWAGGER_DICTIONARY.search.unavailable },
     ],
   })
-  search(@Body() body: SearchBodyDto) {
-    return this.siteSearchService.search(body)
+  @ApiOperation({ security: [{}, { accessCookie: [] }] })
+  search(
+    @Body() body: SearchBodyDto,
+    @Cookies("__Host-accessToken") accessToken: unknown,
+  ) {
+    return this.siteSearchService.search(body, accessToken)
   }
 }
 

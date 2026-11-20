@@ -2,7 +2,7 @@
 
 Справочник моделей хранения в `apps/api/src/entities`. Пользовательские операции описаны в [обзоре API](readme.md), целевые требования — в [основах проекта](../product/foundations/readme.md).
 
-Основные сущности имеют собственную MongoDB-коллекцию, схему, модуль и репозиторий. Общий плагин `DatabaseModule` включает временные метки по умолчанию. В [`AppModule`](../../../src/app/app.module.ts) напрямую подключены 16 модулей сущностей. [HomeFeed](../../../src/entities/homeFeed/schemas/homeFeed.schema.ts) подключён через модуль главной и хранит упорядоченный массив пар `type` и `id` под уникальной датой начала дня ленты. [Поток чтения и подготовки](requestFlows/catalog.md#home-feed).
+Основные сущности имеют собственную MongoDB-коллекцию, схему, модуль и репозиторий. Общий плагин `DatabaseModule` включает временные метки по умолчанию. В [`AppModule`](../../../src/app/app.module.ts) напрямую подключены 16 модулей сущностей.
 
 [`RecommendationModel`](../../../src/entities/recommendationModel/schemas/RecommendationModel.schema.ts) подключается через `RecommendationsModule`. Документ в `RecommendationModel` хранит версию формата, `trainedAt`, стандартные даты `createdAt` и `updatedAt`, источник обучения, строковые ID произведений и бинарные массивы ItemCF, ALS и популярности. Trainer записывает целую модель, API выбирает последнюю обученную версию по `trainedAt`.
 

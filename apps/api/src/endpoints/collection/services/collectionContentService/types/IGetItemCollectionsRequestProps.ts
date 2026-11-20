@@ -5,6 +5,8 @@ import type { ItemCollectionsBodyDto } from "../dto/itemCollections.body"
 interface IGetItemCollectionsRequestProps {
   id: Types.ObjectId
   query: ItemCollectionsBodyDto
+
+  accessToken?: unknown
 }
 
 export type { IGetItemCollectionsRequestProps }

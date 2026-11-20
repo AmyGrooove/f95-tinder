@@ -9,7 +9,7 @@ const CacheEndpoint = (
 ): MethodDecorator => {
   return applyDecorators(
     UseInterceptors(CacheInterceptor),
-    CacheTTL(options.ttlMs ?? DEFAULT_CACHE_ENDPOINT_TTL_MS),
+    CacheTTL(options.ttl ?? DEFAULT_CACHE_ENDPOINT_TTL_MS),
   )
 }
 

@@ -1,5 +1,5 @@
 export { ItemRepository } from "./core/item.repository"
 export { resolveRecommendationLibraryStatuses } from "./functions/resolveRecommendationLibraryStatuses"
-export type { IItemDetails } from "./types/IItemDetails"
 export type { IItemPosterCard } from "./types/IItemPosterCard"
+export type { IReadEligibleRecommendationItemsProps } from "./types/IRecommendationEligibilityProps"
 export type { IItemSearchIndexEntry } from "./types/IItemSearchIndexEntry"

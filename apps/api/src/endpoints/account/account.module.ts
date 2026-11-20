@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common"
 import { RedisModule } from "@nestjs-redis/client"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
+import { UserItemModule } from "@entities/userItem/userItem.module"
 import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserModule } from "@entities/user/user.module"
 import { SecurityModule } from "@infrastructure/security/security.module"
@@ -22,6 +23,7 @@ import { AccountEmailService } from "@endpoints/account/services/accountEmailSer
 @Module({
   imports: [
     AuthModule,
+    UserItemModule,
     UserModule,
     UserSessionModule,
     SecurityModule,

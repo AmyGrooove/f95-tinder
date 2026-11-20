@@ -4,6 +4,7 @@ import { mongo, Types } from "mongoose"
 
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import type { AuthService } from "@endpoints/auth/services/authService"
+import type { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import type { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
 import type { UserRepository } from "@entities/user/services/userRepository"
 
@@ -35,6 +36,7 @@ describe("AccountService", () => {
       {} as UserSessionRepository,
       auth as unknown as AuthService,
       {} as MongoTransactionService,
+      {} as UserItemRepository,
     )
     return { users, auth, service }
   }

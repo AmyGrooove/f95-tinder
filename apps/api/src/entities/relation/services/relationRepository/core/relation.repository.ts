@@ -2,33 +2,22 @@ import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import type { HydratedDocument, Model } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
 import { Relation } from "../../../schemas/relation.schema"
 import type { TCreateRelation } from "../../../schemas/relation.schema"
 
 @Injectable()
 class RelationRepository {
-  readonly read: MongoReadRepository<Relation, HydratedDocument<Relation>>
-  readonly write: MongoWriteRepository<
-    Relation,
-    HydratedDocument<Relation>,
-    TCreateRelation
-  >
-  readonly pagination: MongoPaginationRepository<
-    Relation,
-    HydratedDocument<Relation>
-  >
-  readonly bulk: MongoBulkRepository<
-    Relation,
-    HydratedDocument<Relation>,
-    TCreateRelation
-  >
-  readonly aggregation: MongoAggregationRepository<HydratedDocument<Relation>>
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(Relation.name)

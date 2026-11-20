@@ -3,11 +3,11 @@ import { InjectModel } from "@nestjs/mongoose"
 import { mongo } from "mongoose"
 import type { HydratedDocument, Model, Types } from "mongoose"
 
+import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
+import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
+import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
 import { MongoReadRepository } from "@infrastructure/database/services/mongoReadRepository"
 import { MongoWriteRepository } from "@infrastructure/database/services/mongoWriteRepository"
-import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
-import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
-import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 
 import { UserCollection } from "../../../schemas/userCollection.schema"
 import type { TCreateUserCollection } from "../../../schemas/userCollection.schema"
@@ -15,27 +15,11 @@ import type { IUpsertUserCollectionReactionProps } from "../types/IUpsertUserCol
 
 @Injectable()
 class UserCollectionRepository {
-  readonly read: MongoReadRepository<
-    UserCollection,
-    HydratedDocument<UserCollection>
-  >
-  readonly write: MongoWriteRepository<
-    UserCollection,
-    HydratedDocument<UserCollection>,
-    TCreateUserCollection
-  >
-  readonly pagination: MongoPaginationRepository<
-    UserCollection,
-    HydratedDocument<UserCollection>
-  >
-  readonly bulk: MongoBulkRepository<
-    UserCollection,
-    HydratedDocument<UserCollection>,
-    TCreateUserCollection
-  >
-  readonly aggregation: MongoAggregationRepository<
-    HydratedDocument<UserCollection>
-  >
+  readonly read
+  readonly write
+  readonly pagination
+  readonly bulk
+  readonly aggregation
 
   constructor(
     @InjectModel(UserCollection.name)
@@ -64,6 +48,16 @@ class UserCollectionRepository {
     >(model)
   }
 
+  findByUserAndCollection(
+    userId: Types.ObjectId,
+    collectionId: Types.ObjectId,
+  ) {
+    return this.read.findOne(
+      { user: userId, collectionId },
+      { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 },
+    )
+  }
+
   async upsertReaction(props: IUpsertUserCollectionReactionProps) {
     const { userId, collectionId, reaction } = props
 
@@ -89,16 +83,6 @@ class UserCollectionRepository {
 
       throw error
     }
-  }
-
-  findByUserAndCollection(
-    userId: Types.ObjectId,
-    collectionId: Types.ObjectId,
-  ) {
-    return this.read.findOne(
-      { user: userId, collectionId },
-      { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 },
-    )
   }
 }
 

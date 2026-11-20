@@ -33,7 +33,7 @@ describe("TagSearchService", () => {
 
     await expect(
       service.search({
-        group: { allOf: [null, ETagGroup.GENRE] },
+        groups: { allOf: [null, ETagGroup.GENRE] },
         limit: 10,
       }),
     ).resolves.toEqual({ items: [], nextCursor: null })

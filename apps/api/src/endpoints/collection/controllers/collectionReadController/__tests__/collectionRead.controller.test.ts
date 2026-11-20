@@ -28,10 +28,13 @@ describe("CollectionReadController", () => {
     const { controller, getItems } = await createController()
     const id = new Types.ObjectId()
     const query = { cursor: "YWJj", limit: 10 as const }
-    const result = { nextCursor: null, blocks: [] }
+    const result = { nextCursor: null, blocks: [], isHidden: false }
+    const accessToken = "access-token"
     getItems.mockResolvedValue(result)
-    await expect(controller.getItems(id, query)).resolves.toEqual(result)
-    expect(getItems).toHaveBeenCalledWith({ id, query })
+    await expect(controller.getItems(id, query, accessToken)).resolves.toEqual(
+      result,
+    )
+    expect(getItems).toHaveBeenCalledWith({ id, query, accessToken })
   })
 
   it("сохраняет 404 чтения метаданных и 400 неверного курсора", async () => {

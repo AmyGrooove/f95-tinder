@@ -110,9 +110,14 @@ describe("TagController", () => {
         },
       },
     })
-    expect(document.components?.schemas?.TagGroupBodyDto).toMatchObject({
+    expect(document.components?.schemas?.TagsBodyDto).toMatchObject({
       properties: {
-        allOf: { type: "array", items: { type: ["string", "null"] } },
+        groups: {
+          type: "object",
+          properties: {
+            allOf: { type: "array", items: { type: ["string", "null"] } },
+          },
+        },
       },
     })
   })
@@ -140,7 +145,7 @@ describe("TagController", () => {
   it("передаёт очищенный текст и фильтры в индекс и возвращает nullable поля", async () => {
     const response = await query({
       search: "  примре  ",
-      group: { allOf: [null], anyOf: ["genre", null], noneOf: ["style"] },
+      groups: { allOf: [null], anyOf: ["genre", null], noneOf: ["style"] },
       limit: 10,
     })
 
@@ -162,7 +167,7 @@ describe("TagController", () => {
   })
 
   it("возвращает пустую выдачу для нескольких обязательных групп", async () => {
-    const response = await query({ group: { allOf: ["genre", null] } })
+    const response = await query({ groups: { allOf: ["genre", null] } })
 
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({ items: [], nextCursor: null })
@@ -172,7 +177,7 @@ describe("TagController", () => {
   it("привязывает курсор к запросу и допускает перестановку значений фильтра", async () => {
     const first = await query({
       search: "example",
-      group: { anyOf: ["genre", null] },
+      groups: { anyOf: ["genre", null] },
     })
     const { nextCursor } = first.json<{ nextCursor: string }>()
     expect(typeof nextCursor).toBe("string")
@@ -181,7 +186,7 @@ describe("TagController", () => {
       (
         await query({
           search: "example",
-          group: { anyOf: [null, "genre"] },
+          groups: { anyOf: [null, "genre"] },
           limit: 50,
           cursor: nextCursor,
         })
@@ -191,13 +196,13 @@ describe("TagController", () => {
     for (const changes of [
       { search: "other" },
       { limit: 10 },
-      { group: { anyOf: [null] } },
+      { groups: { anyOf: [null] } },
     ]) {
       expect(
         (
           await query({
             search: "example",
-            group: { anyOf: ["genre", null] },
+            groups: { anyOf: ["genre", null] },
             cursor: nextCursor,
             ...changes,
           })
@@ -210,11 +215,12 @@ describe("TagController", () => {
     { search: " " },
     { limit: "50" },
     { limit: 100 },
-    { group: null },
-    { group: { anyOf: [] } },
-    { group: { allOf: ["genre", "genre"] } },
-    { group: { noneOf: ["unknown"] } },
-    { group: { unknown: ["genre"] } },
+    { groups: null },
+    { groups: { anyOf: [] } },
+    { groups: { allOf: ["genre", "genre"] } },
+    { groups: { noneOf: ["unknown"] } },
+    { groups: { unknown: ["genre"] } },
+    { group: { anyOf: ["genre"] } },
     { q: "legacy" },
   ])("отклоняет некорректное тело %j", async (body) => {
     expect((await query(body)).statusCode).toBe(400)

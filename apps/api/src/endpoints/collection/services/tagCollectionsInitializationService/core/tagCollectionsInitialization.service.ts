@@ -19,9 +19,6 @@ class TagCollectionsInitializationService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.tags.initialize()
-    await this.collections.initialize()
-
     const definitions = new Map(
       tagDictionary.flatMap((props) => {
         const { group, tags } = props

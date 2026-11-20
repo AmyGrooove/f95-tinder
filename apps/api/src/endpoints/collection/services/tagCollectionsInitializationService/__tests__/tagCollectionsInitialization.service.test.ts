@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals"
+import { getModelToken } from "@nestjs/mongoose"
+import { Test } from "@nestjs/testing"
 import { Mongoose, mongo } from "mongoose"
 import type { HydratedDocument, Types } from "mongoose"
 
-import { TagSchema } from "@entities/tag/schemas/tag.schema"
-import type { Tag, TCreateTag } from "@entities/tag/schemas/tag.schema"
-import type { TagRepository } from "@entities/tag/services/tagRepository"
-import type { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import { Tag, TagSchema } from "@entities/tag/schemas/tag.schema"
+import type { TCreateTag } from "@entities/tag/schemas/tag.schema"
+import { TagModule } from "@entities/tag/tag.module"
+import { TagRepository } from "@entities/tag/services/tagRepository"
+import { CollectionModule } from "@entities/collection/collection.module"
+import { Collection } from "@entities/collection/schemas/collection.schema"
+import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { TagCollectionsInitializationService } from "../core/tagCollectionsInitialization.service"
 import dictionary from "../../../../../../public/import/main/tags/tags.json" with { type: "json" }
 
@@ -16,11 +21,8 @@ describe("TagCollectionsInitializationService", () => {
     jest.fn<(payload: TCreateTag) => Promise<HydratedDocument<Tag>>>()
   const ensure =
     jest.fn<(id: Types.ObjectId, title: unknown) => Promise<unknown>>()
-  const initializeTags = jest.fn<() => Promise<void>>()
-  const initializeCollections = jest.fn<() => Promise<void>>()
   const service = new TagCollectionsInitializationService(
     {
-      initialize: initializeTags,
       read: {
         findOne: async ({ key }: { key: string }) => records.get(key) ?? null,
         findMany: async () => [...records.values()],
@@ -28,7 +30,6 @@ describe("TagCollectionsInitializationService", () => {
       write: { create },
     } as unknown as TagRepository,
     {
-      initialize: initializeCollections,
       ensureForTag: ensure,
     } as unknown as CollectionRepository,
   )
@@ -40,8 +41,6 @@ describe("TagCollectionsInitializationService", () => {
         records.set(tag.key, new model({ key: tag.key, name: tag.name }))
       }
     }
-    initializeTags.mockReset().mockResolvedValue()
-    initializeCollections.mockReset().mockResolvedValue()
     ensure.mockReset().mockResolvedValue(null)
     create.mockReset().mockImplementation(async (payload) => {
       const tag = new model(payload)
@@ -100,13 +99,37 @@ describe("TagCollectionsInitializationService", () => {
     expect(ensure).toHaveBeenCalledTimes(records.size)
   })
 
-  it("останавливает инициализацию при ошибке индекса до создания тегов и коллекций", async () => {
-    initializeTags.mockRejectedValueOnce(new Error("index failed"))
+  it.each([Tag.name, Collection.name])(
+    "останавливает запуск до заполнения справочника при ошибке индекса модели %s",
+    async (failedModel) => {
+      const indexError = new Error("index failed")
+      const modelFor = (name: string) => ({
+        init: async () => {
+          if (failedModel === name) {
+            throw indexError
+          }
+        },
+      })
+      const moduleRef = await Test.createTestingModule({
+        imports: [TagModule, CollectionModule],
+        providers: [TagCollectionsInitializationService],
+      })
+        .overrideProvider(getModelToken(Tag.name))
+        .useValue(modelFor(Tag.name))
+        .overrideProvider(getModelToken(Collection.name))
+        .useValue(modelFor(Collection.name))
+        .compile()
+      const readTags = jest.spyOn(moduleRef.get(TagRepository).read, "findOne")
+      const ensureForTag = jest.spyOn(
+        moduleRef.get(CollectionRepository),
+        "ensureForTag",
+      )
 
-    await expect(service.onModuleInit()).rejects.toThrow("index failed")
-    expect(create).not.toHaveBeenCalled()
-    expect(ensure).not.toHaveBeenCalled()
-  })
+      await expect(moduleRef.init()).rejects.toBe(indexError)
+      expect(readTags).not.toHaveBeenCalled()
+      expect(ensureForTag).not.toHaveBeenCalled()
+    },
+  )
 
   it("не скрывает ошибку записи, не связанную с конкурентным созданием", async () => {
     records.delete("fantasy")

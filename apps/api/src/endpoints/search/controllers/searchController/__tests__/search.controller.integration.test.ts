@@ -65,7 +65,7 @@ describe("SearchController", () => {
     return item
   }
 
-  it("возвращает независимые публичные группы с актуальными карточками без проверки cookie и записи данных", async () => {
+  it("возвращает гостю независимые группы с актуальными карточками без записи данных", async () => {
     const { connection } = application
     const poster = {
       src: "/poster.jpg",
@@ -118,10 +118,7 @@ describe("SearchController", () => {
       ),
     )
 
-    const response = await query(
-      { search: "  Nebula  " },
-      { cookie: "__Host-accessToken=invalid" },
-    )
+    const response = await query({ search: "  Nebula  " })
 
     expect(response.statusCode).toBe(200)
     expect(response.headers["cache-control"]).toBe("no-store")
@@ -134,6 +131,9 @@ describe("SearchController", () => {
           type: "movie",
           title: { ru: "Актуальное название", en: "Orbit" },
           media: [poster],
+          rating: null,
+          userRating: null,
+          userStatus: null,
         },
       ],
       users: [
@@ -154,6 +154,17 @@ describe("SearchController", () => {
       ],
       nextCursor: null,
     })
+    expect((await query({})).json<SearchResponseDto>().items).toEqual(
+      response.json<SearchResponseDto>().items,
+    )
+    expect(
+      (
+        await query(
+          { search: "Nebula" },
+          { cookie: "__Host-accessToken=invalid" },
+        )
+      ).statusCode,
+    ).toBe(401)
     expect(
       await Promise.all(
         ["Item", "User", "Collection", "UserItem"].map(async (name) =>
@@ -227,7 +238,7 @@ describe("SearchController", () => {
     const body = {
       search: "Орбита",
       limit: 10,
-      types: {
+      entities: {
         allOf: ["items", "users"],
         anyOf: ["collections"],
         noneOf: ["users"],
@@ -240,7 +251,7 @@ describe("SearchController", () => {
           noneOf: [String(excludedTag)],
         },
         rating: { min: 7.5, max: 7.5 },
-        sort: { type: "rating" },
+        sort: "rating",
       },
     }
     const expected = matched.map((item) => String(item._id)).sort()
@@ -290,7 +301,7 @@ describe("SearchController", () => {
       for (const sort of ["rating", "releaseDate"]) {
         const response = await query({
           search: "Орбита",
-          items: { sort: { type: sort, direction } },
+          items: { sort, direction },
         })
         expect(response.statusCode).toBe(200)
         expect(
@@ -325,7 +336,7 @@ describe("SearchController", () => {
     ) => {
       const response = await query({
         search: "Орбита",
-        items: { rating, sort: { type: "rating", direction } },
+        items: { rating, sort: "rating", direction },
       })
       expect(response.statusCode).toBe(200)
       return response.json<SearchResponseDto>().items.map((item) => item.id)
@@ -375,7 +386,7 @@ describe("SearchController", () => {
     ] as const) {
       const response = await query({
         search: "common",
-        items: { sort: { type: "title", language } },
+        items: { sort: "title", language },
       })
       expect(response.statusCode).toBe(200)
       expect(
@@ -384,17 +395,11 @@ describe("SearchController", () => {
     }
   })
 
-  it("фильтрует подборки по типу и автору независимо от произведений и пользователей", async () => {
-    const author = new Types.ObjectId()
-    const definitions = [
-      { type: "custom", author },
-      { type: "tag", author },
-      { type: "custom", author: null },
-      { type: "custom", author: new Types.ObjectId() },
-    ]
-    const collections = definitions.map((definition, index) => ({
+  it("фильтрует подборки по типу независимо от группы произведений", async () => {
+    const collections = ["custom", "tag", "franchise"].map((type, index) => ({
       _id: new Types.ObjectId(),
-      ...definition,
+      type,
+      author: null,
       title: { ru: `Орбита ${index}`, en: null },
       description: { ru: null, en: null },
       media: [],
@@ -409,8 +414,7 @@ describe("SearchController", () => {
     const response = await query({
       search: "Орбита",
       collections: {
-        types: { allOf: ["custom"] },
-        authorIds: { anyOf: [String(author).toUpperCase()] },
+        collectionTypes: { allOf: ["custom"] },
       },
     })
     expect(response.statusCode).toBe(200)
@@ -424,36 +428,26 @@ describe("SearchController", () => {
     ])
     expect(response.json<SearchResponseDto>().items).toHaveLength(1)
 
-    const excludedAuthor = await query({
+    const excludedType = await query({
       search: "Орбита",
-      types: { anyOf: ["collections"] },
+      entities: { anyOf: ["collections"] },
       collections: {
-        types: { anyOf: ["custom", "tag"], noneOf: ["tag"] },
-        authorIds: { noneOf: [String(author)] },
+        collectionTypes: { anyOf: ["custom", "tag"], noneOf: ["tag"] },
       },
     })
-    expect(excludedAuthor.statusCode).toBe(200)
-    const excludedAuthorResult = excludedAuthor.json<SearchResponseDto>()
-    expect(
-      excludedAuthorResult.collections
-        .map((collection) => collection.id)
-        .sort(),
-    ).toEqual(
-      collections
-        .slice(2)
-        .map((collection) => String(collection._id))
-        .sort(),
-    )
-    expect(excludedAuthorResult.items).toEqual([])
+    expect(excludedType.statusCode).toBe(200)
+    const excludedTypeResult = excludedType.json<SearchResponseDto>()
+    expect(excludedTypeResult.collections.map(({ id }) => id)).toEqual([
+      String(collections[0]._id),
+    ])
+    expect(excludedTypeResult.items).toEqual([])
 
-    for (const filters of [
-      { types: { allOf: ["custom", "tag"] } },
-      { authorIds: { allOf: [String(author), String(definitions[3].author)] } },
-    ]) {
-      const impossible = await query({ search: "Орбита", collections: filters })
-      expect(impossible.statusCode).toBe(200)
-      expect(impossible.json<SearchResponseDto>().collections).toEqual([])
-    }
+    const impossible = await query({
+      search: "Орбита",
+      collections: { collectionTypes: { allOf: ["custom", "tag"] } },
+    })
+    expect(impossible.statusCode).toBe(200)
+    expect(impossible.json<SearchResponseDto>().collections).toEqual([])
   })
 
   it("не возвращает удалённые MongoDB записи из устаревшего индекса и очищает их при синхронизации", async () => {
@@ -558,9 +552,9 @@ describe("SearchController", () => {
     const response = await query({
       search: "Orbit",
       limit: 10,
-      items: { sort: { type: "relevance", direction: "asc" } },
-      users: { sort: { type: "relevance", direction: "asc" } },
-      collections: { sort: { type: "relevance", direction: "asc" } },
+      items: { sort: "relevance", direction: "asc" },
+      users: { sort: "relevance", direction: "asc" },
+      collections: { sort: "relevance", direction: "asc" },
     })
     expect(response.statusCode).toBe(200)
     const result = response.json<SearchResponseDto>()
@@ -668,7 +662,6 @@ describe("SearchController", () => {
     null,
     [],
     "text",
-    {},
     { search: " " },
     { search: "x".repeat(201) },
     { search: 12 },
@@ -678,17 +671,17 @@ describe("SearchController", () => {
     { search: "x", cursor: null },
     { search: "x", cursor: "broken" },
     { search: "x", unknown: true },
-    { search: "x", types: { allOf: [] } },
-    { search: "x", types: { anyOf: ["unknown"] } },
-    { search: "x", types: { noneOf: ["items", "items"] } },
+    { search: "x", entities: { allOf: [] } },
+    { search: "x", entities: { anyOf: ["unknown"] } },
+    { search: "x", entities: { noneOf: ["items", "items"] } },
+    { search: "x", types: { anyOf: ["items"] } },
     { search: "x", items: null },
     { search: "x", users: [] },
     { search: "x", collections: "bad" },
-    { search: "x", items: { sort: "rating" } },
-    { search: "x", items: { sort: { type: "recommended" } } },
-    { search: "x", items: { sort: { direction: "asc" } } },
-    { search: "x", items: { sort: { type: "rating", direction: "up" } } },
-    { search: "x", items: { sort: { type: "title", language: "de" } } },
+    { search: "x", items: { sort: { type: "rating" } } },
+    { search: "x", items: { sort: "recommended" } },
+    { search: "x", items: { sort: "rating", direction: "up" } },
+    { search: "x", items: { sort: "title", language: "de" } },
     { search: "x", items: { types: [] } },
     { search: "x", items: { types: ["movie", "movie"] } },
     { search: "x", items: { tags: { anyOf: ["bad"] } } },
@@ -706,10 +699,13 @@ describe("SearchController", () => {
     { search: "x", items: { rating: { max: 11 } } },
     { search: "x", items: { fields: [{ field: "movie.duration", min: 90 }] } },
     { search: "x", items: { tagIds: ["abcdefabcdefabcdefabcdef"] } },
-    { search: "x", collections: { authorIds: { noneOf: [] } } },
-    { search: "x", collections: { types: { anyOf: ["bad"] } } },
-    { search: "x", users: { sort: { type: "username" } } },
-    { search: "x", users: { sort: { type: "displayName", language: "ru" } } },
+    {
+      search: "x",
+      collections: { authorIds: { anyOf: ["abcdefabcdefabcdefabcdef"] } },
+    },
+    { search: "x", collections: { collectionTypes: { anyOf: ["bad"] } } },
+    { search: "x", users: { sort: "username" } },
+    { search: "x", users: { sort: "displayName", language: "ru" } },
   ])("отклоняет некорректный запрос без запуска поиска: %j", async (body) => {
     const search = application.app.get(SearchService)
     const searchIndex = jest.spyOn(search, "search")

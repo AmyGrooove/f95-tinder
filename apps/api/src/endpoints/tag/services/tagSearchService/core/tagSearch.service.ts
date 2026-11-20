@@ -4,7 +4,7 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { SearchService } from "@infrastructure/search/services/searchService"
-import { ESearchSortDirection } from "@infrastructure/search/types/ESearchSortDirection"
+import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
@@ -24,13 +24,13 @@ class TagSearchService {
   ) {}
 
   async search(props: TagsBodyDto): Promise<TagsResponseDto> {
-    const { search = "", group, limit, cursor } = props
+    const { search = "", groups, limit = 50, cursor } = props
 
     const { maxTotalHits, ungrouped } = TAG_SEARCH_SETTINGS
-    const allOf = group?.allOf?.map((value) => value ?? ungrouped).sort() ?? []
-    const anyOf = group?.anyOf?.map((value) => value ?? ungrouped).sort() ?? []
+    const allOf = groups?.allOf?.map((value) => value ?? ungrouped).sort() ?? []
+    const anyOf = groups?.anyOf?.map((value) => value ?? ungrouped).sort() ?? []
     const noneOf =
-      group?.noneOf?.map((value) => value ?? ungrouped).sort() ?? []
+      groups?.noneOf?.map((value) => value ?? ungrouped).sort() ?? []
     const scope = [search, allOf, anyOf, noneOf, limit]
     const offset = isUndefined(cursor)
       ? 0
@@ -95,7 +95,7 @@ class TagSearchService {
           search,
           {
             filter,
-            sort: [`id:${ESearchSortDirection.ASC}`],
+            sort: [`id:${ESortDirection.ASC}`],
             offset,
             limit,
           },

@@ -1,7 +1,10 @@
 import { Module } from "@nestjs/common"
 
 import { ItemModule } from "@entities/item/item.module"
+import { ItemStatsModule } from "@entities/itemStats/itemStats.module"
 import { UserModule } from "@entities/user/user.module"
+import { UserItemModule } from "@entities/userItem/userItem.module"
+import { UserCollectionModule } from "@entities/userCollection/userCollection.module"
 import { CollectionModule } from "@entities/collection/collection.module"
 import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
@@ -14,11 +17,16 @@ import { SearchController } from "@endpoints/search/controllers/searchController
 import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
 import { SiteSearchService } from "@endpoints/search/services/siteSearchService"
 import { SearchSyncSchedulerService } from "@endpoints/search/services/searchSyncSchedulerService"
+import { AuthModule } from "@endpoints/auth/auth.module"
 
 @Module({
   imports: [
+    AuthModule,
     ItemModule,
+    ItemStatsModule,
     UserModule,
+    UserItemModule,
+    UserCollectionModule,
     CollectionModule,
     SiteStatsModule,
     CacheModule,
