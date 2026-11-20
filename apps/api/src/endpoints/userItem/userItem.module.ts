@@ -6,6 +6,7 @@ import { ItemStatsModule } from "@entities/itemStats/itemStats.module"
 import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
+import { UserItemHistoryModule } from "@entities/userItemHistory/userItemHistory.module"
 import { UserModule } from "@entities/user/user.module"
 import { DatabaseModule } from "@infrastructure/database/database.module"
 
@@ -21,11 +22,13 @@ import { UserItemStatsService } from "@endpoints/userItem/services/userItemStats
     ItemModule,
     TagItemModule,
     UserItemModule,
+    UserItemHistoryModule,
     UserModule,
     DatabaseModule,
   ],
   controllers: [UserItemController],
   providers: [UserItemService, UserItemStatsService],
+  exports: [UserItemService],
 })
 class UserItemEndpointModule {}
 

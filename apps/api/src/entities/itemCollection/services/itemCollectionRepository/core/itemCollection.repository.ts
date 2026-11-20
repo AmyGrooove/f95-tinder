@@ -5,13 +5,18 @@ import type {
   InsertManyOptions,
   Model,
   MongooseBulkWriteOptions,
+  PipelineStage,
+  Types,
 } from "mongoose"
 
-import type { EItemType } from "@entities/item/schemas/EItemType"
-import type { ItemStats } from "@entities/itemStats/schemas/itemStats.schema"
+import { Collection } from "@entities/collection/schemas/collection.schema"
+import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { Item } from "@entities/item/schemas/item.schema"
+import { ELanguage } from "@entities/shared/schemas/ELanguage"
+import { ESort } from "@entities/shared/types/ESort"
 import { normalizeEmptyStringToNull } from "@entities/shared/functions/setters/normalizeEmptyStringToNull"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
+import { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
@@ -29,6 +34,7 @@ import type { ICollectionContentSelectionProps } from "../types/ICollectionConte
 import type { ICreateItemCollectionsProps } from "../types/ICreateItemCollectionsProps"
 import type { IItemCollectionCard } from "../types/IItemCollectionCard"
 import type { IItemCollectionsSelectionProps } from "../types/IItemCollectionsSelectionProps"
+import type { IReadCollectionContentSliceProps } from "../types/IReadCollectionContentSliceProps"
 import type { IRemoveItemCollectionsProps } from "../types/IRemoveItemCollectionsProps"
 
 @Injectable()
@@ -79,19 +85,99 @@ class ItemCollectionRepository {
     )
   }
 
-  readContentSlice(
-    props: ICollectionContentSelectionProps & {
-      limit: number
-      after?: {
-        groupOrder: number
-        position: number
-        id: ItemCollection["_id"]
-      }
-      types?: readonly EItemType[]
-      userId?: UserItem["user"]
-      isPersonalFilterApplied: boolean
-    },
+  async readPublicCollectionIdsByItem(item: Types.ObjectId) {
+    const memberships = await this.aggregation.aggregate<
+      Pick<ItemCollection, "collectionId">
+    >(
+      new AggregationBuilder()
+        .match({ item })
+        .project({ _id: 0, collectionId: 1, groupId: 1 })
+        .use({
+          $lookup: {
+            from: Collection.name,
+            localField: "collectionId",
+            foreignField: "_id",
+            let: { groupId: "$groupId" },
+            pipeline: [
+              { $match: { deletedAt: null } },
+              { $unwind: "$blocks" },
+              {
+                $match: {
+                  "blocks.type": ECollectionBlockType.GROUP,
+                  $expr: { $eq: ["$blocks.id", "$$groupId"] },
+                },
+              },
+              { $project: { _id: 1 } },
+            ],
+            as: "publicCollection",
+          },
+        })
+        .match({ "publicCollection.0": { $exists: true } })
+        .project({ _id: 0, collectionId: 1 })
+        .build(),
+    )
+
+    return memberships.map(({ collectionId }) => collectionId.toHexString())
+  }
+
+  async readAvailableCounts(
+    props: ICollectionContentSelectionProps,
+    userId?: UserItem["user"],
   ) {
+    const { collectionId, groupIds } = props
+    const builder = new AggregationBuilder()
+      .match({ collectionId, groupId: { $in: groupIds } })
+      .use({
+        $lookup: {
+          from: Item.name,
+          localField: "item",
+          foreignField: "_id",
+          as: "availableItem",
+          pipeline: AggregationBuilder.forLookup()
+            .match({ deletedAt: null })
+            .project({ _id: 1 })
+            .build(),
+        },
+      })
+      .match({ "availableItem.0": { $exists: true } })
+
+    if (!isUndefined(userId)) {
+      builder.use({
+        $lookup: {
+          from: UserItem.name,
+          localField: "item",
+          foreignField: "item",
+          as: "completedItem",
+          pipeline: AggregationBuilder.forLookup()
+            .match({ user: userId, status: EUserItemStatus.COMPLETED })
+            .limit(1)
+            .project({ _id: 1 })
+            .build(),
+        },
+      })
+    }
+
+    const pipeline = builder
+      .use({
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          completed: {
+            $sum: { $size: { $ifNull: ["$completedItem", []] } },
+          },
+        },
+      })
+      .project({ _id: 0, total: 1, completed: 1 })
+      .build()
+    const [counts] = await this.aggregation.aggregate<{
+      total: number
+      completed: number
+    }>(pipeline)
+
+    return counts ?? { total: 0, completed: 0 }
+  }
+
+  readContentSlice(props: IReadCollectionContentSliceProps) {
     const {
       after,
       collectionId,
@@ -100,7 +186,13 @@ class ItemCollectionRepository {
       userId,
       isPersonalFilterApplied,
       limit,
+      isGrouped,
+      search,
+      rating,
+      sort,
     } = props
+    const isRatingNeededBeforeLimit =
+      !isUndefined(rating) || sort?.field === ESort.RATING
     const builder = new AggregationBuilder()
       .match({ collectionId, groupId: { $in: groupIds } })
       .use({ $set: { groupOrder: { $indexOfArray: [groupIds, "$groupId"] } } })
@@ -122,31 +214,111 @@ class ItemCollectionRepository {
       })
     }
 
-    builder
-      .sort({ groupOrder: 1, position: 1, _id: 1 })
-      .use(createCollectionCardItemLookup(types), { $unwind: "$item" })
+    if (isUndefined(sort)) {
+      builder.sort({ groupOrder: 1, position: 1, _id: 1 })
+    }
 
-    if (!isUndefined(userId)) {
-      builder.use(createCollectionViewerItemLookup(userId), {
-        $set: { viewerItem: { $first: "$viewerItem" } },
+    builder.use(createCollectionCardItemLookup(types, search), {
+      $unwind: "$item",
+    })
+
+    const ratingStages = [
+      createCollectionCardMetricsLookup(),
+      { $set: { ratingAverage: { $first: "$metrics.ratingAverage" } } },
+    ] satisfies PipelineStage[]
+    const viewerStages = isUndefined(userId)
+      ? []
+      : ([
+          createCollectionViewerItemLookup(userId),
+          { $set: { viewerItem: { $first: "$viewerItem" } } },
+        ] satisfies PipelineStage[])
+
+    if (isPersonalFilterApplied) {
+      builder.use(...viewerStages)
+      builder.match({
+        "viewerItem.status": {
+          $nin: [
+            EUserItemStatus.COMPLETED,
+            EUserItemStatus.DROPPED,
+            EUserItemStatus.BLOCKED,
+          ],
+        },
       })
+    }
 
-      if (isPersonalFilterApplied) {
-        builder.match({
-          "viewerItem.status": {
-            $nin: [
-              EUserItemStatus.COMPLETED,
-              EUserItemStatus.DROPPED,
-              EUserItemStatus.BLOCKED,
-            ],
+    if (isRatingNeededBeforeLimit) {
+      builder.use(...ratingStages)
+    }
+
+    if (!isUndefined(rating)) {
+      builder.match({
+        ratingAverage: {
+          $type: "number",
+          ...(!isUndefined(rating.min) && { $gte: rating.min }),
+          ...(!isUndefined(rating.max) && { $lte: rating.max }),
+        },
+      })
+    }
+
+    if (!isUndefined(sort)) {
+      const { field, direction, language, offset } = sort
+      const fallbackLanguage =
+        language === ELanguage.RUSSIAN ? ELanguage.ENGLISH : ELanguage.RUSSIAN
+      const title = `$item.title.${language}`
+      const sortValue =
+        field === ESort.TITLE
+          ? {
+              $cond: [
+                { $ne: [{ $trim: { input: { $ifNull: [title, ""] } } }, ""] },
+                title,
+                `$item.title.${fallbackLanguage}`,
+              ],
+            }
+          : field === ESort.RATING
+            ? "$ratingAverage"
+            : "$item.releaseDate"
+
+      builder
+        .use(
+          { $set: { sortValue } },
+          {
+            $set: {
+              hasSortValue: { $ne: [{ $ifNull: ["$sortValue", null] }, null] },
+            },
           },
-        })
+        )
+        .sort(
+          isGrouped
+            ? {
+                groupOrder: 1,
+                hasSortValue: -1,
+                sortValue: direction,
+                position: 1,
+                _id: 1,
+              }
+            : {
+                hasSortValue: -1,
+                sortValue: direction,
+                groupOrder: 1,
+                position: 1,
+                _id: 1,
+              },
+        )
+
+      if (offset > 0) {
+        builder.use({ $skip: offset })
       }
     }
 
-    builder.limit(limit).use(createCollectionCardMetricsLookup(), {
-      $set: { ratingAverage: { $first: "$metrics.ratingAverage" } },
-    })
+    builder.limit(limit)
+
+    if (!isRatingNeededBeforeLimit) {
+      builder.use(...ratingStages)
+    }
+
+    if (!isPersonalFilterApplied) {
+      builder.use(...viewerStages)
+    }
 
     const pipeline = builder
       .project({
@@ -160,14 +332,12 @@ class ItemCollectionRepository {
       })
       .build()
 
-    return this.aggregation.aggregate<
-      IItemCollectionCard & {
-        _id: ItemCollection["_id"]
-        groupOrder: number
-        ratingAverage?: ItemStats["ratingAverage"]
-        viewerItem?: Pick<UserItem, "status" | "rating">
-      }
-    >(pipeline)
+    return this.aggregation.aggregate<IItemCollectionCard>(
+      pipeline,
+      sort?.field === ESort.TITLE
+        ? { collation: { locale: sort.language, strength: 2 } }
+        : undefined,
+    )
   }
 
   createForCollection(

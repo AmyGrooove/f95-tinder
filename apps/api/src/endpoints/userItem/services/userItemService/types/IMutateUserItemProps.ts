@@ -8,6 +8,8 @@ interface IMutateUserItemProps {
     userItem: HydratedDocument<UserItem>,
     session: ClientSession,
   ) => void | Promise<void>
+
+  isCompletedAndUnratedRequired?: boolean
 }
 
 export type { IMutateUserItemProps }

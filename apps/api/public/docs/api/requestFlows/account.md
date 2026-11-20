@@ -2,18 +2,18 @@
 
 [← Все эндпоинты](../endpoints.md) · [Авторизация и сессии](auth.md) · [Обозначения](readme.md)
 
-Все девять операций используют cookie `__Host-accessToken`, проверяют подпись и срок JWT, активную сессию пользователя и существование User. JSON передаётся с `Content-Type: application/json`. Неизвестные поля запрещены. Общие ошибки — 400 для неверных входных данных, 401 при отсутствии действующего доступа, 403 при проверке CSRF изменяющих запросов, 429 при превышении лимита. Успешные ответы имеют `Cache-Control: no-store`. Событий в этих потоках нет.
+Все операции используют cookie `__Host-accessToken`, проверяют подпись и срок JWT, активную сессию пользователя и существование User. JSON передаётся с `Content-Type: application/json`. Неизвестные поля запрещены. Общие ошибки — 400 для неверных входных данных, 401 при отсутствии действующего доступа, 403 при проверке CSRF, 429 при превышении лимита. Успешные ответы имеют `Cache-Control: no-store`.
 
 <a id="whoami"></a>
 
 ## GET /account/whoami
 
-Показать текущего пользователя и сессию. **Пример:** `GET /account/whoami`, без тела, с access cookie. **Ответ:** 200, `user` (id, username, displayName, avatarUrl, role) и `session` (id, country, expiresAt в ISO 8601).
+`GET /account/whoami` с access-cookie и без тела возвращает 200 с `user` (id, username, displayName, avatarUrl, email, isPasswordSet, isAccessCodeEnabled, role) и `session` (id, country, expiresAt в ISO 8601).
 
 ```mermaid
 flowchart TD
     accTitle: Кто сейчас вошёл
-    accDescr: Проверить access JWT, параллельно прочитать пользователя и активную сессию и вернуть только публичные поля
+    accDescr: Проверить access JWT, параллельно прочитать пользователя и активную сессию, вернуть сведения об аккаунте и доступных способах входа
     A(["GET /account/whoami"]):::http --> B["Проверить access JWT"]:::action
     B --> C[("Прочитать User и активную UserSession")]:::data
     C --> D["Проверить наличие обеих записей"]:::action
@@ -23,6 +23,47 @@ flowchart TD
 Чтения User и UserSession параллельные, без транзакции и общего snapshot; нет записей, внешних вызовов или фоновой работы. Нет пользователя или сессии — 401. HTTP ждёт обоих чтений и маппинга.
 
 **Технические подробности:** [AccountController.whoami](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.whoami](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → AuthService.getSession/UserRepository.read.findById. [Response DTO](../../../../src/endpoints/account/services/accountService/dto/whoami.response.ts).
+
+<a id="put-avatar"></a>
+
+## PUT /account/avatar
+
+Заменяет аватар текущего пользователя. Запрос содержит access-cookie и один файл `avatar` в `multipart/form-data`. Успешный ответ — `200 { avatarUrl }`.
+
+```mermaid
+flowchart TD
+    accTitle: Загрузка своего аватара
+    accDescr: Проверить пользователя и сессию, обработать изображение и сохранить URL аватара
+    A(["PUT /account/avatar"]):::http --> B["Проверить сессию и multipart"]:::action
+    B --> C["Проверить файл и преобразовать в WebP"]:::action
+    C --> D[("Загрузить объект в S3")]:::data
+    D --> E[("Атомарно заменить URL и ключ объекта в User")]:::data
+    E -->|Сбой записи| F["Попытаться удалить новый объект"]:::action
+    E -->|Сохранено| G["Попытаться удалить прежний управляемый объект"]:::action
+    G --> H(["200 — URL аватара"]):::http
+```
+
+Форматы — JPEG, PNG, WebP и AVIF. Ограничения входа — 5 МиБ, до 4 000 пикселей на сторону и до 16 млн пикселей суммарно. Выход — кадрированное изображение WebP до 512 × 512 без увеличения исходника. Некорректный файл или дополнительные поля дают 400, превышение размера файла — 413, сбой хранилища или отсутствие публичного URL — 503. URL и ключ сохраняются вместе. Удаление прежнего объекта выполняется после записи, его сбой логируется. Аватар с ранее сохранённым URL без ключа можно заменить, файл по такому URL не удаляется.
+
+<a id="delete-avatar"></a>
+
+## DELETE /account/avatar
+
+`DELETE /account/avatar` с access-cookie очищает аватар текущего пользователя. Успешный ответ — 204, включая случай, когда аватара уже нет.
+
+```mermaid
+flowchart TD
+    accTitle: Удаление своего аватара
+    accDescr: Проверить пользователя и сессию, сбросить аватар и удалить ранее сохранённый объект при наличии ключа
+    A(["DELETE /account/avatar"]):::http --> B["Проверить сессию"]:::action
+    B --> C[("Атомарно очистить URL и ключ в User")]:::data
+    C --> D["Попытаться удалить прежний управляемый объект"]:::action
+    D --> E(["204 — аватар отсутствует"]):::http
+```
+
+После успешной записи `GET /account/whoami` возвращает `avatarUrl: null`. Сбой удаления объекта фиксируется в журнале. Поисковый индекс отражает URL после очередной [синхронизации](catalog.md#search-sync).
+
+**Технические подробности.** [AccountAvatarController](../../../../src/endpoints/account/controllers/accountAvatarController/core/accountAvatar.controller.ts) · [AccountAvatarService](../../../../src/endpoints/account/services/accountAvatarService/core/accountAvatar.service.ts) · [Обработка изображений](../../../../agents/storage.md)
 
 <a id="library-continue"></a>
 
@@ -49,6 +90,30 @@ flowchart TD
 Ошибки используют `{"error":{"code":"…","message":"…","details":null,"requestId":"…"}}`. Для 400 код `BAD_REQUEST`, в `details` передаётся `{"errors":["…"]}`. Остальные ответы используют `details: null`. Недействительная авторизация даёт `401 UNAUTHORIZED`, превышение лимита 100 запросов в минуту на IP — `429 TOO_MANY_REQUESTS` с `Retry-After`, необработанный сбой — `500 INTERNAL_ERROR`.
 
 **Технические подробности.** [AccountController.readLibraryContinue](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.readLibraryContinue](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → [UserItemRepository.readLibraryContinueStatus](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts). [Запрос](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.query.ts) и [ответ](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.response.ts).
+
+<a id="library-history"></a>
+
+## QUERY /account/library/history
+
+Первый запрос обслуживает блок последних действий. Например, `QUERY /account/library/history` с access-cookie и телом `{"limit":10}`. Следующий запрос передаёт тот же лимит и полученный `nextCursor`. Курсор привязан к пользователю и размеру страницы.
+
+```mermaid
+flowchart TD
+    accTitle: Чтение личной истории библиотеки
+    accDescr: Проверить тело, сессию и курсор, затем прочитать события по владельцу
+    A(["QUERY /account/library/history"]):::http --> B["Проверить тело и access JWT"]:::action
+    B --> C[("Прочитать User и активную UserSession")]:::data
+    C --> D{"Пользователь и сессия найдены?"}
+    D -->|Нет| E(["401 — нет доступа"]):::http
+    D -->|Да| F["Проверить курсор владельца"]:::action
+    F --> G[("Выбрать события по createdAt и ID по убыванию")]:::data
+    G --> I[("Прочитать названия и постеры видимых произведений страницы одним запросом")]:::data
+    I --> H(["200 — события с карточками и следующий курсор"]):::http
+```
+
+История читается из `UserItemHistory` по ID из текущей сессии. Чтение использует на одну запись больше запрошенного лимита для определения следующей страницы. Для событий самой страницы добавляются название и первый постер. Отсутствующее или удалённое произведение даёт `item: null` без пропуска события. Ответ содержит `items` и `nextCursor`, который равен `null` в конце истории, а также заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
+
+**Технические подробности.** [Контракт](../contracts/librarySpec.md#личная-история-библиотеки) · [LibraryHistoryController](../../../../src/endpoints/account/controllers/libraryHistoryController/core/libraryHistory.controller.ts) · [LibraryHistoryService](../../../../src/endpoints/account/services/libraryHistoryService/core/libraryHistory.service.ts) · [UserItemHistoryRepository](../../../../src/entities/userItemHistory/services/userItemHistoryRepository/core/userItemHistory.repository.ts)
 
 <a id="display-name"></a>
 

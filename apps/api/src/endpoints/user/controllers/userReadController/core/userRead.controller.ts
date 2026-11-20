@@ -65,7 +65,7 @@ class UserReadController {
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
-      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
+      { status: 403, description: SWAGGER_DICTIONARY.user.library.forbidden },
       { status: 404, description: SWAGGER_DICTIONARY.user.library.notFound },
       {
         status: 413,

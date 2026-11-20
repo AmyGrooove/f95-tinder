@@ -20,7 +20,7 @@
 
 ## POST /auth/register
 
-Создаёт аккаунт без email/пароля и сразу открывает сессию. Доступ без авторизации; тело не требуется. Пример: `POST /auth/register` → `204` без тела и обе auth-cookies.
+Создаёт аккаунт без email и пароля и сразу открывает сессию. Тело и авторизация не требуются. `POST /auth/register` возвращает `201 { username, accessCode }` и обе auth-cookies.
 
 ```mermaid
 flowchart TD
@@ -33,7 +33,7 @@ flowchart TD
     end
     B --> C
     E -->|Commit| F["Установить обе cookies"]:::action
-    F --> G(["204: без тела"]):::http
+    F --> G(["201 — логин и новый секретный код"]):::http
 ```
 
 **Данные и проверки:** `UserRepository.createNew` генерирует логин/displayName и 24 случайных байта в виде 32-символьного base64url кода; хранит SHA-256 `accessCodeHash`. `AuthService.createSession` создаёт `UserSession` с userAgent, страной, сроком 120 дней и SHA-256 refresh-хешем. Другие сущности, включая UserSettings, этот поток не создаёт.
@@ -95,7 +95,7 @@ flowchart TD
 
 ## PATCH /auth/login/code
 
-Перевыпускает секретный код до установки пароля. Требует access-cookie, действующую собственную сессию и текущий код. Пример: `{"accessCode":"AbCdEfGhIjKlMnOpQrStUvWxYz012345"}` → `204` без тела и новые auth-cookies.
+Перевыпускает секретный код до установки пароля. Требует access-cookie, действующую собственную сессию и текущий код. Запрос с `accessCode` возвращает `200 { accessCode }` с новым кодом и новые auth-cookies.
 
 ```mermaid
 flowchart TD
@@ -109,7 +109,7 @@ flowchart TD
     end
     B --> C
     F -->|Commit| G["Установить обе cookies"]:::action
-    G --> H(["204: без тела"]):::http
+    G --> H(["200 — новый секретный код"]):::http
 ```
 
 **Данные и проверки:** `UserRepository.reissueAccessCode` атомарно проверяет userId, SHA-256 старого кода и `passwordHash:null`, записывает хеш нового случайного кода. `updateRefreshToken` проверяет принадлежность и явный срок текущей сессии, меняет refresh-хеш, expiresAt на 120 дней и lastRefreshedAt. Её id/userAgent/country сохраняются; `deleteOthers` удаляет все остальные сессии, включая истёкшие.

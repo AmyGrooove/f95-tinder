@@ -4,7 +4,9 @@ import { Item } from "@entities/item/schemas/item.schema"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { ECollectionBlockType } from "../../../../schemas/ECollectionBlockType"
 
-const createAvailableCollectionMembershipLookup = (): PipelineStage.Lookup => {
+const createAvailableCollectionMembershipLookup = ({
+  isCountRequested = false,
+}: { isCountRequested?: boolean } = {}): PipelineStage.Lookup => {
   return {
     $lookup: {
       from: ItemCollection.name,
@@ -40,8 +42,11 @@ const createAvailableCollectionMembershipLookup = (): PipelineStage.Lookup => {
           },
         })
         .match({ "availableItem.0": { $exists: true } })
-        .limit(1)
-        .project({ _id: 1 })
+        .use(
+          ...(isCountRequested
+            ? [{ $count: "itemCount" }]
+            : [{ $limit: 1 }, { $project: { _id: 1 } }]),
+        )
         .build(),
       as: "availableMembership",
     },

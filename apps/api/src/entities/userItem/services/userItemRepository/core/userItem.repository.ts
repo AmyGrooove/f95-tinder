@@ -17,6 +17,8 @@ import { EUserItemStatus } from "../../../schemas/EUserItemStatus"
 import { UserItem } from "../../../schemas/userItem.schema"
 import type { TCreateUserItem } from "../../../schemas/userItem.schema"
 import { LIBRARY_CONTINUE_STATUSES } from "../../../static/LIBRARY_CONTINUE_STATUSES"
+import { USER_ITEM_LIBRARY_STATUSES } from "../../../static/USER_ITEM_LIBRARY_STATUSES"
+import type { TLibraryStatus } from "../../../types/TLibraryStatus"
 import { createLibraryContinueItemLookup } from "../functions/aggregationPipelines/createLibraryContinueItemLookup"
 import { createLibraryEntryProjection } from "../functions/aggregationPipelines/createLibraryEntryProjection"
 import { createLibraryItemStatsLookup } from "../functions/aggregationPipelines/createLibraryItemStatsLookup"
@@ -85,12 +87,63 @@ class UserItemRepository {
     return record?.status ?? null
   }
 
+  async readLibrarySummary(userId: Types.ObjectId) {
+    const pipeline = new AggregationBuilder()
+      .match({ user: userId, status: { $in: USER_ITEM_LIBRARY_STATUSES } })
+      .project({ _id: 0, item: 1, status: 1, rating: 1, isFavorite: 1 })
+      .use(createLibraryPageItemLookup({}, { _id: 1 }))
+      .match({ "visibleItem.0": { $exists: true } })
+      .use({
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          ratingsCount: {
+            $sum: {
+              $cond: [{ $ne: [{ $ifNull: ["$rating", null] }, null] }, 1, 0],
+            },
+          },
+          favoritesCount: {
+            $sum: { $cond: [{ $eq: ["$isFavorite", true] }, 1, 0] },
+          },
+        },
+      })
+      .build()
+
+    const groups = await this.aggregation.aggregate<{
+      _id: TLibraryStatus
+      count: number
+      ratingsCount: number
+      favoritesCount: number
+    }>(pipeline)
+    const summary = {
+      statusCounts: {
+        planned: 0,
+        inProgress: 0,
+        onHold: 0,
+        completed: 0,
+        dropped: 0,
+      } satisfies Record<TLibraryStatus, number>,
+      ratingsCount: 0,
+      favoritesCount: 0,
+    }
+
+    for (const group of groups) {
+      summary.statusCounts[group._id] = group.count
+      summary.ratingsCount += group.ratingsCount
+      summary.favoritesCount += group.favoritesCount
+    }
+
+    return summary
+  }
+
   readLibraryPage(props: IReadLibraryPageProps) {
     const {
       userId,
       statuses,
       types,
       isFavorite,
+      isUnrated = false,
+      after,
       search,
       sort,
       direction,
@@ -101,7 +154,6 @@ class UserItemRepository {
     } = props
     const isTitleSort = sort === ESort.TITLE
     const itemFilter: PipelineStage.Match["$match"] = {
-      deletedAt: null,
       type: { $in: types },
     }
 
@@ -120,6 +172,13 @@ class UserItemRepository {
         user: userId,
         status: { $in: statuses },
         ...(!isUndefined(isFavorite) && { isFavorite }),
+        ...(isUnrated && { rating: null }),
+        ...(!isUndefined(after) && {
+          $or: [
+            { createdAt: { $lt: after.createdAt } },
+            { createdAt: after.createdAt, _id: { $gt: after.id } },
+          ],
+        }),
       })
       .project({
         item: 1,

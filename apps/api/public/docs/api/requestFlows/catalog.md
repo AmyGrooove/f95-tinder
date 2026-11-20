@@ -53,13 +53,16 @@ flowchart TD
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cursor`          | Необязательная строка длиной 1–256 символов. Без неё формируется список                                                                                                                                                                                                                      |
 | `limit`           | Необязательное целое из `10`, `20`, `50`, по умолчанию `20`                                                                                                                                                                                                                                  |
+| `excludeItemIds`  | Необязательный массив из 0–25 ObjectId произведений, уникальных без учёта регистра. Применяется при создании списка ко всем источникам с сохранением взаимного порядка оставшихся карточек. При продолжении поле валидируется, выдача берётся из сохранённого снимка                         |
 | `filter.types`    | 1–7 уникальных значений: `movie`, `series`, `animatedMovie`, `animatedSeries`, `animeSeries`, `animeMovie`, `game`. По умолчанию все типы                                                                                                                                                    |
 | `filter.tags`     | 0–10 групп. Каждая содержит необязательные массивы `allOf`, `anyOf`, `noneOf` по 1–100 ObjectId, уникальных без учёта регистра. Условия и группы соединяются через И. Пустая группа условий не добавляет, отсутствующий тег не считается назначенным                                         |
 | `filter.statuses` | Необязательные массивы `allOf`, `anyOf`, `noneOf` по 1–6 уникальных значений из `outside`, `planned`, `inProgress`, `onHold`, `completed`, `dropped`. Условия проверяются по одному статусу. Отсутствие объекта означает `{"anyOf":["outside"]}`, пустой объект разрешает все шесть значений |
 
 `filter` и все перечисленные поля необязательны. Явный `null` и неизвестные поля запрещены. Без `filter.tags` фильтрация по тегам не применяется.
 
-На главной включённый переключатель личных фильтров передаётся через `library: {"noneOf":["completed","dropped"]}`, выключенный — через `library: {}`. При любом значении исключаются `blocked`, действующие `skipped`, удалённые произведения, глобальные запреты и запреты для страны сессии. Просроченный `skipped` считается `outside`. Гость блок рекомендаций не запрашивает.
+На главной включённый переключатель личных фильтров передаётся через `filter.statuses: {"noneOf":["completed","dropped"]}`, выключенный — через `filter.statuses: {}`. При любом значении исключаются `blocked`, действующие `skipped`, удалённые произведения, глобальные запреты и запреты для страны сессии. Просроченный `skipped` считается `outside`. Гость блок рекомендаций не запрашивает.
+
+Отсутствие `excludeItemIds` и пустой массив дают одинаковую выдачу. [Пик](../pages/pick.md) отправляет в этом поле уже показанные ID при новом запросе без курсора, в том числе после `410`.
 
 ```http
 QUERY /recommendations HTTP/1.1
@@ -103,7 +106,7 @@ flowchart TD
     E -->|Невалиден| F(["400"]):::http
     E --> G[("Прочитать снимок — Redis")]:::data
     G -->|Снимок отсутствует| H(["410 — HTTP_410"]):::http
-    D -->|Нет| I["Сформировать рекомендации"]:::action
+    D -->|Нет| I["Сформировать список с учётом исключаемых ID"]:::action
     I --> J[("Проверить доступность и прочитать карточки — MongoDB")]:::data
     G -->|Снимок найден| J
     J --> K{"Первая страница?"}:::action
@@ -115,6 +118,132 @@ flowchart TD
 **Ошибки.** `400 BAD_REQUEST` — ошибка тела, фильтра или курсора. `401 UNAUTHORIZED` — недействительная авторизация, сессия или отсутствующий пользователь. `410 HTTP_410` — снимок отсутствует, начать заново без курсора. Действуют также `403 FORBIDDEN` для CSRF, `413 HTTP_413` и `415 HTTP_415` для ошибок формата тела, `429 TOO_MANY_REQUESTS` с `Retry-After` и `500 INTERNAL_ERROR` при необработанном сбое. Ошибки имеют форму `{error: {code, message, details, requestId}}`. При ошибке валидации DTO `details` содержит `{errors: string[]}`, в остальных описанных случаях — `null`.
 
 [Контроллер](../../../../src/endpoints/recommendations/controllers/recommendationsController/core/recommendations.controller.ts) · [Сервис ленты](../../../../src/endpoints/recommendations/services/recommendationFeedService/core/recommendationFeed.service.ts) · [ItemRepository](../../../../src/entities/item/services/itemRepository/core/item.repository.ts)
+
+<a id="item"></a>
+
+## GET /items/:id
+
+Публичное чтение карточки произведения по ObjectId из 24 шестнадцатеричных символов. Доступно гостю. Тела запроса и параметров строки запроса нет.
+
+```http
+GET /items/655f2ab09e1c427b40f604a1 HTTP/1.1
+Host: api.example.com
+Accept: application/json
+```
+
+```json
+{
+  "id": "655f2ab09e1c427b40f604a1",
+  "type": "game",
+  "title": { "ru": "После дождя", "en": null },
+  "description": { "ru": null, "en": null },
+  "aliases": [],
+  "media": [],
+  "tags": [],
+  "relations": [],
+  "stats": {
+    "ratingAverage": null,
+    "ratingsCount": 0,
+    "favoritesCount": 0,
+    "statusCounts": {
+      "planned": 0,
+      "inProgress": 0,
+      "onHold": 0,
+      "completed": 0,
+      "dropped": 0
+    }
+  },
+  "releaseDate": "2026-11-20T00:00:00.000Z",
+  "ageRestriction": "18++",
+  "movie": null,
+  "series": null,
+  "game": { "mainStoryDuration": 480, "fullCompletionDuration": null }
+}
+```
+
+```mermaid
+flowchart TD
+    accTitle: Прочитать карточку произведения
+    accDescr: Проверить лимит и ID, прочитать Item, его статистику, прямые теги и связи, вернуть публичную карточку
+    A(["GET /items/:id"]):::http --> B["Проверить лимит запросов"]:::action
+    B -->|Лимит превышен| C(["429 — Retry-After"]):::http
+    B --> D["Проверить и преобразовать ObjectId"]:::action
+    D -->|Неверный ID| E(["400"]):::http
+    D --> F[("Прочитать неудалённый Item — MongoDB")]:::data
+    F -->|Документ отсутствует| G(["404"]):::http
+    F -->|Документ найден| H[("Прочитать TagItem и Tag — MongoDB")]:::data
+    F -->|Документ найден| I[("Прочитать ItemRelation, связанные Item и Relation — MongoDB")]:::data
+    F -->|Документ найден| L[("Прочитать ItemStats — MongoDB")]:::data
+    H --> J(["200 — публичная карточка"]):::http
+    I --> J
+    L --> J
+    B -->|Сбой Redis| K(["500"]):::http
+    F -->|Сбой MongoDB| K
+    H -->|Сбой MongoDB| K
+    I -->|Сбой MongoDB| K
+    L -->|Сбой MongoDB| K
+```
+
+Ответ содержит все поля [контракта ITEM-01](../../todos/catalog/itemDetails.md). Связи читаются в обе стороны. Имя роли берётся со стороны связанного произведения и подставляется отдельно для каждого языка.
+
+**Ошибки.** `400 BAD_REQUEST` — неверный `id`, `404 NOT_FOUND` — произведение отсутствует или удалено, `429 TOO_MANY_REQUESTS` — превышен общий лимит запросов, `500 INTERNAL_ERROR` — необработанный сбой. `Retry-After` при `429` указывает время ожидания в секундах. Ошибки используют общий формат `{error: {code, message, details, requestId}}`.
+
+[Контроллер](../../../../src/endpoints/item/controllers/itemController/core/item.controller.ts) · [Сервис](../../../../src/endpoints/item/services/itemService/core/item.service.ts)
+
+<a id="item-user"></a>
+
+## GET /items/:id/user
+
+Прочитать актуальную запись владельца сессии по ObjectId произведения. Нужна cookie `__Host-accessToken`. Ответ `200` передаётся с `Cache-Control: no-store`.
+
+```http
+GET /items/655f2ab09e1c427b40f604a1/user HTTP/1.1
+Host: api.example.com
+Accept: application/json
+Cookie: __Host-accessToken=<access-token>
+```
+
+```json
+{
+  "entry": {
+    "userItemId": "655f2ab09e1c427b40f604a2",
+    "status": "inProgress",
+    "rating": null,
+    "isFavorite": true,
+    "note": null,
+    "attempts": [
+      {
+        "id": "655f2ab09e1c427b40f604a3",
+        "isCompleted": false,
+        "progress": 30,
+        "unit": "minute",
+        "startedAt": null,
+        "completedAt": null
+      }
+    ]
+  }
+}
+```
+
+```mermaid
+flowchart TD
+    accTitle: Прочитать личную запись произведения
+    accDescr: Проверить ID и сессию, найти неудалённое произведение и вернуть актуальную запись владельца
+    A(["GET /items/:id/user"]):::http --> B["Проверить лимит запросов и ObjectId"]:::action
+    B -->|Лимит превышен| C(["429 — Retry-After"]):::http
+    B -->|Неверный ID| D(["400"]):::http
+    B --> E[("Проверить JWT и прочитать UserSession и User")]:::data
+    E -->|Сессия недействительна| F(["401"]):::http
+    E --> G[("Найти неудалённый Item — MongoDB")]:::data
+    G -->|Не найден| H(["404"]):::http
+    G --> I[("Прочитать актуальный UserItem владельца — MongoDB")]:::data
+    I -->|Найден| J(["200 — entry с попытками"]):::http
+    I -->|Отсутствует или пропуск истёк| K(["200 — entry: null"]):::http
+```
+
+Возвращаются пять обычных статусов, `blocked` и `skipped` с `expiresAt` строго позже текущего времени. Если актуальной записи нет, ответ — `{"entry":null}`. Необработанный сбой даёт `500`. Форматы попыток и правила редактирования описаны в [контракте библиотеки](../contracts/librarySpec.md#личная-запись-по-id-произведения).
+
+[Контроллер](../../../../src/endpoints/item/controllers/itemController/core/item.controller.ts) · [Сервис библиотеки](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts)
 
 <a id="fact"></a>
 
@@ -204,14 +333,14 @@ flowchart TD
 
 ## QUERY /search
 
-Найти произведения, пользователей и подборки или получить новинки и популярное на главной.
+Найти произведения, пользователей и коллекции, применить фильтры каталога или получить новинки и популярное на главной.
 
 Пример тела запроса — `{"search":"космос","limit":10,"items":{"sort":"rating","direction":"desc"}}`. Ответ `200` содержит массивы `items`, `collections`, `users` и `nextCursor` (строка или `null`). Заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
 
 ```mermaid
 flowchart TD
     accTitle: Общий поиск по сайту
-    accDescr: Проверить запрос, зрителя и курсор, найти совпадения и получить карточки с оценками и статусом зрителя
+    accDescr: Проверить запрос, зрителя и курсор, найти совпадения, применить личные фильтры и получить карточки
     A(["QUERY /search + JSON"]):::http --> B["Проверить тело, фильтры и сортировку"]:::action
     B -->|Не прошли проверку| Bad(["400"]):::http
     B --> V{"Передана access-cookie?"}:::action
@@ -220,27 +349,39 @@ flowchart TD
     S -->|Зритель установлен| K["Проверить курсор"]:::action
     V -->|Нет| K
     K -->|Курсор недействителен| Bad
-    K --> C{"Есть активные группы?"}:::action
+    K --> M{"Для активной группы коллекций задан itemId или favoritedByUserId?"}:::action
+    M -->|Да| N[("Отобрать коллекции по актуальным членствам и избранному — MongoDB")]:::data
+    N --> C{"Есть активные группы?"}:::action
+    M -->|Нет| C
+    N -->|Сбой чтения| F
     C -->|Нет| J(["200 — пустые массивы, nextCursor = null"]):::http
     C -->|Да| D[("Прочитать отметку синхронизации — Redis")]:::data
     D --> E{"Индекс подготовлен?"}:::action
     E -->|Нет| F(["503 — поиск пока недоступен"]):::http
-    E -->|Да| G[/"Найти ID и проверить продолжение активных групп — Meilisearch"/]:::external
-    G --> H[("Прочитать карточки и данные ItemStats, UserItem, UserCollection по условиям")]:::data
+    E -->|Да| G[/"Применить индексные условия, включая группу тега коллекции, и найти ID — Meilisearch"/]:::external
+    G --> H[("Прочитать совпадения, оценки Item и нужные данные зрителя")]:::data
     H --> P["Применить включённые личные условия и собрать порцию"]:::action
-    P --> I(["200 — три массива и nextCursor"]):::http
+    P --> T[("Пакетно прочитать авторов и статистику коллекций порции")]:::data
+    T --> I(["200 — три массива и nextCursor"]):::http
     G -->|Сбой поиска| F
     H -->|Сбой чтения| F
+    T -->|Сбой чтения| F
 ```
 
 **Проверки и данные.** Тело — JSON-объект с известными полями. Необязательный `search` содержит 1–200 символов после обрезки пробелов. Главная выбирает только Item через `entities` и опускает текст. Лимит на группу — 10, 20 или 50, по умолчанию 20. Курсор хранит позиции отдельных групп и привязан к условиям, а также к проверенному зрителю или гостю. Для новинок фиксируется время первой страницы. Обратная релевантность ранжирует совпадения после пакетного прохода индекса.
 
-**Границы и ошибки.** Глубина ограничена 10 000 кандидатами на группу. Для новинок, рейтинга Item без текста и групп с действующей личной фильтрацией до выбора страницы проверяются до 200 кандидатов на группу. Короткая или пустая порция может иметь курсор продолжения. Ошибки `400` относятся к телу, фильтрам и курсору, `401` — к недействительным учётным данным, `503` — к готовности индекса или сбою Redis, Meilisearch либо MongoDB. Действуют общие `403` и `429`.
+Для блока «В коллекциях» передайте `{"entities":{"anyOf":["collections"]},"collections":{"itemId":"655f2ab09e1c427b40f604a1"},"limit":10}`. Для полного списка используются те же условия и `nextCursor`. MongoDB отбирает коллекции с действующим членством на каждом запросе. Meilisearch ищет и сортирует в отобранном наборе до пагинации.
+
+Для вкладок профиля выберите только `collections` и передайте `collections.authorId` для созданных или `collections.favoritedByUserId` для избранных коллекций. На каждой странице поиск использует текущие связи с избранным. Индекс применяет условия по автору и набор ID до пагинации, MongoDB подтверждает актуальность возвращаемых карточек.
+
+Для жанровых коллекций передайте `{"entities":{"anyOf":["collections"]},"collections":{"tagGroups":{"anyOf":["genre","subgenre"]}}}`. Индекс отбирает коллекции по группе связанного `Collection.tag` до пагинации. Для следующей порции сохраните фильтр и передайте `nextCursor`.
+
+**Границы и ошибки.** Глубина ограничена 10 000 кандидатами на группу. Для новинок, рейтинга Item без текста и групп с фильтрами по данным `UserItem` или `UserCollection` до выбора страницы проверяются до 200 кандидатов на группу. Короткая или пустая порция может иметь курсор продолжения. Ошибки `400` относятся к телу, фильтрам и курсору, `401` — к недействительным учётным данным, `503` — к готовности индекса или сбою Redis, Meilisearch либо MongoDB. Действуют общие `403` и `429`.
 
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/readGroupPage](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Сервис переиспользует [AuthService](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), CacheService, CursorService, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и репозитории сущностей. Индексы `site_items`, `site_users`, `site_collections`. Отметка готовности `siteSearch:checkpoint:v4`. [Подробный контракт](../contracts/searchSpec.md#search).
+[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/readGroupPage](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Сервис переиспользует [AuthService](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), CacheService, CursorService, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и репозитории сущностей. Индексы `site_items`, `site_users`, `site_collections`. Отметка готовности `siteSearch:checkpoint:v6`. [Подробный контракт](../contracts/searchSpec.md#search).
 
 </details>
 
@@ -256,11 +397,11 @@ flowchart TD
     accDescr: Планировщик ставит задачу, воркер читает MongoDB, обновляет Meilisearch и только после успеха сохраняет отметку готовности в Redis
     A["Старт приложения или каждые 5 минут"]:::action --> Q{{"Добавить search.synchronize"}}:::queue
     Q -.-> J[["Джоба синхронизации поиска"]]:::job
-    J --> B[("Прочитать SiteStats один раз, затем Item, TagItem, Tag, ItemStats, User, Collection")]:::data
+    J --> B[("Прочитать SiteStats один раз, затем Item, TagItem, Tag, ItemStats, User, Collection и оценки UserCollection")]:::data
     B --> C[/"Обновить индексы и удалить устаревшие ID — Meilisearch"/]:::external
     C --> D[("Сохранить отметку успешной синхронизации — Redis")]:::data
 ```
 
-Item индексируется полным проходом с пересчётом рейтингового балла по единому среднему сайта на задачу. В том же проходе индексируется дата новинки из Item или даты последней вышедшей серии. Записи User/Collection после первого полного прохода выбираются по updatedAt с перекрытием в минуту. Воркер настраивает индексы и удаляет записи, которых больше нет в MongoDB. Начальная готовность появляется после успешного обхода всех трёх источников. При последующих сбоях прежняя отметка может оставаться, а индекс — частично обновлённым. MongoDB не изменяется, событий нет.
+Item индексируется полным проходом с пересчётом рейтингового балла по единому среднему сайта на задачу. В том же проходе индексируются дата новинки, год выхода и теги по группам. Для Collection полный проход пакетно обновляет средние оценки и группы связанных тегов. Реакции и группы тегов могут меняться независимо от `Collection.updatedAt`. Записи User после первого полного прохода выбираются по `updatedAt` с перекрытием в минуту. Воркер настраивает индексы и удаляет записи, которых больше нет в MongoDB. Начальная готовность появляется после успешного обхода всех трёх источников. При последующих сбоях прежняя отметка может оставаться, а индекс — частично обновлённым. MongoDB не изменяется, событий нет.
 
 **Исходники:** [SearchSyncSchedulerService.enqueue](../../../../src/endpoints/search/services/searchSyncSchedulerService/core/searchSyncScheduler.service.ts), [SYNC_SEARCH_JOB](../../../../src/endpoints/search/static/SYNC_SEARCH_JOB.ts), [SyncSearchJobHandler.handle/synchronize/createSources](../../../../src/endpoints/search/services/syncSearchJobHandler/core/syncSearchJob.handler.ts), [ItemRepository.readSearchIndexBatch](../../../../src/entities/item/services/itemRepository/core/item.repository.ts).

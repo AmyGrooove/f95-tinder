@@ -22,6 +22,7 @@ import {
 import {
   AuthService,
   LoginCodeBodyDto,
+  LoginCodeResponseDto,
 } from "@endpoints/auth/services/authService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.accountCredentials)
@@ -80,7 +81,7 @@ class AccountCredentialsController {
   }
 
   @Patch("auth/login/code")
-  @HttpCode(204)
+  @HttpCode(200)
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiCookieAuth("accessCookie")
@@ -89,8 +90,9 @@ class AccountCredentialsController {
     summary: SWAGGER_DICTIONARY.auth.reissueCode.summary,
     description: SWAGGER_DICTIONARY.auth.reissueCode.description,
     response: {
-      status: 204,
+      status: 200,
       description: SWAGGER_DICTIONARY.auth.reissueCode.response,
+      type: LoginCodeResponseDto,
       headers: {
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.authCookies,
@@ -116,9 +118,14 @@ class AccountCredentialsController {
     @Body() body: LoginCodeBodyDto,
     @Res({ passthrough: true }) reply: unknown,
   ) {
-    const { tokens } = await this.authService.reissueCode(accessToken, body)
+    const { tokens, response } = await this.authService.reissueCode(
+      accessToken,
+      body,
+    )
 
     this.securityCookieService.setAuthCookies(reply, tokens)
+
+    return response
   }
 }
 

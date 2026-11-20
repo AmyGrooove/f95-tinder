@@ -6,8 +6,9 @@ import {
 import { Types } from "mongoose"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
-import type { UserCollection } from "@entities/userCollection/schemas/userCollection.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -21,6 +22,7 @@ class CollectionUserService {
     private readonly collectionAuthService: CollectionAuthService,
     private readonly collectionRepository: CollectionRepository,
     private readonly userCollectionRepository: UserCollectionRepository,
+    private readonly itemCollectionRepository: ItemCollectionRepository,
   ) {}
 
   async getUser(
@@ -28,16 +30,29 @@ class CollectionUserService {
     id: Types.ObjectId,
   ): Promise<UserCollectionResponseDto> {
     const userId = await this.collectionAuthService.authenticate(accessToken)
-    const isAvailable = await this.collectionRepository.checkIsNotDeleted(id)
+    const collection = await this.collectionRepository.findNotDeletedById(id)
 
-    if (!isAvailable) {
+    if (isNil(collection)) {
       throw new NotFoundException(DICTIONARY.collection.notFound)
     }
 
-    const reaction =
-      await this.userCollectionRepository.findByUserAndCollection(userId, id)
+    const groupIds = collection.blocks
+      .filter((block) => block.type === ECollectionBlockType.GROUP)
+      .map((block) => block.id)
+    const [reaction, progress] = await Promise.all([
+      this.userCollectionRepository.findByUserAndCollection(userId, id),
+      this.itemCollectionRepository.readAvailableCounts(
+        { collectionId: id, groupIds },
+        userId,
+      ),
+    ])
 
-    return this.mapResponse(reaction)
+    return {
+      isFavorite: reaction?.isFavorite ?? false,
+      rating: reaction?.rating ?? null,
+      isHidden: reaction?.isHidden ?? false,
+      progress,
+    }
   }
 
   async updateReaction(
@@ -70,16 +85,6 @@ class CollectionUserService {
 
     if (isNil(reaction)) {
       throw new NotFoundException(DICTIONARY.collection.notFound)
-    }
-  }
-
-  private mapResponse(
-    reaction: Pick<UserCollection, "isFavorite" | "rating" | "isHidden"> | null,
-  ): UserCollectionResponseDto {
-    return {
-      isFavorite: reaction?.isFavorite ?? false,
-      rating: reaction?.rating ?? null,
-      isHidden: reaction?.isHidden ?? false,
     }
   }
 }

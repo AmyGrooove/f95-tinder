@@ -1,5 +1,6 @@
 export { UserItemService } from "./core/userItem.service"
 export { UserItemResponseDto } from "./dto/userItem.response"
+export { ItemUserResponseDto } from "./dto/itemUser.response"
 export { CreateUserItemBodyDto } from "./dto/createUserItem.body"
 export { CreateExclusionBodyDto } from "./dto/createExclusion.body"
 export { UpdateUserItemBodyDto } from "./dto/updateUserItem.body"

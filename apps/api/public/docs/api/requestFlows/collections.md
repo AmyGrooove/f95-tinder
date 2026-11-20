@@ -2,7 +2,7 @@
 
 [← Все эндпоинты](../endpoints.md) · [Контракт подборок](../contracts/collectionsSpec.md) · [Обозначения](readme.md)
 
-Публичные чтения не проверяют cookies и не возвращают UserItem. Создание, редактирование, удаление и личные реакции требуют access cookie: JWT → активная собственная UserSession + существующий User. Для изменения/удаления подборки проверяется также author. Все `:id` — ObjectId подборки. JSON — с `Content-Type: application/json`; неизвестные поля запрещены. Все ответы имеют `Cache-Control: no-store`. Общие ошибки: 400 — входные данные/ID, 401 — доступ защищённых операций, 403 — CSRF, 429 — throttling.
+Метаданные и статистика доступны публично. Чтение состава проверяет access cookie, если она передана, и может вернуть личные поля карточек. Создание, редактирование, удаление и личные реакции требуют access cookie: JWT → активная собственная UserSession + существующий User. Для изменения/удаления подборки проверяется также author. Все `:id` — ObjectId подборки. JSON — с `Content-Type: application/json`; неизвестные поля запрещены. Все ответы имеют `Cache-Control: no-store`. Общие ошибки: 400 — входные данные/ID, 401 — доступ защищённых операций, 403 — CSRF, 429 — throttling.
 
 Эти восемь HTTP-потоков не публикуют событий и не ставят джоб. Загрузка обложки обращается к S3 и обрабатывает изображение; остальные операции работают с MongoDB. Включение Item в подборку не меняет UserItem и вкус пользователя. Отдельный обработчик изменений TagItem поддерживает автоматические подборки, но эти маршруты его **не вызывают**. Обновление поиска происходит [независимым фоном](catalog.md#search-sync).
 
@@ -10,19 +10,20 @@
 
 ## GET /collections/:id
 
-Открыть метаданные и блоки подборки. **Пример:** `GET /collections/507f1f77bcf86cd799439011`, без тела. **Ответ:** 200, id/version/author/type/title/description/media/blocks/createdAt/updatedAt. Автор — {id, avatar, displayName} или null. Item внутри групп загружаются отдельно.
+Открыть метаданные, блоки и статистику подборки. **Пример:** `GET /collections/507f1f77bcf86cd799439011`, без тела. **Ответ:** 200, id/version/author/type/title/description/media/blocks/createdAt/updatedAt/itemCount/ratingAverage/ratingsCount/favoritesCount. Автор — {id, avatar, displayName} или null. Item внутри групп загружаются отдельно.
 
 ```mermaid
 flowchart TD
     accTitle: Открытие подборки
-    accDescr: Проверить ID и прочитать неудалённую Collection, вернуть метаданные и блоки или 404
+    accDescr: Прочитать неудалённую Collection, публичные данные автора и статистику или вернуть 404
     A(["GET /collections/:id"]):::http --> B["Проверить формат ID"]:::action
     B --> C[("Прочитать неудалённую Collection")]:::data
-    C --> U[("Если указан author — прочитать публичные поля User")]:::data
-    U --> D(["200 — метаданные, автор и блоки; нет Collection — 404"]):::http
+    C -->|Найдена| U[("Прочитать автора, посчитать доступные Item и агрегировать реакции")]:::data
+    C -->|Отсутствует| N(["404"]):::response
+    U --> D(["200 — метаданные, блоки и статистика"]):::response
 ```
 
-Чтение Collection и, при указанном author, публичных полей User без транзакции. Items и личные реакции не читаются. Если запись автора отсутствует, author в ответе равен null. Отсутствующая и soft-deleted подборка дают одинаковый 404. Даты — ISO, языковые значения и nullable поля отображаются явно. HTTP ждёт чтения и маппинга, записей нет.
+После чтения Collection сервис параллельно запрашивает публичные поля автора, число доступных Item и агрегаты UserCollection. Если запись автора отсутствует, author в ответе равен null. Отсутствующая и soft-deleted подборка дают одинаковый 404. Все операции выполняются без записи и общей транзакции.
 
 **Технические подробности:** CollectionReadController.getById → CollectionService.getById/mapResponse → CollectionRepository.findNotDeletedById. [Контроллер](../../../../src/endpoints/collection/controllers/collectionReadController/core/collectionRead.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts), [response DTO](../../../../src/endpoints/collection/services/collectionService/dto/collection.response.ts).
 
@@ -30,7 +31,7 @@ flowchart TD
 
 ## QUERY /collections/:id/items
 
-Первый запрос передаёт `{}` или параметры чтения. Следующие передают `cursor` из `nextCursor`. Пример главной — `{"types":["movie","series"],"isPersonalFilteringEnabled":true,"isMetadataIncluded":true}`. При наличии access-cookie сервер проверяет зрителя. См. [контракт выдачи Item](../contracts/collectionsSpec.md#выдача-item).
+Первый запрос передаёт `{}` или параметры чтения. Следующие передают `cursor` из `nextCursor`. Пример главной — `{"types":["movie","series"],"isPersonalFilteringEnabled":true,"isMetadataIncluded":true}`. Пример Баттла — `{"mode":"flat","isItemStatusFilteringEnabled":true}`. При наличии access-cookie сервер проверяет зрителя. См. [контракт выдачи Item](../contracts/collectionsSpec.md#выдача-item).
 
 ```mermaid
 flowchart TD
@@ -43,17 +44,17 @@ flowchart TD
     D -->|Сессия действительна| E
     D -->|Сессия недействительна| U(["401"]):::response
     E --> F["Проверить область курсора"]:::action
-    F --> G{"Личные фильтры действуют?"}:::decision
+    F --> G{"Учитывать скрытие подборки?"}:::decision
     G -->|Да| H[("Прочитать UserCollection")]:::data
-    G -->|Нет| J[("Прочитать страницу состава, оценки и статус зрителя")]:::data
+    G -->|Нет| J[("Применить условия, отсортировать и прочитать страницу с оценками и личными полями")]:::data
     H --> I{"Подборка скрыта?"}:::decision
     I -->|Да| M(["200 — пустая страница, isHidden: true"]):::response
     I -->|Нет| J
-    J --> K["Собрать блоки, курсор и запрошенные метаданные"]:::action
+    J --> K["Собрать блоки или плоский список, курсор и запрошенные метаданные"]:::action
     K --> L(["200 — страница состава, isHidden: false"]):::response
 ```
 
-Выборка применяет `types` и читает ItemStats и личное состояние для карточек. При действующих личных фильтрах исключения UserItem применяются до лимита. При фильтрации пустая страница без видимых Item не содержит текста. Недействительная cookie даёт 401, отсутствующая подборка — 404, несоответствие курсора — 400. Маршрут выполняет только чтение.
+Скрытие подборки проверяется у вошедшего зрителя при `isPersonalFilteringEnabled: true`. Если включён любой из двух флагов, сервер исключает произведения со статусами зрителя `completed`, `dropped` и `blocked`. Эти исключения, поиск, ограничение типов и диапазон ItemStats применяются до пагинации. Для карточек вошедшего зрителя возвращается краткий прогресс последней попытки. Группы сохраняют свои ID между порциями. При фильтрации пустая страница без видимых Item не содержит текста. Недействительная cookie даёт 401, отсутствующая подборка — 404, несоответствие курсора — 400. Маршрут выполняет только чтение.
 
 <a id="create"></a>
 
@@ -127,21 +128,22 @@ flowchart TD
 
 ## GET /collections/:id/user
 
-Прочитать свою реакцию на подборку. **Пример:** `GET /collections/507f1f77bcf86cd799439011/user`, без тела, access cookie. **Ответ:** 200, `{"isFavorite":false,"rating":null,"isHidden":false}` либо сохранённые значения.
+Прочитать свою реакцию и прогресс по всему составу. **Пример:** `GET /collections/507f1f77bcf86cd799439011/user`, без тела, access cookie. **Ответ:** 200, например `{"isFavorite":false,"rating":null,"isHidden":false,"progress":{"completed":2,"total":5}}`.
 
 ```mermaid
 flowchart TD
-    accTitle: Личная реакция на подборку
-    accDescr: Проверить пользователя и наличие подборки, прочитать его UserCollection, при отсутствии вернуть значения по умолчанию без создания записи
+    accTitle: Личная реакция и прогресс по подборке
+    accDescr: Проверить пользователя, прочитать его реакцию и посчитать завершённые произведения среди всех доступных
     A(["GET /collections/:id/user"]):::http --> B["Проверить доступ"]:::action
     B --> C[("Проверить неудалённую Collection")]:::data
-    C --> D[("Прочитать свою UserCollection")]:::data
-    D --> E(["200 — личная реакция или значения по умолчанию"]):::http
+    C -->|Найдена| D[("Прочитать UserCollection и посчитать доступные и завершённые Item")]:::data
+    C -->|Отсутствует| N(["404"]):::response
+    D --> E(["200 — реакция и прогресс"]):::response
 ```
 
-Нет Collection — 404; нет UserCollection — успешный ответ с false/null/false, без создания записи. Проверка Collection и чтение реакции раздельные, общей транзакции/snapshot нет. HTTP ждёт оба чтения; записи и фон отсутствуют.
+Без UserCollection поля реакции принимают значения false/null/false. Прогресс считается по всему доступному составу, независимо от реакции, фильтров и пагинации. Общей транзакции нет.
 
-**Технические подробности:** [CollectionUserController.getUser](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts) → [CollectionUserService.getUser/mapResponse](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts) → CollectionRepository.checkIsNotDeleted, [UserCollectionRepository.findByUserAndCollection](../../../../src/entities/userCollection/services/userCollectionRepository/core/userCollection.repository.ts).
+**Технические подробности:** [CollectionUserController.getUser](../../../../src/endpoints/collection/controllers/collectionUserController/core/collectionUser.controller.ts) → [CollectionUserService.getUser](../../../../src/endpoints/collection/services/collectionUserService/core/collectionUser.service.ts) → CollectionRepository.findNotDeletedById, UserCollectionRepository.findByUserAndCollection и [ItemCollectionRepository.readAvailableCounts](../../../../src/entities/itemCollection/services/itemCollectionRepository/core/itemCollection.repository.ts).
 
 <a id="reaction"></a>
 

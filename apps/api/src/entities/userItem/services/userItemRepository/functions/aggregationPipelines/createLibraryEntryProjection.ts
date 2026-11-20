@@ -1,10 +1,12 @@
 import type { PipelineStage } from "mongoose"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import { createBriefUserItemProgress } from "../../../../functions/createBriefUserItemProgress"
 
 const createLibraryEntryProjection = (
   isProgressVisible: boolean,
 ): PipelineStage.Project["$project"] => {
   return {
+    createdAt: 1,
     status: 1,
     rating: 1,
     isFavorite: 1,
@@ -23,17 +25,9 @@ const createLibraryEntryProjection = (
     ratingAverage: {
       $ifNull: [{ $arrayElemAt: ["$stats.ratingAverage", 0] }, null],
     },
+    movieDuration: { $ifNull: ["$visibleItem.movie.duration", null] },
     progress: isProgressVisible
-      ? {
-          $cond: [
-            { $ne: [{ $ifNull: ["$latestAttempt.progress", null] }, null] },
-            {
-              value: "$latestAttempt.progress",
-              unit: "$latestAttempt.unit",
-            },
-            null,
-          ],
-        }
+      ? createBriefUserItemProgress("$latestAttempt")
       : { $literal: null },
   }
 }

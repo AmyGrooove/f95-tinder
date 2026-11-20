@@ -11,6 +11,7 @@ import {
 import type {
   IFindRecommendationsProps,
   IRecommendationFeedSources,
+  TReadRecommendationFeedPageProps,
 } from "@endpoints/recommendations/services/recommendationsService"
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import {
@@ -35,10 +36,7 @@ class RecommendationFeedService {
     private readonly relationRepository: RelationRepository,
   ) {}
 
-  readPage(
-    accessToken: unknown,
-    props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit"> = {},
-  ) {
+  readPage(accessToken: unknown, props: TReadRecommendationFeedPageProps = {}) {
     return this.recommendationsService.readFeedPage(
       accessToken,
       props,

@@ -4,9 +4,30 @@
 
 Семь операций под `/userItems` проверяют access-cookie, активную UserSession и существующий User. Для них `:id` — **ID UserItem**, а `itemId` в создании — ID произведения Item. JSON передаётся с `Content-Type: application/json`; неизвестные поля запрещены. Общие ошибки: 400 — DTO/формат ObjectId; 401 — доступ к `/userItems`; 403 — CSRF; 429 — throttling. Успешные ответы содержат `Cache-Control: no-store`.
 
-Изменения UserItem и его статистики выполняются одной MongoDB-транзакцией. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы/числа оценок. Старая подсистема рекомендаций удалена; очереди вкуса нет. HTTP ждёт завершения транзакции.
+Изменения UserItem, его статистики и [событий личной истории](account.md#library-history) выполняются одной MongoDB-транзакцией. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы или числа оценок. HTTP ждёт завершения транзакции.
 
 Изменяющие операции отвечают 204 без тела.
+
+<a id="user-profile"></a>
+
+## GET /users/:id
+
+Публичный профиль по ObjectId пользователя с датой регистрации и сводкой библиотеки. Запрос доступен без cookie.
+
+```mermaid
+flowchart TD
+    accTitle: Чтение публичного профиля
+    accDescr: Проверить ID, прочитать публичные поля пользователя и подсчитать доступные записи библиотеки
+    A(["GET /users/:id"]):::http --> B{"Корректный ObjectId?"}:::action
+    B -->|Нет| C(["400 — неверный ID"]):::http
+    B -->|Да| D[("Найти публичные поля User")]:::data
+    D --> E{"Пользователь существует?"}:::action
+    E -->|Нет| F(["404 — пользователь не найден"]):::http
+    E -->|Да| G[("Подсчитать видимые записи UserItem с существующим неудалённым Item")]:::data
+    G --> H(["200 — профиль и сводка"]):::http
+```
+
+**Технические подробности.** [Контракт](../contracts/librarySpec.md#публичный-профиль) · [UserProfileService](../../../../src/endpoints/user/services/userProfileService/core/userProfile.service.ts) · [UserItemRepository](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts)
 
 <a id="user-library"></a>
 
@@ -23,12 +44,16 @@ flowchart TD
     C --> D{"Владелец существует?"}:::action
     D -->|Нет| E(["404 — пользователь не найден"]):::http
     D -->|Да| F["Проверить cookie и при совпадении владельца прочитать активную UserSession"]:::action
-    F --> G["Проверить курсор для выбранного режима доступа"]:::action
-    G --> H[("Прочитать страницу UserItem с Item и ItemStats")]:::data
+    F --> G{"Запрошен фильтр по отсутствию оценки без сессии владельца?"}:::action
+    G -->|Да| J(["403 — фильтр доступен владельцу"]):::http
+    G -->|Нет| K["Проверить курсор выбранного режима"]:::action
+    K --> H[("Отобрать записи и продолжить страницу UserItem с Item и ItemStats")]:::data
     H --> I(["200 — карточки и следующий курсор"]):::http
 ```
 
-Публично `progress` и `userItemId` равны `null`. Владелец с действующей сессией получает ID записи и значение прогресса последней попытки, если оно задано. Пустая страница — `200 {"items":[],"nextCursor":null}`. Страницы отражают текущие данные. Запрос не меняет БД и не запускает фоновые задачи.
+Публично `progress` и `userItemId` равны `null`. Владелец с действующей сессией получает ID записи и значение прогресса последней попытки, если оно задано. В обоих представлениях `movieDuration` содержит длительность фильма в минутах при наличии данных. Пустая страница — `200 {"items":[],"nextCursor":null}`. Страницы отражают текущие данные. Запрос не меняет БД и не запускает фоновые задачи.
+
+Для «Оценки» передай `{"isUnrated":true,"statuses":{"anyOf":["completed"]}}`. MongoDB отбирает записи с пустой или отсутствующей оценкой до ограничения страницы. Курсор продолжает после `createdAt` последней карточки по убыванию и ID UserItem по возрастанию при равенстве дат.
 
 **Технические подробности.** [Контракт](../contracts/librarySpec.md#публичный-список-библиотеки) · [UserReadController](../../../../src/endpoints/user/controllers/userReadController/core/userRead.controller.ts) · [UserLibraryService](../../../../src/endpoints/user/services/userLibraryService/core/userLibrary.service.ts) · [UserItemRepository](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts)
 
@@ -46,9 +71,10 @@ flowchart TD
     subgraph TX["Транзакция MongoDB"]
         C[("Удалить прежний истёкший skipped; создать UserItem")]:::data
         C --> D[("Применить дельты — ItemStats, при необходимости SiteStats")]:::data
+        D --> H[("Записать событие added")]:::data
     end
     B --> C
-    D -->|Commit| R(["204 — без тела"]):::http
+    H -->|Commit| R(["204 — без тела"]):::http
 ```
 
 До транзакции проверяется неудалённый Item; для completed — ограничения завершения. Для inProgress/onHold/completed/dropped автоматически создаётся первая попытка; completed помечает её завершённой. Просроченный skipped той же пары user/item удаляется внутри транзакции; другая существующая запись не заменяется — 409 уникальности. Нет Item — 404; недопустимое завершение — 409. HTTP ждёт commit.
@@ -105,23 +131,31 @@ flowchart TD
 
 ## PATCH /userItems/:id
 
-Изменить статус, оценку, избранное или заметку. **Пример:** `PATCH /userItems/507f1f77bcf86cd799439012`, `{"rating":8,"isFavorite":true}`, access cookie. **Ответ:** 204 без тела.
+Изменить статус, оценку, избранное или заметку. Для «Оценки» отправь `PATCH /userItems/507f1f77bcf86cd799439012` с телом `{"rating":8,"isCompletedAndUnratedRequired":true}` и access-cookie. Успешный ответ — 204 без тела.
 
 ```mermaid
 flowchart TD
     accTitle: Изменение записи библиотеки
-    accDescr: Прочитать собственную UserItem и проверить изменения, сохранить запись и статистику одной транзакцией
+    accDescr: Прочитать собственную UserItem, проверить условия обновления и сохранить запись со статистикой в одной транзакции
     A(["PATCH /userItems/:id"]):::http --> B["Проверить непустой запрос и доступ"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Прочитать свою неистёкшую UserItem")]:::data
-        C --> D["Проверить статус, попытки, Item и теги при необходимости"]:::action
-        D --> E[("Сохранить UserItem и дельты ItemStats / SiteStats")]:::data
+        C -->|Запись найдена| K{"Включённое условие оценки выполнено?"}:::action
+        K -->|Да или флаг выключен| D["Проверить статус, попытки, Item и теги при необходимости"]:::action
+        D --> E[("Обновить UserItem с проверкой включённого условия")]:::data
+        E -->|Сохранено| S[("Применить дельты ItemStats / SiteStats")]:::data
+        S --> H[("Записать события фактических смен статуса, оценки и избранного")]:::data
     end
     B --> C
-    E -->|Commit| R(["204 — без тела"]):::http
+    C -->|Нет записи| N(["404 — запись не найдена"]):::http
+    K -->|Нет| F(["409 — конфликт состояния"]):::http
+    E -->|Условие не выполнено| F
+    H -->|Commit| R(["204 — без тела"]):::http
 ```
 
 rating — целое 1–10 или null для очистки; note допускает null. completed помечает последнюю попытку завершённой; переход в требующий попытку статус создаёт её, если попыток нет. skipped несовместим с оценкой/избранным/заметкой/попытками — 409. expiresAt обнуляется при выходе из skipped, при входе назначается 90 дней. Неверные даты/проценты/единицы попыток — 400; недопустимое завершение — 409. Отсутствующая, чужая или истёкшая skipped — одинаковый 404. ItemStats обновляется синхронно в транзакции. HTTP ждёт commit.
+
+При `isCompletedAndUnratedRequired: true` обязательна целая оценка 1–10. Если запись уже получила оценку или её статус отличается от `completed`, возвращается 409 без записи оценки и дельт. После конфликта конкурентной записи повтор транзакции читает актуальное состояние.
 
 **Технические подробности:** UserItemController.update → UserItemService.update/mutate/changeStatus/validateUserItem/validateCompletion; UserItemRepository.read.findOne/write.updateByFilter фильтруют владельца и срок. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/updateUserItem.body.ts).
 
@@ -144,7 +178,7 @@ flowchart TD
     D -->|Commit| R(["204 — запись удалена"]):::http
 ```
 
-Нет/чужая запись — 404; повторное удаление тоже 404. Удаление разрешено и для просроченного skipped, если TTL ещё не удалил его. Item не проверяется и не удаляется. Статистика вычитается из возвращённой удалённой записи в той же транзакции; HTTP ждёт commit, внешних вызовов нет.
+Нет/чужая запись — 404; повторное удаление тоже 404. Удаление разрешено и для просроченного skipped, если TTL ещё не удалил его. Item не проверяется и не удаляется. Статистика вычитается из возвращённой удалённой записи в той же транзакции. Удаление сейчас оставляет записанные события истории без изменений. HTTP ждёт commit, внешних вызовов нет.
 
 **Технические подробности:** UserItemController.remove → UserItemService.remove/runMutation → UserItemRepository.write.deleteByFilter, UserItemStatsService.update(previous, null). [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [репозиторий](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts).
 

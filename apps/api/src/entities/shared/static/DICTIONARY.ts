@@ -54,6 +54,10 @@ const DICTIONARY = {
       unsupportedMediaType: "Для запроса библиотеки требуется application/json",
       sortLanguage: "Язык указывается только при сортировке по названию",
       invalidCursor: "Некорректный курсор библиотеки",
+      unratedForbidden:
+        "Фильтр по отсутствию оценки доступен только владельцу библиотеки",
+      unratedSort:
+        "Для записей без оценки доступен только порядок от новых к старым",
     },
   },
   userItem: {
@@ -74,6 +78,8 @@ const DICTIONARY = {
     seasonReleaseNotFinished:
       "Нельзя отметить полный просмотр сезона, выпуск которого ещё не завершён",
     emptyUpdate: "Укажите хотя бы одно поле для изменения",
+    ratingCandidateConflict:
+      "У записи уже есть оценка или её статус не «Завершено»",
     invalidDates: "Дата завершения не может предшествовать дате начала",
   },
   fact: {
@@ -82,6 +88,8 @@ const DICTIONARY = {
   collection: {
     queryBodyRequired: "Тело запроса подборок должно быть JSON-объектом",
     invalidItemsCursor: "Недействительный курсор состава подборки",
+    invalidItemsRatingRange:
+      "Укажите хотя бы одну границу оценки, минимальная не должна превышать максимальную",
     invalidRatingRange: "Минимальная оценка не может превышать максимальную",
     unavailableMode: "Режим grouped недоступен для этой подборки",
     unavailableSort:
@@ -140,6 +148,7 @@ const DICTIONARY = {
     invalidGroupKey: "Tag key does not match its group rule",
   },
   account: {
+    avatarStorageUnavailable: "Не удалось получить публичный URL аватара",
     emailConfirmationInvalid:
       "Код подтверждения смены email недействителен или истёк, при необходимости запросите новый",
     emailUnavailable:

@@ -12,6 +12,12 @@ interface IFindRecommendationsProps extends ICursorPagination {
   sessionId: Types.ObjectId
 
   filter?: IRecommendationFilter
+  excludeItemIds?: readonly Types.ObjectId[]
 }
 
-export type { IFindRecommendationsProps }
+type TReadRecommendationFeedPageProps = Pick<
+  IFindRecommendationsProps,
+  "cursor" | "filter" | "limit" | "excludeItemIds"
+>
+
+export type { IFindRecommendationsProps, TReadRecommendationFeedPageProps }

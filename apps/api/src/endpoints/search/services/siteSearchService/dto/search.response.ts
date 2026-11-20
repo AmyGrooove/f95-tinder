@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger"
+import { ApiProperty, PickType } from "@nestjs/swagger"
 
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
@@ -66,6 +66,14 @@ class SearchUserResponseDto {
   avatarUrl: string | null
 }
 
+class SearchCollectionAuthorResponseDto extends PickType(
+  SearchUserResponseDto,
+  ["id", "displayName"],
+) {
+  @ApiProperty({ type: String, nullable: true })
+  avatar: string | null
+}
+
 class SearchCollectionResponseDto {
   @ApiProperty({ type: String })
   id: string
@@ -78,6 +86,21 @@ class SearchCollectionResponseDto {
 
   @ApiProperty({ type: [MediaResponseDto] })
   media: MediaResponseDto[]
+
+  @ApiProperty({ type: SearchCollectionAuthorResponseDto, nullable: true })
+  author: SearchCollectionAuthorResponseDto | null
+
+  @ApiProperty({
+    type: Boolean,
+    description: "Коллекция без пользовательского автора",
+  })
+  isSiteCollection: boolean
+
+  @ApiProperty({ type: "integer", minimum: 0 })
+  itemCount: number
+
+  @ApiProperty({ type: Number, minimum: 1, maximum: 10, nullable: true })
+  ratingAverage: number | null
 }
 
 class SearchResponseDto {

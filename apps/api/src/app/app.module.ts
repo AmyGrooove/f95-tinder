@@ -7,6 +7,7 @@ import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { UserEndpointModule } from "@endpoints/user/user.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
 import { RecommendationsModule } from "@endpoints/recommendations/recommendations.module"
+import { ItemEndpointModule } from "@endpoints/item/item.module"
 import { SearchEndpointModule } from "@endpoints/search/search.module"
 import { TagEndpointModule } from "@endpoints/tag/tag.module"
 import { FactEndpointModule } from "@endpoints/fact/fact.module"
@@ -57,6 +58,7 @@ import { AppController } from "./controllers/appController"
     UserEndpointModule,
     CollectionEndpointModule,
     RecommendationsModule,
+    ItemEndpointModule,
     ItemModule,
     CollectionModule,
     ItemCollectionModule,

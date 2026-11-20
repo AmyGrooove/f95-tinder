@@ -15,7 +15,7 @@ class RecommendationsHttpService {
     accessToken: unknown,
     body: RecommendationsBodyDto,
   ): Promise<RecommendationsResponseDto> {
-    const { cursor, limit = 20, filter } = body
+    const { cursor, limit = 20, filter, excludeItemIds = [] } = body
     const { types, statuses, tags } = filter ?? {}
 
     try {
@@ -24,6 +24,9 @@ class RecommendationsHttpService {
         {
           cursor,
           limit,
+          ...(excludeItemIds.length > 0 && {
+            excludeItemIds: excludeItemIds.map((id) => new Types.ObjectId(id)),
+          }),
           filter: {
             types,
             library: statuses,

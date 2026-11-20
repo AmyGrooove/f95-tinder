@@ -16,13 +16,17 @@ const createSearchIndexTagsLookup = (): PipelineStage.Lookup => {
             localField: "tag",
             foreignField: "_id",
             pipeline: AggregationBuilder.forLookup()
-              .project({ _id: 1 })
+              .project({ _id: 1, group: 1, key: 1 })
               .build(),
             as: "existingTag",
           },
         })
         .match({ "existingTag.0": { $exists: true } })
-        .project({ tag: 1 })
+        .project({
+          tag: 1,
+          group: { $first: "$existingTag.group" },
+          key: { $first: "$existingTag.key" },
+        })
         .build(),
       as: "searchTags",
     },

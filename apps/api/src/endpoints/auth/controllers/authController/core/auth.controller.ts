@@ -19,6 +19,7 @@ import {
   LoginCodeBodyDto,
   LoginBodyDto,
   AuthService,
+  RegisterResponseDto,
 } from "@endpoints/auth/services/authService"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.auth)
@@ -148,7 +149,7 @@ class AuthController {
   }
 
   @Post("register")
-  @HttpCode(204)
+  @HttpCode(201)
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 2, ttl: 60_000 } })
   @ApiEndpoint({
@@ -156,8 +157,9 @@ class AuthController {
     summary: SWAGGER_DICTIONARY.auth.register.summary,
     description: SWAGGER_DICTIONARY.auth.register.description,
     response: {
-      status: 204,
+      status: 201,
       description: SWAGGER_DICTIONARY.auth.register.response,
+      type: RegisterResponseDto,
       headers: {
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.authCookies,
@@ -181,9 +183,11 @@ class AuthController {
     @Headers("user-agent") userAgent: string | undefined,
     @Res({ passthrough: true }) reply: unknown,
   ) {
-    const { tokens } = await this.authService.register(userAgent)
+    const { tokens, response } = await this.authService.register(userAgent)
 
     this.securityCookieService.setAuthCookies(reply, tokens)
+
+    return response
   }
 }
 

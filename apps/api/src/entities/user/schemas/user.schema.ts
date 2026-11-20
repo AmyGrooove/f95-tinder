@@ -36,6 +36,9 @@ class User extends MongoEntity {
   avatarUrl: string | null
 
   @Prop({ type: String, default: null, select: false })
+  avatarStorageKey: string | null
+
+  @Prop({ type: String, default: null, select: false })
   passwordHash: string | null
 
   @Prop({ type: String, default: null, select: false })
@@ -65,6 +68,7 @@ type TCreateUser = TCreateEntity<
   User,
   | "email"
   | "avatarUrl"
+  | "avatarStorageKey"
   | "passwordHash"
   | "accessCodeHash"
   | "role"
@@ -76,6 +80,7 @@ const UserSchema = SchemaFactory.createForClass(User)
 
 UserSchema.set("toJSON", {
   transform: (_document, returnedObject: Partial<User>) => {
+    delete returnedObject.avatarStorageKey
     delete returnedObject.passwordHash
     delete returnedObject.accessCodeHash
 

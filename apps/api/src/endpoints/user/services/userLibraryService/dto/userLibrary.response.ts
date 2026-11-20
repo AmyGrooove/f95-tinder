@@ -5,7 +5,7 @@ import { EItemType } from "@entities/item/schemas/EItemType"
 import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageText.response"
 import { MediaResponseDto } from "@entities/shared/dto/response/media.response"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
-import { EUnit } from "@entities/shared/schemas/EUnit"
+import { UserItemProgressResponseDto } from "@entities/userItem/dto/response/userItemProgress.response"
 import type { TLibraryStatus } from "@entities/userItem/services/userItemRepository"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 
@@ -16,17 +16,14 @@ class UserLibraryPosterResponseDto extends MediaResponseDto {
   override type: EMediaType.POSTER = EMediaType.POSTER
 }
 
-class UserLibraryProgressResponseDto {
+class UserLibraryProgressResponseDto extends UserItemProgressResponseDto {
   @ApiProperty({
     type: "integer",
     minimum: 0,
     maximum: Number.MAX_SAFE_INTEGER,
     description: card.progressValue,
   })
-  value: number
-
-  @ApiProperty({ enum: [EUnit.MINUTE, EUnit.EPISODE, EUnit.PERCENT] })
-  unit: EUnit.MINUTE | EUnit.EPISODE | EUnit.PERCENT
+  declare value: number
 }
 
 class UserLibraryItemResponseDto {
@@ -65,6 +62,13 @@ class UserLibraryItemResponseDto {
     description: card.ratingAverage,
   })
   ratingAverage: number | null
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: card.movieDuration,
+  })
+  movieDuration: number | null
 
   @ApiProperty({ type: String, nullable: true, description: card.userItemId })
   userItemId: string | null

@@ -1,5 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger"
 
+class UserCollectionProgressResponseDto {
+  @ApiProperty({ type: "integer", minimum: 0 })
+  completed: number
+
+  @ApiProperty({ type: "integer", minimum: 0 })
+  total: number
+}
+
 class UserCollectionResponseDto {
   @ApiProperty({ type: Boolean })
   isFavorite: boolean
@@ -9,6 +17,9 @@ class UserCollectionResponseDto {
 
   @ApiProperty({ type: Boolean })
   isHidden: boolean
+
+  @ApiProperty({ type: UserCollectionProgressResponseDto })
+  progress: UserCollectionProgressResponseDto
 }
 
 export { UserCollectionResponseDto }

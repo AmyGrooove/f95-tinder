@@ -11,6 +11,8 @@ import { calculateItemRatingScore } from "@entities/itemStats/functions/calculat
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
+import { ETagGroup } from "@entities/tag/schemas/ETagGroup"
+import { TagRepository } from "@entities/tag/services/tagRepository"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
@@ -37,6 +39,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     private readonly collectionRepository: CollectionRepository,
     private readonly userRepository: UserRepository,
     private readonly siteRatingsStatsRepository: SiteRatingsStatsRepository,
+    private readonly tagRepository: TagRepository,
   ) {}
 
   async handle(_payload: null, context: IJobContext) {
@@ -149,7 +152,10 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             "id",
             "type",
             "tagIds",
+            "countryTagIds",
+            "releaseStatusTagIds",
             "rating",
+            "releaseYear",
             "latestReleaseDate",
             ...Object.values(SEARCH_ITEM_FIELDS).map(
               (field) => `fields.${field}`,
@@ -244,25 +250,24 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         index: SEARCH_SETTINGS.indexes.collections,
         options: {
           searchableAttributes: ["title", "description"],
-          filterableAttributes: ["id", "type", "authorId"],
+          filterableAttributes: ["id", "type", "authorId", "tagGroup"],
           sortableAttributes: [
             "id",
             `sortTitle.${ELanguage.RUSSIAN}`,
             `sortTitle.${ELanguage.ENGLISH}`,
             "updatedAt",
+            "hasRating",
+            "ratingAverage",
           ],
           displayedAttributes: ["id", "type", "title", "media", "authorId"],
           pagination,
           typoTolerance,
           rankingRules,
         },
-        readBatch: async (afterId, updatedSince) => {
+        readBatch: async (afterId) => {
           const collections = await this.collectionRepository.read.findMany(
             {
               ...(!isNil(afterId) ? { _id: { $gt: afterId } } : {}),
-              ...(!isNil(updatedSince)
-                ? { updatedAt: { $gte: updatedSince } }
-                : {}),
             },
             {
               _id: 1,
@@ -271,10 +276,31 @@ class SyncSearchJobHandler implements IJobHandler<null> {
               description: 1,
               media: 1,
               author: 1,
+              tag: 1,
               deletedAt: 1,
               updatedAt: 1,
             },
             { sort: { _id: 1 }, limit: SEARCH_SETTINGS.batchSize },
+          )
+          const availableCollections = collections.filter(({ deletedAt }) =>
+            isNil(deletedAt),
+          )
+          const tagIds = availableCollections.flatMap(({ tag }) =>
+            isNil(tag) ? [] : [tag],
+          )
+          const [ratings, tags] = await Promise.all([
+            this.collectionRepository.readRatingAveragesByIds(
+              availableCollections.map(({ _id }) => _id),
+            ),
+            tagIds.length === 0
+              ? []
+              : this.tagRepository.read.findMany(
+                  { _id: { $in: tagIds } },
+                  { _id: 1, group: 1 },
+                ),
+          ])
+          const tagGroups = new Map(
+            tags.map(({ _id, group }) => [String(_id), group]),
           )
 
           return collections.map((collection) => ({
@@ -300,6 +326,12 @@ class SyncSearchJobHandler implements IJobHandler<null> {
                     language: media.language,
                   })),
                   authorId: collection.author?.toString() ?? null,
+                  tagGroup: (
+                    tagGroups.get(String(collection.tag)) ??
+                    SEARCH_SETTINGS.ungroupedCollectionTag
+                  ).toLowerCase(),
+                  ratingAverage: ratings.get(String(collection._id)) ?? null,
+                  hasRating: isNil(ratings.get(String(collection._id))) ? 0 : 1,
                   sortTitle: this.mapSortTitle(collection.title),
                   updatedAt: collection.updatedAt.getTime(),
                 },
@@ -347,6 +379,16 @@ class SyncSearchJobHandler implements IJobHandler<null> {
       ratingsCount,
       siteRatingAverage,
     })
+    const yearTag = item.searchTags.find(
+      ({ group, key }) =>
+        group === ETagGroup.RELEASE_YEAR &&
+        /^releaseYear[1-9]\d{0,3}$/.test(key),
+    )
+    const releaseYear =
+      item.releaseDate?.getUTCFullYear() ??
+      (isNil(yearTag)
+        ? null
+        : Number(yearTag.key.slice(ETagGroup.RELEASE_YEAR.length)))
 
     return {
       id: String(item._id),
@@ -365,12 +407,19 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         type: media.type,
         language: media.language,
       })),
-      tagIds: item.tagIds.map((id) => String(id)),
+      tagIds: item.searchTags.map(({ tag }) => String(tag)),
+      countryTagIds: item.searchTags
+        .filter(({ group }) => group === ETagGroup.COUNTRY)
+        .map(({ tag }) => String(tag)),
+      releaseStatusTagIds: item.searchTags
+        .filter(({ group }) => group === ETagGroup.RELEASE_STATUS)
+        .map(({ tag }) => String(tag)),
       rating,
       ratingScore,
       ratingsCount: isNil(ratingScore) ? 0 : ratingsCount,
       hasRating: isNil(ratingScore) ? 0 : 1,
       releaseDate: item.releaseDate?.getTime() ?? null,
+      releaseYear,
       hasReleaseDate: isNil(item.releaseDate) ? 0 : 1,
       latestReleaseDate:
         item.type !== EItemType.GAME && isDate(latestReleaseDate)

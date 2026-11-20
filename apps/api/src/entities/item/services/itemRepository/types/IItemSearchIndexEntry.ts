@@ -1,5 +1,7 @@
 import type { Types } from "mongoose"
 
+import type { Tag } from "@entities/tag/schemas/tag.schema"
+
 import type { Item } from "../../../schemas/item.schema"
 
 interface IItemSearchIndexEntry extends Pick<
@@ -17,7 +19,7 @@ interface IItemSearchIndexEntry extends Pick<
   | "game"
   | "deletedAt"
 > {
-  tagIds: Types.ObjectId[]
+  searchTags: (Pick<Tag, "group" | "key"> & { tag: Types.ObjectId })[]
   rating: number | null
   ratingsCount: number
 }

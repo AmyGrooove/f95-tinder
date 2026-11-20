@@ -14,7 +14,7 @@ const createSearchIndexProjection = (): PipelineStage.Project["$project"] => {
     series: 1,
     game: 1,
     deletedAt: 1,
-    tagIds: "$searchTags.tag",
+    searchTags: 1,
     ratingsCount: {
       $ifNull: [{ $arrayElemAt: ["$searchMetrics.ratingsCount", 0] }, 0],
     },

@@ -36,6 +36,14 @@ class UserLibraryBodyDto extends IntersectionType(
   @ValidateIf((_object, value: unknown) => !isUndefined(value))
   @IsBoolean()
   isFavorite?: boolean
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    description: SWAGGER_DICTIONARY.user.library.body.isUnrated,
+  })
+  @ValidateIf((_object, value: unknown) => !isUndefined(value))
+  @IsBoolean()
+  isUnrated?: boolean
 }
 
 export { UserLibraryBodyDto }

@@ -5,6 +5,7 @@ import { mongo, Types } from "mongoose"
 import type { HydratedDocument, Model, QueryOptions } from "mongoose"
 
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
+import { UserCollection } from "@entities/userCollection/schemas/userCollection.schema"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
@@ -106,6 +107,60 @@ class CollectionRepository implements OnModuleInit {
         .project({ _id: 1 })
         .use({ $sample: { size: limit } })
         .build(),
+    )
+  }
+
+  readAvailableItemCountsByIds(ids: Types.ObjectId[]) {
+    return this.aggregation.aggregate<{
+      _id: Types.ObjectId
+      itemCount: number
+    }>(
+      new AggregationBuilder()
+        .match({ _id: { $in: ids }, deletedAt: null })
+        .project({ _id: 1, blocks: 1 })
+        .use(
+          createAvailableCollectionMembershipLookup({ isCountRequested: true }),
+        )
+        .project({
+          _id: 1,
+          itemCount: {
+            $ifNull: [{ $first: "$availableMembership.itemCount" }, 0],
+          },
+        })
+        .build(),
+    )
+  }
+
+  async readRatingAveragesByIds(ids: Types.ObjectId[]) {
+    if (ids.length === 0) {
+      return new Map<string, number | null>()
+    }
+
+    const rows = await this.aggregation.aggregate<{
+      _id: Types.ObjectId
+      ratingAverage: number | null
+    }>(
+      new AggregationBuilder()
+        .match({ _id: { $in: ids }, deletedAt: null })
+        .project({ _id: 1 })
+        .use({
+          $lookup: {
+            from: UserCollection.name,
+            localField: "_id",
+            foreignField: "collectionId",
+            pipeline: [{ $group: { _id: null, average: { $avg: "$rating" } } }],
+            as: "ratings",
+          },
+        })
+        .project({
+          _id: 1,
+          ratingAverage: { $ifNull: [{ $first: "$ratings.average" }, null] },
+        })
+        .build(),
+    )
+
+    return new Map(
+      rows.map(({ _id, ratingAverage }) => [String(_id), ratingAverage]),
     )
   }
 

@@ -12,6 +12,7 @@ import type { ClientSession, HydratedDocument } from "mongoose"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { StorageService } from "@infrastructure/storage/services/storageService"
 import { UserRepository } from "@entities/user/services/userRepository"
+import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
@@ -46,6 +47,7 @@ class CollectionService {
     private readonly transactionService: MongoTransactionService,
     private readonly userRepository: UserRepository,
     private readonly storageService: StorageService,
+    private readonly userCollectionRepository: UserCollectionRepository,
   ) {}
 
   async create(accessToken: unknown, body: CreateCollectionBodyDto) {
@@ -131,16 +133,23 @@ class CollectionService {
       throw new NotFoundException(DICTIONARY.collection.notFound)
     }
 
-    const user = isNil(collection.author)
-      ? null
-      : await this.userRepository.read.findById(
-          collection.author.toHexString(),
-          {
+    const groupIds = collection.blocks
+      .filter((block) => block.type === ECollectionBlockType.GROUP)
+      .map((block) => block.id)
+    const [user, { total }, statistics] = await Promise.all([
+      isNil(collection.author)
+        ? null
+        : this.userRepository.read.findById(collection.author.toHexString(), {
             _id: 1,
             avatarUrl: 1,
             displayName: 1,
-          },
-        )
+          }),
+      this.itemCollectionRepository.readAvailableCounts({
+        collectionId: id,
+        groupIds,
+      }),
+      this.userCollectionRepository.readStatistics(id),
+    ])
 
     return this.mapResponse(
       collection,
@@ -151,6 +160,7 @@ class CollectionService {
             avatar: user.avatarUrl ?? null,
             displayName: user.displayName,
           },
+      { itemCount: total, ...statistics },
     )
   }
 
@@ -712,6 +722,10 @@ class CollectionService {
   private mapResponse(
     collection: HydratedDocument<Collection>,
     author: CollectionResponseDto["author"],
+    statistics: Pick<
+      CollectionResponseDto,
+      "itemCount" | "ratingAverage" | "ratingsCount" | "favoritesCount"
+    >,
   ): CollectionResponseDto {
     return {
       id: collection._id.toHexString(),
@@ -734,6 +748,7 @@ class CollectionService {
       blocks: collection.blocks.map((block) => this.mapBlock(block)),
       createdAt: collection.createdAt.toISOString(),
       updatedAt: collection.updatedAt.toISOString(),
+      ...statistics,
     }
   }
 

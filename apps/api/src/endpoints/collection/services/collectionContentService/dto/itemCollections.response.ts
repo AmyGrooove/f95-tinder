@@ -7,6 +7,7 @@ import {
 } from "@nestjs/swagger"
 import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageText.response"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { UserItemProgressResponseDto } from "@entities/userItem/dto/response/userItemProgress.response"
 import type { TLibraryStatus } from "@entities/userItem/types/TLibraryStatus"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import {
@@ -44,6 +45,13 @@ class CollectionGroupItemResponseDto extends PickType(
     description: SWAGGER_DICTIONARY.collection.itemsUserStatus,
   })
   userStatus: TLibraryStatus | null
+
+  @ApiProperty({
+    type: UserItemProgressResponseDto,
+    nullable: true,
+    description: SWAGGER_DICTIONARY.collection.itemsUserProgress,
+  })
+  userProgress: UserItemProgressResponseDto | null
 }
 
 class CollectionItemsMetadataResponseDto {
@@ -55,6 +63,7 @@ class CollectionItemsMetadataResponseDto {
 }
 
 class CollectionItemsGroupResponseDto extends PickType(GroupBlockResponseDto, [
+  "id",
   "type",
   "title",
   "description",
@@ -83,6 +92,9 @@ class ItemCollectionsResponseDto {
     },
   })
   blocks: (CollectionItemsGroupResponseDto | CollectionItemsTextResponseDto)[]
+
+  @ApiPropertyOptional({ type: [CollectionGroupItemResponseDto] })
+  items?: CollectionGroupItemResponseDto[]
 
   @ApiPropertyOptional({
     type: CollectionItemsMetadataResponseDto,

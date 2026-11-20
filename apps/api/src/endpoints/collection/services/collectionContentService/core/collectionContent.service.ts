@@ -1,16 +1,26 @@
 import { REGEX } from "@shared/static/REGEX"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
-import { Injectable, NotFoundException } from "@nestjs/common"
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common"
 import { Types } from "mongoose"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import type { CollectionBlock } from "@entities/collection/schemas/collectionBlock.schema"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
+import type { IItemCollectionCard } from "@entities/itemCollection/services/itemCollectionRepository"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { ESort } from "@entities/shared/types/ESort"
+import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
+import { ECollectionMode } from "@endpoints/collection/types/ECollectionMode"
+import { ECollectionSort } from "@endpoints/collection/types/ECollectionSort"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isInt } from "@shared/functions/checks/isInt"
@@ -39,14 +49,49 @@ class CollectionContentService {
     props: IGetItemCollectionsRequestProps,
   ): Promise<ItemCollectionsResponseDto> {
     const { accessToken, id, query } = props
-    const { types, limit = 50 } = query
+    const {
+      cursor,
+      types,
+      search,
+      rating,
+      limit = 50,
+      mode = ECollectionMode.GROUPED,
+      sort = ECollectionSort.COLLECTION,
+    } = query
+    const isGrouped = mode === ECollectionMode.GROUPED
+    const isAuthorOrder = sort === ECollectionSort.COLLECTION
+    const direction =
+      query.direction ??
+      (sort === ESort.TITLE ? ESortDirection.ASC : ESortDirection.DESC)
+    const language =
+      sort === ESort.TITLE
+        ? (query.language ?? ELanguage.RUSSIAN)
+        : ELanguage.RUSSIAN
+    const isDefaultView =
+      isGrouped && isAuthorOrder && isUndefined(search) && isUndefined(rating)
+
+    if (!isUndefined(rating)) {
+      const { min, max } = rating
+      if ((isUndefined(min) && isUndefined(max)) || (min ?? 1) > (max ?? 10)) {
+        throw new BadRequestException(
+          DICTIONARY.collection.invalidItemsRatingRange,
+        )
+      }
+    }
+
     const allTypes = Object.values(EItemType)
     const filteredTypes = types?.length === allTypes.length ? undefined : types
     const userId = isUndefined(accessToken)
       ? undefined
       : await this.collectionAuthService.authenticate(accessToken)
-    const isPersonalFilterApplied =
+    const isCollectionHideFilterApplied =
       !isUndefined(userId) && query.isPersonalFilteringEnabled === true
+    const isItemStatusOnlyFilterApplied =
+      !isUndefined(userId) &&
+      !isCollectionHideFilterApplied &&
+      query.isItemStatusFilteringEnabled === true
+    const isItemStatusFilterApplied =
+      isCollectionHideFilterApplied || isItemStatusOnlyFilterApplied
     const { collection, groupIds } = await this.getContentContext(id)
     const scope = [
       "collectionItems",
@@ -55,9 +100,27 @@ class CollectionContentService {
       [...(filteredTypes ?? allTypes)].sort(),
       limit,
       userId?.toHexString() ?? null,
-      isPersonalFilterApplied,
+      isCollectionHideFilterApplied,
+      ...(isDefaultView
+        ? []
+        : [
+            mode,
+            sort,
+            isAuthorOrder ? null : direction,
+            language,
+            search ?? null,
+            rating?.min ?? null,
+            rating?.max ?? null,
+          ]),
+      ...(isItemStatusOnlyFilterApplied ? ["itemStatusFilter"] : []),
     ]
-    const after = this.readCursor(query.cursor, scope, groupIds.length)
+    const after = isAuthorOrder
+      ? this.readCursor(cursor, scope, groupIds.length)
+      : undefined
+    const sortedPosition = isAuthorOrder
+      ? undefined
+      : this.readSortedCursor(cursor, scope, groupIds.length, limit)
+    const offset = sortedPosition?.offset ?? 0
     const metadata =
       query.isMetadataIncluded === true
         ? {
@@ -74,12 +137,18 @@ class CollectionContentService {
           }
         : {}
 
-    if (isPersonalFilterApplied) {
+    if (isCollectionHideFilterApplied) {
       const reaction =
         await this.userCollectionRepository.findByUserAndCollection(userId, id)
 
       if (reaction?.isHidden === true) {
-        return { nextCursor: null, blocks: [], ...metadata, isHidden: true }
+        return {
+          nextCursor: null,
+          blocks: [],
+          ...(!isGrouped && { items: [] }),
+          ...metadata,
+          isHidden: true,
+        }
       }
     }
 
@@ -90,14 +159,19 @@ class CollectionContentService {
       limit: limit + 1,
       types: filteredTypes,
       userId,
-      isPersonalFilterApplied,
+      isPersonalFilterApplied: isItemStatusFilterApplied,
+      isGrouped,
+      search,
+      rating,
+      sort: isAuthorOrder
+        ? undefined
+        : {
+            field: sort,
+            direction: direction === ESortDirection.ASC ? 1 : -1,
+            language,
+            offset,
+          },
     })
-    if (
-      (!isUndefined(filteredTypes) || isPersonalFilterApplied) &&
-      rows.length === 0
-    ) {
-      return { nextCursor: null, blocks: [], ...metadata, isHidden: false }
-    }
 
     const page = rows.slice(0, limit)
     const last = page.at(-1)
@@ -105,9 +179,46 @@ class CollectionContentService {
       rows.length > limit && !isUndefined(last)
         ? this.cursorService.create({
             scope,
-            position: [last.groupOrder, last.position, last._id.toHexString()],
+            position: isAuthorOrder
+              ? [last.groupOrder, last.position, last._id.toHexString()]
+              : [offset + limit, last.groupOrder],
           })
         : null
+
+    const response = { nextCursor, ...metadata, isHidden: false }
+
+    if (!isGrouped) {
+      return {
+        ...response,
+        blocks: [],
+        items: page.map((row) => this.mapItem(row)),
+      }
+    }
+
+    const isFiltered =
+      !isUndefined(filteredTypes) ||
+      isItemStatusFilterApplied ||
+      !isUndefined(search) ||
+      !isUndefined(rating)
+    const blocks =
+      rows.length === 0 && isFiltered
+        ? []
+        : this.mapBlocks(
+            collection.blocks,
+            page,
+            after?.groupOrder ?? sortedPosition?.groupOrder ?? -1,
+            isNil(nextCursor),
+          )
+
+    return { ...response, blocks }
+  }
+
+  private mapBlocks(
+    collectionBlocks: readonly CollectionBlock[],
+    page: readonly IItemCollectionCard[],
+    previousGroupOrder: number,
+    isLastPage: boolean,
+  ): ItemCollectionsResponseDto["blocks"] {
     const itemsByGroup = new Map<string, CollectionGroupItemResponseDto[]>()
     for (const row of page) {
       const groupId = row.groupId.toHexString()
@@ -119,9 +230,9 @@ class CollectionContentService {
     const blocks: ItemCollectionsResponseDto["blocks"] = []
     let pendingText: ItemCollectionsResponseDto["blocks"] = []
     let groupOrder = -1
-    for (const block of collection.blocks) {
+    for (const block of collectionBlocks) {
       if (block.type === ECollectionBlockType.TEXT) {
-        if (groupOrder >= (after?.groupOrder ?? -1)) {
+        if (groupOrder >= previousGroupOrder) {
           pendingText.push({
             type: block.type,
             content: {
@@ -140,6 +251,7 @@ class CollectionContentService {
       }
 
       blocks.push(...pendingText, {
+        id: block.id.toHexString(),
         type: block.type,
         title: isNil(block.title)
           ? null
@@ -151,16 +263,40 @@ class CollectionContentService {
       })
       pendingText = []
     }
-    if (isNil(nextCursor)) {
+    if (isLastPage) {
       blocks.push(...pendingText)
     }
 
-    return {
-      nextCursor,
-      blocks,
-      ...metadata,
-      isHidden: false,
+    return blocks
+  }
+
+  private readSortedCursor(
+    cursor: string | undefined,
+    scope: readonly unknown[],
+    groupCount: number,
+    limit: number,
+  ) {
+    if (isUndefined(cursor)) {
+      return undefined
     }
+
+    const [offset, groupOrder] = this.cursorService.read({
+      cursor,
+      scope,
+      isPosition: (value): value is [number, number] =>
+        isArray(value) &&
+        value.length === 2 &&
+        isInt(value[0]) &&
+        value[0] >= limit &&
+        value[0] <= Number.MAX_SAFE_INTEGER - limit &&
+        value[0] % limit === 0 &&
+        isInt(value[1]) &&
+        isNonNegativeSafe(value[1]) &&
+        value[1] < groupCount,
+      invalidCursorMessage: DICTIONARY.collection.invalidItemsCursor,
+    })
+
+    return { offset, groupOrder }
   }
 
   private readCursor(
@@ -205,12 +341,12 @@ class CollectionContentService {
     return { collection, groupIds }
   }
 
-  private mapItem(
-    card: Awaited<
-      ReturnType<ItemCollectionRepository["readContentSlice"]>
-    >[number],
-  ): CollectionGroupItemResponseDto {
+  private mapItem(card: IItemCollectionCard): CollectionGroupItemResponseDto {
     const status = card.viewerItem?.status
+    const userStatus =
+      status === EUserItemStatus.BLOCKED || status === EUserItemStatus.SKIPPED
+        ? null
+        : (status ?? null)
 
     return {
       id: card.item._id.toHexString(),
@@ -227,10 +363,10 @@ class CollectionContentService {
       note: card.note,
       ratingAverage: card.ratingAverage ?? null,
       userRating: card.viewerItem?.rating ?? null,
-      userStatus:
-        status === EUserItemStatus.BLOCKED || status === EUserItemStatus.SKIPPED
-          ? null
-          : (status ?? null),
+      userStatus,
+      userProgress: isNil(userStatus)
+        ? null
+        : (card.viewerItem?.progress ?? null),
     }
   }
 }

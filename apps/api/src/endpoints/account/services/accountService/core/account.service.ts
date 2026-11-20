@@ -176,6 +176,9 @@ class AccountService {
         username: 1,
         displayName: 1,
         avatarUrl: 1,
+        email: 1,
+        passwordHash: 1,
+        accessCodeHash: 1,
         role: 1,
       }),
     ])
@@ -191,7 +194,11 @@ class AccountService {
         id: user._id.toHexString(),
         username: user.username,
         displayName: user.displayName,
-        avatarUrl: user.avatarUrl,
+        avatarUrl: user.avatarUrl ?? null,
+        email: user.email ?? null,
+        isPasswordSet: !isNil(user.passwordHash),
+        isAccessCodeEnabled:
+          isNil(user.passwordHash) && !isNil(user.accessCodeHash),
         role: user.role,
       },
       session: {

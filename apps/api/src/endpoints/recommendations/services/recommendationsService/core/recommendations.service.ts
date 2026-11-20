@@ -31,7 +31,10 @@ import { FALLBACK_PAGE_SETTINGS } from "../static/FALLBACK_PAGE_SETTINGS"
 import { InvalidRecommendationModelError } from "../static/errors/InvalidRecommendationModelError"
 import type { IFallbackCursorPosition } from "../types/IFallbackCursorPosition"
 import type { IFallbackSnapshot } from "../types/IFallbackSnapshot"
-import type { IFindRecommendationsProps } from "../types/IFindRecommendationsProps"
+import type {
+  IFindRecommendationsProps,
+  TReadRecommendationFeedPageProps,
+} from "../types/IFindRecommendationsProps"
 import type { TReadRecommendationFeedSources } from "../types/IRecommendationFeedSources"
 import type { IRecommendationModel } from "../types/IRecommendationModel"
 import type { TFindRecommendationsResult } from "../types/TFindRecommendationsResult"
@@ -121,7 +124,7 @@ class RecommendationsService {
 
   readFeedPage(
     accessToken: unknown,
-    props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
+    props: TReadRecommendationFeedPageProps,
     readSources: TReadRecommendationFeedSources,
   ) {
     return this.readSnapshotPage(accessToken, props, {
@@ -133,7 +136,7 @@ class RecommendationsService {
 
   private async readSnapshotPage<TCard>(
     accessToken: unknown,
-    props: Pick<IFindRecommendationsProps, "cursor" | "filter" | "limit">,
+    props: TReadRecommendationFeedPageProps,
     options: {
       namespace: string
       readCards: (
@@ -147,6 +150,7 @@ class RecommendationsService {
       cursor,
       filter,
       limit = FALLBACK_PAGE_SETTINGS.defaultPageSize,
+      excludeItemIds,
     } = props
     const { invalidCursor, invalidLimit } = DICTIONARY.recommendation
 
@@ -190,7 +194,7 @@ class RecommendationsService {
             await this.buildItemIds(
               await this.candidatesService.prepareContextForViewer(viewer),
               filter,
-              readSources,
+              { readSources, excludeItemIds },
             )
           ).map((id) => id.toHexString()),
         }
@@ -233,7 +237,13 @@ class RecommendationsService {
   private async buildItemIds(
     context: IRecommendationCandidateContext,
     filter?: IFindRecommendationsProps["filter"],
-    readSources?: TReadRecommendationFeedSources,
+    {
+      readSources,
+      excludeItemIds = [],
+    }: {
+      readSources?: TReadRecommendationFeedSources
+      excludeItemIds?: readonly Types.ObjectId[]
+    } = {},
   ) {
     const { types, ...candidateFilter } = filter ?? {}
     const selectedTypes = Object.values(EItemType).filter(
@@ -250,6 +260,7 @@ class RecommendationsService {
         ),
       ),
     )
+    const excludedIds = new Set(excludeItemIds.map((id) => id.toHexString()))
     const items: Types.ObjectId[] = []
     const longestListLength = Math.max(0, ...lists.map((list) => list.length))
 
@@ -257,7 +268,7 @@ class RecommendationsService {
       for (const list of lists) {
         const itemId = list[index]
 
-        if (!isUndefined(itemId)) {
+        if (!isUndefined(itemId) && !excludedIds.has(itemId.toHexString())) {
           items.push(itemId)
         }
       }

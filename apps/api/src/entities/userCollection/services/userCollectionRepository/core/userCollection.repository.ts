@@ -3,6 +3,7 @@ import { InjectModel } from "@nestjs/mongoose"
 import { mongo } from "mongoose"
 import type { HydratedDocument, Model, Types } from "mongoose"
 
+import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { MongoAggregationRepository } from "@infrastructure/database/services/mongoAggregationRepository"
 import { MongoBulkRepository } from "@infrastructure/database/services/mongoBulkRepository"
 import { MongoPaginationRepository } from "@infrastructure/database/services/mongoPaginationRepository"
@@ -55,6 +56,42 @@ class UserCollectionRepository {
     return this.read.findOne(
       { user: userId, collectionId },
       { _id: 0, isFavorite: 1, rating: 1, isHidden: 1 },
+    )
+  }
+
+  async readFavoriteCollectionIds(userId: Types.ObjectId) {
+    const reactions = await this.read.findMany(
+      { user: userId, isFavorite: true },
+      { _id: 0, collectionId: 1 },
+      { lean: true },
+    )
+
+    return reactions.map(({ collectionId }) => collectionId.toHexString())
+  }
+
+  async readStatistics(collectionId: Types.ObjectId) {
+    const pipeline = new AggregationBuilder()
+      .match({ collectionId })
+      .use({
+        $group: {
+          _id: null,
+          ratingAverage: { $avg: "$rating" },
+          ratingsCount: { $sum: { $cond: [{ $isNumber: "$rating" }, 1, 0] } },
+          favoritesCount: {
+            $sum: { $cond: [{ $eq: ["$isFavorite", true] }, 1, 0] },
+          },
+        },
+      })
+      .project({ _id: 0, ratingAverage: 1, ratingsCount: 1, favoritesCount: 1 })
+      .build()
+    const [statistics] = await this.aggregation.aggregate<{
+      ratingAverage: number | null
+      ratingsCount: number
+      favoritesCount: number
+    }>(pipeline)
+
+    return (
+      statistics ?? { ratingAverage: null, ratingsCount: 0, favoritesCount: 0 }
     )
   }
 

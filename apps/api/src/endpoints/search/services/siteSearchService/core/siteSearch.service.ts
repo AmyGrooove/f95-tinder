@@ -8,14 +8,17 @@ import {
 import { Types } from "mongoose"
 
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
+import { EItemField } from "@entities/item/schemas/EItemField"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import type { IItemPosterCard } from "@entities/item/services/itemRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import type { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import { filterSingleValues } from "@entities/shared/functions/filterSingleValues"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
@@ -23,6 +26,7 @@ import { UserItemRepository } from "@entities/userItem/services/userItemReposito
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { AuthService } from "@endpoints/auth/services/authService"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
+import { SEARCH_ITEM_FIELDS } from "@endpoints/search/static/SEARCH_ITEM_FIELDS"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import type { ValueFilter } from "@entities/shared/types/ValueFilter"
@@ -43,6 +47,7 @@ import type { SearchBodyDto } from "../dto/search.body"
 import type { SearchResponseDto } from "../dto/search.response"
 import { ESort } from "@entities/shared/types/ESort"
 import { ESearchGroup } from "../types/ESearchGroup"
+import type { IItemSearchPersonalFilters } from "../types/IItemSearchPersonalFilters"
 import type { IReadSearchGroupPageProps } from "../types/IReadSearchGroupPageProps"
 import type { ISearchGroupOptions } from "../types/ISearchGroupOptions"
 import type { ISearchGroupProps } from "../types/ISearchGroupProps"
@@ -60,6 +65,7 @@ class SiteSearchService {
     private readonly userItemRepository: UserItemRepository,
     private readonly userCollectionRepository: UserCollectionRepository,
     private readonly itemStatsRepository: ItemStatsRepository,
+    private readonly itemCollectionRepository: ItemCollectionRepository,
   ) {}
 
   async search(
@@ -83,17 +89,68 @@ class SiteSearchService {
     }
 
     const options = this.prepareGroups(body)
+    const collectionItemId = body.collections?.itemId?.toLowerCase()
+    const collectionAuthorId = body.collections?.authorId?.toLowerCase()
+    const collectionFavoritedByUserId =
+      body.collections?.favoritedByUserId?.toLowerCase()
+    this.validateRange(body.items?.userRating)
 
     try {
       const viewerId = isUndefined(accessToken)
         ? undefined
         : await this.authenticateViewer(accessToken)
-      const filterViewerId = isPersonalFilteringEnabled ? viewerId : undefined
+      const isVerifiedViewer = !isUndefined(viewerId)
+      const isLegacyPersonalFilterActive =
+        isVerifiedViewer && isPersonalFilteringEnabled
+      const itemFilters = this.prepareItemPersonalFilters(
+        isVerifiedViewer ? body.items : undefined,
+        isLegacyPersonalFilterActive,
+      )
+      const isHiddenCollectionExcluded =
+        isVerifiedViewer &&
+        (body.collections?.isHiddenExcluded ?? isPersonalFilteringEnabled)
+      const isFavoriteCollection =
+        isVerifiedViewer && body.collections?.isFavorite === true
+      if (itemFilters.statuses?.length === 0) {
+        options.items.isImpossible = true
+      }
+
+      if (!isUndefined(viewerId) && body.collections?.isMine === true) {
+        options.collections.filter.push(
+          `authorId = ${JSON.stringify(viewerId.toHexString())}`,
+        )
+      }
+
+      if (!isUndefined(collectionAuthorId)) {
+        options.collections.filter.push(
+          `authorId = ${JSON.stringify(collectionAuthorId)}`,
+        )
+      }
+
+      const isAnyAdditionalItemFilterActive =
+        itemFilters.isFavorite ||
+        !isUndefined(itemFilters.isUserItemPresent) ||
+        !isUndefined(itemFilters.statuses) ||
+        !isUndefined(itemFilters.userRating)
       const isItemCandidatePage =
         isLatestRelease ||
         (isUndefined(body.search) && body.items?.sort === ESort.RATING) ||
-        !isUndefined(filterViewerId)
-      const isCollectionCandidatePage = !isUndefined(filterViewerId)
+        itemFilters.isCompletedOrDroppedExcluded ||
+        itemFilters.isBlockedExcluded ||
+        isAnyAdditionalItemFilterActive
+      const isCollectionCandidatePage =
+        isHiddenCollectionExcluded ||
+        isFavoriteCollection ||
+        !isUndefined(collectionAuthorId) ||
+        !isUndefined(collectionFavoritedByUserId)
+      const isItemFilterDifferentFromLegacy =
+        itemFilters.isCompletedOrDroppedExcluded !==
+          isLegacyPersonalFilterActive ||
+        itemFilters.isBlockedExcluded !== isLegacyPersonalFilterActive ||
+        isAnyAdditionalItemFilterActive
+      const isCollectionFilterDifferentFromLegacy =
+        isHiddenCollectionExcluded !== isLegacyPersonalFilterActive ||
+        isFavoriteCollection
       const candidateGroups = new Set<ESearchGroup>([
         ...(isItemCandidatePage ? [ESearchGroup.ITEMS] : []),
         ...(isCollectionCandidatePage ? [ESearchGroup.COLLECTIONS] : []),
@@ -104,7 +161,23 @@ class SiteSearchService {
         limit,
         selected.map((group) => [group, options[group]]),
         viewerId?.toHexString() ?? null,
-        !isUndefined(filterViewerId),
+        isLegacyPersonalFilterActive,
+        ...(selected.includes(ESearchGroup.ITEMS) &&
+        isItemFilterDifferentFromLegacy
+          ? [itemFilters]
+          : []),
+        ...(selected.includes(ESearchGroup.COLLECTIONS) &&
+        isCollectionFilterDifferentFromLegacy
+          ? [{ isHiddenCollectionExcluded, isFavoriteCollection }]
+          : []),
+        ...(selected.includes(ESearchGroup.COLLECTIONS) &&
+        !isUndefined(collectionItemId)
+          ? [{ collectionItemId }]
+          : []),
+        ...(selected.includes(ESearchGroup.COLLECTIONS) &&
+        !isUndefined(collectionFavoritedByUserId)
+          ? [{ collectionFavoritedByUserId }]
+          : []),
       ]
       const now = Date.now()
       const position = isUndefined(body.cursor)
@@ -146,9 +219,24 @@ class SiteSearchService {
           position[index + Number(isLatestRelease)],
         ]),
       )
+
+      const collectionOptions =
+        isNil(offsets.get(ESearchGroup.COLLECTIONS)) ||
+        options.collections.isImpossible === true
+          ? options.collections
+          : await this.applyCollectionIdFilters({
+              options: options.collections,
+              itemId: collectionItemId,
+              favoritedByUserId: collectionFavoritedByUserId,
+            })
+
       const isAnyGroupActive = selected.some(
         (group) =>
-          !isNil(offsets.get(group)) && options[group].isImpossible !== true,
+          !isNil(offsets.get(group)) &&
+          (group === ESearchGroup.COLLECTIONS
+            ? collectionOptions
+            : options[group]
+          ).isImpossible !== true,
       )
 
       if (!isAnyGroupActive) {
@@ -180,16 +268,23 @@ class SiteSearchService {
               },
           isCandidatePage: candidateGroups.has(ESearchGroup.ITEMS),
           load: (ids) =>
-            this.loadItems(ids, viewerId, !isUndefined(filterViewerId)),
+            this.loadItems({ ids, viewerId, filters: itemFilters }),
         }),
         this.readGroupPage({
           body,
           limit,
           group: ESearchGroup.COLLECTIONS,
           offset: offsets.get(ESearchGroup.COLLECTIONS),
-          props: options.collections,
+          props: collectionOptions,
           isCandidatePage: candidateGroups.has(ESearchGroup.COLLECTIONS),
-          load: (ids) => this.loadCollections(ids, filterViewerId),
+          load: (ids) =>
+            this.loadCollections({
+              ids,
+              authorId: collectionAuthorId,
+              viewerId,
+              isHiddenExcluded: isHiddenCollectionExcluded,
+              isFavorite: isFavoriteCollection,
+            }),
         }),
         this.readGroupPage({
           body,
@@ -216,7 +311,7 @@ class SiteSearchService {
 
       return {
         items: items.cards,
-        collections: collections.cards,
+        collections: await this.enrichCollectionCards(collections.cards),
         users: users.cards,
         nextCursor,
       }
@@ -229,6 +324,57 @@ class SiteSearchService {
         cause: error,
       })
     }
+  }
+
+  private async applyCollectionIdFilters({
+    options,
+    itemId,
+    favoritedByUserId,
+  }: {
+    options: ISearchGroupOptions
+    itemId?: string
+    favoritedByUserId?: string
+  }) {
+    const [memberIds, favoriteIds] = await Promise.all([
+      isUndefined(itemId)
+        ? undefined
+        : this.readCollectionIdsByItem(new Types.ObjectId(itemId)),
+      isUndefined(favoritedByUserId)
+        ? undefined
+        : this.userCollectionRepository.readFavoriteCollectionIds(
+            new Types.ObjectId(favoritedByUserId),
+          ),
+    ])
+    const favoriteIdSet =
+      !isUndefined(memberIds) && !isUndefined(favoriteIds)
+        ? new Set(favoriteIds)
+        : undefined
+    const collectionIds =
+      !isUndefined(memberIds) && !isUndefined(favoriteIdSet)
+        ? memberIds.filter((id) => favoriteIdSet.has(id))
+        : (memberIds ?? favoriteIds)
+
+    if (isUndefined(collectionIds)) {
+      return options
+    }
+
+    return collectionIds.length === 0
+      ? { ...options, isImpossible: true }
+      : {
+          ...options,
+          filter: [...options.filter, `id IN ${JSON.stringify(collectionIds)}`],
+        }
+  }
+
+  private async readCollectionIdsByItem(itemId: Types.ObjectId) {
+    const isAvailable = await this.itemRepository.read.checkIsExists({
+      _id: itemId,
+      deletedAt: null,
+    })
+
+    return isAvailable
+      ? this.itemCollectionRepository.readPublicCollectionIdsByItem(itemId)
+      : []
   }
 
   private selectGroups({ entities }: SearchBodyDto) {
@@ -314,8 +460,15 @@ class SiteSearchService {
                   : undefined,
       },
       collections: {
-        isImpossible: (collectionTypes?.allOf?.length ?? 0) > 1,
-        filter: this.createValueFilters("type", collectionTypes),
+        isImpossible:
+          (collectionTypes?.allOf?.length ?? 0) > 1 ||
+          (collections?.tagGroups?.allOf?.length ?? 0) > 1,
+        filter: [
+          ...this.createValueFilters("type", collectionTypes),
+          ...this.createValueFilters("tagGroup", collections?.tagGroups),
+          ...(collections?.source === "site" ? ["authorId IS NULL"] : []),
+          ...(collections?.source === "user" ? ["authorId IS NOT NULL"] : []),
+        ],
         isAscendingRelevance:
           collectionSort === ESort.RELEVANCE &&
           collectionDirection === ESortDirection.ASC,
@@ -327,7 +480,13 @@ class SiteSearchService {
               ]
             : collectionSort === ESort.UPDATED_AT
               ? [`updatedAt:${collectionDirection}`, "id:asc"]
-              : undefined,
+              : collectionSort === ESort.RATING
+                ? [
+                    "hasRating:desc",
+                    `ratingAverage:${collectionDirection}`,
+                    "id:asc",
+                  ]
+                : undefined,
       },
       users: {
         filter: [],
@@ -342,7 +501,6 @@ class SiteSearchService {
   }
 
   private createItemFilters(items: SearchBodyDto["items"]) {
-    const { min, max } = items?.rating ?? {}
     const isLatestRelease = items?.sort === ESort.LATEST_RELEASE_DATE
     const types = isLatestRelease
       ? (items.types ?? Object.values(EItemType)).filter(
@@ -350,21 +508,74 @@ class SiteSearchService {
         )
       : items?.types
 
-    if (
-      (!isNil(items?.rating) && isNil(min) && isNil(max)) ||
-      (!isNil(min) && !isNil(max) && min > max)
-    ) {
-      throw new BadRequestException(DICTIONARY.search.invalidFilters)
-    }
+    const durationField =
+      SEARCH_ITEM_FIELDS[items?.duration?.field ?? EItemField.DURATION]
 
     return [
       ...(isNil(types) ? [] : [`type IN ${JSON.stringify([...types].sort())}`]),
       ...(isLatestRelease ? ["latestReleaseDate IS NOT NULL"] : []),
       ...this.createValueFilters("tagIds", items?.tags),
-      ...(!isNil(min) || !isNil(max) ? ["rating IS NOT NULL"] : []),
-      ...(isNil(min) ? [] : [`rating >= ${min}`]),
-      ...(isNil(max) ? [] : [`rating <= ${max}`]),
+      ...this.createValueFilters("countryTagIds", items?.countries),
+      ...this.createValueFilters("releaseStatusTagIds", items?.releaseStatuses),
+      ...this.createRangeFilters("rating", items?.rating),
+      ...this.createRangeFilters("releaseYear", items?.releaseYear),
+      ...this.createRangeFilters(`fields.${durationField}`, items?.duration),
     ]
+  }
+
+  private validateRange(range?: { min?: number; max?: number }) {
+    if (isUndefined(range)) {
+      return
+    }
+
+    const { min, max } = range
+    if (
+      (isNil(min) && isNil(max)) ||
+      (!isNil(min) && !isNil(max) && min > max)
+    ) {
+      throw new BadRequestException(DICTIONARY.search.invalidFilters)
+    }
+  }
+
+  private createRangeFilters(
+    attribute: string,
+    range?: { min?: number; max?: number },
+  ) {
+    this.validateRange(range)
+    if (isUndefined(range)) {
+      return []
+    }
+
+    return [
+      `${attribute} IS NOT NULL`,
+      ...(isNil(range.min) ? [] : [`${attribute} >= ${range.min}`]),
+      ...(isNil(range.max) ? [] : [`${attribute} <= ${range.max}`]),
+    ]
+  }
+
+  private prepareItemPersonalFilters(
+    items: SearchBodyDto["items"],
+    isLegacyPersonalFilterActive: boolean,
+  ): IItemSearchPersonalFilters {
+    const { statuses, isUserItemPresent, userRating } = items ?? {}
+    const libraryStatuses = [...USER_ITEM_LIBRARY_STATUSES, "outside"] as const
+    const allowedStatuses = filterSingleValues(libraryStatuses, statuses)
+
+    return {
+      isCompletedOrDroppedExcluded:
+        items?.isCompletedOrDroppedExcluded ?? isLegacyPersonalFilterActive,
+      isBlockedExcluded:
+        items?.isBlockedExcluded ?? isLegacyPersonalFilterActive,
+      isFavorite: items?.isFavorite === true,
+      isUserItemPresent,
+      statuses:
+        allowedStatuses.length === libraryStatuses.length
+          ? undefined
+          : allowedStatuses,
+      userRating: isUndefined(userRating)
+        ? undefined
+        : { min: userRating.min, max: userRating.max },
+    }
   }
 
   private createValueFilters(attribute: string, filter?: ValueFilter<string>) {
@@ -460,11 +671,15 @@ class SiteSearchService {
     return ranked.slice(offset)
   }
 
-  private async loadItems(
-    ids: string[],
-    viewerId: Types.ObjectId | undefined,
-    isPersonalFilterEnabled: boolean,
-  ): Promise<SearchResponseDto["items"]> {
+  private async loadItems({
+    ids,
+    viewerId,
+    filters,
+  }: {
+    ids: string[]
+    viewerId?: Types.ObjectId
+    filters: IItemSearchPersonalFilters
+  }): Promise<SearchResponseDto["items"]> {
     if (ids.length === 0) {
       return []
     }
@@ -475,7 +690,7 @@ class SiteSearchService {
       !isUndefined(viewerId)
         ? this.userItemRepository.read.findMany(
             { user: viewerId, item: { $in: itemIds } },
-            { _id: 0, item: 1, status: 1, rating: 1 },
+            { _id: 0, item: 1, status: 1, rating: 1, isFavorite: 1 },
           )
         : [],
       this.itemStatsRepository.read.findMany(
@@ -494,11 +709,27 @@ class SiteSearchService {
       const card = this.mapItem(item)
       const userItem = userItemsById.get(card.id)
       const status = userItem?.status
+      const userStatus =
+        USER_ITEM_LIBRARY_STATUSES.find(
+          (libraryStatus) => libraryStatus === status,
+        ) ?? null
+      const userRating =
+        status === EUserItemStatus.SKIPPED ? null : (userItem?.rating ?? null)
       if (
-        isPersonalFilterEnabled &&
-        (status === EUserItemStatus.COMPLETED ||
-          status === EUserItemStatus.DROPPED ||
-          status === EUserItemStatus.BLOCKED)
+        (filters.isCompletedOrDroppedExcluded &&
+          (status === EUserItemStatus.COMPLETED ||
+            status === EUserItemStatus.DROPPED)) ||
+        (filters.isBlockedExcluded && status === EUserItemStatus.BLOCKED) ||
+        (filters.isFavorite && userItem?.isFavorite !== true) ||
+        (!isUndefined(filters.isUserItemPresent) &&
+          filters.isUserItemPresent !== !isUndefined(userItem)) ||
+        filters.statuses?.includes(userStatus ?? "outside") === false ||
+        (!isUndefined(filters.userRating) &&
+          (isNil(userRating) ||
+            (!isUndefined(filters.userRating.min) &&
+              userRating < filters.userRating.min) ||
+            (!isUndefined(filters.userRating.max) &&
+              userRating > filters.userRating.max)))
       ) {
         return []
       }
@@ -507,51 +738,68 @@ class SiteSearchService {
         {
           ...card,
           rating: ratingsById.get(card.id) ?? null,
-          userRating:
-            status === EUserItemStatus.SKIPPED
-              ? null
-              : (userItem?.rating ?? null),
-          userStatus:
-            USER_ITEM_LIBRARY_STATUSES.find(
-              (libraryStatus) => libraryStatus === status,
-            ) ?? null,
+          userRating,
+          userStatus,
         },
       ]
     })
   }
 
-  private async loadCollections(
-    ids: string[],
-    viewerId?: Types.ObjectId,
-  ): Promise<SearchResponseDto["collections"]> {
+  private async loadCollections({
+    ids,
+    authorId,
+    viewerId,
+    isHiddenExcluded,
+    isFavorite,
+  }: {
+    ids: string[]
+    authorId?: string
+    viewerId?: Types.ObjectId
+    isHiddenExcluded: boolean
+    isFavorite: boolean
+  }) {
     if (ids.length === 0) {
       return []
     }
 
     const collectionIds = ids.map((id) => new Types.ObjectId(id))
-    const [documents, hidden] = await Promise.all([
+    const [documents, reactions] = await Promise.all([
       this.collectionRepository.read.findMany(
-        { _id: { $in: collectionIds }, deletedAt: null },
-        { _id: 1, type: 1, title: 1, media: 1 },
+        {
+          _id: { $in: collectionIds },
+          deletedAt: null,
+          ...(isUndefined(authorId)
+            ? {}
+            : { author: new Types.ObjectId(authorId) }),
+        },
+        { _id: 1, type: 1, title: 1, media: 1, author: 1 },
       ),
-      isUndefined(viewerId)
+      isUndefined(viewerId) || (!isHiddenExcluded && !isFavorite)
         ? []
         : this.userCollectionRepository.read.findMany(
             {
               user: viewerId,
               collectionId: { $in: collectionIds },
-              isHidden: true,
             },
-            { _id: 0, collectionId: 1 },
+            { _id: 0, collectionId: 1, isHidden: 1, isFavorite: 1 },
           ),
     ])
-    const hiddenIds = new Set(hidden.map((entry) => String(entry.collectionId)))
+    const reactionsById = new Map(
+      reactions.map((reaction) => [String(reaction.collectionId), reaction]),
+    )
 
-    return this.orderCards(
-      ids.filter((id) => !hiddenIds.has(id)),
-      documents,
-    ).map((collection) => ({
+    const visibleIds = ids.filter((id) => {
+      const reaction = reactionsById.get(id)
+
+      return (
+        (!isHiddenExcluded || reaction?.isHidden !== true) &&
+        (!isFavorite || reaction?.isFavorite === true)
+      )
+    })
+
+    return this.orderCards(visibleIds, documents).map((collection) => ({
       id: String(collection._id),
+      authorId: collection.author,
       type: collection.type,
       title: {
         [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
@@ -559,6 +807,57 @@ class SiteSearchService {
       },
       media: this.mapMedia(collection.media),
     }))
+  }
+
+  private async enrichCollectionCards(
+    cards: Awaited<ReturnType<SiteSearchService["loadCollections"]>>,
+  ): Promise<SearchResponseDto["collections"]> {
+    if (cards.length === 0) {
+      return []
+    }
+
+    const collectionIds = cards.map(({ id }) => new Types.ObjectId(id))
+    const authorIds = [
+      ...new Set(
+        cards.flatMap(({ authorId }) =>
+          isNil(authorId) ? [] : [authorId.toHexString()],
+        ),
+      ),
+    ].map((id) => new Types.ObjectId(id))
+    const [authors, counts, ratings] = await Promise.all([
+      authorIds.length === 0
+        ? []
+        : this.userRepository.read.findMany(
+            { _id: { $in: authorIds } },
+            { _id: 1, avatarUrl: 1, displayName: 1 },
+          ),
+      this.collectionRepository.readAvailableItemCountsByIds(collectionIds),
+      this.collectionRepository.readRatingAveragesByIds(collectionIds),
+    ])
+    const authorsById = new Map(
+      authors.map((author) => [String(author._id), author]),
+    )
+    const countsById = new Map(
+      counts.map(({ _id, itemCount }) => [String(_id), itemCount]),
+    )
+
+    return cards.map(({ authorId, ...card }) => {
+      const author = authorsById.get(String(authorId))
+
+      return {
+        ...card,
+        author: isNil(author)
+          ? null
+          : {
+              id: String(author._id),
+              avatar: author.avatarUrl ?? null,
+              displayName: author.displayName,
+            },
+        isSiteCollection: isNil(authorId),
+        itemCount: countsById.get(card.id) ?? 0,
+        ratingAverage: ratings.get(card.id) ?? null,
+      }
+    })
   }
 
   private async loadUsers(ids: string[]): Promise<SearchResponseDto["users"]> {

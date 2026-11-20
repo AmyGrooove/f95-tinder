@@ -19,6 +19,12 @@ import { UserItemRepository } from "@entities/userItem/services/userItemReposito
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { ItemAttempt } from "@entities/userItem/schemas/itemAttempt.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
+import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { EUserItemHistoryEvent } from "@entities/userItemHistory/schemas/EUserItemHistoryEvent"
+import {
+  UserItemHistoryRepository,
+  type TUserItemHistoryEvent,
+} from "@entities/userItemHistory/services/userItemHistoryRepository"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
@@ -29,6 +35,7 @@ import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { CreateUserItemBodyDto } from "../dto/createUserItem.body"
 import type { CreateExclusionBodyDto } from "../dto/createExclusion.body"
+import type { ItemUserResponseDto } from "../dto/itemUser.response"
 import type { UserItemResponseDto } from "../dto/userItem.response"
 import type { ICreateAttemptProps } from "../types/ICreateAttemptProps"
 import type { IUpdateAttemptProps } from "../types/IUpdateAttemptProps"
@@ -48,7 +55,37 @@ class UserItemService {
     private readonly transactionService: MongoTransactionService,
     private readonly tagItemRepository: TagItemRepository,
     private readonly userItemStatsService: UserItemStatsService,
+    private readonly historyRepository: UserItemHistoryRepository,
   ) {}
+
+  async readByItemId(
+    accessToken: unknown,
+    itemId: Types.ObjectId,
+  ): Promise<ItemUserResponseDto> {
+    const userId = await this.authenticate(accessToken)
+    const isAvailable = await this.itemRepository.read.checkIsExists({
+      _id: itemId,
+      deletedAt: null,
+    })
+
+    if (!isAvailable) {
+      throw new NotFoundException(DICTIONARY.item.notFound)
+    }
+
+    const userItem = await this.userItemRepository.read.findOne(
+      { user: userId, item: itemId, ...this.createCurrentEntryFilter() },
+      { _id: 1, status: 1, rating: 1, isFavorite: 1, note: 1, attempts: 1 },
+    )
+
+    return {
+      entry: isNil(userItem)
+        ? null
+        : {
+            userItemId: userItem._id.toHexString(),
+            ...this.mapEntry(userItem),
+          },
+    }
+  }
 
   async create(accessToken: unknown, body: CreateUserItemBodyDto) {
     return this.createWithStatus(accessToken, body)
@@ -121,6 +158,22 @@ class UserItemService {
           session,
         })
 
+        if (
+          USER_ITEM_LIBRARY_STATUSES.some((status) => status === created.status)
+        ) {
+          await this.historyRepository.append(
+            [
+              {
+                user: userId,
+                item: itemId,
+                type: EUserItemHistoryEvent.ADDED,
+                status: created.status,
+              },
+            ],
+            session,
+          )
+        }
+
         return created
       })
 
@@ -141,13 +194,15 @@ class UserItemService {
 
   async update(accessToken: unknown, props: IUpdateUserItemProps) {
     const { body, id } = props
+    const { isCompletedAndUnratedRequired, ...changes } = body
 
-    this.requireChanges(body)
+    this.requireChanges(changes)
 
     return this.mutate(accessToken, {
       id,
+      isCompletedAndUnratedRequired,
       mutate: async (userItem, session) => {
-        const { status, rating, isFavorite, note } = body
+        const { status, rating, isFavorite, note } = changes
 
         if (status === EUserItemStatus.COMPLETED) {
           await this.validateCompletion({
@@ -299,7 +354,7 @@ class UserItemService {
   }
 
   private async mutate(accessToken: unknown, props: IMutateUserItemProps) {
-    const { id, mutate } = props
+    const { id, mutate, isCompletedAndUnratedRequired = false } = props
 
     const userId = await this.authenticate(accessToken)
 
@@ -307,10 +362,7 @@ class UserItemService {
       const filter = {
         _id: id,
         user: userId,
-        $or: [
-          { status: { $ne: EUserItemStatus.SKIPPED } },
-          { expiresAt: { $gt: new Date() } },
-        ],
+        ...this.createCurrentEntryFilter(),
       }
       const userItem = await this.userItemRepository.read.findOne(
         filter,
@@ -320,6 +372,14 @@ class UserItemService {
 
       if (isNil(userItem)) {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
+      }
+
+      if (
+        isCompletedAndUnratedRequired &&
+        (userItem.status !== EUserItemStatus.COMPLETED ||
+          !isNil(userItem.rating))
+      ) {
+        throw new ConflictException(DICTIONARY.userItem.ratingCandidateConflict)
       }
 
       const previous = this.userItemStatsService.getState(userItem)
@@ -348,7 +408,9 @@ class UserItemService {
       }
 
       const updated = await this.userItemRepository.write.updateByFilter(
-        filter,
+        isCompletedAndUnratedRequired
+          ? { ...filter, status: EUserItemStatus.COMPLETED, rating: null }
+          : filter,
         {
           $set: {
             status: userItem.status,
@@ -363,20 +425,69 @@ class UserItemService {
       )
 
       if (isNil(updated)) {
+        if (isCompletedAndUnratedRequired) {
+          throw new ConflictException(
+            DICTIONARY.userItem.ratingCandidateConflict,
+          )
+        }
+
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
+      const next = this.userItemStatsService.getState(updated)
       await this.userItemStatsService.update({
         itemId: updated.item,
         previous,
-        next: this.userItemStatsService.getState(updated),
+        next,
         session,
       })
+
+      const event = { user: userId, item: updated.item }
+      const events: TUserItemHistoryEvent[] = []
+
+      if (previous.status !== next.status) {
+        events.push({
+          ...event,
+          type: EUserItemHistoryEvent.STATUS_CHANGED,
+          status: next.status,
+        })
+      }
+
+      const rating = next.rating ?? null
+
+      if ((previous.rating ?? null) !== rating) {
+        events.push({
+          ...event,
+          type: EUserItemHistoryEvent.RATING_CHANGED,
+          rating,
+        })
+      }
+
+      const isFavorite = next.isFavorite === true
+
+      if ((previous.isFavorite === true) !== isFavorite) {
+        events.push({
+          ...event,
+          type: EUserItemHistoryEvent.FAVORITE_CHANGED,
+          isFavorite,
+        })
+      }
+
+      await this.historyRepository.append(events, session)
 
       return this.mapResponse(updated)
     })
 
     return result
+  }
+
+  private createCurrentEntryFilter() {
+    return {
+      $or: [
+        { status: { $ne: EUserItemStatus.SKIPPED } },
+        { expiresAt: { $gt: new Date() } },
+      ],
+    }
   }
 
   private async runMutation<TResult>(
@@ -549,8 +660,16 @@ class UserItemService {
     return {
       id: userItem._id.toHexString(),
       itemId: userItem.item.toHexString(),
-      status: userItem.status,
       expiresAt: userItem.expiresAt?.toISOString() ?? null,
+      ...this.mapEntry(userItem),
+      createdAt: userItem.createdAt.toISOString(),
+      updatedAt: userItem.updatedAt.toISOString(),
+    }
+  }
+
+  private mapEntry(userItem: UserItem) {
+    return {
+      status: userItem.status,
       rating: userItem.rating,
       isFavorite: userItem.isFavorite,
       note: userItem.note,
@@ -562,8 +681,6 @@ class UserItemService {
         startedAt: attempt.startedAt?.toISOString() ?? null,
         completedAt: attempt.completedAt?.toISOString() ?? null,
       })),
-      createdAt: userItem.createdAt.toISOString(),
-      updatedAt: userItem.updatedAt.toISOString(),
     }
   }
 }

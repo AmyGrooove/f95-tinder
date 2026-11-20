@@ -64,6 +64,18 @@ class CollectionResponseDto {
 
   @ApiProperty({ type: String, format: "date-time" })
   updatedAt: string
+
+  @ApiProperty({ type: "integer", minimum: 0 })
+  itemCount: number
+
+  @ApiProperty({ type: Number, nullable: true, minimum: 1, maximum: 10 })
+  ratingAverage: number | null
+
+  @ApiProperty({ type: "integer", minimum: 0 })
+  ratingsCount: number
+
+  @ApiProperty({ type: "integer", minimum: 0 })
+  favoritesCount: number
 }
 
 export { CollectionResponseDto }

@@ -3,9 +3,8 @@ import type { Types } from "mongoose"
 import type { EItemType } from "@entities/item/schemas/EItemType"
 import type { IItemPosterCard } from "@entities/item/services/itemRepository"
 import type { ELanguage } from "@entities/shared/schemas/ELanguage"
-import type { EUnit } from "@entities/shared/schemas/EUnit"
-
 import type { LIBRARY_SORTS } from "../../../static/LIBRARY_SORTS"
+import type { IBriefUserItemProgress } from "../../../types/IBriefUserItemProgress"
 import type { TLibraryStatus } from "../../../types/TLibraryStatus"
 
 interface IReadLibraryPageProps {
@@ -21,19 +20,20 @@ interface IReadLibraryPageProps {
 
   search?: string
   isFavorite?: boolean
+  isUnrated?: boolean
+  after?: { createdAt: Date; id: Types.ObjectId }
 }
 
 interface ILibraryEntry {
   _id: Types.ObjectId
+  createdAt: Date
   item: IItemPosterCard
   status: TLibraryStatus
   rating: number | null
   isFavorite: boolean
   ratingAverage: number | null
-  progress: {
-    value: number
-    unit: EUnit.MINUTE | EUnit.EPISODE | EUnit.PERCENT
-  } | null
+  movieDuration: number | null
+  progress: IBriefUserItemProgress | null
 }
 
 export type { IReadLibraryPageProps, ILibraryEntry, TLibraryStatus }

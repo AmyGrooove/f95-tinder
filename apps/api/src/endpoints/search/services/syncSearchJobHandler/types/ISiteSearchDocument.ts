@@ -12,12 +12,15 @@ interface IItemSearchDocument {
   description: LanguageText
   media: MediaSrc[]
   tagIds: string[]
+  countryTagIds: string[]
+  releaseStatusTagIds: string[]
   fields: Record<string, number | null>
   rating: number | null
   ratingScore: number | null
   ratingsCount: number
   hasRating: number
   releaseDate: number | null
+  releaseYear: number | null
   hasReleaseDate: number
   latestReleaseDate: number | null
   sortTitle: Record<ELanguage, string>
@@ -39,7 +42,10 @@ interface ICollectionSearchDocument {
   description: LanguageText
   media: MediaSrc[]
   authorId: string | null
+  tagGroup: string
   updatedAt: number
+  ratingAverage: number | null
+  hasRating: number
   sortTitle: Record<ELanguage, string>
 }
 

@@ -3,7 +3,10 @@ export { RecommendationCursorExpiredError } from "./static/errors/Recommendation
 export { RecommendationAlsFoldInError } from "./static/errors/RecommendationAlsFoldInError"
 export { calculateAlsCandidates } from "./functions/calculateAlsCandidates"
 export { calculateItemCfCandidates } from "./functions/calculateItemCfCandidates"
-export type { IFindRecommendationsProps } from "./types/IFindRecommendationsProps"
+export type {
+  IFindRecommendationsProps,
+  TReadRecommendationFeedPageProps,
+} from "./types/IFindRecommendationsProps"
 export type { IRecommendationFeedSources } from "./types/IRecommendationFeedSources"
 export type {
   IReadRecommendationCandidatesProps,
