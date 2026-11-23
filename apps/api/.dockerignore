@@ -3,8 +3,7 @@
 **/*.tsbuildinfo
 **/coverage
 **/.pnpm-store
-tools/recommendationTrainer/.venv
-tools/recommendationTrainer/__pycache__
+tools/recommendationTrainer/
 
 **/.env
 **/.env.*

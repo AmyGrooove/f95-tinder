@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "dev:docker": "docker compose up --wait --wait-timeout 120 && docker compose run --rm --no-deps garage-init",
+    "dev:api": "pnpm --dir apps/api run dev",
+    "dev:web": "pnpm --dir apps/web run dev --port 3001"
+  }
+}

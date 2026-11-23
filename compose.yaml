@@ -1,0 +1,93 @@
+name: bisky
+
+x-garage-bucket: &garage-bucket
+  APP_NAME: bisky
+  GARAGE_ACCESS_KEY_ID: GK000000000000000000000001
+  GARAGE_SECRET_ACCESS_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
+
+x-dependency-healthcheck: &dependency-healthcheck
+  interval: 2s
+  timeout: 5s
+  retries: 30
+
+services:
+  mongo:
+    image: mongo:8.0-noble
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      <<: *dependency-healthcheck
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ping: 1}).ok ? 0 : 1)"]
+
+  redis:
+    image: redis:8.10-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      <<: *dependency-healthcheck
+      test: ["CMD", "redis-cli", "ping"]
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.57.0
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: bisky-local-meilisearch-key
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "127.0.0.1:7700:7700"
+    volumes:
+      - meili-data:/meili_data
+    healthcheck:
+      <<: *dependency-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7700/health"]
+
+  garage:
+    image: dxflrs/garage:v2.5.0
+    environment:
+      GARAGE_ADMIN_TOKEN: &garage-admin-token bisky-local-garage-admin-token
+      GARAGE_RPC_SECRET: "0000000000000000000000000000000000000000000000000000000000000002"
+    configs:
+      - source: garage-config
+        target: /etc/garage.toml
+    volumes:
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    ports:
+      - "127.0.0.1:3900:3900"
+      - "127.0.0.1:3902:3902"
+    healthcheck:
+      <<: *dependency-healthcheck
+      # Check RPC before garage-init assigns a storage role to the node.
+      test: ["CMD", "/garage", "json-api", "GetClusterStatus"]
+
+  garage-init:
+    image: node:26-bookworm-slim
+    profiles: ["setup"]
+    environment:
+      <<: *garage-bucket
+      GARAGE_ADMIN_TOKEN: *garage-admin-token
+    configs:
+      - source: garage-init-script
+        target: /garage-init.mjs
+    command: ["node", "/garage-init.mjs"]
+    depends_on:
+      garage:
+        condition: service_healthy
+
+configs:
+  garage-config:
+    file: ./docker/garage.toml
+  garage-init-script:
+    file: ./docker/garage-init.mjs
+
+volumes:
+  mongo-data:
+  redis-data:
+  meili-data:
+  garage-meta:
+  garage-data:

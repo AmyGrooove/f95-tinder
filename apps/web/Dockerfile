@@ -7,7 +7,7 @@ WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-RUN corepack enable
+RUN npm install --global pnpm@12.5.1
 
 
 # ---------- Dependencies ----------
@@ -17,8 +17,7 @@ FROM base AS dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN --mount=type=cache,id=pnpm-web,target=/pnpm/store \
-  pnpm config set store-dir /pnpm/store && \
-  pnpm install --frozen-lockfile
+  pnpm install --frozen-lockfile --store-dir /pnpm/store
 
 
 # ---------- Build ----------
@@ -49,6 +48,6 @@ USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
 CMD ["node", "server.js"]
