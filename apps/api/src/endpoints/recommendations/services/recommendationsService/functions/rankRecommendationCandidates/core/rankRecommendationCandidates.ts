@@ -5,12 +5,11 @@ interface IRankRecommendationCandidatesProps {
   candidateIndices: readonly number[]
 }
 
-const rankRecommendationCandidates = ({
-  itemIds,
-  popularity,
-  scores,
-  candidateIndices,
-}: IRankRecommendationCandidatesProps) => {
+const rankRecommendationCandidates = (
+  props: IRankRecommendationCandidatesProps,
+) => {
+  const { itemIds, popularity, scores, candidateIndices } = props
+
   return candidateIndices
     .toSorted((left, right) => {
       if (scores[left] !== scores[right]) {

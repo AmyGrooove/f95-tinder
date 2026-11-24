@@ -8,21 +8,25 @@ import { createRecommendationFilterTagsLookup } from "./createRecommendationFilt
 const createItemTagFilterPipeline = (
   groups: readonly ValueFilter<Types.ObjectId>[],
 ): PipelineStage[] => {
-  const conditions = groups.flatMap(({ allOf = [], anyOf, noneOf = [] }) => [
-    ...(allOf.length > 0 ? [{ "filterTags.tag": { $all: allOf } }] : []),
-    ...(!isUndefined(anyOf) ? [{ "filterTags.tag": { $in: anyOf } }] : []),
-    ...(noneOf.length > 0 ? [{ "filterTags.tag": { $nin: noneOf } }] : []),
-  ])
+  const conditions = groups.flatMap((group) => {
+    const { allOf = [], anyOf, noneOf = [] } = group
+
+    return [
+      ...(allOf.length > 0 ? [{ "filterTags.tag": { $all: allOf } }] : []),
+      ...(!isUndefined(anyOf) ? [{ "filterTags.tag": { $in: anyOf } }] : []),
+      ...(noneOf.length > 0 ? [{ "filterTags.tag": { $nin: noneOf } }] : []),
+    ]
+  })
 
   if (conditions.length === 0) {
     return []
   }
 
-  const tagIds = groups.flatMap(({ allOf = [], anyOf = [], noneOf = [] }) => [
-    ...allOf,
-    ...anyOf,
-    ...noneOf,
-  ])
+  const tagIds = groups.flatMap((group) => {
+    const { allOf = [], anyOf = [], noneOf = [] } = group
+
+    return [...allOf, ...anyOf, ...noneOf]
+  })
 
   return new AggregationBuilder()
     .use(createRecommendationFilterTagsLookup(tagIds))

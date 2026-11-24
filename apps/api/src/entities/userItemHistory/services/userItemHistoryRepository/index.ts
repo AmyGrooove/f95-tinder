@@ -1,2 +1,2 @@
 export { UserItemHistoryRepository } from "./core/userItemHistory.repository"
-export type { TUserItemHistoryEvent } from "./types/TUserItemHistoryEvent"
+export type { TCreateUserItemHistory as TUserItemHistoryEvent } from "../../schemas/userItemHistory.schema"

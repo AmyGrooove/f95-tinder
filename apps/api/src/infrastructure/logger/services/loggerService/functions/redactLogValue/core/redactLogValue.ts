@@ -30,7 +30,9 @@ const redactLogValue = (
   }
 
   return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => {
+    Object.entries(value).map((entry) => {
+      const [key, item] = entry
+
       const normalizedKey = key
         .replace(REGEX.LOG_KEY_SEPARATORS, "")
         .toLowerCase()

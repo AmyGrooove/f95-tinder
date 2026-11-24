@@ -282,15 +282,23 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             },
             { sort: { _id: 1 }, limit: SEARCH_SETTINGS.batchSize },
           )
-          const availableCollections = collections.filter(({ deletedAt }) =>
-            isNil(deletedAt),
-          )
-          const tagIds = availableCollections.flatMap(({ tag }) =>
-            isNil(tag) ? [] : [tag],
-          )
+          const availableCollections = collections.filter((collection) => {
+            const { deletedAt } = collection
+
+            return isNil(deletedAt)
+          })
+          const tagIds = availableCollections.flatMap((collection) => {
+            const { tag } = collection
+
+            return isNil(tag) ? [] : [tag]
+          })
           const [ratings, tags] = await Promise.all([
             this.collectionRepository.readRatingAveragesByIds(
-              availableCollections.map(({ _id }) => _id),
+              availableCollections.map((collection) => {
+                const { _id } = collection
+
+                return _id
+              }),
             ),
             tagIds.length === 0
               ? []
@@ -300,7 +308,11 @@ class SyncSearchJobHandler implements IJobHandler<null> {
                 ),
           ])
           const tagGroups = new Map(
-            tags.map(({ _id, group }) => [String(_id), group]),
+            tags.map((tag) => {
+              const { _id, group } = tag
+
+              return [String(_id), group]
+            }),
           )
 
           return collections.map((collection) => ({
@@ -379,11 +391,14 @@ class SyncSearchJobHandler implements IJobHandler<null> {
       ratingsCount,
       siteRatingAverage,
     })
-    const yearTag = item.searchTags.find(
-      ({ group, key }) =>
+    const yearTag = item.searchTags.find((tag) => {
+      const { group, key } = tag
+
+      return (
         group === ETagGroup.RELEASE_YEAR &&
-        /^releaseYear[1-9]\d{0,3}$/.test(key),
-    )
+        /^releaseYear[1-9]\d{0,3}$/.test(key)
+      )
+    })
     const releaseYear =
       item.releaseDate?.getUTCFullYear() ??
       (isNil(yearTag)
@@ -407,13 +422,33 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         type: media.type,
         language: media.language,
       })),
-      tagIds: item.searchTags.map(({ tag }) => String(tag)),
+      tagIds: item.searchTags.map((entry) => {
+        const { tag } = entry
+
+        return String(tag)
+      }),
       countryTagIds: item.searchTags
-        .filter(({ group }) => group === ETagGroup.COUNTRY)
-        .map(({ tag }) => String(tag)),
+        .filter((entry) => {
+          const { group } = entry
+
+          return group === ETagGroup.COUNTRY
+        })
+        .map((entry) => {
+          const { tag } = entry
+
+          return String(tag)
+        }),
       releaseStatusTagIds: item.searchTags
-        .filter(({ group }) => group === ETagGroup.RELEASE_STATUS)
-        .map(({ tag }) => String(tag)),
+        .filter((entry) => {
+          const { group } = entry
+
+          return group === ETagGroup.RELEASE_STATUS
+        })
+        .map((entry) => {
+          const { tag } = entry
+
+          return String(tag)
+        }),
       rating,
       ratingScore,
       ratingsCount: isNil(ratingScore) ? 0 : ratingsCount,

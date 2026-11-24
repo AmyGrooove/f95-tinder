@@ -4,8 +4,10 @@ import { rankRecommendationCandidates } from "../../rankRecommendationCandidates
 const calculateItemCfCandidates = (
   model: Pick<IRecommendationModel, "itemIds" | "itemCF" | "popularity">,
   positiveItemIds: readonly string[],
-  { isPositiveCandidateAllowed = false } = {},
+  options: { isPositiveCandidateAllowed?: boolean } = {},
 ) => {
+  const { isPositiveCandidateAllowed = false } = options
+
   const { itemIds, itemCF, popularity } = model
   const { offsets, indices, weights } = itemCF
   const positiveIds = new Set(positiveItemIds)

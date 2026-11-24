@@ -30,18 +30,22 @@ class RecommendationsHttpService {
           filter: {
             types,
             library: statuses,
-            tags: tags?.map(({ allOf, anyOf, noneOf }) => ({
-              allOf: allOf?.map((id) => new Types.ObjectId(id)),
-              anyOf: anyOf?.map((id) => new Types.ObjectId(id)),
-              noneOf: noneOf?.map((id) => new Types.ObjectId(id)),
-            })),
+            tags: tags?.map((group) => {
+              const { allOf, anyOf, noneOf } = group
+
+              return {
+                allOf: allOf?.map((id) => new Types.ObjectId(id)),
+                anyOf: anyOf?.map((id) => new Types.ObjectId(id)),
+                noneOf: noneOf?.map((id) => new Types.ObjectId(id)),
+              }
+            }),
           },
         },
       )
 
       return {
-        items: items.map(
-          ({
+        items: items.map((item) => {
+          const {
             _id,
             type,
             title,
@@ -49,20 +53,26 @@ class RecommendationsHttpService {
             ratingAverage,
             userRating,
             userStatus,
-          }) => ({
+          } = item
+
+          return {
             id: _id.toHexString(),
             type,
             title: { ru: title?.ru ?? null, en: title?.en ?? null },
-            media: media.map(({ src, type, language }) => ({
-              src,
-              type,
-              language: language ?? null,
-            })),
+            media: media.map((source) => {
+              const { src, type, language } = source
+
+              return {
+                src,
+                type,
+                language: language ?? null,
+              }
+            }),
             ratingAverage,
             userRating,
             userStatus,
-          }),
-        ),
+          }
+        }),
         count,
         nextCursor,
       }

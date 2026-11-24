@@ -69,7 +69,9 @@ const useTextarea = (props: ITextareaProps) => {
     let previousWidth = 0
     let animationFrameId = 0
 
-    const resizeObserver = new ResizeObserver(([entry]) => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      const [entry] = entries
+
       const width = entry.contentRect.width
 
       if (width === previousWidth) {

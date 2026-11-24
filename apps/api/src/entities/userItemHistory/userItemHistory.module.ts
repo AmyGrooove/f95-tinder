@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common"
 import { MongooseModule } from "@nestjs/mongoose"
 
+import { UserItemHistoryRepository } from "@entities/userItemHistory/services/userItemHistoryRepository"
+
 import {
   UserItemHistory,
   UserItemHistorySchema,
 } from "./schemas/userItemHistory.schema"
-import { UserItemHistoryRepository } from "./services/userItemHistoryRepository"
 
 @Module({
   imports: [

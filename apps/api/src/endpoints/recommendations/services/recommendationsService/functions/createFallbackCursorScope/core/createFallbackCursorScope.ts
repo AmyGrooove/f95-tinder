@@ -21,10 +21,11 @@ const createFallbackCursorScope = (props: ICreateFallbackCursorScopeProps) => {
   } = filter ?? {}
   const tagGroups = tags
     .map(normalizeValueFilter)
-    .filter(
-      ([allOf, anyOf, noneOf]) =>
-        allOf.length > 0 || !isNil(anyOf) || noneOf.length > 0,
-    )
+    .filter((tagGroup) => {
+      const [allOf, anyOf, noneOf] = tagGroup
+
+      return allOf.length > 0 || !isNil(anyOf) || noneOf.length > 0
+    })
     .map((group) => JSON.stringify(group))
 
   return [

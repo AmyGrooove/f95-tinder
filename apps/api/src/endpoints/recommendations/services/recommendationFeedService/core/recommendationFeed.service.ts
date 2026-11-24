@@ -94,7 +94,11 @@ class RecommendationFeedService {
 
     const modelIds = new Set(model.itemIds)
     const knownPositiveIds = positiveItems
-      .map(({ _id }) => _id.toHexString())
+      .map((item) => {
+        const { _id } = item
+
+        return _id.toHexString()
+      })
       .filter((id) => modelIds.has(id))
     if (knownPositiveIds.length < minPositiveItems) {
       return { plannedIds }
@@ -129,7 +133,11 @@ class RecommendationFeedService {
           .map((id) => new Types.ObjectId(id)),
       })
     const typeById = new Map(
-      eligibleItems.map(({ _id, type }) => [_id.toHexString(), type]),
+      eligibleItems.map((item) => {
+        const { _id, type } = item
+
+        return [_id.toHexString(), type]
+      }),
     )
     const scoresByType = new Map(
       types.map((type) => {
@@ -162,32 +170,51 @@ class RecommendationFeedService {
     )
     const sequelIds = await this.readSequelIds(
       context,
-      positiveItems.map(({ _id }) => _id),
+      positiveItems.map((item) => {
+        const { _id } = item
+
+        return _id
+      }),
       personalIds,
     )
     const personalByType = new Map(
-      [...scoresByType].map(([type, scores]) => [
-        type,
-        [...scores]
-          .sort(([leftId, left], [rightId, right]) =>
-            left === right ? leftId.localeCompare(rightId) : right - left,
-          )
-          .map(([id, score]) => ({
-            itemId: new Types.ObjectId(id),
-            score,
-            bonus: sequelIds.has(id) ? sequelBonus : 0,
-          })),
-      ]),
+      [...scoresByType].map((entry) => {
+        const [type, scores] = entry
+
+        return [
+          type,
+          [...scores]
+            .sort((leftEntry, rightEntry) => {
+              const [leftId, left] = leftEntry
+              const [rightId, right] = rightEntry
+
+              return left === right
+                ? leftId.localeCompare(rightId)
+                : right - left
+            })
+            .map((entry) => {
+              const [id, score] = entry
+
+              return {
+                itemId: new Types.ObjectId(id),
+                score,
+                bonus: sequelIds.has(id) ? sequelBonus : 0,
+              }
+            }),
+        ]
+      }),
     )
 
     return { plannedIds, personalByType }
   }
 
   private async readSequelIds(
-    { userId, country }: IRecommendationCandidateContext,
+    context: IRecommendationCandidateContext,
     positiveIds: readonly Types.ObjectId[],
     candidateIds: readonly Types.ObjectId[],
   ) {
+    const { userId, country } = context
+
     if (candidateIds.length === 0) {
       return new Set<string>()
     }
@@ -211,7 +238,11 @@ class RecommendationFeedService {
     return sources.length === 0
       ? new Set<string>()
       : this.itemRelationRepository.readRelatedItemIds(
-          sources.map(({ _id }) => _id),
+          sources.map((item) => {
+            const { _id } = item
+
+            return _id
+          }),
           candidateIds,
           role._id,
         )

@@ -31,8 +31,10 @@ class LibraryHistoryService {
 
   async readPage(
     accessToken: unknown,
-    { cursor, limit = 20 }: LibraryHistoryBodyDto,
+    props: LibraryHistoryBodyDto,
   ): Promise<LibraryHistoryResponseDto> {
+    const { cursor, limit = 20 } = props
+
     const payload = await this.authService.verifyAccessToken(accessToken)
     const [session, user] = await Promise.all([
       this.authService.getSession(payload),
@@ -55,12 +57,20 @@ class LibraryHistoryService {
     })
     const page = entries.slice(0, limit)
     const last = page.at(-1)
-    const itemIds = new Map(page.map(({ item }) => [item.toHexString(), item]))
+    const itemIds = new Map(
+      page.map((entry) => {
+        const { item } = entry
+
+        return [item.toHexString(), item]
+      }),
+    )
     const cards = await this.itemRepository.readPosterCardsByIds([
       ...itemIds.values(),
     ])
     const cardsById = new Map(
-      cards.map(({ _id, title, media }) => {
+      cards.map((card) => {
+        const { _id, title, media } = card
+
         const poster = media[0]
 
         return [
@@ -80,8 +90,10 @@ class LibraryHistoryService {
     )
 
     return {
-      items: page.map(
-        ({ _id, item, createdAt, type, status, rating, isFavorite }) => ({
+      items: page.map((entry) => {
+        const { _id, item, createdAt, type, status, rating, isFavorite } = entry
+
+        return {
           id: _id.toHexString(),
           itemId: item.toHexString(),
           item: cardsById.get(item.toHexString()) ?? null,
@@ -90,8 +102,8 @@ class LibraryHistoryService {
           ...(!isUndefined(status) && { status }),
           ...(!isUndefined(rating) && { rating }),
           ...(!isUndefined(isFavorite) && { isFavorite }),
-        }),
-      ),
+        }
+      }),
       nextCursor:
         entries.length > limit && !isUndefined(last)
           ? this.cursorService.create({

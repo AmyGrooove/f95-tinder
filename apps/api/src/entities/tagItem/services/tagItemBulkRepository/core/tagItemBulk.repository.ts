@@ -59,7 +59,7 @@ class TagItemBulkRepository extends MongoBulkRepository<
   }
 
   override async updateMany(
-    ...[filter, payload, options]: Parameters<
+    ...args: Parameters<
       MongoBulkRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -67,6 +67,8 @@ class TagItemBulkRepository extends MongoBulkRepository<
       >["updateMany"]
     >
   ) {
+    const [filter, payload, options] = args
+
     return await this.mutations.run({
       mutate: () => super.updateMany(filter, payload, options),
       filters: [filter],
@@ -76,7 +78,7 @@ class TagItemBulkRepository extends MongoBulkRepository<
   }
 
   override async deleteMany(
-    ...[filter, options]: Parameters<
+    ...args: Parameters<
       MongoBulkRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -84,6 +86,8 @@ class TagItemBulkRepository extends MongoBulkRepository<
       >["deleteMany"]
     >
   ) {
+    const [filter, options] = args
+
     return await this.mutations.run({
       mutate: () => super.deleteMany(filter, options),
       filters: [filter],
@@ -93,7 +97,7 @@ class TagItemBulkRepository extends MongoBulkRepository<
   }
 
   override async bulkWrite(
-    ...[operations, options]: Parameters<
+    ...args: Parameters<
       MongoBulkRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -101,6 +105,8 @@ class TagItemBulkRepository extends MongoBulkRepository<
       >["bulkWrite"]
     >
   ) {
+    const [operations, options] = args
+
     const filters: QueryFilter<TagItem>[] = []
     const itemIds = operations.flatMap((operation) => {
       if ("insertOne" in operation) {

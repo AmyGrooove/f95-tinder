@@ -71,7 +71,9 @@ class AppController {
       })) as { details?: Record<string, { status: string }> }
 
     const healthStatuses = Object.entries(healthResponse.details ?? {})
-      .map(([serviceName, serviceHealth]) => {
+      .map((entry) => {
+        const [serviceName, serviceHealth] = entry
+
         const isHealthy = serviceHealth.status === "up"
 
         return SERVICE_HEALTH_HTML.replace(

@@ -326,15 +326,13 @@ class SiteSearchService {
     }
   }
 
-  private async applyCollectionIdFilters({
-    options,
-    itemId,
-    favoritedByUserId,
-  }: {
+  private async applyCollectionIdFilters(props: {
     options: ISearchGroupOptions
     itemId?: string
     favoritedByUserId?: string
   }) {
+    const { options, itemId, favoritedByUserId } = props
+
     const [memberIds, favoriteIds] = await Promise.all([
       isUndefined(itemId)
         ? undefined
@@ -377,7 +375,9 @@ class SiteSearchService {
       : []
   }
 
-  private selectGroups({ entities }: SearchBodyDto) {
+  private selectGroups(props: SearchBodyDto) {
+    const { entities } = props
+
     const included = [...(entities?.allOf ?? []), ...(entities?.anyOf ?? [])]
 
     return Object.values(ESearchGroup).filter(
@@ -671,15 +671,13 @@ class SiteSearchService {
     return ranked.slice(offset)
   }
 
-  private async loadItems({
-    ids,
-    viewerId,
-    filters,
-  }: {
+  private async loadItems(props: {
     ids: string[]
     viewerId?: Types.ObjectId
     filters: IItemSearchPersonalFilters
   }): Promise<SearchResponseDto["items"]> {
+    const { ids, viewerId, filters } = props
+
     if (ids.length === 0) {
       return []
     }
@@ -745,19 +743,15 @@ class SiteSearchService {
     })
   }
 
-  private async loadCollections({
-    ids,
-    authorId,
-    viewerId,
-    isHiddenExcluded,
-    isFavorite,
-  }: {
+  private async loadCollections(props: {
     ids: string[]
     authorId?: string
     viewerId?: Types.ObjectId
     isHiddenExcluded: boolean
     isFavorite: boolean
   }) {
+    const { ids, authorId, viewerId, isHiddenExcluded, isFavorite } = props
+
     if (ids.length === 0) {
       return []
     }
@@ -816,12 +810,18 @@ class SiteSearchService {
       return []
     }
 
-    const collectionIds = cards.map(({ id }) => new Types.ObjectId(id))
+    const collectionIds = cards.map((card) => {
+      const { id } = card
+
+      return new Types.ObjectId(id)
+    })
     const authorIds = [
       ...new Set(
-        cards.flatMap(({ authorId }) =>
-          isNil(authorId) ? [] : [authorId.toHexString()],
-        ),
+        cards.flatMap((card) => {
+          const { authorId } = card
+
+          return isNil(authorId) ? [] : [authorId.toHexString()]
+        }),
       ),
     ].map((id) => new Types.ObjectId(id))
     const [authors, counts, ratings] = await Promise.all([
@@ -838,10 +838,16 @@ class SiteSearchService {
       authors.map((author) => [String(author._id), author]),
     )
     const countsById = new Map(
-      counts.map(({ _id, itemCount }) => [String(_id), itemCount]),
+      counts.map((count) => {
+        const { _id, itemCount } = count
+
+        return [String(_id), itemCount]
+      }),
     )
 
-    return cards.map(({ authorId, ...card }) => {
+    return cards.map((entry) => {
+      const { authorId, ...card } = entry
+
       const author = authorsById.get(String(authorId))
 
       return {

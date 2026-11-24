@@ -35,9 +35,11 @@ const itemTypeCount = Object.values(EItemType).length
 
 class QueryFieldsDto {
   @ApiPropertyOptional({ type: String, minLength: 1, maxLength: 200 })
-  @Transform(({ value }: TransformFnParams) =>
-    isString(value) ? value.trim() : value,
-  )
+  @Transform((params: TransformFnParams) => {
+    const { value } = params
+
+    return isString(value) ? value.trim() : value
+  })
   @ValidateIf(isProvided)
   @IsString()
   @Length(1, 200)

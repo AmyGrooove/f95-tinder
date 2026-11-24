@@ -9,7 +9,9 @@ if (!bucketName || !accessKeyId || !secretAccessKey || !adminToken) {
   throw new Error("Garage setup requires APP_NAME, GARAGE_ACCESS_KEY_ID, GARAGE_SECRET_ACCESS_KEY and GARAGE_ADMIN_TOKEN")
 }
 
-async function garageRequest(endpoint, { query, body, allowMissing = false } = {}) {
+async function garageRequest(endpoint, options = {}) {
+  const { query, body, allowMissing = false } = options
+
   const url = new URL(`/v2/${endpoint}`, "http://garage:3903")
   if (query) {
     url.search = new URLSearchParams(query).toString()
@@ -39,7 +41,11 @@ async function garageRequest(endpoint, { query, body, allowMissing = false } = {
 const { layoutVersion, nodes } = await garageRequest("GetClusterStatus")
 
 if (layoutVersion === 0) {
-  const node = nodes.find(({ isUp }) => isUp)
+  const node = nodes.find((node) => {
+    const { isUp } = node
+
+    return isUp
+  })
 
   if (!node) {
     throw new Error("Garage has no active storage node")

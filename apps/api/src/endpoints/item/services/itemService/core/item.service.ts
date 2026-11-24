@@ -25,11 +25,15 @@ const mapItemSummary = (
   id: item._id.toHexString(),
   type: item.type,
   title: mapLanguageText(item.title),
-  media: (item.media ?? []).map(({ src, type, language }) => ({
-    src,
-    type,
-    language: language ?? null,
-  })),
+  media: (item.media ?? []).map((source) => {
+    const { src, type, language } = source
+
+    return {
+      src,
+      type,
+      language: language ?? null,
+    }
+  }),
 })
 
 @Injectable()
@@ -145,13 +149,23 @@ class ItemService {
     }
 
     const tags = await this.tagRepository.read.findMany(
-      { _id: { $in: assignments.map(({ tag }) => tag) } },
+      {
+        _id: {
+          $in: assignments.map((assignment) => {
+            const { tag } = assignment
+
+            return tag
+          }),
+        },
+      },
       { _id: 1, key: 1, group: 1, name: 1 },
       { lean: true },
     )
     const tagsById = new Map(tags.map((tag) => [tag._id.toHexString(), tag]))
 
-    return assignments.flatMap(({ tag: tagId }) => {
+    return assignments.flatMap((assignment) => {
+      const { tag: tagId } = assignment
+
       const tag = tagsById.get(tagId.toHexString())
 
       return isNil(tag)
@@ -180,17 +194,36 @@ class ItemService {
       return []
     }
 
-    const related = links.map(({ first, second }) =>
-      id.equals(first.item) ? second : first,
-    )
+    const related = links.map((link) => {
+      const { first, second } = link
+
+      return id.equals(first.item) ? second : first
+    })
     const [items, roles] = await Promise.all([
       this.itemRepository.read.findMany(
-        { _id: { $in: related.map(({ item }) => item) }, deletedAt: null },
+        {
+          _id: {
+            $in: related.map((relation) => {
+              const { item } = relation
+
+              return item
+            }),
+          },
+          deletedAt: null,
+        },
         { _id: 1, type: 1, title: 1, media: 1 },
         { lean: true },
       ),
       this.relationRepository.read.findMany(
-        { _id: { $in: related.map(({ role }) => role) } },
+        {
+          _id: {
+            $in: related.map((relation) => {
+              const { role } = relation
+
+              return role
+            }),
+          },
+        },
         { _id: 1, key: 1, name: 1 },
         { lean: true },
       ),
@@ -202,30 +235,30 @@ class ItemService {
       roles.map((role) => [role._id.toHexString(), role]),
     )
 
-    return related.flatMap(
-      ({ item: itemId, role: roleId, roleNameOverride }) => {
-        const item = itemsById.get(itemId.toHexString())
-        const role = rolesById.get(roleId.toHexString())
+    return related.flatMap((relation) => {
+      const { item: itemId, role: roleId, roleNameOverride } = relation
 
-        if (isNil(item) || isNil(role)) {
-          return []
-        }
+      const item = itemsById.get(itemId.toHexString())
+      const role = rolesById.get(roleId.toHexString())
 
-        return [
-          {
-            item: mapItemSummary(item),
-            role: {
-              id: role._id.toHexString(),
-              key: role.key,
-              name: {
-                ru: roleNameOverride?.ru ?? role.name?.ru ?? null,
-                en: roleNameOverride?.en ?? role.name?.en ?? null,
-              },
+      if (isNil(item) || isNil(role)) {
+        return []
+      }
+
+      return [
+        {
+          item: mapItemSummary(item),
+          role: {
+            id: role._id.toHexString(),
+            key: role.key,
+            name: {
+              ru: roleNameOverride?.ru ?? role.name?.ru ?? null,
+              en: roleNameOverride?.en ?? role.name?.en ?? null,
             },
           },
-        ]
-      },
-    )
+        },
+      ]
+    })
   }
 }
 

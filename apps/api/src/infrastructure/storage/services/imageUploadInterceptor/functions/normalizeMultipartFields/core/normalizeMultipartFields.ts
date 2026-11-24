@@ -5,7 +5,9 @@ const normalizeMultipartFields = (
   fields: Record<string, unknown>,
 ): Record<string, unknown> => {
   return Object.fromEntries(
-    Object.entries(fields).map(([field, value]) => {
+    Object.entries(fields).map((entry) => {
+      const [field, value] = entry
+
       if (isArray(value)) {
         return [
           field,

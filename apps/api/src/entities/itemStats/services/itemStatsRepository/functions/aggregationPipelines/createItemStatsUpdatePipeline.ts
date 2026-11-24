@@ -36,10 +36,11 @@ const createItemStatsUpdatePipeline = (props: IUpdateItemStatsProps) => {
     .use(
       {
         $set: Object.fromEntries(
-          Object.entries(increments).map(([key, value]) => [
-            key,
-            { $add: [{ $ifNull: [`$${key}`, 0] }, value] },
-          ]),
+          Object.entries(increments).map((increment) => {
+            const [key, value] = increment
+
+            return [key, { $add: [{ $ifNull: [`$${key}`, 0] }, value] }]
+          }),
         ),
       },
       {

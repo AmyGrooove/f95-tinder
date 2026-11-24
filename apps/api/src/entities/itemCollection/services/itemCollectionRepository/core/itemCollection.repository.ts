@@ -117,7 +117,11 @@ class ItemCollectionRepository {
         .build(),
     )
 
-    return memberships.map(({ collectionId }) => collectionId.toHexString())
+    return memberships.map((membership) => {
+      const { collectionId } = membership
+
+      return collectionId.toHexString()
+    })
   }
 
   async readAvailableCounts(

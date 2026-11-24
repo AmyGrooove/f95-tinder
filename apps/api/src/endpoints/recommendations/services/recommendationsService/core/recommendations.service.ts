@@ -52,9 +52,11 @@ class RecommendationsService {
     private readonly cursorService: CursorService,
   ) {}
 
-  async loadLatestModel({
-    isInvalidModelIgnored = false,
-  } = {}): Promise<IRecommendationModel | null> {
+  async loadLatestModel(
+    options: { isInvalidModelIgnored?: boolean } = {},
+  ): Promise<IRecommendationModel | null> {
+    const { isInvalidModelIgnored = false } = options
+
     const document = await this.recommendationModelRepository.readLatest()
     if (document === null) {
       return null
@@ -237,14 +239,13 @@ class RecommendationsService {
   private async buildItemIds(
     context: IRecommendationCandidateContext,
     filter?: IFindRecommendationsProps["filter"],
-    {
-      readSources,
-      excludeItemIds = [],
-    }: {
+    options: {
       readSources?: TReadRecommendationFeedSources
       excludeItemIds?: readonly Types.ObjectId[]
     } = {},
   ) {
+    const { readSources, excludeItemIds = [] } = options
+
     const { types, ...candidateFilter } = filter ?? {}
     const selectedTypes = Object.values(EItemType).filter(
       (type) => types?.includes(type) ?? true,

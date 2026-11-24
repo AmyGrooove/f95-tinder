@@ -160,7 +160,11 @@ class CollectionRepository implements OnModuleInit {
     )
 
     return new Map(
-      rows.map(({ _id, ratingAverage }) => [String(_id), ratingAverage]),
+      rows.map((rating) => {
+        const { _id, ratingAverage } = rating
+
+        return [String(_id), ratingAverage]
+      }),
     )
   }
 

@@ -13,45 +13,45 @@ const DIAGRAM_TYPES = {
 
 const loadDiagramRenderer = () => {
   diagramRendererPromise ??=
-    import("/knowledge/vendor/mermaid/mermaid.esm.min.mjs").then(
-      ({ default: mermaid }) => {
-        const styles = getComputedStyle(document.documentElement)
+    import("/knowledge/vendor/mermaid/mermaid.esm.min.mjs").then((module) => {
+      const { default: mermaid } = module
 
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          suppressErrorRendering: true,
+      const styles = getComputedStyle(document.documentElement)
+
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        suppressErrorRendering: true,
+        htmlLabels: false,
+        theme: "base",
+        fontFamily: "Roboto, Arial, sans-serif",
+        themeVariables: {
+          darkMode: true,
+          fontSize: "15px",
+          background: styles.getPropertyValue("--background").trim(),
+          primaryColor: styles.getPropertyValue("--surface-raised").trim(),
+          primaryTextColor: styles.getPropertyValue("--text").trim(),
+          primaryBorderColor: styles.getPropertyValue("--muted").trim(),
+          lineColor: styles.getPropertyValue("--muted").trim(),
+          secondaryColor: styles.getPropertyValue("--surface").trim(),
+          tertiaryColor: styles.getPropertyValue("--background").trim(),
+          clusterBkg: styles.getPropertyValue("--background").trim(),
+          clusterBorder: styles.getPropertyValue("--border").trim(),
+          edgeLabelBackground: styles.getPropertyValue("--surface").trim(),
+        },
+        flowchart: {
           htmlLabels: false,
-          theme: "base",
-          fontFamily: "Roboto, Arial, sans-serif",
-          themeVariables: {
-            darkMode: true,
-            fontSize: "15px",
-            background: styles.getPropertyValue("--background").trim(),
-            primaryColor: styles.getPropertyValue("--surface-raised").trim(),
-            primaryTextColor: styles.getPropertyValue("--text").trim(),
-            primaryBorderColor: styles.getPropertyValue("--muted").trim(),
-            lineColor: styles.getPropertyValue("--muted").trim(),
-            secondaryColor: styles.getPropertyValue("--surface").trim(),
-            tertiaryColor: styles.getPropertyValue("--background").trim(),
-            clusterBkg: styles.getPropertyValue("--background").trim(),
-            clusterBorder: styles.getPropertyValue("--border").trim(),
-            edgeLabelBackground: styles.getPropertyValue("--surface").trim(),
-          },
-          flowchart: {
-            htmlLabels: false,
-            useMaxWidth: false,
-            curve: "basis",
-            nodeSpacing: 40,
-            rankSpacing: 34,
-            padding: 16,
-            wrappingWidth: 240,
-          },
-        })
+          useMaxWidth: false,
+          curve: "basis",
+          nodeSpacing: 40,
+          rankSpacing: 34,
+          padding: 16,
+          wrappingWidth: 240,
+        },
+      })
 
-        return mermaid
-      },
-    )
+      return mermaid
+    })
 
   return diagramRendererPromise
 }
@@ -131,7 +131,9 @@ const renderKnowledgeDiagrams = async () => {
 
 window.$docsify.markdown = {
   renderer: {
-    code({ text, lang }) {
+    code(codeBlock) {
+      const { text, lang } = codeBlock
+
       if (lang !== "mermaid") {
         return this.origin.code.apply(this, arguments)
       }

@@ -4,9 +4,11 @@ import { Item } from "@entities/item/schemas/item.schema"
 import { AggregationBuilder } from "@infrastructure/database/services/aggregationBuilder"
 import { ECollectionBlockType } from "../../../../schemas/ECollectionBlockType"
 
-const createAvailableCollectionMembershipLookup = ({
-  isCountRequested = false,
-}: { isCountRequested?: boolean } = {}): PipelineStage.Lookup => {
+const createAvailableCollectionMembershipLookup = (
+  options: { isCountRequested?: boolean } = {},
+): PipelineStage.Lookup => {
+  const { isCountRequested = false } = options
+
   return {
     $lookup: {
       from: ItemCollection.name,

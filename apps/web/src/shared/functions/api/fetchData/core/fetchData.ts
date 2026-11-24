@@ -50,7 +50,9 @@ const fetchData = async <TResponse>(props: IFetchDataProps) => {
 
   const searchParameters = new URLSearchParams()
 
-  Object.entries(query ?? {}).forEach(([key, value]) => {
+  Object.entries(query ?? {}).forEach((entry) => {
+    const [key, value] = entry
+
     if (isNil(value)) {
       return
     }

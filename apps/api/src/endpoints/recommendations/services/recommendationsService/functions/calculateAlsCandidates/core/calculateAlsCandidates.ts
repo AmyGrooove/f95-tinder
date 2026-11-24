@@ -8,8 +8,10 @@ import { rankRecommendationCandidates } from "../../rankRecommendationCandidates
 const calculateAlsCandidates = (
   model: Pick<IRecommendationModel, "itemIds" | "als" | "popularity">,
   positiveItemIds: readonly string[],
-  { isPositiveCandidateAllowed = false } = {},
+  options: { isPositiveCandidateAllowed?: boolean } = {},
 ) => {
+  const { isPositiveCandidateAllowed = false } = options
+
   const { itemIds, als, popularity } = model
   const { factors, alpha, regularization, itemFactors, gram } = als
   const positiveIds = new Set(positiveItemIds)

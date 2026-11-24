@@ -19,7 +19,7 @@ class TagItemWriteRepository extends MongoWriteRepository<
   }
 
   override async create(
-    ...[payload, options]: Parameters<
+    ...args: Parameters<
       MongoWriteRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -27,6 +27,8 @@ class TagItemWriteRepository extends MongoWriteRepository<
       >["create"]
     >
   ) {
+    const [payload, options] = args
+
     return await this.mutations.run({
       mutate: () => super.create(payload, options),
       itemIds: [payload.item],
@@ -35,7 +37,7 @@ class TagItemWriteRepository extends MongoWriteRepository<
   }
 
   override async updateById(
-    ...[id, payload, options]: Parameters<
+    ...args: Parameters<
       MongoWriteRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -43,6 +45,8 @@ class TagItemWriteRepository extends MongoWriteRepository<
       >["updateById"]
     >
   ) {
+    const [id, payload, options] = args
+
     return await this.mutations.run({
       mutate: () => super.updateById(id, payload, options),
       filters: [{ _id: new Types.ObjectId(id) }],
@@ -51,7 +55,7 @@ class TagItemWriteRepository extends MongoWriteRepository<
   }
 
   override async updateByFilter(
-    ...[filter, payload, options]: Parameters<
+    ...args: Parameters<
       MongoWriteRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -59,6 +63,8 @@ class TagItemWriteRepository extends MongoWriteRepository<
       >["updateByFilter"]
     >
   ) {
+    const [filter, payload, options] = args
+
     return await this.mutations.run({
       mutate: () => super.updateByFilter(filter, payload, options),
       filters: [filter],
@@ -67,7 +73,7 @@ class TagItemWriteRepository extends MongoWriteRepository<
   }
 
   override async deleteById(
-    ...[id, options]: Parameters<
+    ...args: Parameters<
       MongoWriteRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -75,6 +81,8 @@ class TagItemWriteRepository extends MongoWriteRepository<
       >["deleteById"]
     >
   ) {
+    const [id, options] = args
+
     return await this.mutations.run({
       mutate: () => super.deleteById(id, options),
       filters: [{ _id: new Types.ObjectId(id) }],
@@ -83,7 +91,7 @@ class TagItemWriteRepository extends MongoWriteRepository<
   }
 
   override async deleteByFilter(
-    ...[filter, options]: Parameters<
+    ...args: Parameters<
       MongoWriteRepository<
         TagItem,
         HydratedDocument<TagItem>,
@@ -91,6 +99,8 @@ class TagItemWriteRepository extends MongoWriteRepository<
       >["deleteByFilter"]
     >
   ) {
+    const [filter, options] = args
+
     return await this.mutations.run({
       mutate: () => super.deleteByFilter(filter, options),
       filters: [filter],

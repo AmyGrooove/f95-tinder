@@ -21,14 +21,13 @@ class FallbackRecommendationsService {
   async readItemIds(
     context: IRecommendationCandidateContext,
     props: Pick<IReadRecommendationCandidatesProps, "type" | "filter">,
-    {
-      personal = [],
-      plannedIds = new Set<string>(),
-    }: {
+    options: {
       personal?: readonly IRecommendationSourceCandidate[]
       plannedIds?: ReadonlySet<string>
     } = {},
   ) {
+    const { personal = [], plannedIds = new Set<string>() } = options
+
     const { maxItemsPerType, sourceOrder, personalSourceOrder } =
       FALLBACK_RECOMMENDATIONS_SETTINGS
     const query = { ...props, limit: maxItemsPerType }
@@ -42,18 +41,26 @@ class FallbackRecommendationsService {
       candidates: readonly IRecommendationSourceCandidate[],
     ) =>
       candidates
-        .map(({ itemId, score, bonus = 0 }) => ({
-          itemId,
-          score:
-            score *
-            (1 +
-              Math.max(
-                bonus,
-                plannedIds.has(itemId.toHexString()) ? plannedBonus : 0,
-              )),
-        }))
+        .map((candidate) => {
+          const { itemId, score, bonus = 0 } = candidate
+
+          return {
+            itemId,
+            score:
+              score *
+              (1 +
+                Math.max(
+                  bonus,
+                  plannedIds.has(itemId.toHexString()) ? plannedBonus : 0,
+                )),
+          }
+        })
         .sort((left, right) => right.score - left.score)
-        .map(({ itemId }) => itemId)
+        .map((candidate) => {
+          const { itemId } = candidate
+
+          return itemId
+        })
     const rankBaseCandidates = (ids: Types.ObjectId[]) =>
       plannedIds.size === 0
         ? ids

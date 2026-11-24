@@ -239,7 +239,11 @@ class UserItemRepository {
       { lean: true },
     )
 
-    return records.map(({ item }) => item)
+    return records.map((userItem) => {
+      const { item } = userItem
+
+      return item
+    })
   }
 
   async readPlannedItemIds(userId: Types.ObjectId) {
@@ -249,7 +253,11 @@ class UserItemRepository {
       { lean: true },
     )
 
-    return records.map(({ item }) => item)
+    return records.map((userItem) => {
+      const { item } = userItem
+
+      return item
+    })
   }
 }
 

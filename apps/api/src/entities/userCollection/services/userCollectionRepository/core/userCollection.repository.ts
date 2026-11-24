@@ -66,7 +66,11 @@ class UserCollectionRepository {
       { lean: true },
     )
 
-    return reactions.map(({ collectionId }) => collectionId.toHexString())
+    return reactions.map((reaction) => {
+      const { collectionId } = reaction
+
+      return collectionId.toHexString()
+    })
   }
 
   async readStatistics(collectionId: Types.ObjectId) {

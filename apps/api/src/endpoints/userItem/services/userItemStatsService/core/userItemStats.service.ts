@@ -39,10 +39,14 @@ class UserItemStatsService {
       (next?.completedAttemptsCount ?? 0) -
       (previous?.completedAttemptsCount ?? 0)
     const ratingDistribution = Object.fromEntries(
-      Object.entries(RATING_DISTRIBUTION_VALUES).map(([key, rating]) => [
-        key,
-        Number(next?.rating === rating) - Number(previous?.rating === rating),
-      ]),
+      Object.entries(RATING_DISTRIBUTION_VALUES).map((entry) => {
+        const [key, rating] = entry
+
+        return [
+          key,
+          Number(next?.rating === rating) - Number(previous?.rating === rating),
+        ]
+      }),
     )
     const statusCounts = Object.fromEntries(
       USER_ITEM_LIBRARY_STATUSES.map((status) => [

@@ -49,9 +49,11 @@ class HomeFeedService {
 
   private getFeedDate() {
     const { year, month, day, hour } = Object.fromEntries(
-      this.dateFormatter
-        .formatToParts(new Date())
-        .map(({ type, value }) => [type, value]),
+      this.dateFormatter.formatToParts(new Date()).map((part) => {
+        const { type, value } = part
+
+        return [type, value]
+      }),
     )
     const date = `${year}-${month}-${day}`
 
@@ -75,9 +77,23 @@ class HomeFeedService {
       ),
     ])
     const pools = {
-      [FACT]: [...new Set(facts.map(({ _id }) => _id.toHexString()))],
+      [FACT]: [
+        ...new Set(
+          facts.map((fact) => {
+            const { _id } = fact
+
+            return _id.toHexString()
+          }),
+        ),
+      ],
       [COLLECTION]: [
-        ...new Set(collections.map(({ _id }) => _id.toHexString())),
+        ...new Set(
+          collections.map((collection) => {
+            const { _id } = collection
+
+            return _id.toHexString()
+          }),
+        ),
       ],
       [FEATURE]: [...new Set(HOME_FEED_FEATURE_IDS)],
     }

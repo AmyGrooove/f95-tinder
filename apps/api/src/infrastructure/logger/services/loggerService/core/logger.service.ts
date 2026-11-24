@@ -66,9 +66,11 @@ class LoggerService {
 
       if (environment === "development") {
         const consoleLevel = level === "info" ? "log" : level
-        const params = Object.entries(details).filter(
-          ([, value]) => value !== undefined,
-        )
+        const params = Object.entries(details).filter((entry) => {
+          const [, value] = entry
+
+          return value !== undefined
+        })
         const consoleParams =
           params.length > 0 ? [redactLogValue(Object.fromEntries(params))] : []
 

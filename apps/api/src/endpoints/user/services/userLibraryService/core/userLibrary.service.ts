@@ -147,11 +147,15 @@ class UserLibraryService {
         ru: entry.item.title.ru ?? null,
         en: entry.item.title.en ?? null,
       },
-      media: entry.item.media.map(({ type, src, language }) => ({
-        type,
-        src,
-        language: language ?? null,
-      })),
+      media: entry.item.media.map((source) => {
+        const { type, src, language } = source
+
+        return {
+          type,
+          src,
+          language: language ?? null,
+        }
+      }),
       status: entry.status,
       isFavorite: entry.isFavorite,
       rating: entry.rating ?? null,

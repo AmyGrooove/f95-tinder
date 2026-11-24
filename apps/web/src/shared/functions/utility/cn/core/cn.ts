@@ -12,10 +12,14 @@ const cn = (...classNames: TCnValue[]) => {
     }
 
     return Object.entries(className)
-      .filter(([, isEnabled]) => {
+      .filter((entry) => {
+        const [, isEnabled] = entry
+
         return !isNil(isEnabled) && isEnabled
       })
-      .map(([currentClassName]) => {
+      .map((entry) => {
+        const [currentClassName] = entry
+
         return currentClassName
       })
   })

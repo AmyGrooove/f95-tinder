@@ -11,9 +11,11 @@ class LibraryContinueBodyDto extends PickType(QueryFieldsDto, ["types"]) {
     uniqueItems: false,
     description: SWAGGER_DICTIONARY.account.dto.libraryContinueBody.types,
   })
-  @Transform(({ value }: TransformFnParams) =>
-    isArray(value) ? [...new Set(value)] : value,
-  )
+  @Transform((params: TransformFnParams) => {
+    const { value } = params
+
+    return isArray(value) ? [...new Set(value)] : value
+  })
   declare types?: QueryFieldsDto["types"]
 }
 

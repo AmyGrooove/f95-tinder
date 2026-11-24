@@ -5,6 +5,7 @@ import type { Types } from "mongoose"
 import { checkIsNullableRating } from "@entities/shared/functions/checks/checkIsNullableRating"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
+import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
 
 import { EUserItemHistoryEvent } from "./EUserItemHistoryEvent"
 
@@ -16,10 +17,14 @@ class UserItemHistory extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
   item: Types.ObjectId
 
-  @Prop({ type: String, enum: EUserItemHistoryEvent, required: true })
+  @Prop({
+    type: String,
+    enum: Object.values(EUserItemHistoryEvent),
+    required: true,
+  })
   type: EUserItemHistoryEvent
 
-  @Prop({ type: String, enum: EUserItemStatus })
+  @Prop({ type: String, enum: Object.values(EUserItemStatus) })
   status?: EUserItemStatus
 
   @Prop({ type: Number, validate: checkIsNullableRating })
@@ -29,6 +34,16 @@ class UserItemHistory extends MongoEntity {
   isFavorite?: boolean
 }
 
+type TCreateUserItemHistory = TCreateEntity<UserItemHistory> &
+  (
+    | {
+        type: EUserItemHistoryEvent.ADDED | EUserItemHistoryEvent.STATUS_CHANGED
+        status: EUserItemStatus
+      }
+    | { type: EUserItemHistoryEvent.RATING_CHANGED; rating: number | null }
+    | { type: EUserItemHistoryEvent.FAVORITE_CHANGED; isFavorite: boolean }
+  )
+
 const UserItemHistorySchema = SchemaFactory.createForClass(UserItemHistory)
 
 UserItemHistorySchema.index(
@@ -37,3 +52,4 @@ UserItemHistorySchema.index(
 )
 
 export { UserItemHistory, UserItemHistorySchema }
+export type { TCreateUserItemHistory }
