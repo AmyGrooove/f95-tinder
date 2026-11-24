@@ -7,6 +7,7 @@ import type { UserRepository } from "@entities/user/services/userRepository"
 import type { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import type { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
+import { CollectionPosterEventsService } from "@endpoints/collection/services/collectionPosterEventsService"
 import type { ItemRepository } from "@entities/item/services/itemRepository"
 import type { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import type { CollectionRepository } from "@entities/collection/services/collectionRepository"
@@ -35,6 +36,7 @@ describe("CollectionService", () => {
       {} as UserRepository,
       {} as StorageService,
       {} as UserCollectionRepository,
+      new CollectionPosterEventsService(),
     )
     return { collections, transactions, service }
   }

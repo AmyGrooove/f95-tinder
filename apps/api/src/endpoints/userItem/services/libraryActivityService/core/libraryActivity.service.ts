@@ -2,11 +2,13 @@ import { createHash, randomUUID } from "node:crypto"
 
 import { InjectRedis } from "@nestjs-redis/client"
 import { Injectable } from "@nestjs/common"
+import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { Cron } from "@nestjs/schedule"
 import { Types } from "mongoose"
 import type { ClientSession } from "mongoose"
 import type { RedisClientType } from "redis"
 
+import { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
 import { EUserActivityType } from "@entities/userActivity/schemas/EUserActivityType"
 import type { TCreateUserActivity } from "@entities/userActivity/schemas/userActivity.schema"
 import { UserActivityRepository } from "@entities/userActivity/services/userActivityRepository"
@@ -38,8 +40,9 @@ const normalizeState = (state: ILibraryActivityState | null) => {
 }
 
 @Injectable()
-class LibraryActivityService {
+class LibraryActivityService implements OnModuleInit, OnModuleDestroy {
   readonly #keys: string[]
+  private unsubscribe?: () => void
 
   constructor(
     @InjectRedis("libraryActivity") private readonly redis: RedisClientType,
@@ -47,9 +50,20 @@ class LibraryActivityService {
     private readonly transactionService: MongoTransactionService,
     private readonly logger: LoggerService,
     configuration: InfrastructureConfigService,
+    private readonly userItemEventsService: UserItemEventsService,
   ) {
     const prefix = `{${configuration.app.name}:library-activity}`
     this.#keys = [`${prefix}:active`, `${prefix}:windows`, `${prefix}:due`]
+  }
+
+  onModuleInit() {
+    this.unsubscribe = this.userItemEventsService.subscribe((change, session) =>
+      this.stageAfterCommit(change, session),
+    )
+  }
+
+  onModuleDestroy() {
+    this.unsubscribe?.()
   }
 
   async stageAfterCommit(

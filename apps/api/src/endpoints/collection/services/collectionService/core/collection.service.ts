@@ -10,7 +10,7 @@ import { Types } from "mongoose"
 import type { ClientSession, HydratedDocument } from "mongoose"
 
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
-import { StorageService } from "@infrastructure/storage/services/storageService"
+import { CollectionPosterEventsService } from "@endpoints/collection/services/collectionPosterEventsService"
 import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import { resolveMediaUrl } from "@endpoints/shared/functions/resolveMediaUrl"
 import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
@@ -28,6 +28,7 @@ import type {
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
@@ -51,6 +52,7 @@ class CollectionService {
     private readonly userRepository: UserRepository,
     private readonly storageService: StorageService,
     private readonly userCollectionRepository: UserCollectionRepository,
+    private readonly posterEvents: CollectionPosterEventsService,
   ) {}
 
   async create(accessToken: unknown, body: CreateCollectionBodyDto) {
@@ -307,6 +309,9 @@ class CollectionService {
     if (collection.version === Number.MAX_SAFE_INTEGER) {
       throw new ConflictException(DICTIONARY.collection.versionLimit)
     }
+    const previousPosters = collection.media.filter(
+      (media) => media.type === EMediaType.POSTER,
+    )
     const updated = await this.collectionRepository.updateVersioned({
       id: id,
       authorId: userId,
@@ -332,25 +337,12 @@ class CollectionService {
     if (isNil(updated)) {
       throw new ConflictException(DICTIONARY.collection.versionConflict)
     }
-    const prefix = "collections/" + id.toHexString() + "/poster/"
-    for (const poster of collection.media.filter(
-      (media) => media.type === EMediaType.POSTER,
-    )) {
-      const filename = poster.src.slice(poster.src.lastIndexOf("/") + 1)
-      const key = prefix + filename
-      const isStoredPoster =
-        poster.source === EMediaSource.STORAGE_KEY
-          ? poster.src === key
-          : poster.src.endsWith("/" + key)
 
-      if (
-        isStoredPoster &&
-        key !== path &&
-        /^[a-f0-9-]{36}\.webp$/.test(filename)
-      ) {
-        await this.storageService.delete(key).catch(() => undefined)
-      }
-    }
+    await this.posterEvents.publishChanged({
+      collectionId: id.toHexString(),
+      previousPosters,
+      currentKey: path,
+    })
   }
 
   async remove(accessToken: unknown, id: Types.ObjectId) {

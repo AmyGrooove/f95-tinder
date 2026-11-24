@@ -5,12 +5,12 @@ import {
 } from "@nestjs/common"
 
 import { AuthService } from "@endpoints/auth/services/authService"
+import { AccountAvatarEventsService } from "@endpoints/account/services/accountAvatarEventsService"
 import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
-import { StorageService } from "@infrastructure/storage/services/storageService"
 import type { IStorageUploadResult } from "@infrastructure/storage/services/storageService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
@@ -22,7 +22,7 @@ class AccountAvatarService {
   constructor(
     private readonly authService: AuthService,
     private readonly userRepository: UserRepository,
-    private readonly storageService: StorageService,
+    private readonly avatarEvents: AccountAvatarEventsService,
   ) {}
 
   async authenticate(accessToken: unknown) {
@@ -81,15 +81,7 @@ class AccountAvatarService {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    if (
-      previous.avatar?.source === EMediaSource.STORAGE_KEY &&
-      (avatar?.source !== EMediaSource.STORAGE_KEY ||
-        previous.avatar.src !== avatar.src)
-    ) {
-      await this.storageService
-        .delete(previous.avatar.src)
-        .catch(() => undefined)
-    }
+    await this.avatarEvents.publishChanged(previous.avatar ?? null, avatar)
   }
 }
 

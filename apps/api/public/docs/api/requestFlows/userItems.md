@@ -66,20 +66,21 @@ flowchart TD
 ```mermaid
 flowchart TD
     accTitle: Добавление произведения в библиотеку
-    accDescr: Проверить доступ и Item, создать UserItem со статистикой в транзакции и вернуть запись
+    accDescr: Проверить доступ и Item, сохранить UserItem и статистику в транзакции, затем передать изменение в Redis
     A(["POST /userItems"]):::http --> B["Проверить доступ, Item и допустимость завершения"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Удалить прежний истёкший skipped; создать UserItem")]:::data
-        C --> D[("Применить дельты — ItemStats, при необходимости SiteStats")]:::data
+        C --> V>"Опубликовать изменение UserItem"]:::event
+        V --> D[("Применить дельты ItemStats и SiteStats")]:::data
     end
     B --> C
     D -->|Commit| H[("Передать изменение в Redis")]:::data
     H --> R(["204 — без тела"]):::http
 ```
 
-До транзакции проверяется неудалённый Item; для completed — ограничения завершения. Для inProgress/onHold/completed/dropped автоматически создаётся первая попытка; completed помечает её завершённой. Просроченный skipped той же пары user/item удаляется внутри транзакции; другая существующая запись не заменяется — 409 уникальности. Нет Item — 404; недопустимое завершение — 409. HTTP ждёт commit.
+До транзакции проверяется неудалённый Item; для completed — ограничения завершения. Для inProgress/onHold/completed/dropped автоматически создаётся первая попытка; completed помечает её завершённой. Просроченный skipped той же пары user/item удаляется внутри транзакции; другая существующая запись не заменяется — 409 уникальности. Нет Item — 404; недопустимое завершение — 409. HTTP ждёт commit и попытку записи в Redis.
 
-**Технические подробности:** UserItemController.create → UserItemService.create/createWithStatus/runMutation → ItemRepository.read.checkIsExists, UserItemRepository.write.deleteByFilter/create, UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [create DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createUserItem.body.ts), [допустимые статусы создания](../../../../src/endpoints/userItem/services/userItemService/dto/status.body.ts).
+**Технические подробности:** UserItemController.create → UserItemService.create/createWithStatus/runMutation → UserItemRepository.write.deleteByFilter/create → UserItemEventsService.publishChanged. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [create DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createUserItem.body.ts), [допустимые статусы создания](../../../../src/endpoints/userItem/services/userItemService/dto/status.body.ts).
 
 <a id="skip"></a>
 
@@ -94,14 +95,15 @@ flowchart TD
     A(["POST /userItems/skip"]):::http --> B["Проверить доступ и неудалённый Item"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Удалить истёкший skipped; создать новый UserItem на 90 дней")]:::data
-        C --> D["Посчитать дельты статистики; нулевые не писать"]:::action
+        C --> V>"Опубликовать изменение UserItem"]:::event
+        V --> D["Посчитать дельты статистики"]:::action
     end
     B --> C
     D -->|Commit| H[("Учесть исключение в текущем окне Redis")]:::data
     H --> R(["204 — без тела"]):::http
 ```
 
-Создаётся новая запись без оценки, избранного, заметки и попыток. Свежий skipped/другая существующая запись пары user/item даёт 409, отсутствующий/удалённый Item — 404. Чистый skipped не вносит вклад в ItemStats/SiteStats, поэтому вызов расчёта дельт обычно ничего туда не пишет. MongoDB TTL позже физически удаляет просроченные skipped независимо от запроса; это не BullMQ-джоба и не обещание удаления ровно в expiresAt. HTTP ждёт commit.
+Создаётся новая запись без оценки, избранного, заметки и попыток. Свежий skipped/другая существующая запись пары user/item даёт 409, отсутствующий/удалённый Item — 404. Чистый skipped не вносит вклад в ItemStats/SiteStats, поэтому обработчик статистики пропускает запись агрегатов. MongoDB TTL позже физически удаляет просроченные skipped независимо от запроса. HTTP ждёт commit и попытку записи в Redis.
 
 **Технические подробности:** UserItemController.skip → UserItemService.skip/createWithStatus, общий путь создания выше. [Exclusion DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createExclusion.body.ts), [TTL-индекс](../../../../src/entities/userItem/schemas/userItem.schema.ts), [срок](../../../../src/endpoints/userItem/services/userItemService/static/USER_ITEM_SKIP_DURATION_MS.ts).
 
@@ -118,14 +120,15 @@ flowchart TD
     A(["POST /userItems/block"]):::http --> B["Проверить доступ и неудалённый Item"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Удалить истёкший skipped; создать blocked — UserItem")]:::data
-        C --> D["Посчитать дельты статистики; нулевые не писать"]:::action
+        C --> V>"Опубликовать изменение UserItem"]:::event
+        V --> D["Посчитать дельты статистики"]:::action
     end
     B --> C
     D -->|Commit| H[("Учесть исключение в текущем окне Redis")]:::data
     H --> R(["204 — без тела"]):::http
 ```
 
-Создание blocked не заменяет действующую запись пары user/item: 409. Для изменения существующей записи нужен PATCH /userItems/:id. Нет доступного Item — 404. Чистый blocked не входит в обычные счётчики библиотеки и не несёт оценки/избранного, поэтому ненулевых дельт статистики нет. TTL не применяется. HTTP ждёт commit и попытку записи в Redis. Отдельного события создания исключения нет.
+Создание blocked не заменяет действующую запись пары user/item: 409. Для изменения существующей записи нужен PATCH /userItems/:id. Нет доступного Item — 404. Чистый blocked не входит в обычные счётчики библиотеки и не несёт оценки/избранного, поэтому обработчик статистики пропускает запись агрегатов. TTL не применяется. HTTP ждёт commit и попытку записи в Redis. Само создание исключения не добавляет запись в UserActivity.
 
 **Технические подробности:** UserItemController.block → UserItemService.block/createWithStatus → те же репозитории, что в создании. [Контроллер](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts), [сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [статусы счётчиков](../../../../src/entities/userItem/static/USER_ITEM_LIBRARY_STATUSES.ts).
 
@@ -145,7 +148,8 @@ flowchart TD
         C -->|Запись найдена| K{"Включённое условие оценки выполнено?"}:::action
         K -->|Да или флаг выключен| D["Проверить статус, попытки, Item и теги при необходимости"]:::action
         D --> E[("Обновить UserItem с проверкой включённого условия")]:::data
-        E -->|Сохранено| S[("Применить дельты ItemStats / SiteStats")]:::data
+        E -->|Сохранено| V>"Опубликовать изменение UserItem"]:::event
+        V --> S[("Применить дельты ItemStats / SiteStats")]:::data
     end
     B --> C
     C -->|Нет записи| N(["404 — запись не найдена"]):::http
@@ -155,7 +159,7 @@ flowchart TD
     H --> R(["204 — без тела"]):::http
 ```
 
-rating — целое 1–10 или null для очистки; note допускает null. completed помечает последнюю попытку завершённой; переход в требующий попытку статус создаёт её, если попыток нет. skipped несовместим с оценкой/избранным/заметкой/попытками — 409. expiresAt обнуляется при выходе из skipped, при входе назначается 90 дней. Неверные даты/проценты/единицы попыток — 400; недопустимое завершение — 409. Отсутствующая, чужая или истёкшая skipped — одинаковый 404. ItemStats обновляется синхронно в транзакции. HTTP ждёт commit.
+rating — целое 1–10 или null для очистки; note допускает null. completed помечает последнюю попытку завершённой; переход в требующий попытку статус создаёт её, если попыток нет. skipped несовместим с оценкой/избранным/заметкой/попытками — 409. expiresAt обнуляется при выходе из skipped, при входе назначается 90 дней. Неверные даты/проценты/единицы попыток — 400; недопустимое завершение — 409. Отсутствующая, чужая или истёкшая skipped — одинаковый 404. Обработчик события применяет дельты в транзакции. HTTP ждёт commit и, если меняются статус, оценка или избранное, попытку записи в Redis.
 
 При `isCompletedAndUnratedRequired: true` обязательна целая оценка 1–10. Если запись уже получила оценку или её статус отличается от `completed`, возвращается 409 без записи оценки и дельт. После конфликта конкурентной записи повтор транзакции читает актуальное состояние.
 
@@ -174,7 +178,8 @@ flowchart TD
     A(["DELETE /userItems/:id"]):::http --> B["Проверить ID и доступ"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Удалить свою UserItem вместе с attempts")]:::data
-        C --> D[("Вычесть вклад — ItemStats и при необходимости SiteStats")]:::data
+        C --> V>"Опубликовать изменение UserItem"]:::event
+        V --> D[("Вычесть вклад в ItemStats и SiteStats")]:::data
     end
     B --> C
     D -->|Commit| H[("Передать удаление записи в Redis")]:::data
@@ -183,7 +188,7 @@ flowchart TD
 
 Нет/чужая запись — 404; повторное удаление тоже 404. Удаление разрешено и для просроченного skipped, если TTL ещё не удалил его. Item не проверяется и не удаляется. Статистика вычитается из возвращённой удалённой записи в той же транзакции. Удаление отменяет ожидающие события для произведения в текущем окне Redis. Ранее записанные события истории сохраняются. HTTP ждёт commit и попытку записи в Redis.
 
-**Технические подробности:** UserItemController.remove → UserItemService.remove/runMutation → UserItemRepository.write.deleteByFilter, UserItemStatsService.update(previous, null). [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [репозиторий](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts).
+**Технические подробности:** UserItemController.remove → UserItemService.remove/runMutation → UserItemRepository.write.deleteByFilter → UserItemEventsService.publishChanged с after=null. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [репозиторий](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts).
 
 <a id="create-attempt"></a>
 
@@ -194,20 +199,22 @@ flowchart TD
 ```mermaid
 flowchart TD
     accTitle: Добавление попытки просмотра
-    accDescr: Проверить собственную запись, статус и ограничения попытки, сохранить UserItem и статистику в транзакции и вернуть запись
+    accDescr: Проверить собственную запись, статус и ограничения попытки, сохранить UserItem и статистику в транзакции
     A(["POST /userItems/:id/attempts"]):::http --> B["Проверить доступ"]:::action
     subgraph TX["Транзакция MongoDB"]
         C[("Прочитать свою неистёкшую UserItem")]:::data
         C --> D["Проверить статус, даты, прогресс и ограничения Item / TagItem / Tag"]:::action
-        D --> E[("Добавить attempts; обновить дельты ItemStats")]:::data
+        D --> E[("Добавить попытку в UserItem")]:::data
+        E --> V>"Опубликовать изменение UserItem"]:::event
+        V --> S[("Применить дельту ItemStats при изменении числа завершённых попыток")]:::data
     end
     B --> C
-    E -->|Commit| R(["204 — без тела"]):::http
+    S -->|Commit| R(["204 — без тела"]):::http
 ```
 
-Новая попытка разрешена только inProgress/onHold/completed/dropped, иначе 409. По умолчанию isCompleted=false, progress=null, unit=minute, даты=null; `{}` допустим. Попытка **не меняет статус UserItem**. unit=episode разрешён только сериалам; percent не выше 100; завершение игры без определённого конца и незавершённого сезона запрещено по TagItem/Tag. Ошибки формата/дат/единиц — 400, ограничения завершения — 409, нет собственной активной записи — 404. Общий mutate обновляет статистику в той же транзакции. Нет внешних обращений; HTTP ждёт commit.
+Новая попытка разрешена только inProgress/onHold/completed/dropped, иначе 409. По умолчанию isCompleted=false, progress=null, unit=minute, даты=null; `{}` допустим. Попытка **не меняет статус UserItem**. unit=episode разрешён только сериалам; percent не выше 100; завершение игры без определённого конца и незавершённого сезона запрещено по TagItem/Tag. Ошибки формата/дат/единиц — 400, ограничения завершения — 409, нет собственной активной записи — 404. Обработчик события обновляет статистику в той же транзакции. Изменения одних попыток оставляют окно истории в Redis без изменений, HTTP ждёт commit.
 
-**Технические подробности:** UserItemController.createAttempt → UserItemService.createAttempt/mutate/validateCompletion → UserItemRepository и при необходимости ItemRepository/TagItemRepository.checkHasTagKeys → UserItemStatsService.update. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createAttempt.body.ts).
+**Технические подробности:** UserItemController.createAttempt → UserItemService.createAttempt/mutate/validateCompletion → UserItemRepository и при необходимости ItemRepository/TagItemRepository.checkHasTagKeys → UserItemEventsService.publishChanged. [Сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/createAttempt.body.ts).
 
 <a id="update-attempt"></a>
 
@@ -223,14 +230,18 @@ flowchart TD
     subgraph TX["Транзакция MongoDB"]
         C[("Прочитать свою неистёкшую UserItem и найти attemptId")]:::data
         C --> D["Проверить даты, прогресс и ограничения Item / TagItem / Tag"]:::action
-        D --> E[("Сохранить attempts; обновить дельты ItemStats")]:::data
+        D --> E[("Сохранить попытки в UserItem")]:::data
+        E --> V>"Опубликовать изменение UserItem"]:::event
+        V --> S[("Применить дельту ItemStats при изменении числа завершённых попыток")]:::data
     end
     B --> C
-    E -->|Commit| R(["204 — без тела"]):::http
+    S -->|Commit| R(["204 — без тела"]):::http
 ```
 
-Пустое изменение — 400; неизвестная попытка/отсутствующая или чужая UserItem — 404. Те же ограничения дат/единиц/процентов и завершения, что при создании попытки; изменение попытки не меняет статус UserItem. В отличие от создания, отдельной проверки допустимости статуса для добавления здесь нет. ItemStats обновляется только при ненулевой дельте, например изменении числа завершённых попыток; SiteStats при обычном редактировании attempts не меняется. HTTP ждёт commit; внешних обращений и событий нет.
+Пустое изменение — 400; неизвестная попытка/отсутствующая или чужая UserItem — 404. Те же ограничения дат/единиц/процентов и завершения, что при создании попытки; изменение попытки не меняет статус UserItem. В отличие от создания, отдельной проверки допустимости статуса для добавления здесь нет. ItemStats обновляется при изменении числа завершённых попыток. SiteStats и окно истории в Redis остаются без изменений. HTTP ждёт commit.
 
 **Технические подробности:** UserItemController.updateAttempt → UserItemService.updateAttempt/mutate/validateUserItem/validateCompletion. [Контроллер](../../../../src/endpoints/userItem/controllers/userItemController/core/userItem.controller.ts), [сервис](../../../../src/endpoints/userItem/services/userItemService/core/userItem.service.ts), [DTO](../../../../src/endpoints/userItem/services/userItemService/dto/updateAttempt.body.ts).
 
-**Исходники статистики:** [UserItemStatsService](../../../../src/endpoints/userItem/services/userItemStatsService/core/userItemStats.service.ts), [ItemStatsRepository.applyChanges](../../../../src/entities/itemStats/services/itemStatsRepository/core/itemStats.repository.ts), [SiteRatingsStatsRepository.applyChanges](../../../../src/entities/siteStats/services/siteRatingsStatsRepository/core/siteRatingsStats.repository.ts).
+Во всех семи мутациях событие передаёт снимки UserItem до и после записи. Ошибка обработчика статистики откатывает транзакцию. Обработчик истории регистрирует запись в Redis после commit только при изменении статуса, оценки или избранного, включая создание и удаление. Сбой Redis журналируется после сохранения UserItem.
+
+**Исходники событий и обработчиков.** [UserItemEventsService](../../../../src/endpoints/userItem/services/userItemEventsService/core/userItemEvents.service.ts), [UserItemStatsService](../../../../src/endpoints/userItem/services/userItemStatsService/core/userItemStats.service.ts), [LibraryActivityService](../../../../src/endpoints/userItem/services/libraryActivityService/core/libraryActivity.service.ts), [ItemStatsRepository.applyChanges](../../../../src/entities/itemStats/services/itemStatsRepository/core/itemStats.repository.ts), [SiteRatingsStatsRepository.applyChanges](../../../../src/entities/siteStats/services/siteRatingsStatsRepository/core/siteRatingsStats.repository.ts).

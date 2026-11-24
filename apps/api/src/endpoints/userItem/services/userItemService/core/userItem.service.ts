@@ -19,7 +19,7 @@ import { UserItemRepository } from "@entities/userItem/services/userItemReposito
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { ItemAttempt } from "@entities/userItem/schemas/itemAttempt.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
-import { LibraryActivityService } from "@endpoints/userItem/services/libraryActivityService"
+import { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
@@ -38,7 +38,6 @@ import type { IUpdateUserItemProps } from "../types/IUpdateUserItemProps"
 import type { IMutateUserItemProps } from "../types/IMutateUserItemProps"
 import type { IValidateCompletionProps } from "../types/IValidateCompletionProps"
 import { USER_ITEM_SKIP_DURATION_MS } from "../static/USER_ITEM_SKIP_DURATION_MS"
-import { UserItemStatsService } from "@endpoints/userItem/services/userItemStatsService"
 
 @Injectable()
 class UserItemService {
@@ -49,8 +48,7 @@ class UserItemService {
     private readonly userItemRepository: UserItemRepository,
     private readonly transactionService: MongoTransactionService,
     private readonly tagItemRepository: TagItemRepository,
-    private readonly userItemStatsService: UserItemStatsService,
-    private readonly libraryActivityService: LibraryActivityService,
+    private readonly userItemEventsService: UserItemEventsService,
   ) {}
 
   async readByItemId(
@@ -146,16 +144,13 @@ class UserItemService {
           },
           { session },
         )
-        const next = this.userItemStatsService.getState(created)
-        await this.userItemStatsService.update({
-          itemId,
-          previous: null,
-          next,
-          session,
-        })
-
-        await this.libraryActivityService.stageAfterCommit(
-          { user: userId, item: itemId, before: null, after: next },
+        await this.userItemEventsService.publishChanged(
+          {
+            user: userId,
+            item: itemId,
+            before: null,
+            after: created.toObject(),
+          },
           session,
         )
 
@@ -228,15 +223,13 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      const previous = this.userItemStatsService.getState(removed)
-      await this.userItemStatsService.update({
-        itemId: removed.item,
-        previous,
-        next: null,
-        session,
-      })
-      await this.libraryActivityService.stageAfterCommit(
-        { user: userId, item: removed.item, before: previous, after: null },
+      await this.userItemEventsService.publishChanged(
+        {
+          user: userId,
+          item: removed.item,
+          before: removed.toObject(),
+          after: null,
+        },
         session,
       )
     })
@@ -372,7 +365,7 @@ class UserItemService {
         throw new ConflictException(DICTIONARY.userItem.ratingCandidateConflict)
       }
 
-      const previous = this.userItemStatsService.getState(userItem)
+      const before = userItem.toObject()
 
       await mutate(userItem, session)
       this.validateUserItem(userItem)
@@ -424,16 +417,8 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
-      const next = this.userItemStatsService.getState(updated)
-      await this.userItemStatsService.update({
-        itemId: updated.item,
-        previous,
-        next,
-        session,
-      })
-
-      await this.libraryActivityService.stageAfterCommit(
-        { user: userId, item: updated.item, before: previous, after: next },
+      await this.userItemEventsService.publishChanged(
+        { user: userId, item: updated.item, before, after: updated.toObject() },
         session,
       )
 

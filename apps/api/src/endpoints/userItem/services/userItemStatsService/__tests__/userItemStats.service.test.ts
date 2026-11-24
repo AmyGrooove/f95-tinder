@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals"
 import { Types } from "mongoose"
 import type { ClientSession } from "mongoose"
 
+import type { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
 import type { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import type { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
@@ -18,6 +19,9 @@ describe("UserItemStatsService", () => {
   const service = new UserItemStatsService(
     { applyChanges: applyItem } as unknown as ItemStatsRepository,
     { applyChanges: applySite } as unknown as SiteRatingsStatsRepository,
+    {
+      subscribe: jest.fn<UserItemEventsService["subscribe"]>(),
+    } as unknown as UserItemEventsService,
   )
   const state = (rating: number | null): IUserItemStatsState => ({
     rating,

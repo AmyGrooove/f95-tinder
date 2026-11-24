@@ -17,7 +17,6 @@ const TEST_ENVIRONMENT = {
   MEILISEARCH_ACCESS_SECRET: "test-search-key",
   RESEND_ACCESS_SECRET: "test-mail-key",
   MAIL_DOMAIN: "mail.example.test",
-  KODIK_API_TOKEN: "test-source-token",
 }
 
 export { TEST_ENVIRONMENT }

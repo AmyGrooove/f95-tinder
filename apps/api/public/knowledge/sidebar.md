@@ -40,8 +40,6 @@ API
 - [Исследования](/research/readme.md)
   - [Рекомендации](/research/recommendations/readme.md)
   - [Роли связей](/research/relations/readme.md)
-- [Внешние источники](/sources/readme.md)
-  - [Kodik](/sources/kodik/readme.md)
 - [Архив Bisky v3](/legacyBiskyV3/readme.md)
   - [Экраны](/legacyBiskyV3/screens/readme.md)
   - [Сценарии](/legacyBiskyV3/flows/readme.md)

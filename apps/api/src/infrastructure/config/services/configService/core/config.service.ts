@@ -41,10 +41,6 @@ class InfrastructureConfigService {
   get mail() {
     return this.configuration.mail
   }
-
-  get sources() {
-    return this.configuration.sources
-  }
 }
 
 export { InfrastructureConfigService }

@@ -17,6 +17,8 @@ import { CollectionController } from "@endpoints/collection/controllers/collecti
 import { CollectionUserController } from "@endpoints/collection/controllers/collectionUserController"
 import { CollectionReadController } from "@endpoints/collection/controllers/collectionReadController"
 import { CollectionService } from "@endpoints/collection/services/collectionService"
+import { CollectionPosterEventsService } from "@endpoints/collection/services/collectionPosterEventsService"
+import { CollectionPosterCleanupService } from "@endpoints/collection/services/collectionPosterCleanupService"
 import { CollectionUserService } from "@endpoints/collection/services/collectionUserService"
 import { CollectionContentService } from "@endpoints/collection/services/collectionContentService"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
@@ -47,6 +49,8 @@ import { SynchronizeTagCollectionsJobHandler } from "@endpoints/collection/servi
   providers: [
     CollectionAuthService,
     CollectionService,
+    CollectionPosterEventsService,
+    CollectionPosterCleanupService,
     CollectionUserService,
     CollectionContentService,
     TagCollectionsInitializationService,

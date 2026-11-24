@@ -54,9 +54,6 @@ const createInfrastructureConfiguration = () => {
       apiKey: getRequiredEnvironmentValue("RESEND_ACCESS_SECRET"),
       domain: mailDomain,
     },
-    sources: {
-      kodikApiToken: getRequiredEnvironmentValue("KODIK_API_TOKEN"),
-    },
   }
 }
 

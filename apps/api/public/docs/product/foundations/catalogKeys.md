@@ -195,15 +195,15 @@ DLC и порты не получают отдельных ролей в это�
 
 Согласованные кандидаты для внешних привязок:
 
-| Item.type        | Ключи                                       |
-| ---------------- | ------------------------------------------- |
-| `movie`          | `kodik`, `kinopoisk`, `imdb`                |
-| `series`         | `kodik`, `kinopoisk`, `imdb`, `mydramalist` |
-| `animatedMovie`  | `kodik`, `kinopoisk`, `imdb`                |
-| `animatedSeries` | `kodik`, `kinopoisk`, `imdb`                |
-| `animeMovie`     | `kodik`, `shikimori`, `kinopoisk`, `imdb`   |
-| `animeSeries`    | `kodik`, `shikimori`, `kinopoisk`, `imdb`   |
-| `game`           | `igdb`, `steam`                             |
+| Item.type        | Ключи                              |
+| ---------------- | ---------------------------------- |
+| `movie`          | `kinopoisk`, `imdb`                |
+| `series`         | `kinopoisk`, `imdb`, `mydramalist` |
+| `animatedMovie`  | `kinopoisk`, `imdb`                |
+| `animatedSeries` | `kinopoisk`, `imdb`                |
+| `animeMovie`     | `shikimori`, `kinopoisk`, `imdb`   |
+| `animeSeries`    | `shikimori`, `kinopoisk`, `imdb`   |
+| `game`           | `igdb`, `steam`                    |
 
 Source описывает сервис, SourceItem — его внешний объект и привязку к Item. Таблица не гарантирует покрытие каждого произведения источником. Совпадение названий само по себе не устанавливает идентичность.
 
@@ -211,7 +211,7 @@ Source описывает сервис, SourceItem — его внешний о�
 
 ## Граница реализации
 
-В коде ETagKey именует hasDefinedEndFalse, releaseStatusAnnounced и releaseStatusOngoing; ESourceKey — kodik. Эти имена уже используются сервисами. Остальные согласованные ключи здесь задают контракт справочников и не означают расширение enum, создание записей БД или реализацию новых импортёров.
+В коде ETagKey именует hasDefinedEndFalse, releaseStatusAnnounced и releaseStatusOngoing. Эти имена уже используются сервисами. Остальные согласованные ключи здесь задают контракт справочников и не означают расширение enum, создание записей БД или реализацию новых импортёров.
 
 Схемы и текущее состояние реализации описаны в [сущностях API](../../api/entities.md); правила пользовательской завершённости — в [контракте библиотеки](../../api/contracts/librarySpec.md).
 

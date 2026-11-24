@@ -50,7 +50,6 @@ describe("createInfrastructureConfiguration", () => {
         apiKey: TEST_ENVIRONMENT.RESEND_ACCESS_SECRET,
         domain: TEST_ENVIRONMENT.MAIL_DOMAIN,
       },
-      sources: { kodikApiToken: TEST_ENVIRONMENT.KODIK_API_TOKEN },
     })
   })
 
@@ -150,7 +149,6 @@ describe("createInfrastructureConfiguration", () => {
     "GARAGE_SECRET_ACCESS_KEY",
     "MEILISEARCH_ACCESS_SECRET",
     "RESEND_ACCESS_SECRET",
-    "KODIK_API_TOKEN",
   ])("отклоняет пустую обязательную переменную %s", (key) => {
     process.env[key] = " "
 

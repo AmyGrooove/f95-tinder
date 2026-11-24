@@ -20,6 +20,6 @@ pnpm dev:api
 pnpm dev:web
 ```
 
-Web доступен на [localhost:3001](http://localhost:3001), Swagger — на [localhost:3000/docs](http://localhost:3000/docs), а публичные объекты Garage — на `http://bisky.localhost:3902`. Настройки Resend и Kodik задаются в `apps/api/.env`.
+Web доступен на [localhost:3001](http://localhost:3001), Swagger — на [localhost:3000/docs](http://localhost:3000/docs), а публичные объекты Garage — на `http://bisky.localhost:3902`. Настройки Resend задаются в `apps/api/.env`.
 
 Для остановки инфраструктуры выполните `docker compose stop` из корня. Данные хранятся в именованных томах Docker.

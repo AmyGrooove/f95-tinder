@@ -17,6 +17,5 @@ type TEnvironmentKey =
   | "MEILISEARCH_ACCESS_SECRET"
   | "RESEND_ACCESS_SECRET"
   | "MAIL_DOMAIN"
-  | "KODIK_API_TOKEN"
 
 export type { TEnvironmentKey }

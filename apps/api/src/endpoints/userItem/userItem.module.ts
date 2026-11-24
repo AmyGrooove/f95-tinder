@@ -17,6 +17,7 @@ import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 
 import { UserItemController } from "@endpoints/userItem/controllers/userItemController"
 import { UserItemService } from "@endpoints/userItem/services/userItemService"
+import { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
 import { UserItemStatsService } from "@endpoints/userItem/services/userItemStatsService"
 import { LibraryActivityService } from "@endpoints/userItem/services/libraryActivityService"
 
@@ -47,7 +48,12 @@ import { LibraryActivityService } from "@endpoints/userItem/services/libraryActi
     }),
   ],
   controllers: [UserItemController],
-  providers: [UserItemService, UserItemStatsService, LibraryActivityService],
+  providers: [
+    UserItemService,
+    UserItemEventsService,
+    UserItemStatsService,
+    LibraryActivityService,
+  ],
   exports: [UserItemService],
 })
 class UserItemEndpointModule {}

@@ -47,7 +47,6 @@ const createTestConfiguration = (mongoUri: string, redisUrl: string) => {
     },
     search: { host: "http://127.0.0.1:1", apiKey: "test" },
     mail: { apiKey: "test", domain: "example.test" },
-    sources: { kodikApiToken: "test" },
   } satisfies TInfrastructureConfiguration
 }
 

@@ -24,6 +24,8 @@ import { AccountCredentialsController } from "@endpoints/account/controllers/acc
 import { LibraryHistoryController } from "@endpoints/account/controllers/libraryHistoryController"
 import { AccountService } from "@endpoints/account/services/accountService"
 import { AccountAvatarService } from "@endpoints/account/services/accountAvatarService"
+import { AccountAvatarEventsService } from "@endpoints/account/services/accountAvatarEventsService"
+import { AccountAvatarCleanupService } from "@endpoints/account/services/accountAvatarCleanupService"
 import { AccountSetupService } from "@endpoints/account/services/accountSetupService"
 import { AccountEmailService } from "@endpoints/account/services/accountEmailService"
 import { LibraryHistoryService } from "@endpoints/account/services/libraryHistoryService"
@@ -63,6 +65,8 @@ import { LibraryHistoryService } from "@endpoints/account/services/libraryHistor
   providers: [
     AccountService,
     AccountAvatarService,
+    AccountAvatarEventsService,
+    AccountAvatarCleanupService,
     AccountSetupService,
     AccountEmailService,
     LibraryHistoryService,

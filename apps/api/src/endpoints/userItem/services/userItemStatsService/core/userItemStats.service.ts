@@ -1,5 +1,7 @@
 import { Injectable } from "@nestjs/common"
+import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 
+import { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { RATING_DISTRIBUTION_VALUES } from "@entities/itemStats/static/RATING_DISTRIBUTION_VALUES"
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
@@ -11,11 +13,31 @@ import type { IUserItemStatsState } from "../types/IUserItemStatsState"
 import type { IUpdateUserItemStatsProps } from "../types/IUpdateUserItemStatsProps"
 
 @Injectable()
-class UserItemStatsService {
+class UserItemStatsService implements OnModuleInit, OnModuleDestroy {
+  private unsubscribe?: () => void
+
   constructor(
     private readonly itemStatsRepository: ItemStatsRepository,
     private readonly siteRatingsStatsRepository: SiteRatingsStatsRepository,
+    private readonly userItemEventsService: UserItemEventsService,
   ) {}
+
+  onModuleInit() {
+    this.unsubscribe = this.userItemEventsService.subscribe(
+      async ({ item, before, after }, session) => {
+        await this.update({
+          itemId: item,
+          previous: before === null ? null : this.getState(before),
+          next: after === null ? null : this.getState(after),
+          session,
+        })
+      },
+    )
+  }
+
+  onModuleDestroy() {
+    this.unsubscribe?.()
+  }
 
   getState(userItem: UserItem): IUserItemStatsState {
     return {

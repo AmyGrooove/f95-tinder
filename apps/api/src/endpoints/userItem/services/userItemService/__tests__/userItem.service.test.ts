@@ -4,9 +4,12 @@ import { model, mongo, Types } from "mongoose"
 import type { ClientSession } from "mongoose"
 
 import type { AuthService } from "@endpoints/auth/services/authService"
-import type { LibraryActivityService } from "@endpoints/userItem/services/libraryActivityService"
+import { UserItemEventsService } from "@endpoints/userItem/services/userItemEventsService"
+import { UserItemStatsService } from "@endpoints/userItem/services/userItemStatsService"
 import type { ItemRepository } from "@entities/item/services/itemRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
+import type { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
+import type { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 import type { TagItemRepository } from "@entities/tagItem/services/tagItemRepository"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import type { UserRepository } from "@entities/user/services/userRepository"
@@ -17,7 +20,6 @@ import type { UserItemRepository } from "@entities/userItem/services/userItemRep
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 
 import { UserItemService } from "../core/userItem.service"
-import { UserItemStatsService } from "@endpoints/userItem/services/userItemStatsService"
 
 describe("UserItemService", () => {
   const userId = new Types.ObjectId()
@@ -32,7 +34,6 @@ describe("UserItemService", () => {
   const deleteByFilter =
     jest.fn<UserItemRepository["write"]["deleteByFilter"]>()
   const create = jest.fn<UserItemRepository["write"]["create"]>()
-  const updateMetrics = jest.fn<UserItemStatsService["update"]>()
   const session = {} as ClientSession
   let isCommitted = false
   let entry = new UserItemModel()
@@ -43,6 +44,19 @@ describe("UserItemService", () => {
       return result
     },
   )
+  const transactions = {
+    run,
+    assertManagedSession:
+      jest.fn<MongoTransactionService["assertManagedSession"]>(),
+  } as unknown as MongoTransactionService
+  const events = new UserItemEventsService(transactions)
+  const stats = new UserItemStatsService(
+    {} as ItemStatsRepository,
+    {} as SiteRatingsStatsRepository,
+    events,
+  )
+  const updateMetrics = jest.spyOn(stats, "update")
+  stats.onModuleInit()
 
   const service = new UserItemService(
     {
@@ -62,17 +76,9 @@ describe("UserItemService", () => {
       read: { findOne },
       write: { create, updateByFilter, deleteByFilter },
     } as unknown as UserItemRepository,
-    { run } as unknown as MongoTransactionService,
+    transactions,
     {} as TagItemRepository,
-    {
-      update: updateMetrics,
-      getState: UserItemStatsService.prototype.getState,
-    } as unknown as UserItemStatsService,
-    {
-      stageAfterCommit: jest
-        .fn<LibraryActivityService["stageAfterCommit"]>()
-        .mockResolvedValue(undefined),
-    } as unknown as LibraryActivityService,
+    events,
   )
 
   beforeEach(() => {

@@ -166,8 +166,18 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["Проверить access и авторство"] --> B["Обработать изображение"]
-    B --> C["Записать WebP в S3"]
-    C --> D["Обновить ссылку на обложку с проверкой версии"]
-    D --> E["204 · без тела"]
+    accTitle: Замена постера подборки
+    accDescr: Сохранить новый постер с проверкой версии подборки и дождаться попытки удалить прежние объекты по событию
+    A(["PUT /collections/:id/poster"]):::http --> B["Проверить сессию, авторство и multipart"]:::action
+    B --> C["Обработать изображение"]:::action
+    C --> D[/"Записать WebP в S3"/]:::external
+    D --> E[("Заменить постер в Collection с проверкой версии")]:::data
+    E -->|Сбой записи или конфликт| F[/"Попытаться удалить новый объект из S3"/]:::external
+    E -->|Сохранено| G>"Опубликовать изменение постера"]:::event
+    G --> H[/"Попытаться удалить прежние управляемые объекты из S3"/]:::external
+    H --> R(["204 — без тела"]):::http
 ```
+
+После загрузки сервис повторно читает подборку и сохраняет новый постер, только если её версия с момента чтения совпадает. При конфликте API возвращает 409, а интерцептор пытается удалить новый файл. При успешном обновлении подписчик получает прежние постеры из использованной версии и новый ключ. Для удаления подходят прежние ключи и ссылки, совпадающие с форматом `collections/<id>/poster/<uuid>.webp` этой подборки. Текущий ключ пропускается. Ошибка отдельного удаления логируется, подписчик продолжает очистку, и API возвращает 204.
+
+**Технические подробности.** [CollectionController](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts) · [CollectionService](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts) · [CollectionPosterEventsService](../../../../src/endpoints/collection/services/collectionPosterEventsService/core/collectionPosterEvents.service.ts) · [CollectionPosterCleanupService](../../../../src/endpoints/collection/services/collectionPosterCleanupService/core/collectionPosterCleanup.service.ts) · [Обработка изображений](../../../../agents/storage.md)
