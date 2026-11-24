@@ -7,6 +7,7 @@ import { ItemCollectionRepository } from "@entities/itemCollection/services/item
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { CollectionContentService } from "../core/collectionContent.service"
 
 describe("CollectionContentService", () => {
@@ -20,6 +21,7 @@ describe("CollectionContentService", () => {
         { provide: ItemCollectionRepository, useValue: { readContentSlice } },
         { provide: UserCollectionRepository, useValue: {} },
         { provide: CollectionAuthService, useValue: {} },
+        { provide: StorageService, useValue: {} },
         CursorService,
       ],
     }).compile()
@@ -47,8 +49,12 @@ describe("CollectionContentService", () => {
     expect(readContentSlice).toHaveBeenCalledWith({
       collectionId: id,
       groupIds: [],
+      isGrouped: true,
       after: undefined,
       limit: 51,
+      rating: undefined,
+      search: undefined,
+      sort: undefined,
       types: undefined,
       userId: undefined,
       isPersonalFilterApplied: false,

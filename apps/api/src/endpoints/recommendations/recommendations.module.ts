@@ -9,6 +9,7 @@ import { SiteStatsModule } from "@entities/siteStats/siteStats.module"
 import { UserModule } from "@entities/user/user.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
+import { StorageModule } from "@infrastructure/storage/storage.module"
 
 import { RecommendationsController } from "./controllers/recommendationsController"
 import { FallbackRecommendationsService } from "./services/fallbackRecommendationsService"
@@ -28,6 +29,7 @@ import { RecommendationsService } from "./services/recommendationsService"
     UserItemModule,
     ItemRelationModule,
     RelationModule,
+    StorageModule,
   ],
   controllers: [RecommendationsController],
   providers: [

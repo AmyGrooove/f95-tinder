@@ -6,7 +6,7 @@ Read for object storage, bucket startup, presigned URLs or image-upload endpoint
 
 [StorageService](../src/infrastructure/storage/services/storageService/core/storage.service.ts) uses the app name as bucket. At module initialization it performs HeadBucket. Only recognized not-found errors can trigger automatic bucket creation, and only outside production. In production, a missing bucket fails initialization. Other initialization errors also fail rather than silently creating a bucket.
 
-Public APIs are `upload`, `download`, `delete`, `deleteMany`, `isExists`, `presignedReadUrl` and `presignedWriteUrl`. Upload sends PutObject followed by HeadObject and returns path, size, MIME type and optional public URL. Download returns a Node Readable stream. Public URLs use the configured public base and encode each path segment. A recognized 404 yields false for `isExists`; other errors become ServiceUnavailableException and are logged. [StorageHealthService](../src/infrastructure/storage/services/storageHealthService/core/storageHealth.service.ts) checks HeadBucket.
+Public APIs are `upload`, `download`, `delete`, `deleteMany`, `isExists`, `presignedReadUrl`, `presignedWriteUrl` and `createPublicUrl`. Upload sends PutObject followed by HeadObject and returns path, size, MIME type and optional public URL. Download returns a Node Readable stream. `createPublicUrl` uses the configured public base and encodes each path segment. It returns undefined when the path or public base is missing. A recognized 404 yields false for `isExists`; other errors become ServiceUnavailableException and are logged. [StorageHealthService](../src/infrastructure/storage/services/storageHealthService/core/storageHealth.service.ts) checks HeadBucket.
 
 ## Multipart pipeline
 

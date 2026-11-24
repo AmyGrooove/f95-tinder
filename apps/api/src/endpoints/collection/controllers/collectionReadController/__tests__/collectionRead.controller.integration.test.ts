@@ -76,7 +76,8 @@ describe("CollectionReadController", () => {
   })
 
   it("возвращает состав без личных оценок и статусов гостю и владельцу без записей в библиотеке", async () => {
-    const { collection, first, second, owner } = await createCollection()
+    const { collection, first, second, owner, firstGroupId, secondGroupId } =
+      await createCollection()
     const response = await query(collection.id)
     expect(response.statusCode).toBe(200)
     expect(response.headers["accept-query"]).toBe("application/json")
@@ -86,6 +87,7 @@ describe("CollectionReadController", () => {
       isHidden: false,
       blocks: [
         {
+          id: firstGroupId,
           type: "group",
           title: null,
           description: null,
@@ -99,11 +101,13 @@ describe("CollectionReadController", () => {
               ratingAverage: null,
               userRating: null,
               userStatus: null,
+              userProgress: null,
             },
           ],
         },
         { type: "text", content: { ru: "Текст", en: null } },
         {
+          id: secondGroupId,
           type: "group",
           title: { ru: "Группа", en: null },
           description: null,
@@ -117,6 +121,7 @@ describe("CollectionReadController", () => {
               ratingAverage: null,
               userRating: null,
               userStatus: null,
+              userProgress: null,
             },
           ],
         },
@@ -125,6 +130,15 @@ describe("CollectionReadController", () => {
     const authenticated = await query(collection.id, {}, owner.headers)
     expect(authenticated.statusCode).toBe(200)
     expect(authenticated.json()).toEqual(response.json())
+    const flat = await query(collection.id, { mode: "flat", sort: "title" })
+    expect(flat.statusCode).toBe(200)
+    expect(flat.json()).toMatchObject({
+      blocks: [],
+      items: [
+        { id: first._id.toHexString() },
+        { id: second._id.toHexString() },
+      ],
+    })
   })
 
   it("подгружает состав без пропусков, исключает удалённые Item и не повторяет текст", async () => {
@@ -207,11 +221,17 @@ describe("CollectionReadController", () => {
       properties: {
         isHidden: { type: "boolean" },
         metadata: expect.any(Object),
+        items: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/CollectionGroupItemResponseDto",
+          },
+        },
       },
     })
     expect(
       document.components?.schemas?.ItemCollectionsResponseDto,
-    ).not.toHaveProperty("properties.items")
+    ).not.toMatchObject({ required: expect.arrayContaining(["items"]) })
   })
 
   it("возвращает 404 для удалённых маршрутов и 400 для старых полей запроса", async () => {
@@ -233,8 +253,8 @@ describe("CollectionReadController", () => {
     ).toBe(404)
     for (const payload of [
       { page: 1 },
-      { mode: "flat" },
-      { sort: "title" },
+      { mode: "invalid" },
+      { sort: "invalid" },
       { tags: [] },
       { cursor: "YWJj" },
     ]) {

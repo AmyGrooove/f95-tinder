@@ -17,6 +17,7 @@ import { Types } from "mongoose"
 import { AuthService } from "@endpoints/auth/services/authService"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
@@ -32,6 +33,7 @@ import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 
 import { SiteSearchService } from "../core/siteSearch.service"
 import { SearchBodyDto } from "../dto/search.body"
@@ -61,12 +63,16 @@ describe("SiteSearchService", () => {
           (
             ...args: Parameters<UserRepository["read"]["findMany"]>
           ) => Promise<
-            Pick<User, "_id" | "username" | "displayName" | "avatarUrl">[]
+            Pick<User, "_id" | "username" | "displayName" | "avatar">[]
           >
         >(),
     },
   }
   const collections = {
+    readAvailableItemCountsByIds:
+      jest.fn<CollectionRepository["readAvailableItemCountsByIds"]>(),
+    readRatingAveragesByIds:
+      jest.fn<CollectionRepository["readRatingAveragesByIds"]>(),
     read: {
       findMany:
         jest.fn<
@@ -96,6 +102,8 @@ describe("SiteSearchService", () => {
         { provide: UserItemRepository, useValue: {} },
         { provide: UserCollectionRepository, useValue: {} },
         { provide: ItemStatsRepository, useValue: itemStats },
+        { provide: ItemCollectionRepository, useValue: {} },
+        { provide: StorageService, useValue: {} },
       ],
     }).compile()
     service = module.get(SiteSearchService)
@@ -112,6 +120,8 @@ describe("SiteSearchService", () => {
     itemStats.read.findMany.mockResolvedValue([])
     users.read.findMany.mockResolvedValue([])
     collections.read.findMany.mockResolvedValue([])
+    collections.readAvailableItemCountsByIds.mockResolvedValue([])
+    collections.readRatingAveragesByIds.mockResolvedValue(new Map())
   })
 
   afterEach(async () => module?.close())
@@ -178,7 +188,7 @@ describe("SiteSearchService", () => {
         _id,
         username: "username",
         displayName: "Имя",
-        avatarUrl: null,
+        avatar: null,
         passwordHash: "internal",
       })),
     )
@@ -223,6 +233,12 @@ describe("SiteSearchService", () => {
         type: "custom",
         title: { ru: "Подборка", en: null },
         media: [],
+        author: id.equals(first)
+          ? { id: String(first), avatar: null, displayName: "Имя" }
+          : null,
+        isSiteCollection: !id.equals(first),
+        itemCount: 0,
+        ratingAverage: null,
       })),
       nextCursor: null,
     })

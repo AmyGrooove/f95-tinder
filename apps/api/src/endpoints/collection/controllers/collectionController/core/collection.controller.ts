@@ -178,7 +178,7 @@ class CollectionController {
     }
     await this.collectionService.replacePoster(accessToken, {
       id,
-      src: file.publicUrl,
+      upload: file,
     })
   }
 

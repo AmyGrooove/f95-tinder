@@ -3,13 +3,18 @@ import { Types } from "mongoose"
 
 import { RecommendationFeedService } from "@endpoints/recommendations/services/recommendationFeedService"
 import { RecommendationCursorExpiredError } from "@endpoints/recommendations/services/recommendationsService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 
 import type { RecommendationsBodyDto } from "../dto/recommendations.body"
 import type { RecommendationsResponseDto } from "../dto/recommendations.response"
 
 @Injectable()
 class RecommendationsHttpService {
-  constructor(private readonly feedService: RecommendationFeedService) {}
+  constructor(
+    private readonly feedService: RecommendationFeedService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async readPage(
     accessToken: unknown,
@@ -59,15 +64,7 @@ class RecommendationsHttpService {
             id: _id.toHexString(),
             type,
             title: { ru: title?.ru ?? null, en: title?.en ?? null },
-            media: media.map((source) => {
-              const { src, type, language } = source
-
-              return {
-                src,
-                type,
-                language: language ?? null,
-              }
-            }),
+            media: mapMediaSources(media, this.storageService),
             ratingAverage,
             userRating,
             userStatus,

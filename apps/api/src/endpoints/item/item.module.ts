@@ -7,6 +7,7 @@ import { ItemStatsModule } from "@entities/itemStats/itemStats.module"
 import { RelationModule } from "@entities/relation/relation.module"
 import { TagModule } from "@entities/tag/tag.module"
 import { TagItemModule } from "@entities/tagItem/tagItem.module"
+import { StorageModule } from "@infrastructure/storage/storage.module"
 
 import { ItemController } from "./controllers/itemController"
 import { ItemService } from "./services/itemService"
@@ -20,6 +21,7 @@ import { ItemService } from "./services/itemService"
     TagModule,
     TagItemModule,
     UserItemEndpointModule,
+    StorageModule,
   ],
   controllers: [ItemController],
   providers: [ItemService],

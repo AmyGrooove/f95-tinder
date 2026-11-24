@@ -1,10 +1,24 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import { EMediaType } from "./EMediaType"
+
+import { checkIsArrayWithoutNil } from "../functions/checks/checkIsArrayWithoutNil"
+import { EMediaSource } from "./EMediaSource"
+import { CATALOG_MEDIA_TYPES, EMediaType } from "./EMediaType"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class MediaSrc {
-  @Prop({ type: String, required: true })
+  @Prop({
+    type: String,
+    required: true,
+    validate: (value: string) => value.trim().length > 0,
+  })
   src: string
+
+  @Prop({
+    type: String,
+    enum: EMediaSource,
+    default: EMediaSource.URL,
+  })
+  source: EMediaSource | null
 
   @Prop({ type: String, default: null })
   language: string | null
@@ -15,4 +29,11 @@ class MediaSrc {
 
 const MediaSrcSchema = SchemaFactory.createForClass(MediaSrc)
 
-export { MediaSrc, MediaSrcSchema }
+const checkIsCatalogMedia = (value: MediaSrc[]) => {
+  return (
+    checkIsArrayWithoutNil(value) &&
+    value.every(({ type }) => CATALOG_MEDIA_TYPES.includes(type))
+  )
+}
+
+export { checkIsCatalogMedia, MediaSrc, MediaSrcSchema }

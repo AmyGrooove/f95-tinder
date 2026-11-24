@@ -1,6 +1,6 @@
 interface IRecommendationModel {
   id: string
-  trainedAt: Date
+  createdAt: Date
   itemIds: readonly string[]
   itemCF: {
     offsets: Int32Array

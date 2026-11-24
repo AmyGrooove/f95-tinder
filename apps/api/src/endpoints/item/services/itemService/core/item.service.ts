@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common"
 import type { Types } from "mongoose"
 
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { ItemRelationRepository } from "@entities/itemRelation/services/itemRelationRepository"
@@ -10,6 +11,7 @@ import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { TagRepository } from "@entities/tag/services/tagRepository"
 import { TagItemRepository } from "@entities/tagItem/services/tagItemRepository"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isNil } from "@shared/functions/checks/isNil"
 
 import type { ItemResponseDto } from "../dto/item.response"
@@ -21,19 +23,12 @@ const mapLanguageText = (text: LanguageText | null | undefined) => ({
 
 const mapItemSummary = (
   item: Pick<Item, "_id" | "type" | "title" | "media">,
+  storageService: StorageService,
 ) => ({
   id: item._id.toHexString(),
   type: item.type,
   title: mapLanguageText(item.title),
-  media: (item.media ?? []).map((source) => {
-    const { src, type, language } = source
-
-    return {
-      src,
-      type,
-      language: language ?? null,
-    }
-  }),
+  media: mapMediaSources(item.media ?? [], storageService),
 })
 
 @Injectable()
@@ -45,6 +40,7 @@ class ItemService {
     private readonly itemRelationRepository: ItemRelationRepository,
     private readonly relationRepository: RelationRepository,
     private readonly itemStatsRepository: ItemStatsRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async getById(id: Types.ObjectId): Promise<ItemResponseDto> {
@@ -78,7 +74,7 @@ class ItemService {
     const { movie, series, game } = item
 
     return {
-      ...mapItemSummary(item),
+      ...mapItemSummary(item, this.storageService),
       description: mapLanguageText(item.description),
       aliases: item.aliases ?? [],
       tags,
@@ -247,7 +243,7 @@ class ItemService {
 
       return [
         {
-          item: mapItemSummary(item),
+          item: mapItemSummary(item, this.storageService),
           role: {
             id: role._id.toHexString(),
             key: role.key,

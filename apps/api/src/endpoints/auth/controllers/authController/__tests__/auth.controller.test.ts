@@ -77,7 +77,7 @@ describe("AuthController", () => {
       expect(cookies.clearAuthCookies).not.toHaveBeenCalled()
     })
 
-    it("открывает сессию и устанавливает cookies при регистрации без тела ответа", async () => {
+    it("открывает сессию, устанавливает cookies и возвращает данные регистрации", async () => {
       const { controller, service, cookies } = await createController()
       const result = {
         tokens: {
@@ -92,9 +92,9 @@ describe("AuthController", () => {
       const reply = {}
       service.register.mockResolvedValue(result)
 
-      await expect(
-        controller.register(userAgent, reply),
-      ).resolves.toBeUndefined()
+      await expect(controller.register(userAgent, reply)).resolves.toEqual(
+        result.response,
+      )
 
       expect(service.register).toHaveBeenCalledTimes(1)
       expect(service.register).toHaveBeenCalledWith(userAgent)

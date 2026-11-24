@@ -71,6 +71,7 @@ describe("CollectionRepository", () => {
       _id: id,
       author,
       title,
+      type: ECollectionType.CUSTOM,
       deletedAt: null,
     })
     const changes = {
@@ -109,17 +110,22 @@ describe("CollectionRepository", () => {
     await expect(repository.checkIsNotDeleted(id)).resolves.toBe(false)
   })
 
-  it("считает тайтлы из существующих групп и выбирает только непустые системные подборки", async () => {
+  it("считает тайтлы из существующих групп и выбирает только непустые теговые подборки сайта", async () => {
     const title = { en: "Collection", ru: null }
     const groupId = new Types.ObjectId()
     const blocks = [{ type: ECollectionBlockType.GROUP, id: groupId }] as const
     const [site, empty, custom, deleted] = await repository.bulk.createMany([
-      { title, type: ECollectionType.FEATURE, blocks: [...blocks] },
-      { title, type: ECollectionType.FEATURE },
-      { title, author: new Types.ObjectId(), blocks: [...blocks] },
+      { title, type: ECollectionType.TAG, blocks: [...blocks] },
+      { title, type: ECollectionType.TAG },
       {
         title,
-        type: ECollectionType.FEATURE,
+        type: ECollectionType.TAG,
+        author: new Types.ObjectId(),
+        blocks: [...blocks],
+      },
+      {
+        title,
+        type: ECollectionType.TAG,
         blocks: [...blocks],
         deletedAt: new Date(),
       },

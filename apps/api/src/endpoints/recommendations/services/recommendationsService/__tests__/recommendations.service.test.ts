@@ -18,6 +18,7 @@ import type { RecommendationModel } from "@entities/recommendationModel/schemas/
 import { RecommendationModelRepository } from "@entities/recommendationModel/services/recommendationModelRepository"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
 import type { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
 import type { UserRepository } from "@entities/user/services/userRepository"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
@@ -248,7 +249,12 @@ describe("RecommendationsService", () => {
         type,
         title: { ru: "Последний", en: null },
         media: [
-          { src: "/poster.jpg", language: null, type: EMediaType.POSTER },
+          {
+            src: "/poster.jpg",
+            source: EMediaSource.URL,
+            language: null,
+            type: EMediaType.POSTER,
+          },
         ],
       },
     ] satisfies Awaited<ReturnType<ItemRepository["readPosterCardsByIds"]>>
@@ -464,7 +470,7 @@ describe("RecommendationsService", () => {
 
   it("читает последнюю BSON-модель, сохраняет порядок при равных scores и исключает положительную историю", async () => {
     const _id = new Types.ObjectId()
-    const trainedAt = new Date()
+    const createdAt = new Date()
     const itemIds = Array.from({ length: 4 }, () =>
       new Types.ObjectId().toHexString(),
     )
@@ -477,7 +483,7 @@ describe("RecommendationsService", () => {
     }
     const bson = mongo.BSON.serialize({
       _id,
-      trainedAt,
+      createdAt,
       formatVersion: 1,
       itemIds,
       itemCF: {
@@ -523,9 +529,9 @@ describe("RecommendationsService", () => {
     try {
       const service = moduleRef.get(RecommendationsService)
       const model = await service.loadLatestModel()
-      expect(sort).toHaveBeenCalledWith({ trainedAt: -1, _id: -1 })
+      expect(sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 })
       expect(lean).toHaveBeenCalledTimes(1)
-      expect(model).toMatchObject({ id: _id.toHexString(), trainedAt, itemIds })
+      expect(model).toMatchObject({ id: _id.toHexString(), createdAt, itemIds })
       if (model === null) {
         throw new Error("Ожидалась загруженная модель")
       }
@@ -577,7 +583,7 @@ describe("RecommendationsService", () => {
     const itemIds = [new Types.ObjectId().toHexString()]
     const document = {
       _id: new Types.ObjectId(),
-      trainedAt: new Date(),
+      createdAt: new Date(),
       formatVersion: 1,
       itemIds,
       itemCF: {

@@ -5,6 +5,7 @@ import { Types } from "mongoose"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { Item } from "@entities/item/schemas/item.schema"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
 import { getSearchTestApplication } from "@app/__tests__/setup/setupSearchIntegration"
@@ -76,9 +77,19 @@ describe("SearchController", () => {
       aliases: ["Nebula"],
       description: { ru: "Секретное описание", en: null },
       media: [
-        { src: "/screen.jpg", language: null, type: EMediaType.SCREENSHOT },
-        poster,
-        { src: "/trailer.mp4", language: null, type: EMediaType.TRAILER },
+        {
+          src: "/screen.jpg",
+          source: EMediaSource.URL,
+          language: null,
+          type: EMediaType.SCREENSHOT,
+        },
+        { ...poster, source: EMediaSource.URL },
+        {
+          src: "/trailer.mp4",
+          source: EMediaSource.URL,
+          language: null,
+          type: EMediaType.TRAILER,
+        },
       ],
     })
     const user = {
@@ -150,6 +161,10 @@ describe("SearchController", () => {
           type: "custom",
           title: collection.title,
           media: [],
+          author: { id: String(user._id), avatar: null, displayName: "Pilot" },
+          isSiteCollection: false,
+          itemCount: 0,
+          ratingAverage: null,
         },
       ],
       nextCursor: null,
@@ -424,6 +439,10 @@ describe("SearchController", () => {
         type: "custom",
         title: collections[0].title,
         media: [],
+        author: null,
+        isSiteCollection: true,
+        itemCount: 0,
+        ratingAverage: null,
       },
     ])
     expect(response.json<SearchResponseDto>().items).toHaveLength(1)

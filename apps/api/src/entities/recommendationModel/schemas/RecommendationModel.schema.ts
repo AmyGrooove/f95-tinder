@@ -12,12 +12,6 @@ class RecommendationModel extends MongoEntity {
   @Prop({ type: Number, required: true })
   formatVersion: number
 
-  @Prop({ type: Date, required: true })
-  trainedAt: Date
-
-  @Prop({ type: String, required: true })
-  source: string
-
   @Prop({ type: [String], required: true, default: undefined })
   itemIds: string[]
 
@@ -33,5 +27,10 @@ class RecommendationModel extends MongoEntity {
 
 const RecommendationModelSchema =
   SchemaFactory.createForClass(RecommendationModel)
+
+RecommendationModelSchema.index(
+  { createdAt: -1, _id: -1 },
+  { name: "recommendationModelLatest" },
+)
 
 export { RecommendationModel, RecommendationModelSchema }

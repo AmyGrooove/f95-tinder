@@ -3,6 +3,7 @@ import { ConflictException, UnauthorizedException } from "@nestjs/common"
 import { mongo, Types } from "mongoose"
 
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
+import type { StorageService } from "@infrastructure/storage/services/storageService"
 import type { AuthService } from "@endpoints/auth/services/authService"
 import type { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import type { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
@@ -37,6 +38,7 @@ describe("AccountService", () => {
       auth as unknown as AuthService,
       {} as MongoTransactionService,
       {} as UserItemRepository,
+      {} as StorageService,
     )
     return { users, auth, service }
   }

@@ -151,7 +151,7 @@ describe("RecommendationFeedService", () => {
       }
       loadLatestModel.mockResolvedValue({
         id: new Types.ObjectId().toHexString(),
-        trainedAt: new Date(),
+        createdAt: new Date(),
         itemIds,
         itemCF: {
           offsets: new Int32Array(itemIds.length + 1),
@@ -202,7 +202,7 @@ describe("RecommendationFeedService", () => {
     offsets[0] = 0
     loadLatestModel.mockResolvedValue({
       id: new Types.ObjectId().toHexString(),
-      trainedAt: new Date(),
+      createdAt: new Date(),
       itemIds,
       itemCF: {
         offsets,

@@ -30,6 +30,7 @@ describe("CollectionUserController", () => {
       isFavorite: false,
       rating: null,
       isHidden: false,
+      progress: { completed: 0, total: 2 },
     })
   })
 
@@ -71,7 +72,12 @@ describe("CollectionUserController", () => {
       headers,
     })
     expect(read.statusCode).toBe(200)
-    expect(read.json()).toEqual({ isFavorite: true, isHidden: true, rating: 8 })
+    expect(read.json()).toEqual({
+      isFavorite: true,
+      isHidden: true,
+      rating: 8,
+      progress: { completed: 0, total: 2 },
+    })
   })
 
   it("принимает несколько полей в одном запросе и отклоняет прежние маршруты", async () => {
@@ -99,6 +105,7 @@ describe("CollectionUserController", () => {
       isFavorite: true,
       isHidden: true,
       rating: 8,
+      progress: { completed: 0, total: 2 },
     })
     for (const path of ["favorite", "hidden", "rating"]) {
       expect(
@@ -128,6 +135,7 @@ describe("CollectionUserController", () => {
       isFavorite: false,
       rating: null,
       isHidden: false,
+      progress: { completed: 0, total: 2 },
     })
     expect(await connection.collection("UserCollection").countDocuments()).toBe(
       0,
@@ -198,7 +206,10 @@ describe("CollectionUserController", () => {
         headers,
       })
       expect(read.statusCode).toBe(200)
-      expect(read.json()).toEqual(expected)
+      expect(read.json()).toEqual({
+        ...expected,
+        progress: { completed: 0, total: 2 },
+      })
     }
     expect(await connection.collection("UserCollection").countDocuments()).toBe(
       1,
@@ -212,6 +223,7 @@ describe("CollectionUserController", () => {
       isFavorite: false,
       rating: null,
       isHidden: false,
+      progress: { completed: 0, total: 2 },
     })
     expect(await connection.collection("UserItem").countDocuments()).toBe(0)
     expect(await connection.collection("ItemCollection").countDocuments()).toBe(

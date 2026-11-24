@@ -11,8 +11,7 @@
   "date": "2026-11-19",
   "blocks": [
     { "type": "fact", "id": "673ca2e4bf12d94201000001" },
-    { "type": "collection", "id": "673ca2e4bf12d94201000002" },
-    { "type": "feature", "id": "pick" }
+    { "type": "collection", "id": "673ca2e4bf12d94201000002" }
   ]
 }
 ```
@@ -28,18 +27,18 @@ flowchart TD
     B --> D[("Прочитать ключ дня в Redis")]:::data
     D -->|Ключ существует| R(["Для запроса вернуть 200"]):::http
     D -->|Ключа нет| E[("Выбрать ID фактов и непустых коллекций в MongoDB")]:::data
-    E --> F["Добавить фичи и собрать список в порядке показа"]:::action
+    E --> F["Собрать список в порядке показа"]:::action
     F --> H[("Записать список в Redis только при отсутствии ключа")]:::data
     H -->|Ключ создан или возвращён сохранённый список| R
     D -->|Сбой Redis| X["Для запроса вернуть 500, для крона записать ошибку"]:::action
     H -->|Сбой Redis| X
 ```
 
-Порядок полного набора — факт → 3 коллекции → фича → 3 коллекции → факт → 3 коллекции → фича → 3 коллекции → факт → 3 коллекции. Недостающие позиции пропускаются. ID каждого типа уникальны в пределах дня. ID факта и коллекции — строки Mongo ObjectId в нижнем регистре. ID фичи — ключ из статического пула `pick`, `battle`, `rating`. Коллекции сайта типа `tag` или `feature` участвуют, пока у них есть хотя бы один неудалённый Item в существующей группе.
+Порядок полного набора — факт → 3 коллекции → факт → 6 коллекций → факт → 6 коллекций. Недостающие позиции пропускаются. ID каждого типа уникальны в пределах дня. ID факта и коллекции — строки Mongo ObjectId в нижнем регистре. Теговые подборки сайта участвуют, пока у них есть хотя бы один неудалённый Item в существующей группе.
 
-Первый запрос после пропущенного запуска формирует список текущего дня. Redis хранит его 24 часа под ключом `home:feed:v1:<date>` в пространстве имён приложения. Параллельные запуски используют первый сохранённый список, включая пустой массив. Потеря ключа допускает повторную генерацию в тот же день. Пагинации и nullable-полей нет. Сбой чтения или подготовки возвращает запросу `500`, а ошибка крона записывается в лог. При превышении лимита ответ `429` включает `Retry-After`. Ошибки используют общий объект `error` с полями `code`, `message`, `details` и `requestId`.
+Первый запрос после пропущенного запуска формирует список текущего дня. Redis хранит его 24 часа под ключом `home:feed:v2:<date>` в пространстве имён приложения. Параллельные запуски используют первый сохранённый список, включая пустой массив. Потеря ключа допускает повторную генерацию в тот же день. Пагинации и nullable-полей нет. Сбой чтения или подготовки возвращает запросу `500`, а ошибка крона записывается в лог. При превышении лимита ответ `429` включает `Retry-After`. Ошибки используют общий объект `error` с полями `code`, `message`, `details` и `requestId`.
 
-При подключении главной массив нужно держать до обновления страницы. Факт и состав коллекции догружаются по ID. Если отдельное чтение вернуло `404` либо коллекция скрылась или осталась без видимых Item, главная пропускает блок и сохраняет порядок остальных. Ключи фич сопоставляются с компонентами на фронте, неизвестный ключ пропускается.
+При подключении главной массив нужно держать до обновления страницы. Факт и состав коллекции догружаются по ID. Если отдельное чтение вернуло `404` либо коллекция скрылась или осталась без видимых Item, главная пропускает блок и сохраняет порядок остальных.
 
 [HomeController](../../../../src/endpoints/home/controllers/homeController/core/home.controller.ts) · [HomeFeedService](../../../../src/endpoints/home/services/homeFeedService/core/homeFeed.service.ts) · [CacheService](../../../../src/infrastructure/cache/services/cacheService/core/cache.service.ts)
 
@@ -262,15 +261,15 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 Cache-Control: no-store
 
-{"id":"655f2ab09e1c427b40f604a1","text":{"ru":"Первый показ прошёл в Париже","en":null},"sourceUrl":null}
+{"id":"655f2ab09e1c427b40f604a1","text":{"ru":"Первый показ прошёл в Париже","en":null},"author":"655f2ab09e1c427b40f604a2"}
 ```
 
-В ответе обязательны `id` в нижнем регистре, объект `text` с обоими ключами `ru` и `en` и поле `sourceUrl`. Каждый перевод и ссылка имеют тип `string | null`.
+В ответе обязательны `id` в нижнем регистре, объект `text` с обоими ключами `ru` и `en` и поле `author`. Каждый перевод имеет тип `string | null`. `author` содержит ObjectId пользователя в виде строки в нижнем регистре или `null`.
 
 ```mermaid
 flowchart TD
     accTitle: Прочитать факт по ID
-    accDescr: Проверить лимит и ID, прочитать факт из MongoDB и вернуть два перевода и ссылку
+    accDescr: Проверить лимит и ID, прочитать факт из MongoDB и вернуть два перевода и ID автора
     A(["GET /facts/:id"]):::http --> B["Проверить лимит запросов"]:::action
     B -->|Лимит превышен| C(["429 — Retry-After"]):::http
     B -->|Запрос разрешён| D["Проверить и преобразовать ObjectId"]:::action
@@ -381,7 +380,7 @@ flowchart TD
 <details>
 <summary>Технические подробности и исходники</summary>
 
-[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/readGroupPage](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Сервис переиспользует [AuthService](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), CacheService, CursorService, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и репозитории сущностей. Индексы `site_items`, `site_users`, `site_collections`. Отметка готовности `siteSearch:checkpoint:v6`. [Подробный контракт](../contracts/searchSpec.md#search).
+[SearchController.search](../../../../src/endpoints/search/controllers/searchController/core/search.controller.ts) → [SearchBodyInterceptor](../../../../src/endpoints/search/services/searchBodyInterceptor/core/searchBody.interceptor.ts) и [DTO](../../../../src/endpoints/search/services/siteSearchService/dto/search.body.ts) → [SiteSearchService.search/readGroupPage](../../../../src/endpoints/search/services/siteSearchService/core/siteSearch.service.ts). Сервис переиспользует [AuthService](../../../../src/endpoints/auth/services/authService/core/auth.service.ts), CacheService, CursorService, [SearchService.search/iterateMatches](../../../../src/infrastructure/search/services/searchService/core/search.service.ts) и репозитории сущностей. Индексы `site_items`, `site_users`, `site_collections`. Отметка готовности `siteSearch:checkpoint:v7`. [Подробный контракт](../contracts/searchSpec.md#search).
 
 </details>
 

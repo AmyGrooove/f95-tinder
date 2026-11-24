@@ -3,12 +3,12 @@ import { describe, expect, it, jest } from "@jest/globals"
 
 import type { User } from "@entities/user/schemas/user.schema"
 import type { UserSession } from "@entities/userSession/schemas/userSession.schema"
-import { UserRepository } from "@entities/user/services/userRepository"
 import { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
+import type { LoginCodeResponseDto } from "@endpoints/auth/services/authService"
 
 describe("AccountCredentialsController", () => {
   it("блокирует смену пароля с постороннего Origin и не выдаёт новые cookies", async () => {
@@ -92,7 +92,9 @@ describe("AccountCredentialsController", () => {
           .toArray(),
       ).toEqual(beforeSessions)
       failure.mockRestore()
-      expect((await app.inject(request)).statusCode).toBe(204)
+      expect((await app.inject(request)).statusCode).toBe(
+        kind === "password" ? 204 : 200,
+      )
     },
   )
 
@@ -232,16 +234,6 @@ describe("AccountCredentialsController", () => {
       payload: { accessCode },
     })
     expect(otherLogin.statusCode).toBe(204)
-    const repository = app.get(UserRepository)
-    const reissueAccessCode = repository.reissueAccessCode.bind(repository)
-    let newAccessCode: string | undefined
-    jest
-      .spyOn(repository, "reissueAccessCode")
-      .mockImplementation(async (...args) => {
-        const result = await reissueAccessCode(...args)
-        newAccessCode = result.accessCode
-        return result
-      })
     const response = await app.inject({
       method: "PATCH",
       url: "/auth/login/code",
@@ -249,12 +241,9 @@ describe("AccountCredentialsController", () => {
       payload: { accessCode },
     })
 
-    expect(response.statusCode).toBe(204)
-    expect(response.body).toBe("")
+    expect(response.statusCode).toBe(200)
     expect(response.headers["cache-control"]).toBe("no-store")
-    if (newAccessCode === undefined) {
-      throw new Error("Новый секретный код не создан")
-    }
+    const { accessCode: newAccessCode } = response.json<LoginCodeResponseDto>()
     expect(newAccessCode).toMatch(/^[A-Za-z0-9_-]{32}$/)
     expect(newAccessCode).not.toBe(accessCode)
     expect(response.headers["set-cookie"]).toEqual(

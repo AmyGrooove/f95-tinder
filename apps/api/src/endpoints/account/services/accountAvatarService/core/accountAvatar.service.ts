@@ -5,6 +5,9 @@ import {
 } from "@nestjs/common"
 
 import { AuthService } from "@endpoints/auth/services/authService"
+import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { StorageService } from "@infrastructure/storage/services/storageService"
@@ -51,7 +54,12 @@ class AccountAvatarService {
       )
     }
 
-    await this.updateAvatar(userId, { path, publicUrl })
+    await this.updateAvatar(userId, {
+      src: path,
+      source: EMediaSource.STORAGE_KEY,
+      language: null,
+      type: EMediaType.AVATAR,
+    })
 
     return { avatarUrl: publicUrl }
   }
@@ -60,28 +68,26 @@ class AccountAvatarService {
     await this.updateAvatar(userId, null)
   }
 
-  private async updateAvatar(
-    userId: string,
-    avatar: { path: string; publicUrl: string } | null,
-  ) {
+  private async updateAvatar(userId: string, avatar: MediaSrc | null) {
     const previous = await this.userRepository.write.updateById(
       userId,
       {
-        $set: {
-          avatarUrl: avatar?.publicUrl ?? null,
-          avatarStorageKey: avatar?.path ?? null,
-        },
+        $set: { avatar },
       },
-      { returnDocument: "before", projection: { avatarStorageKey: 1 } },
+      { returnDocument: "before", projection: { avatar: 1 } },
     )
 
     if (isNil(previous)) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    if (!isNil(previous.avatarStorageKey)) {
+    if (
+      previous.avatar?.source === EMediaSource.STORAGE_KEY &&
+      (avatar?.source !== EMediaSource.STORAGE_KEY ||
+        previous.avatar.src !== avatar.src)
+    ) {
       await this.storageService
-        .delete(previous.avatarStorageKey)
+        .delete(previous.avatar.src)
         .catch(() => undefined)
     }
   }

@@ -6,7 +6,7 @@ import { LoggerService } from "../core/logger.service"
 
 describe("LoggerService", () => {
   const config = {
-    app: { name: "bisky-test", environment: "development" },
+    app: { name: "bisky-test", environment: "production" },
   } as InfrastructureConfigService
 
   it.each(["info", "warn"] as const)(
@@ -22,7 +22,7 @@ describe("LoggerService", () => {
         level,
         message: "Сообщение",
         service: "bisky-test",
-        environment: "development",
+        environment: "production",
         requestId: "request-id",
         context: "test",
       })

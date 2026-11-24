@@ -22,19 +22,7 @@ class HomeFeedCollectionResponseDto {
   id: string
 }
 
-class HomeFeedFeatureResponseDto {
-  @ApiProperty({ type: String, enum: [EHomeFeedBlockType.FEATURE] })
-  type: EHomeFeedBlockType.FEATURE
-
-  @ApiProperty({ type: String, example: "pick" })
-  id: string
-}
-
-@ApiExtraModels(
-  HomeFeedFactResponseDto,
-  HomeFeedCollectionResponseDto,
-  HomeFeedFeatureResponseDto,
-)
+@ApiExtraModels(HomeFeedFactResponseDto, HomeFeedCollectionResponseDto)
 class HomeFeedResponseDto {
   @ApiProperty({
     type: String,
@@ -53,7 +41,6 @@ class HomeFeedResponseDto {
       oneOf: [
         { $ref: getSchemaPath(HomeFeedFactResponseDto) },
         { $ref: getSchemaPath(HomeFeedCollectionResponseDto) },
-        { $ref: getSchemaPath(HomeFeedFeatureResponseDto) },
       ],
       discriminator: {
         propertyName: "type",
@@ -62,18 +49,11 @@ class HomeFeedResponseDto {
           [EHomeFeedBlockType.COLLECTION]: getSchemaPath(
             HomeFeedCollectionResponseDto,
           ),
-          [EHomeFeedBlockType.FEATURE]: getSchemaPath(
-            HomeFeedFeatureResponseDto,
-          ),
         },
       },
     },
   })
-  blocks: (
-    | HomeFeedFactResponseDto
-    | HomeFeedCollectionResponseDto
-    | HomeFeedFeatureResponseDto
-  )[]
+  blocks: (HomeFeedFactResponseDto | HomeFeedCollectionResponseDto)[]
 }
 
 export { HomeFeedResponseDto }

@@ -4,6 +4,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Schema as MongooseSchema } from "mongoose"
 import type { Types } from "mongoose"
 
+import { checkIsArrayWithoutNil } from "@entities/shared/functions/checks/checkIsArrayWithoutNil"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
 @Schema({ collection: "ItemBan" })
@@ -11,7 +12,13 @@ class ItemBan extends MongoEntity {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: "Item" })
   item: Types.ObjectId
 
-  @Prop({ type: [String], enum: ECountry, required: true, default: [] })
+  @Prop({
+    type: [String],
+    enum: ECountry,
+    required: true,
+    default: [],
+    validate: checkIsArrayWithoutNil,
+  })
   countries: ECountry[]
 
   @Prop({ type: String, default: null })

@@ -9,11 +9,10 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { HOME_FEED_SCHEDULE } from "../../../static/HOME_FEED_SCHEDULE"
 import type { HomeFeedResponseDto } from "../dto/homeFeed.response"
 import { HOME_FEED_BLOCK_ORDER } from "../static/HOME_FEED_BLOCK_ORDER"
-import { HOME_FEED_FEATURE_IDS } from "../static/HOME_FEED_FEATURE_IDS"
 import { EHomeFeedBlockType } from "../types/EHomeFeedBlockType"
 import type { IHomeFeedBlock } from "../types/IHomeFeedBlock"
 
-const { FACT, COLLECTION, FEATURE } = EHomeFeedBlockType
+const { FACT, COLLECTION } = EHomeFeedBlockType
 
 @Injectable()
 class HomeFeedService {
@@ -34,7 +33,7 @@ class HomeFeedService {
 
   async getFeed(): Promise<HomeFeedResponseDto> {
     const date = this.getFeedDate()
-    const key = `home:feed:v1:${date}`
+    const key = `home:feed:v2:${date}`
     const existing = await this.cacheService.get<IHomeFeedBlock[]>(key)
     const blocks = isNil(existing)
       ? await this.cacheService.setIfAbsent(
@@ -95,7 +94,6 @@ class HomeFeedService {
           }),
         ),
       ],
-      [FEATURE]: [...new Set(HOME_FEED_FEATURE_IDS)],
     }
 
     const blocks: IHomeFeedBlock[] = []

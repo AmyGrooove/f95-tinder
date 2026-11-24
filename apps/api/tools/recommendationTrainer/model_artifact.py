@@ -28,14 +28,12 @@ def create_model_artifact(
     dataset: TrainingDataset, models: TrainedModels
 ) -> ModelArtifact:
     model_id = ObjectId()
-    trained_at = datetime.now(timezone.utc)
+    created_at = datetime.now(timezone.utc)
     neighbors = models.neighbors
     als = models.als
     document = {
         "_id": model_id,
         "formatVersion": MODEL_FORMAT_VERSION,
-        "trainedAt": trained_at,
-        "source": "json",
         "itemIds": [item.id for item in dataset.items],
         "itemCF": {
             "maxNeighbors": CF_NEIGHBORS,
@@ -51,8 +49,8 @@ def create_model_artifact(
             "itemFactors": np.asarray(als.item_factors, dtype="<f4").tobytes(),
         },
         "popularity": np.asarray(models.popularity, dtype="<f4").tobytes(),
-        "createdAt": trained_at,
-        "updatedAt": trained_at,
+        "createdAt": created_at,
+        "updatedAt": created_at,
     }
     payload = BSON.encode(document)
     if len(payload) > MAX_BSON_SIZE:

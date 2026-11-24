@@ -19,12 +19,7 @@ import { UserItemRepository } from "@entities/userItem/services/userItemReposito
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import type { ItemAttempt } from "@entities/userItem/schemas/itemAttempt.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
-import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
-import { EUserItemHistoryEvent } from "@entities/userItemHistory/schemas/EUserItemHistoryEvent"
-import {
-  UserItemHistoryRepository,
-  type TUserItemHistoryEvent,
-} from "@entities/userItemHistory/services/userItemHistoryRepository"
+import { LibraryActivityService } from "@endpoints/userItem/services/libraryActivityService"
 import { EUnit } from "@entities/shared/schemas/EUnit"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
@@ -55,7 +50,7 @@ class UserItemService {
     private readonly transactionService: MongoTransactionService,
     private readonly tagItemRepository: TagItemRepository,
     private readonly userItemStatsService: UserItemStatsService,
-    private readonly historyRepository: UserItemHistoryRepository,
+    private readonly libraryActivityService: LibraryActivityService,
   ) {}
 
   async readByItemId(
@@ -151,28 +146,18 @@ class UserItemService {
           },
           { session },
         )
+        const next = this.userItemStatsService.getState(created)
         await this.userItemStatsService.update({
           itemId,
           previous: null,
-          next: this.userItemStatsService.getState(created),
+          next,
           session,
         })
 
-        if (
-          USER_ITEM_LIBRARY_STATUSES.some((status) => status === created.status)
-        ) {
-          await this.historyRepository.append(
-            [
-              {
-                user: userId,
-                item: itemId,
-                type: EUserItemHistoryEvent.ADDED,
-                status: created.status,
-              },
-            ],
-            session,
-          )
-        }
+        await this.libraryActivityService.stageAfterCommit(
+          { user: userId, item: itemId, before: null, after: next },
+          session,
+        )
 
         return created
       })
@@ -243,12 +228,17 @@ class UserItemService {
         throw new NotFoundException(DICTIONARY.userItem.notFound)
       }
 
+      const previous = this.userItemStatsService.getState(removed)
       await this.userItemStatsService.update({
         itemId: removed.item,
-        previous: this.userItemStatsService.getState(removed),
+        previous,
         next: null,
         session,
       })
+      await this.libraryActivityService.stageAfterCommit(
+        { user: userId, item: removed.item, before: previous, after: null },
+        session,
+      )
     })
   }
 
@@ -442,38 +432,10 @@ class UserItemService {
         session,
       })
 
-      const event = { user: userId, item: updated.item }
-      const events: TUserItemHistoryEvent[] = []
-
-      if (previous.status !== next.status) {
-        events.push({
-          ...event,
-          type: EUserItemHistoryEvent.STATUS_CHANGED,
-          status: next.status,
-        })
-      }
-
-      const rating = next.rating ?? null
-
-      if ((previous.rating ?? null) !== rating) {
-        events.push({
-          ...event,
-          type: EUserItemHistoryEvent.RATING_CHANGED,
-          rating,
-        })
-      }
-
-      const isFavorite = next.isFavorite === true
-
-      if ((previous.isFavorite === true) !== isFavorite) {
-        events.push({
-          ...event,
-          type: EUserItemHistoryEvent.FAVORITE_CHANGED,
-          isFavorite,
-        })
-      }
-
-      await this.historyRepository.append(events, session)
+      await this.libraryActivityService.stageAfterCommit(
+        { user: userId, item: updated.item, before: previous, after: next },
+        session,
+      )
 
       return this.mapResponse(updated)
     })

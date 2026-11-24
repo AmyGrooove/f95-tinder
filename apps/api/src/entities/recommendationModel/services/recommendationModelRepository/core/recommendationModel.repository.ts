@@ -14,7 +14,7 @@ class RecommendationModelRepository {
   readLatest() {
     return this.model
       .findOne()
-      .sort({ trainedAt: -1, _id: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .setOptions({ promoteBuffers: true })
       .lean<Record<string, unknown> | null>()
       .exec()

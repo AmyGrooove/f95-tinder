@@ -10,8 +10,12 @@ class FactResponseDto {
   @ApiProperty({ type: LanguageTextResponseDto })
   text: LanguageTextResponseDto
 
-  @ApiProperty({ type: String, nullable: true })
-  sourceUrl: string | null
+  @ApiProperty({
+    type: String,
+    pattern: REGEX.MONGO_OBJECT_ID.source,
+    nullable: true,
+  })
+  author: string | null
 }
 
 export { FactResponseDto }

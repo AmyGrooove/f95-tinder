@@ -17,7 +17,10 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { Collection } from "../../../schemas/collection.schema"
 import type { TCreateCollection } from "../../../schemas/collection.schema"
 import { ECollectionBlockType } from "../../../schemas/ECollectionBlockType"
-import { ECollectionType } from "../../../schemas/ECollectionType"
+import {
+  COLLECTION_TYPES,
+  ECollectionType,
+} from "../../../schemas/ECollectionType"
 import { createAvailableCollectionMembershipLookup } from "../functions/aggregationPipelines/createAvailableCollectionMembershipLookup"
 import type { IUpdateCollectionProps } from "../types/IUpdateCollectionProps"
 
@@ -65,7 +68,7 @@ class CollectionRepository implements OnModuleInit {
     options?: Pick<QueryOptions<Collection>, "session">,
   ) {
     return this.read.findOne(
-      { _id: id, deletedAt: null },
+      { _id: id, deletedAt: null, type: { $in: COLLECTION_TYPES } },
       {
         _id: 1,
         version: 1,
@@ -84,13 +87,17 @@ class CollectionRepository implements OnModuleInit {
 
   findNotDeletedAuthorById(id: Types.ObjectId) {
     return this.read.findOne(
-      { _id: id, deletedAt: null },
+      { _id: id, deletedAt: null, type: { $in: COLLECTION_TYPES } },
       { _id: 1, author: 1 },
     )
   }
 
   checkIsNotDeleted(id: Types.ObjectId) {
-    return this.read.checkIsExists({ _id: id, deletedAt: null })
+    return this.read.checkIsExists({
+      _id: id,
+      deletedAt: null,
+      type: { $in: COLLECTION_TYPES },
+    })
   }
 
   sampleAvailableSiteCollectionIds(limit: number) {
@@ -99,7 +106,7 @@ class CollectionRepository implements OnModuleInit {
         .match({
           author: null,
           deletedAt: null,
-          type: { $in: [ECollectionType.TAG, ECollectionType.FEATURE] },
+          type: ECollectionType.TAG,
         })
         .project({ _id: 1, blocks: 1 })
         .use(createAvailableCollectionMembershipLookup())
@@ -216,6 +223,7 @@ class CollectionRepository implements OnModuleInit {
         _id: id,
         author: authorId,
         deletedAt: null,
+        type: { $in: COLLECTION_TYPES },
         ...(version === 0
           ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
           : { version }),
@@ -227,7 +235,12 @@ class CollectionRepository implements OnModuleInit {
 
   softDeleteByAuthor(id: Types.ObjectId, authorId: Types.ObjectId) {
     return this.write.updateByFilter(
-      { _id: id, author: authorId, deletedAt: null },
+      {
+        _id: id,
+        author: authorId,
+        deletedAt: null,
+        type: { $in: COLLECTION_TYPES },
+      },
       { $set: { deletedAt: new Date() } },
       { projection: { _id: 1 } },
     )

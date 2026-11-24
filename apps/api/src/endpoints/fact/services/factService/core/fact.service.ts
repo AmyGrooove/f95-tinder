@@ -15,7 +15,7 @@ class FactService {
     const fact = await this.factRepository.read.findById(id.toHexString(), {
       _id: 1,
       text: 1,
-      sourceUrl: 1,
+      author: 1,
     })
 
     if (isNil(fact)) {
@@ -28,7 +28,7 @@ class FactService {
         ru: fact.text.ru ?? null,
         en: fact.text.en ?? null,
       },
-      sourceUrl: fact.sourceUrl ?? null,
+      author: fact.author?.toHexString() ?? null,
     }
   }
 }

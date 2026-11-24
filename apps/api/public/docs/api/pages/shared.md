@@ -30,7 +30,7 @@ PATCH `/userItems/:id` принимает одно или несколько п�
 
 Для гостя личные действия требуют входа. Операция выполняется только после явного действия пользователя.
 
-Исключения хранятся в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts): skipped действует 90 дней, blocked бессрочный и может сохранять прежние данные. Просроченный skipped исключается из чтения до фоновой TTL-очистки. UserRecommendationState удалён из кода; показы не записываются. UserItemService обновляет ItemStats и связанные счётчики оценок SiteStats в одной транзакции с личной записью. Общая статистика доступна в [GET /items/:id](../requestFlows/catalog.md#item), история действий остаётся в [задачах профиля](../../todos/pages/accountAndLibrary.md#profile).
+Исключения хранятся в [UserItem](../../../../src/entities/userItem/schemas/userItem.schema.ts): skipped действует 90 дней, blocked бессрочный и может сохранять прежние данные. Просроченный skipped исключается из чтения до фоновой TTL-очистки. UserRecommendationState удалён из кода; показы не записываются. UserItemService обновляет ItemStats и связанные счётчики оценок SiteStats в одной транзакции с личной записью. Общая статистика доступна в [GET /items/:id](../requestFlows/catalog.md#item), личная история читается через [маршрут аккаунта](../requestFlows/account.md#library-history).
 
 ## Какие ID хранит клиент
 

@@ -33,17 +33,17 @@ flowchart TD
 ```mermaid
 flowchart TD
     accTitle: Загрузка своего аватара
-    accDescr: Проверить пользователя и сессию, обработать изображение и сохранить URL аватара
+    accDescr: Проверить пользователя и сессию, обработать изображение и сохранить ключ объекта
     A(["PUT /account/avatar"]):::http --> B["Проверить сессию и multipart"]:::action
     B --> C["Проверить файл и преобразовать в WebP"]:::action
     C --> D[("Загрузить объект в S3")]:::data
-    D --> E[("Атомарно заменить URL и ключ объекта в User")]:::data
+    D --> E[("Атомарно заменить User.avatar")]:::data
     E -->|Сбой записи| F["Попытаться удалить новый объект"]:::action
     E -->|Сохранено| G["Попытаться удалить прежний управляемый объект"]:::action
     G --> H(["200 — URL аватара"]):::http
 ```
 
-Форматы — JPEG, PNG, WebP и AVIF. Ограничения входа — 5 МиБ, до 4 000 пикселей на сторону и до 16 млн пикселей суммарно. Выход — кадрированное изображение WebP до 512 × 512 без увеличения исходника. Некорректный файл или дополнительные поля дают 400, превышение размера файла — 413, сбой хранилища или отсутствие публичного URL — 503. URL и ключ сохраняются вместе. Удаление прежнего объекта выполняется после записи, его сбой логируется. Аватар с ранее сохранённым URL без ключа можно заменить, файл по такому URL не удаляется.
+Форматы — JPEG, PNG, WebP и AVIF. Ограничения входа — 5 МиБ, до 4 000 пикселей на сторону и до 16 млн пикселей суммарно. Выход — кадрированное изображение WebP до 512 × 512 без увеличения исходника. Некорректный файл или дополнительные поля дают 400, превышение размера файла — 413, сбой хранилища или отсутствие публичного URL — 503. В `User.avatar` записывается `MediaSrc` типа `avatar` с ключом файла. Публичный URL формируется из ключа и настроенного адреса хранилища. Удаление прежнего объекта выполняется после записи, его сбой логируется.
 
 <a id="delete-avatar"></a>
 
@@ -56,12 +56,12 @@ flowchart TD
     accTitle: Удаление своего аватара
     accDescr: Проверить пользователя и сессию, сбросить аватар и удалить ранее сохранённый объект при наличии ключа
     A(["DELETE /account/avatar"]):::http --> B["Проверить сессию"]:::action
-    B --> C[("Атомарно очистить URL и ключ в User")]:::data
+    B --> C[("Атомарно очистить User.avatar")]:::data
     C --> D["Попытаться удалить прежний управляемый объект"]:::action
     D --> E(["204 — аватар отсутствует"]):::http
 ```
 
-После успешной записи `GET /account/whoami` возвращает `avatarUrl: null`. Сбой удаления объекта фиксируется в журнале. Поисковый индекс отражает URL после очередной [синхронизации](catalog.md#search-sync).
+После успешной записи `GET /account/whoami` возвращает `avatarUrl: null`. Сбой удаления объекта фиксируется в журнале. Карточки в поиске используют текущий источник аватара из MongoDB.
 
 **Технические подробности.** [AccountAvatarController](../../../../src/endpoints/account/controllers/accountAvatarController/core/accountAvatar.controller.ts) · [AccountAvatarService](../../../../src/endpoints/account/services/accountAvatarService/core/accountAvatar.service.ts) · [Обработка изображений](../../../../agents/storage.md)
 
@@ -106,14 +106,14 @@ flowchart TD
     C --> D{"Пользователь и сессия найдены?"}
     D -->|Нет| E(["401 — нет доступа"]):::http
     D -->|Да| F["Проверить курсор владельца"]:::action
-    F --> G[("Выбрать события по createdAt и ID по убыванию")]:::data
+    F --> G[("Прочитать библиотечные события владельца из UserActivity по createdAt и ID")]:::data
     G --> I[("Прочитать названия и постеры видимых произведений страницы одним запросом")]:::data
     I --> H(["200 — события с карточками и следующий курсор"]):::http
 ```
 
-История читается из `UserItemHistory` по ID из текущей сессии. Чтение использует на одну запись больше запрошенного лимита для определения следующей страницы. Для событий самой страницы добавляются название и первый постер. Отсутствующее или удалённое произведение даёт `item: null` без пропуска события. Ответ содержит `items` и `nextCursor`, который равен `null` в конце истории, а также заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
+История читает библиотечные события из `UserActivity` по ID пользователя из текущей сессии. Запрос сортирует события по `createdAt` и ID по убыванию и читает на одну запись больше лимита, чтобы определить наличие следующей страницы. Для событий самой страницы добавляются название и первый постер. Отсутствующее или удалённое произведение даёт `item: null` без пропуска события. Ответ содержит `items` и `nextCursor`, который равен `null` в конце истории, а также заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
 
-**Технические подробности.** [Контракт](../contracts/librarySpec.md#личная-история-библиотеки) · [LibraryHistoryController](../../../../src/endpoints/account/controllers/libraryHistoryController/core/libraryHistory.controller.ts) · [LibraryHistoryService](../../../../src/endpoints/account/services/libraryHistoryService/core/libraryHistory.service.ts) · [UserItemHistoryRepository](../../../../src/entities/userItemHistory/services/userItemHistoryRepository/core/userItemHistory.repository.ts)
+**Технические подробности.** [Контракт](../contracts/librarySpec.md#личная-история-библиотеки) · [LibraryHistoryController](../../../../src/endpoints/account/controllers/libraryHistoryController/core/libraryHistory.controller.ts) · [LibraryHistoryService](../../../../src/endpoints/account/services/libraryHistoryService/core/libraryHistory.service.ts) · [UserActivityRepository](../../../../src/entities/userActivity/services/userActivityRepository/core/userActivity.repository.ts)
 
 <a id="display-name"></a>
 

@@ -12,6 +12,7 @@ import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
 import { ECountry } from "@entities/shared/schemas/ECountry"
 
 import { createAccount } from "@endpoints/account/__tests__/functions/createAccount"
+import type { RegisterResponseDto } from "@endpoints/auth/services/authService"
 
 describe("AuthController", () => {
   it("не отзывает сессию при выходе с одним действующим refresh cookie", async () => {
@@ -56,7 +57,7 @@ describe("AuthController", () => {
     }
   }
 
-  it("регистрирует пользователя без тела, сохраняет хеши и выдаёт рабочую сессию", async () => {
+  it("регистрирует пользователя без тела запроса и выдаёт код доступа и рабочую сессию", async () => {
     const { app, connection } = getTestApplication()
     const startedAt = Date.now()
     const response = await app.inject({
@@ -69,9 +70,11 @@ describe("AuthController", () => {
       },
     })
 
-    expect(response.statusCode).toBe(204)
+    expect(response.statusCode).toBe(201)
     expect(response.headers["cache-control"]).toBe("no-store")
-    expect(response.body).toBe("")
+    const { username, accessCode } = response.json<RegisterResponseDto>()
+    expect(username).toEqual(expect.any(String))
+    expect(accessCode).toMatch(/^[A-Za-z0-9_-]{32}$/)
     expectAuthCookies(response.cookies)
     const cookieHeader = response.cookies
       .map(({ name, value }) => `${name}=${value}`)
@@ -89,9 +92,9 @@ describe("AuthController", () => {
       .collection<User>("User")
       .findOne({ _id: new Types.ObjectId(access.sub) })
     expect(user).toMatchObject({
-      username: expect.any(String),
+      username,
       passwordHash: null,
-      accessCodeHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      accessCodeHash: createHash("sha256").update(accessCode).digest("hex"),
     })
     expect(refresh).toMatchObject({
       sub: access.sub,
@@ -163,7 +166,7 @@ describe("AuthController", () => {
         },
       })
 
-      expect(response.statusCode).toBe(204)
+      expect(response.statusCode).toBe(201)
       const accessToken = response.cookies.find(
         ({ name }) => name === "__Host-accessToken",
       )?.value
@@ -512,7 +515,7 @@ describe("AuthController", () => {
   })
 
   it.each([
-    { url: "/auth/register", limit: 2, status: 204, payload: undefined },
+    { url: "/auth/register", limit: 2, status: 201, payload: undefined },
     {
       url: "/auth/login",
       limit: 5,

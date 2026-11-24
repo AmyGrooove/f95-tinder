@@ -92,7 +92,7 @@ describe("AccountCredentialsController", () => {
     },
   )
 
-  it("перевыпускает код и устанавливает cookies без тела ответа", async () => {
+  it("возвращает перевыпущенный код и устанавливает cookies", async () => {
     const { controller, authService, cookieService } = await createController()
     const body = { accessCode: "a".repeat(32) }
     const result = {
@@ -109,7 +109,7 @@ describe("AccountCredentialsController", () => {
 
     await expect(
       controller.reissueCode("access-token", body, reply),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual(result.response)
 
     expect(authService.reissueCode).toHaveBeenCalledTimes(1)
     expect(authService.reissueCode).toHaveBeenCalledWith("access-token", body)

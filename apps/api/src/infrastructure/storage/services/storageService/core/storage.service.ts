@@ -247,14 +247,10 @@ class StorageService implements OnModuleInit {
     }
   }
 
-  private getBucket() {
-    return this.configurationService.app.name
-  }
-
-  private createPublicUrl(path: string) {
+  createPublicUrl(path: string | null | undefined) {
     const publicUrl = this.configurationService.storage.publicUrl
 
-    if (isNil(publicUrl) || publicUrl === "") {
+    if (isNil(path) || path === "" || isNil(publicUrl) || publicUrl === "") {
       return undefined
     }
 
@@ -266,6 +262,10 @@ class StorageService implements OnModuleInit {
       .join("/")
 
     return `${publicUrl.replace(REGEX.TRAILING_SLASH, "")}/${encodedPath}`
+  }
+
+  private getBucket() {
+    return this.configurationService.app.name
   }
 
   private isObjectNotFound(error: unknown) {

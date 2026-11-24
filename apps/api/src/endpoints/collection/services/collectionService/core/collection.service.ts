@@ -11,6 +11,9 @@ import type { ClientSession, HydratedDocument } from "mongoose"
 
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { StorageService } from "@infrastructure/storage/services/storageService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
+import { resolveMediaUrl } from "@endpoints/shared/functions/resolveMediaUrl"
+import { EMediaSource } from "@entities/shared/schemas/EMediaSource"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { UserCollectionRepository } from "@entities/userCollection/services/userCollectionRepository"
 import { ItemRepository } from "@entities/item/services/itemRepository"
@@ -141,7 +144,7 @@ class CollectionService {
         ? null
         : this.userRepository.read.findById(collection.author.toHexString(), {
             _id: 1,
-            avatarUrl: 1,
+            avatar: 1,
             displayName: 1,
           }),
       this.itemCollectionRepository.readAvailableCounts({
@@ -157,7 +160,7 @@ class CollectionService {
         ? null
         : {
             id: user._id.toHexString(),
-            avatar: user.avatarUrl ?? null,
+            avatar: resolveMediaUrl(user.avatar, this.storageService) ?? null,
             displayName: user.displayName,
           },
       { itemCount: total, ...statistics },
@@ -238,7 +241,11 @@ class CollectionService {
           changes: {
             title: body.title ?? current.title,
             description: body.description ?? current.description,
-            media: body.media ?? current.media,
+            media:
+              body.media?.map((entry) => ({
+                ...entry,
+                source: EMediaSource.URL,
+              })) ?? current.media,
             type: body.type ?? current.type,
             blocks,
           },
@@ -290,9 +297,9 @@ class CollectionService {
       accessToken,
       id,
     )
-    const { src } = props
+    const { path, publicUrl } = props.upload
 
-    if (isNil(src)) {
+    if (isNil(publicUrl)) {
       throw new ServiceUnavailableException(
         DICTIONARY.collection.posterPublicUrlUnavailable,
       )
@@ -310,7 +317,12 @@ class CollectionService {
         type: collection.type,
         blocks: collection.blocks,
         media: [
-          { src: src, language: null, type: EMediaType.POSTER },
+          {
+            src: path,
+            source: EMediaSource.STORAGE_KEY,
+            language: null,
+            type: EMediaType.POSTER,
+          },
           ...collection.media.filter(
             (media) => media.type !== EMediaType.POSTER,
           ),
@@ -324,12 +336,19 @@ class CollectionService {
     for (const poster of collection.media.filter(
       (media) => media.type === EMediaType.POSTER,
     )) {
-      const key = poster.src.slice(poster.src.lastIndexOf("/") + 1)
+      const filename = poster.src.slice(poster.src.lastIndexOf("/") + 1)
+      const key = prefix + filename
+      const isStoredPoster =
+        poster.source === EMediaSource.STORAGE_KEY
+          ? poster.src === key
+          : poster.src.endsWith("/" + key)
+
       if (
-        poster.src.endsWith("/" + prefix + key) &&
-        /^[a-f0-9-]{36}\.webp$/.test(key)
+        isStoredPoster &&
+        key !== path &&
+        /^[a-f0-9-]{36}\.webp$/.test(filename)
       ) {
-        await this.storageService.delete(prefix + key).catch(() => undefined)
+        await this.storageService.delete(key).catch(() => undefined)
       }
     }
   }
@@ -740,11 +759,7 @@ class CollectionService {
         [ELanguage.RUSSIAN]: collection.description[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: collection.description[ELanguage.ENGLISH],
       },
-      media: collection.media.map((media) => ({
-        src: media.src,
-        language: media.language,
-        type: media.type,
-      })),
+      media: mapMediaSources(collection.media, this.storageService),
       blocks: collection.blocks.map((block) => this.mapBlock(block)),
       createdAt: collection.createdAt.toISOString(),
       updatedAt: collection.updatedAt.toISOString(),

@@ -19,9 +19,11 @@ import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { ESort } from "@entities/shared/types/ESort"
 import { ESortDirection } from "@entities/shared/types/ESortDirection"
 import { CollectionAuthService } from "@endpoints/collection/services/collectionAuthService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import { ECollectionMode } from "@endpoints/collection/types/ECollectionMode"
 import { ECollectionSort } from "@endpoints/collection/types/ECollectionSort"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isInt } from "@shared/functions/checks/isInt"
 import { isNonNegativeSafe } from "@shared/functions/checks/isNonNegativeSafe"
@@ -43,6 +45,7 @@ class CollectionContentService {
     private readonly userCollectionRepository: UserCollectionRepository,
     private readonly collectionAuthService: CollectionAuthService,
     private readonly cursorService: CursorService,
+    private readonly storageService: StorageService,
   ) {}
 
   async getItems(
@@ -355,11 +358,7 @@ class CollectionContentService {
         [ELanguage.RUSSIAN]: card.item.title[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: card.item.title[ELanguage.ENGLISH],
       },
-      media: (card.item.media ?? []).map((media) => ({
-        src: media.src,
-        language: media.language,
-        type: media.type,
-      })),
+      media: mapMediaSources(card.item.media ?? [], this.storageService),
       note: card.note,
       ratingAverage: card.ratingAverage ?? null,
       userRating: card.viewerItem?.rating ?? null,

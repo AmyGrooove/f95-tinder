@@ -232,7 +232,7 @@ describe("CollectionController", () => {
       id: expect.any(String),
       author: {
         id: user._id.toHexString(),
-        avatar: user.avatarUrl,
+        avatar: null,
         displayName: user.displayName,
       },
       version: 0,
@@ -241,6 +241,10 @@ describe("CollectionController", () => {
       description: { ru: null, en: null },
       blocks: [],
       media: [],
+      itemCount: 0,
+      ratingAverage: null,
+      ratingsCount: 0,
+      favoritesCount: 0,
       createdAt: expect.any(String),
       updatedAt: expect.any(String),
     })

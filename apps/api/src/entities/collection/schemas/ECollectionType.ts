@@ -2,7 +2,8 @@ enum ECollectionType {
   CUSTOM = "custom",
   FRANCHISE = "franchise",
   TAG = "tag",
-  FEATURE = "feature",
 }
 
-export { ECollectionType }
+const COLLECTION_TYPES = Object.values(ECollectionType)
+
+export { COLLECTION_TYPES, ECollectionType }

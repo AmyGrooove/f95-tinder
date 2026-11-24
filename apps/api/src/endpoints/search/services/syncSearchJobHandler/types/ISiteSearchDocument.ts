@@ -10,7 +10,7 @@ interface IItemSearchDocument {
   title: LanguageText
   aliases: string[]
   description: LanguageText
-  media: MediaSrc[]
+  media: Omit<MediaSrc, "source">[]
   tagIds: string[]
   countryTagIds: string[]
   releaseStatusTagIds: string[]
@@ -30,7 +30,6 @@ interface IUserSearchDocument {
   id: string
   username: string
   displayName: string
-  avatarUrl: string | null
   sortUsername: string
   sortDisplayName: string
 }
@@ -40,7 +39,7 @@ interface ICollectionSearchDocument {
   type: ECollectionType
   title: LanguageText
   description: LanguageText
-  media: MediaSrc[]
+  media: Omit<MediaSrc, "source">[]
   authorId: string | null
   tagGroup: string
   updatedAt: number

@@ -9,6 +9,7 @@ import {
   CollectionSchema,
 } from "@entities/collection/schemas/collection.schema"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { Item, ItemSchema } from "@entities/item/schemas/item.schema"
 import {
@@ -114,9 +115,14 @@ describe("ItemCollectionRepository", () => {
     const { connection } = getTestDatabase()
     const blocks = [{ id: groupId, type: ECollectionBlockType.GROUP }]
     await connection.model(Collection.name).collection.insertMany([
-      { _id: visible, blocks },
-      { _id: orphaned, blocks: [] },
-      { _id: deleted, blocks, deletedAt: new Date() },
+      { _id: visible, type: ECollectionType.CUSTOM, blocks },
+      { _id: orphaned, type: ECollectionType.CUSTOM, blocks: [] },
+      {
+        _id: deleted,
+        type: ECollectionType.CUSTOM,
+        blocks,
+        deletedAt: new Date(),
+      },
     ])
     for (const collectionId of [visible, orphaned, deleted]) {
       await repository.createForCollection({

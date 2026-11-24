@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger"
 
-import { EMediaType } from "../../schemas/EMediaType"
+import { CATALOG_MEDIA_TYPES } from "../../schemas/EMediaType"
+import type { EMediaType } from "../../schemas/EMediaType"
 
 class MediaResponseDto {
   @ApiProperty({ type: String })
@@ -9,7 +10,7 @@ class MediaResponseDto {
   @ApiProperty({ type: String, nullable: true })
   language: string | null
 
-  @ApiProperty({ enum: EMediaType })
+  @ApiProperty({ enum: CATALOG_MEDIA_TYPES })
   type: EMediaType
 }
 

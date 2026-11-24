@@ -48,7 +48,7 @@ const calculateGram = (itemFactors: Float32Array, factors: number) => {
 const decodeRecommendationModel = (
   document: Record<string, unknown>,
 ): IRecommendationModel => {
-  const { _id, trainedAt, formatVersion, itemIds, itemCF, als, popularity } =
+  const { _id, createdAt, formatVersion, itemIds, itemCF, als, popularity } =
     document
 
   if (formatVersion !== 1) {
@@ -59,7 +59,7 @@ const decodeRecommendationModel = (
 
   if (
     !(_id instanceof Types.ObjectId) ||
-    !isDate(trainedAt) ||
+    !isDate(createdAt) ||
     !isArray(itemIds) ||
     itemIds.length === 0 ||
     !itemIds.every(isString) ||
@@ -151,7 +151,7 @@ const decodeRecommendationModel = (
 
   return {
     id: _id.toHexString(),
-    trainedAt,
+    createdAt,
     itemIds,
     itemCF: { offsets: cfOffsets, indices: cfIndices, weights: cfWeights },
     als: {

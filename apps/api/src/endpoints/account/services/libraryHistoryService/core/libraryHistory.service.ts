@@ -2,11 +2,15 @@ import { Injectable, UnauthorizedException } from "@nestjs/common"
 import { Types } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/authService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
-import { UserItemHistoryRepository } from "@entities/userItemHistory/services/userItemHistoryRepository"
+import { EUserActivityType } from "@entities/userActivity/schemas/EUserActivityType"
+import type { TUserLibraryActivityType } from "@entities/userActivity/schemas/EUserActivityType"
+import { UserActivityRepository } from "@entities/userActivity/services/userActivityRepository"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isDate } from "@shared/functions/checks/isDate"
 import { isInt } from "@shared/functions/checks/isInt"
@@ -17,16 +21,28 @@ import { requestContext } from "@shared/functions/context/requestContext"
 import { REGEX } from "@shared/static/REGEX"
 
 import type { LibraryHistoryBodyDto } from "../dto/libraryHistory.body"
+import { ELibraryHistoryEvent } from "../dto/libraryHistory.response"
 import type { LibraryHistoryResponseDto } from "../dto/libraryHistory.response"
+
+const HISTORY_TYPES: Record<TUserLibraryActivityType, ELibraryHistoryEvent> = {
+  [EUserActivityType.LIBRARY_ITEM_ADDED]: ELibraryHistoryEvent.ADDED,
+  [EUserActivityType.LIBRARY_STATUS_CHANGED]:
+    ELibraryHistoryEvent.STATUS_CHANGED,
+  [EUserActivityType.LIBRARY_RATING_CHANGED]:
+    ELibraryHistoryEvent.RATING_CHANGED,
+  [EUserActivityType.LIBRARY_FAVORITE_CHANGED]:
+    ELibraryHistoryEvent.FAVORITE_CHANGED,
+}
 
 @Injectable()
 class LibraryHistoryService {
   constructor(
     private readonly authService: AuthService,
     private readonly userRepository: UserRepository,
-    private readonly historyRepository: UserItemHistoryRepository,
     private readonly cursorService: CursorService,
     private readonly itemRepository: ItemRepository,
+    private readonly storageService: StorageService,
+    private readonly activityRepository: UserActivityRepository,
   ) {}
 
   async readPage(
@@ -50,7 +66,7 @@ class LibraryHistoryService {
 
     const scope = ["accountLibraryHistory", userId, limit]
     const after = this.readPosition(cursor, scope)
-    const entries = await this.historyRepository.readPage({
+    const entries = await this.activityRepository.readLibraryPage({
       userId: user._id,
       limit,
       after,
@@ -58,11 +74,7 @@ class LibraryHistoryService {
     const page = entries.slice(0, limit)
     const last = page.at(-1)
     const itemIds = new Map(
-      page.map((entry) => {
-        const { item } = entry
-
-        return [item.toHexString(), item]
-      }),
+      page.map(({ payload: { item } }) => [item.toHexString(), item]),
     )
     const cards = await this.itemRepository.readPosterCardsByIds([
       ...itemIds.values(),
@@ -71,37 +83,33 @@ class LibraryHistoryService {
       cards.map((card) => {
         const { _id, title, media } = card
 
-        const poster = media[0]
+        const [poster] = mapMediaSources(media, this.storageService)
 
         return [
           _id.toHexString(),
           {
             title: { ru: title?.ru ?? null, en: title?.en ?? null },
-            poster: isUndefined(poster)
-              ? null
-              : {
-                  src: poster.src,
-                  language: poster.language ?? null,
-                  type: poster.type,
-                },
+            poster: poster ?? null,
           },
         ]
       }),
     )
 
     return {
-      items: page.map((entry) => {
-        const { _id, item, createdAt, type, status, rating, isFavorite } = entry
+      items: page.map(({ _id, createdAt, type, payload: eventPayload }) => {
+        const itemId = eventPayload.item.toHexString()
 
         return {
           id: _id.toHexString(),
-          itemId: item.toHexString(),
-          item: cardsById.get(item.toHexString()) ?? null,
+          itemId,
+          item: cardsById.get(itemId) ?? null,
           createdAt: createdAt.toISOString(),
-          type,
-          ...(!isUndefined(status) && { status }),
-          ...(!isUndefined(rating) && { rating }),
-          ...(!isUndefined(isFavorite) && { isFavorite }),
+          type: HISTORY_TYPES[type],
+          ...("status" in eventPayload && { status: eventPayload.status }),
+          ...("rating" in eventPayload && { rating: eventPayload.rating }),
+          ...("isFavorite" in eventPayload && {
+            isFavorite: eventPayload.isFavorite,
+          }),
         }
       }),
       nextCursor:

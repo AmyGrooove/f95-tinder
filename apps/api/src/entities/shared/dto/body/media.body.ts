@@ -1,16 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
-import { IsEnum, IsNotEmpty, IsString, ValidateIf } from "class-validator"
+import { IsIn, IsString, Matches, ValidateIf } from "class-validator"
 
-import { EMediaType } from "../../schemas/EMediaType"
+import { CATALOG_MEDIA_TYPES } from "../../schemas/EMediaType"
+import type { EMediaType } from "../../schemas/EMediaType"
 
 class MediaBodyDto {
   @ApiProperty({ type: String })
   @IsString()
-  @IsNotEmpty()
+  @Matches(/\S/)
   src: string
 
-  @ApiProperty({ enum: EMediaType })
-  @IsEnum(EMediaType)
+  @ApiProperty({ enum: CATALOG_MEDIA_TYPES })
+  @IsIn(CATALOG_MEDIA_TYPES)
   type: EMediaType
 
   @ApiPropertyOptional({ type: String, nullable: true })

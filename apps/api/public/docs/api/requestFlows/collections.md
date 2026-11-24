@@ -120,9 +120,9 @@ flowchart TD
     C --> D(["204 — подборка скрыта; если нет — 404"]):::http
 ```
 
-Один atomic update без отдельной MongoDB-транзакции, без version в запросе. Чужая, автоматическая, уже удалённая или отсутствующая подборка — 404. ItemCollection/UserCollection физически остаются; каскадной очистки нет, публичные чтения проверяют deletedAt. HTTP ждёт update, ошибка доставки ответа не отменяет soft delete. Фоновые удаления не запускаются.
+Один atomic update без отдельной MongoDB-транзакции, без version в запросе. Чужая, автоматическая, уже удалённая или отсутствующая подборка — 404. ItemCollection/UserCollection физически остаются; каскадной очистки нет, публичные чтения проверяют `deletedAt` и допустимый тип подборки. HTTP ждёт update, ошибка доставки ответа не отменяет soft delete. Фоновые удаления не запускаются.
 
-**Технические подробности:** CollectionController.remove → CollectionService.remove → CollectionRepository.softDeleteByAuthor (id+author+deletedAt=null). [Контроллер](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts).
+**Технические подробности:** CollectionController.remove → CollectionService.remove → CollectionRepository.softDeleteByAuthor (ID, автор, `deletedAt = null`, допустимый тип). [Контроллер](../../../../src/endpoints/collection/controllers/collectionController/core/collection.controller.ts), [сервис](../../../../src/endpoints/collection/services/collectionService/core/collection.service.ts), [репозиторий](../../../../src/entities/collection/services/collectionRepository/core/collection.repository.ts).
 
 <a id="user"></a>
 

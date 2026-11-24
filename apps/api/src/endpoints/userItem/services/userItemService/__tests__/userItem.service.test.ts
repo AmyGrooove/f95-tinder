@@ -4,6 +4,7 @@ import { model, mongo, Types } from "mongoose"
 import type { ClientSession } from "mongoose"
 
 import type { AuthService } from "@endpoints/auth/services/authService"
+import type { LibraryActivityService } from "@endpoints/userItem/services/libraryActivityService"
 import type { ItemRepository } from "@entities/item/services/itemRepository"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import type { TagItemRepository } from "@entities/tagItem/services/tagItemRepository"
@@ -13,7 +14,6 @@ import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemSchema } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItem } from "@entities/userItem/schemas/userItem.schema"
 import type { UserItemRepository } from "@entities/userItem/services/userItemRepository"
-import type { UserItemHistoryRepository } from "@entities/userItemHistory/services/userItemHistoryRepository"
 import type { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 
 import { UserItemService } from "../core/userItem.service"
@@ -69,10 +69,10 @@ describe("UserItemService", () => {
       getState: UserItemStatsService.prototype.getState,
     } as unknown as UserItemStatsService,
     {
-      append: jest
-        .fn<UserItemHistoryRepository["append"]>()
+      stageAfterCommit: jest
+        .fn<LibraryActivityService["stageAfterCommit"]>()
         .mockResolvedValue(undefined),
-    } as unknown as UserItemHistoryRepository,
+    } as unknown as LibraryActivityService,
   )
 
   beforeEach(() => {

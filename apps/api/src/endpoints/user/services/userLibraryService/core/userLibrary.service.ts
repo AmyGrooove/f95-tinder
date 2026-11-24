@@ -8,6 +8,7 @@ import {
 import { Types } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/authService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import { EItemType } from "@entities/item/schemas/EItemType"
 import { filterSingleValues } from "@entities/shared/functions/filterSingleValues"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
@@ -18,6 +19,7 @@ import { UserRepository } from "@entities/user/services/userRepository"
 import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isDate } from "@shared/functions/checks/isDate"
 import { isInt } from "@shared/functions/checks/isInt"
@@ -44,6 +46,7 @@ class UserLibraryService {
     private readonly userRepository: UserRepository,
     private readonly userItemRepository: UserItemRepository,
     private readonly cursorService: CursorService,
+    private readonly storageService: StorageService,
   ) {}
 
   async readPage(
@@ -147,15 +150,7 @@ class UserLibraryService {
         ru: entry.item.title.ru ?? null,
         en: entry.item.title.en ?? null,
       },
-      media: entry.item.media.map((source) => {
-        const { type, src, language } = source
-
-        return {
-          type,
-          src,
-          language: language ?? null,
-        }
-      }),
+      media: mapMediaSources(entry.item.media, this.storageService),
       status: entry.status,
       isFavorite: entry.isFavorite,
       rating: entry.rating ?? null,

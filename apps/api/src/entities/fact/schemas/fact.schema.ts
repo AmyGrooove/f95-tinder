@@ -1,4 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { Schema as MongooseSchema } from "mongoose"
+import type { Types } from "mongoose"
 
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity"
@@ -15,11 +17,11 @@ class Fact extends MongoEntity {
   })
   text: LanguageText
 
-  @Prop({ type: String, trim: true, default: null })
-  sourceUrl: string | null
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", default: null })
+  author: Types.ObjectId | null
 }
 
-type TCreateFact = TCreateEntity<Fact, "sourceUrl">
+type TCreateFact = TCreateEntity<Fact, "author">
 
 const FactSchema = SchemaFactory.createForClass(Fact)
 

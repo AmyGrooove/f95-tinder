@@ -5,6 +5,9 @@ import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
+import { EMediaType } from "@entities/shared/schemas/EMediaType"
+import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
+import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
 import { EUserRole } from "./EUserRole"
 import type { LinkedAccount } from "./linkedAccount.schema"
 import { LinkedAccountSchema } from "./linkedAccount.schema"
@@ -32,11 +35,14 @@ class User extends MongoEntity {
   @Prop({ type: String, required: true, trim: true })
   displayName: string
 
-  @Prop({ type: String, default: null })
-  avatarUrl: string | null
-
-  @Prop({ type: String, default: null, select: false })
-  avatarStorageKey: string | null
+  @Prop({
+    type: MediaSrcSchema,
+    default: null,
+    select: false,
+    validate: (value: MediaSrc | null) =>
+      isNil(value) || value.type === EMediaType.AVATAR,
+  })
+  avatar: MediaSrc | null
 
   @Prop({ type: String, default: null, select: false })
   passwordHash: string | null
@@ -67,8 +73,7 @@ class User extends MongoEntity {
 type TCreateUser = TCreateEntity<
   User,
   | "email"
-  | "avatarUrl"
-  | "avatarStorageKey"
+  | "avatar"
   | "passwordHash"
   | "accessCodeHash"
   | "role"
@@ -80,7 +85,7 @@ const UserSchema = SchemaFactory.createForClass(User)
 
 UserSchema.set("toJSON", {
   transform: (_document, returnedObject: Partial<User>) => {
-    delete returnedObject.avatarStorageKey
+    delete returnedObject.avatar
     delete returnedObject.passwordHash
     delete returnedObject.accessCodeHash
 

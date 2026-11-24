@@ -4,7 +4,7 @@ import { RedisModule } from "@nestjs-redis/client"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
-import { UserItemHistoryModule } from "@entities/userItemHistory/userItemHistory.module"
+import { UserActivityModule } from "@entities/userActivity/userActivity.module"
 import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserModule } from "@entities/user/user.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
@@ -33,7 +33,7 @@ import { LibraryHistoryService } from "@endpoints/account/services/libraryHistor
     AuthModule,
     ItemModule,
     UserItemModule,
-    UserItemHistoryModule,
+    UserActivityModule,
     UserModule,
     UserSessionModule,
     SecurityModule,

@@ -1,5 +1,6 @@
 import { setTimeout } from "node:timers/promises"
 
+import { HeadBucketCommand } from "@aws-sdk/client-s3"
 import { afterAll, beforeAll, describe, expect, it } from "@jest/globals"
 import { getConnectionToken } from "@nestjs/mongoose"
 import { Test, type TestingModule } from "@nestjs/testing"
@@ -21,6 +22,7 @@ import { getTestDatabase } from "@infrastructure/database/__tests__/setup/setupD
 import { TestMailModule } from "@infrastructure/mail/__tests__/setup/TestMailModule/testMail.module"
 import { MailModule } from "@infrastructure/mail/mail.module"
 import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
+import { STORAGE_CLIENT } from "@infrastructure/storage/static/STORAGE_CLIENT"
 
 import { RecommendationFeedService } from "../core/recommendationFeed.service"
 
@@ -76,6 +78,15 @@ describe("RecommendationFeedService", () => {
     })
       .overrideModule(MailModule)
       .useModule(TestMailModule)
+      .overrideProvider(STORAGE_CLIENT)
+      .useValue({
+        send: async (command: unknown) => {
+          if (command instanceof HeadBucketCommand) {
+            return {}
+          }
+          throw new Error("Неожиданная команда тестового S3")
+        },
+      })
       .overrideProvider(infrastructureConfiguration.KEY)
       .useValue(createTestConfiguration(uri, url))
       .overrideProvider(getConnectionToken())

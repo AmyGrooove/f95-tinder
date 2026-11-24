@@ -115,7 +115,7 @@ status == skipped AND expiresAt > now
 
 ## 3. Представление фильма: что именно сравнивать
 
-В V1 рекомендую использовать теги. Год, продолжительность и остальные `Feature` сначала оставить для фильтров и объяснимых условий запроса: автоматически обучать предпочтение длины фильма по наличию нескольких записей пока не требуется.
+В V1 рекомендую использовать теги. Год выпуска и продолжительность сначала оставить для фильтров и объяснимых условий запроса: автоматически обучать предпочтение длины фильма по наличию нескольких записей пока не требуется.
 
 Стартовая конфигурация тегов:
 
@@ -569,8 +569,8 @@ generateWindow(context):
     candidates = authoritativeEligibility(candidates, constraints, now)
     candidates = removeIssuedInSession(candidates)
 
-    features = batchLoadFeaturesAndValidMetrics(candidates)
-    scores = calculateScores(features, profile)
+    signals = batchLoadCatalogDataAndValidMetrics(candidates)
+    scores = calculateScores(signals, profile)
     ordered = rerank(scores, issuedPrefix, interests, explorationSeed)
 
     persistImmutableSnapshot(ordered, versions, provenance)
@@ -587,7 +587,7 @@ Snapshot не доказывает показ. Повторная проверк
 
 ```text
 TagItem:      item → tag
-ItemFeature:  item → feature → value
+Item:         типизированные поля каталога
 ```
 
 У существующего `Item` нет поля `tags`; запросы к нему нельзя проектировать так, будто оно уже существует.
@@ -622,8 +622,6 @@ ItemFeature:  item → feature → value
 | ------------------------ | ------------------------------------------------------ | ----------------------------------------- |
 | `TagItem`                | существующий `(item,tag)`                              | Признаки заданных фильмов                 |
 | `TagItem`                | существующий `(tag,item)`                              | Обратный поиск по тегу                    |
-| `ItemFeature`            | существующий `(item,feature)`                          | Значения заданных фильмов                 |
-| `ItemFeature`            | предлагаемый `(feature,value,item)`                    | Диапазоны и равенства по значениям        |
 | `Item`                   | предлагаемый `(type,deletedAt,_id)`                    | Базовое перечисление актуального каталога |
 | `SourceItem`             | существующие индексы                                   | Проверка внешних связей кандидатов        |
 | `ItemBan`                | существующий unique `(source,externalId)`              | Глобальные запреты                        |
@@ -632,9 +630,9 @@ ItemFeature:  item → feature → value
 | `ItemRecommendationData` | `(representationVersion,retrievalTags,sampleKey,item)` | Поиск и ротация кандидатов                |
 | `ItemRecommendationData` | `(representationVersion,sampleKey,item)`               | Общий пул                                 |
 
-Индекс `ItemFeature.value` не решает несоответствие типов. Прежде чем запросить диапазон, приложение должно разрешить `Feature.key`, проверить `valueType` и использовать правильный BSON-тип. Некорректные значения исключаются из вычисления данного признака и попадают в диагностику.
+Для точного диапазона приложение использует типизированное поле Item и проверяет единицы измерения. Некорректные значения исключаются из вычисления признака и попадают в диагностику.
 
-Селективные фильтры стоит применять до набора ограниченного пула: начинать с подходящих `ItemFeature` или тегов, затем пересекать условия. Для ограниченного набора кандидатов нужны пакетные запросы, не N+1.
+Селективные фильтры стоит применять до набора ограниченного пула: начинать с подходящих полей Item или тегов, затем пересекать условия. Для ограниченного набора кандидатов нужны пакетные запросы, не N+1.
 
 ### Фон
 
@@ -792,7 +790,7 @@ Partial unique `(actorKey,item)` действует только для `guardAc
 | `Item`             | При необходимости строгих отрицательных фильтров — явная подтверждённая полнота метаданных по группам; default `unknown`           |
 | `Embedding`        | При будущем использовании — отдельные `modelId`, `modelRevision`, `dimension`, `inputVersion`, `inputHash`, `normalizationVersion` |
 
-Остальные источники — `TagItem`, `ItemFeature`, `SourceItem`, `ItemBan`, подборки — сохраняют свои роли.
+Остальные источники — `TagItem`, `Item`, `SourceItem`, `ItemBan`, подборки — сохраняют свои роли.
 
 Возможные HTTP-контракты, **только как предложения**:
 

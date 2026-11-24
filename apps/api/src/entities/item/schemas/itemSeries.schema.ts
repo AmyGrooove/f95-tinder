@@ -5,23 +5,42 @@ import { isNil } from "@shared/functions/checks/isNil"
 
 @Schema({ _id: false, id: false, timestamps: false })
 class ItemSeries {
-  @Prop({ type: Number, min: 1, validate: Number.isSafeInteger })
-  episodeCount?: number
+  @Prop({
+    type: Number,
+    required: true,
+    min: 1,
+    validate: Number.isSafeInteger,
+  })
+  episodeCount: number
 
-  @Prop({ type: Number, min: 0, validate: Number.isSafeInteger })
-  releasedEpisodeCount?: number
+  @Prop({
+    type: Number,
+    required: true,
+    min: 0,
+    validate: Number.isSafeInteger,
+  })
+  releasedEpisodeCount: number
 
-  @Prop({ type: Number, min: Number.MIN_VALUE, validate: isFiniteNumber })
-  episodeDuration?: number
+  @Prop({
+    type: Number,
+    required: true,
+    min: Number.MIN_VALUE,
+    validate: isFiniteNumber,
+  })
+  episodeDuration: number
 
-  @Prop({ type: Date })
-  lastReleasedEpisodeAt?: Date | null
+  @Prop({ type: Date, required: true })
+  lastReleasedEpisodeAt: Date | null
 
-  @Prop({ type: Date })
-  nextEpisodeAt?: Date
+  @Prop({ type: Date, required: true })
+  nextEpisodeAt: Date
 }
 
 const ItemSeriesSchema = SchemaFactory.createForClass(ItemSeries)
+
+Object.assign(ItemSeriesSchema.path("lastReleasedEpisodeAt"), {
+  checkRequired: (value: Date | null | undefined) => value !== undefined,
+})
 
 ItemSeriesSchema.pre("validate", function () {
   if (

@@ -84,6 +84,7 @@ describe("UserReadController", () => {
       status: EUserItemStatus.IN_PROGRESS,
       rating: 8,
       ratingAverage: null,
+      movieDuration: null,
       isFavorite: true,
       userItemId: null,
       progress: null,

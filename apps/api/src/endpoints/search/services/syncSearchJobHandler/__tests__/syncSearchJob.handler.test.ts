@@ -10,12 +10,15 @@ import { Test, type TestingModule } from "@nestjs/testing"
 import { Types } from "mongoose"
 
 import { ItemRepository } from "@entities/item/services/itemRepository"
+import { ECollectionType } from "@entities/collection/schemas/ECollectionType"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
+import { TagRepository } from "@entities/tag/services/tagRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
 import type { User } from "@entities/user/schemas/user.schema"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 
 import { SyncSearchJobHandler } from "../core/syncSearchJob.handler"
@@ -44,14 +47,14 @@ describe("SyncSearchJobHandler", () => {
         jest.fn<
           (
             ...args: Parameters<UserRepository["read"]["findMany"]>
-          ) => Promise<
-            Pick<User, "_id" | "username" | "displayName" | "avatarUrl">[]
-          >
+          ) => Promise<Pick<User, "_id" | "username" | "displayName">[]>
         >(),
     },
   }
   const collections = {
     read: { findMany: jest.fn<CollectionRepository["read"]["findMany"]>() },
+    readRatingAveragesByIds:
+      jest.fn<CollectionRepository["readRatingAveragesByIds"]>(),
   }
   const siteRatings = {
     readAverage: jest.fn<SiteRatingsStatsRepository["readAverage"]>(),
@@ -74,6 +77,7 @@ describe("SyncSearchJobHandler", () => {
     items.read.findMany.mockResolvedValue([])
     users.read.findMany.mockResolvedValue([])
     collections.read.findMany.mockResolvedValue([])
+    collections.readRatingAveragesByIds.mockResolvedValue(new Map())
     siteRatings.readAverage.mockResolvedValue(null)
     module = await Test.createTestingModule({
       providers: [
@@ -84,6 +88,8 @@ describe("SyncSearchJobHandler", () => {
         { provide: UserRepository, useValue: users },
         { provide: CollectionRepository, useValue: collections },
         { provide: SiteRatingsStatsRepository, useValue: siteRatings },
+        { provide: TagRepository, useValue: {} },
+        { provide: StorageService, useValue: {} },
       ],
     }).compile()
     handler = module.get(SyncSearchJobHandler)
@@ -127,7 +133,7 @@ describe("SyncSearchJobHandler", () => {
       expect.any(Object),
     )
     expect(collections.read.findMany).toHaveBeenCalledWith(
-      {},
+      { type: { $in: Object.values(ECollectionType) } },
       expect.any(Object),
       expect.any(Object),
     )
@@ -167,7 +173,6 @@ describe("SyncSearchJobHandler", () => {
             _id: new Types.ObjectId(),
             username: "username",
             displayName: "Имя",
-            avatarUrl: null,
           },
         ])
         search.upsert.mockRejectedValueOnce(error)

@@ -9,7 +9,10 @@ import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
-import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
+import {
+  checkIsCatalogMedia,
+  MediaSrcSchema,
+} from "@entities/shared/schemas/mediaSrc.schema"
 import type { ItemMovie } from "./itemMovie.schema"
 import { ItemMovieSchema } from "./itemMovie.schema"
 import type { ItemSeries } from "./itemSeries.schema"
@@ -42,7 +45,12 @@ class Item extends MongoEntity {
   @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
   description: LanguageText
 
-  @Prop({ type: [MediaSrcSchema], required: true, default: [] })
+  @Prop({
+    type: [MediaSrcSchema],
+    required: true,
+    default: [],
+    validate: checkIsCatalogMedia,
+  })
   media: MediaSrc[]
 
   @Prop({ type: Date, default: null })
@@ -55,14 +63,14 @@ class Item extends MongoEntity {
   })
   ageRestriction: EAgeRestriction | null
 
-  @Prop({ type: ItemMovieSchema })
-  movie?: ItemMovie | null
+  @Prop({ type: ItemMovieSchema, default: null })
+  movie: ItemMovie | null
 
-  @Prop({ type: ItemSeriesSchema })
-  series?: ItemSeries | null
+  @Prop({ type: ItemSeriesSchema, default: null })
+  series: ItemSeries | null
 
-  @Prop({ type: ItemGameSchema })
-  game?: ItemGame | null
+  @Prop({ type: ItemGameSchema, default: null })
+  game: ItemGame | null
 
   @Prop({ type: Date, default: null })
   deletedAt: Date | null
@@ -75,6 +83,9 @@ type TCreateItem = TCreateEntity<
   | "media"
   | "releaseDate"
   | "ageRestriction"
+  | "movie"
+  | "series"
+  | "game"
   | "deletedAt"
 >
 

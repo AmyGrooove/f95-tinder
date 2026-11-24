@@ -15,8 +15,6 @@ import { EItemType } from "@entities/item/schemas/EItemType"
 import { ItemCollectionRepository } from "@entities/itemCollection/services/itemCollectionRepository"
 import { ItemStatsRepository } from "@entities/itemStats/services/itemStatsRepository"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
-import type { EMediaType } from "@entities/shared/schemas/EMediaType"
-import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { filterSingleValues } from "@entities/shared/functions/filterSingleValues"
 import { UserRepository } from "@entities/user/services/userRepository"
@@ -24,13 +22,17 @@ import { UserCollectionRepository } from "@entities/userCollection/services/user
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
 import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
 import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_LIBRARY_STATUSES"
+import { COLLECTION_TYPES } from "@entities/collection/schemas/ECollectionType"
 import { AuthService } from "@endpoints/auth/services/authService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
+import { resolveMediaUrl } from "@endpoints/shared/functions/resolveMediaUrl"
 import { SEARCH_SETTINGS } from "@endpoints/search/static/SEARCH_SETTINGS"
 import { SEARCH_ITEM_FIELDS } from "@endpoints/search/static/SEARCH_ITEM_FIELDS"
 import { CacheService } from "@infrastructure/cache/services/cacheService"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import type { ValueFilter } from "@entities/shared/types/ValueFilter"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import type {
   ISearchDocument,
   ISearchMatch,
@@ -66,6 +68,7 @@ class SiteSearchService {
     private readonly userCollectionRepository: UserCollectionRepository,
     private readonly itemStatsRepository: ItemStatsRepository,
     private readonly itemCollectionRepository: ItemCollectionRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async search(
@@ -762,6 +765,7 @@ class SiteSearchService {
         {
           _id: { $in: collectionIds },
           deletedAt: null,
+          type: { $in: COLLECTION_TYPES },
           ...(isUndefined(authorId)
             ? {}
             : { author: new Types.ObjectId(authorId) }),
@@ -799,7 +803,7 @@ class SiteSearchService {
         [ELanguage.RUSSIAN]: collection.title[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: collection.title[ELanguage.ENGLISH],
       },
-      media: this.mapMedia(collection.media),
+      media: mapMediaSources(collection.media, this.storageService),
     }))
   }
 
@@ -829,7 +833,7 @@ class SiteSearchService {
         ? []
         : this.userRepository.read.findMany(
             { _id: { $in: authorIds } },
-            { _id: 1, avatarUrl: 1, displayName: 1 },
+            { _id: 1, avatar: 1, displayName: 1 },
           ),
       this.collectionRepository.readAvailableItemCountsByIds(collectionIds),
       this.collectionRepository.readRatingAveragesByIds(collectionIds),
@@ -856,7 +860,8 @@ class SiteSearchService {
           ? null
           : {
               id: String(author._id),
-              avatar: author.avatarUrl ?? null,
+              avatar:
+                resolveMediaUrl(author.avatar, this.storageService) ?? null,
               displayName: author.displayName,
             },
         isSiteCollection: isNil(authorId),
@@ -873,14 +878,14 @@ class SiteSearchService {
 
     const documents = await this.userRepository.read.findMany(
       { _id: { $in: ids.map((id) => new Types.ObjectId(id)) } },
-      { _id: 1, username: 1, displayName: 1, avatarUrl: 1 },
+      { _id: 1, username: 1, displayName: 1, avatar: 1 },
     )
 
     return this.orderCards(ids, documents).map((user) => ({
       id: String(user._id),
       username: user.username,
       displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
+      avatarUrl: resolveMediaUrl(user.avatar, this.storageService) ?? null,
     }))
   }
 
@@ -907,18 +912,8 @@ class SiteSearchService {
         [ELanguage.RUSSIAN]: item.title[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: item.title[ELanguage.ENGLISH],
       },
-      media: this.mapMedia(item.media),
+      media: mapMediaSources(item.media, this.storageService),
     }
-  }
-
-  private mapMedia<TType extends EMediaType>(
-    media: (MediaSrc & { type: TType })[],
-  ) {
-    return media.map((entry) => ({
-      src: entry.src,
-      language: entry.language,
-      type: entry.type,
-    }))
   }
 }
 

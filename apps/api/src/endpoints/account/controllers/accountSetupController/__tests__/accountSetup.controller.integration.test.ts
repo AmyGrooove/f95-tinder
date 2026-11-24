@@ -206,8 +206,10 @@ describe("AccountSetupController", () => {
           headers,
           payload: { accessCode },
         })
-        expect(reissued.statusCode).toBe(204)
-        expect(reissued.body).toBe("")
+        expect(reissued.statusCode).toBe(200)
+        expect(reissued.json()).toEqual({
+          accessCode: expect.stringMatching(/^[A-Za-z0-9_-]{32}$/),
+        })
         const updatedUser = await users.findOne({ _id: user._id })
         expect(updatedUser).toMatchObject({
           accessCodeHash: expect.stringMatching(/^[a-f0-9]{64}$/),

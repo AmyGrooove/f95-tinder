@@ -5,10 +5,16 @@ import { LanguageTextResponseDto } from "@entities/shared/dto/response/languageT
 import { MediaResponseDto } from "@entities/shared/dto/response/media.response"
 import { EMediaType } from "@entities/shared/schemas/EMediaType"
 import { EUserItemStatus } from "@entities/userItem/schemas/EUserItemStatus"
-import { EUserItemHistoryEvent } from "@entities/userItemHistory/schemas/EUserItemHistoryEvent"
 import { REGEX } from "@shared/static/REGEX"
 
 const { event, nextCursor } = SWAGGER_DICTIONARY.account.libraryHistory
+
+enum ELibraryHistoryEvent {
+  ADDED = "added",
+  STATUS_CHANGED = "statusChanged",
+  RATING_CHANGED = "ratingChanged",
+  FAVORITE_CHANGED = "favoriteChanged",
+}
 
 class LibraryHistoryPosterDto extends MediaResponseDto {
   @ApiProperty({ enum: [EMediaType.POSTER] })
@@ -36,8 +42,8 @@ class LibraryHistoryEventDto {
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string
 
-  @ApiProperty({ enum: EUserItemHistoryEvent })
-  type: EUserItemHistoryEvent
+  @ApiProperty({ enum: ELibraryHistoryEvent })
+  type: ELibraryHistoryEvent
 
   @ApiPropertyOptional({ enum: EUserItemStatus, description: event.status })
   status?: EUserItemStatus
@@ -63,4 +69,4 @@ class LibraryHistoryResponseDto {
   nextCursor: string | null
 }
 
-export { LibraryHistoryResponseDto }
+export { ELibraryHistoryEvent, LibraryHistoryResponseDto }

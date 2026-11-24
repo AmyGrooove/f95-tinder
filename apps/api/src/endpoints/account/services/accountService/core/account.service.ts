@@ -6,6 +6,7 @@ import {
 import { mongo, Types } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/authService"
+import { resolveMediaUrl } from "@endpoints/shared/functions/resolveMediaUrl"
 
 import { UserSessionRepository } from "@entities/userSession/services/userSessionRepository"
 import { UserItemRepository } from "@entities/userItem/services/userItemRepository"
@@ -14,6 +15,7 @@ import { UserRepository } from "@entities/user/services/userRepository"
 import { MongoTransactionService } from "@infrastructure/database/services/mongoTransactionService"
 import { compareHash } from "@infrastructure/security/functions/compareHash"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
+import { StorageService } from "@infrastructure/storage/services/storageService"
 import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
 
@@ -32,6 +34,7 @@ class AccountService {
     private readonly authService: AuthService,
     private readonly transactionService: MongoTransactionService,
     private readonly userItemRepository: UserItemRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async updatePassword(accessToken: unknown, body: PasswordBodyDto) {
@@ -175,7 +178,7 @@ class AccountService {
         _id: 1,
         username: 1,
         displayName: 1,
-        avatarUrl: 1,
+        avatar: 1,
         email: 1,
         role: 1,
       }),
@@ -192,7 +195,7 @@ class AccountService {
         id: user._id.toHexString(),
         username: user.username,
         displayName: user.displayName,
-        avatarUrl: user.avatarUrl ?? null,
+        avatarUrl: resolveMediaUrl(user.avatar, this.storageService) ?? null,
         email: user.email ?? null,
         role: user.role,
       },

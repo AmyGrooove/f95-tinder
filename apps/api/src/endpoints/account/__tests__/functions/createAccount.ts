@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from "node:crypto"
 import { Types } from "mongoose"
 import { expect } from "@jest/globals"
 
@@ -7,6 +6,7 @@ import type { UserSession } from "@entities/userSession/schemas/userSession.sche
 import { SecurityJwtService } from "@infrastructure/security/services/jwtService"
 import { hashValue } from "@infrastructure/security/functions/hashValue"
 import { getTestApplication } from "@app/__tests__/setup/setupIntegration"
+import type { RegisterResponseDto } from "@endpoints/auth/services/authService"
 
 const createAccount = async (
   kind: "anonymous" | "password" = "anonymous",
@@ -21,8 +21,8 @@ const createAccount = async (
       ...(ip === undefined ? {} : { "x-forwarded-for": ip }),
     },
   })
-  expect(response.statusCode).toBe(204)
-  expect(response.body).toBe("")
+  expect(response.statusCode).toBe(201)
+  const { accessCode } = response.json<RegisterResponseDto>()
 
   const accessToken =
     response.cookies.find(({ name }) => name === "__Host-accessToken")?.value ??
@@ -31,28 +31,23 @@ const createAccount = async (
     .get(SecurityJwtService)
     .verifyAccessToken(accessToken)
   const userId = new Types.ObjectId(sub)
-  const accessCode = randomBytes(24).toString("base64url")
   const users = connection.collection<User>("User")
   const password = "Initial-password-123"
 
-  const user = await users.findOneAndUpdate(
-    { _id: userId },
-    {
-      $set:
-        kind === "password"
-          ? {
+  const user =
+    kind === "password"
+      ? await users.findOneAndUpdate(
+          { _id: userId },
+          {
+            $set: {
               email: sub + "@example.test",
               passwordHash: await hashValue(password),
               accessCodeHash: null,
-            }
-          : {
-              accessCodeHash: createHash("sha256")
-                .update(accessCode)
-                .digest("hex"),
             },
-    },
-    { returnDocument: "after" },
-  )
+          },
+          { returnDocument: "after" },
+        )
+      : await users.findOne({ _id: userId })
 
   if (user === null) {
     throw new Error("Зарегистрированный пользователь не найден")

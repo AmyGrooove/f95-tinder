@@ -8,6 +8,7 @@ import { EItemType } from "@entities/item/schemas/EItemType"
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { ItemRepository } from "@entities/item/services/itemRepository"
 import { calculateItemRatingScore } from "@entities/itemStats/functions/calculateItemRatingScore"
+import { COLLECTION_TYPES } from "@entities/collection/schemas/ECollectionType"
 import { CollectionRepository } from "@entities/collection/services/collectionRepository"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { SiteRatingsStatsRepository } from "@entities/siteStats/services/siteRatingsStatsRepository"
@@ -18,6 +19,8 @@ import { JobHandler } from "@infrastructure/jobs/decorators/JobHandler"
 import type { IJobContext } from "@infrastructure/jobs/types/IJobContext"
 import type { IJobHandler } from "@infrastructure/jobs/types/IJobHandler"
 import { SearchService } from "@infrastructure/search/services/searchService"
+import { StorageService } from "@infrastructure/storage/services/storageService"
+import { mapMediaSources } from "@endpoints/shared/functions/mapMediaSources"
 import { isDate } from "@shared/functions/checks/isDate"
 import { isNil } from "@shared/functions/checks/isNil"
 
@@ -40,6 +43,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
     private readonly userRepository: UserRepository,
     private readonly siteRatingsStatsRepository: SiteRatingsStatsRepository,
     private readonly tagRepository: TagRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async handle(_payload: null, context: IJobContext) {
@@ -208,7 +212,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
           searchableAttributes: ["username", "displayName"],
           filterableAttributes: ["id"],
           sortableAttributes: ["id", "sortUsername", "sortDisplayName"],
-          displayedAttributes: ["id", "username", "displayName", "avatarUrl"],
+          displayedAttributes: ["id", "username", "displayName"],
           pagination,
           typoTolerance,
           rankingRules,
@@ -221,7 +225,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
                 ? { updatedAt: { $gte: updatedSince } }
                 : {}),
             },
-            { _id: 1, username: 1, displayName: 1, avatarUrl: 1 },
+            { _id: 1, username: 1, displayName: 1 },
             { sort: { _id: 1 }, limit: SEARCH_SETTINGS.batchSize },
           )
 
@@ -231,7 +235,6 @@ class SyncSearchJobHandler implements IJobHandler<null> {
               id: String(user._id),
               username: user.username,
               displayName: user.displayName,
-              avatarUrl: user.avatarUrl,
               sortUsername: user.username.toLowerCase(),
               sortDisplayName: user.displayName.toLowerCase(),
             },
@@ -267,6 +270,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         readBatch: async (afterId) => {
           const collections = await this.collectionRepository.read.findMany(
             {
+              type: { $in: COLLECTION_TYPES },
               ...(!isNil(afterId) ? { _id: { $gt: afterId } } : {}),
             },
             {
@@ -332,11 +336,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
                     [ELanguage.ENGLISH]:
                       collection.description[ELanguage.ENGLISH],
                   },
-                  media: collection.media.map((media) => ({
-                    src: media.src,
-                    type: media.type,
-                    language: media.language,
-                  })),
+                  media: mapMediaSources(collection.media, this.storageService),
                   authorId: collection.author?.toString() ?? null,
                   tagGroup: (
                     tagGroups.get(String(collection.tag)) ??
@@ -354,6 +354,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
             {
               _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
               deletedAt: null,
+              type: { $in: COLLECTION_TYPES },
             },
             { _id: 1 },
           )
@@ -417,11 +418,7 @@ class SyncSearchJobHandler implements IJobHandler<null> {
         [ELanguage.RUSSIAN]: item.description[ELanguage.RUSSIAN],
         [ELanguage.ENGLISH]: item.description[ELanguage.ENGLISH],
       },
-      media: item.media.map((media) => ({
-        src: media.src,
-        type: media.type,
-        language: media.language,
-      })),
+      media: mapMediaSources(item.media, this.storageService),
       tagIds: item.searchTags.map((entry) => {
         const { tag } = entry
 

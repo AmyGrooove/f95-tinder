@@ -14,6 +14,7 @@ import { JobsModule } from "@infrastructure/jobs/jobs.module"
 import { LoggerModule } from "@infrastructure/logger/logger.module"
 import { SchedulerModule } from "@infrastructure/scheduler/scheduler.module"
 import { SearchModule } from "@infrastructure/search/search.module"
+import { StorageModule } from "@infrastructure/storage/storage.module"
 
 import { SearchController } from "@endpoints/search/controllers/searchController"
 import { SyncSearchJobHandler } from "@endpoints/search/services/syncSearchJobHandler"
@@ -38,6 +39,7 @@ import { AuthModule } from "@endpoints/auth/auth.module"
     LoggerModule,
     SchedulerModule,
     SearchModule,
+    StorageModule,
   ],
   controllers: [SearchController],
   providers: [

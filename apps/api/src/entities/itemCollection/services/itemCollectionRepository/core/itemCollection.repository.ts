@@ -11,6 +11,7 @@ import type {
 
 import { Collection } from "@entities/collection/schemas/collection.schema"
 import { ECollectionBlockType } from "@entities/collection/schemas/ECollectionBlockType"
+import { COLLECTION_TYPES } from "@entities/collection/schemas/ECollectionType"
 import { Item } from "@entities/item/schemas/item.schema"
 import { ELanguage } from "@entities/shared/schemas/ELanguage"
 import { ESort } from "@entities/shared/types/ESort"
@@ -99,7 +100,12 @@ class ItemCollectionRepository {
             foreignField: "_id",
             let: { groupId: "$groupId" },
             pipeline: [
-              { $match: { deletedAt: null } },
+              {
+                $match: {
+                  deletedAt: null,
+                  type: { $in: COLLECTION_TYPES },
+                },
+              },
               { $unwind: "$blocks" },
               {
                 $match: {

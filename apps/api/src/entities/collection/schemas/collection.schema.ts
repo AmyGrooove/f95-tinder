@@ -7,12 +7,15 @@ import type { TCreateEntity } from "@infrastructure/database/types/TCreateEntity
 import type { LanguageText } from "@entities/shared/schemas/languageText.schema"
 import { LanguageTextSchema } from "@entities/shared/schemas/languageText.schema"
 import type { MediaSrc } from "@entities/shared/schemas/mediaSrc.schema"
-import { MediaSrcSchema } from "@entities/shared/schemas/mediaSrc.schema"
+import {
+  checkIsCatalogMedia,
+  MediaSrcSchema,
+} from "@entities/shared/schemas/mediaSrc.schema"
 import { checkIsLanguageTextFilled } from "@entities/shared/functions/checkIsLanguageTextFilled"
 import { checkIsNonNegativeSafeInteger } from "@entities/shared/functions/checks/checkIsNonNegativeSafeInteger"
 import { isArray } from "@shared/functions/checks/isArray"
 import { isNil } from "@shared/functions/checks/isNil"
-import { ECollectionType } from "./ECollectionType"
+import { COLLECTION_TYPES, ECollectionType } from "./ECollectionType"
 import type {
   CollectionBlock,
   TCreateCollectionBlock,
@@ -36,7 +39,12 @@ class Collection extends MongoEntity {
   })
   title: LanguageText
 
-  @Prop({ type: [MediaSrcSchema], required: true, default: [] })
+  @Prop({
+    type: [MediaSrcSchema],
+    required: true,
+    default: [],
+    validate: checkIsCatalogMedia,
+  })
   media: MediaSrc[]
 
   @Prop({ type: LanguageTextSchema, required: true, default: () => ({}) })
@@ -47,7 +55,7 @@ class Collection extends MongoEntity {
 
   @Prop({
     type: String,
-    enum: Object.values(ECollectionType),
+    enum: COLLECTION_TYPES,
     required: true,
     default: ECollectionType.CUSTOM,
   })
