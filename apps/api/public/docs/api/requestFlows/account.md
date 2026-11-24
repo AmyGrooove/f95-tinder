@@ -8,12 +8,12 @@
 
 ## GET /account/whoami
 
-`GET /account/whoami` с access-cookie и без тела возвращает 200 с `user` (id, username, displayName, avatarUrl, email, isPasswordSet, isAccessCodeEnabled, role) и `session` (id, country, expiresAt в ISO 8601).
+`GET /account/whoami` с access-cookie и без тела возвращает 200 с `user` (id, username, displayName, avatarUrl, email, role) и `session` (id, country, expiresAt в ISO 8601).
 
 ```mermaid
 flowchart TD
     accTitle: Кто сейчас вошёл
-    accDescr: Проверить access JWT, параллельно прочитать пользователя и активную сессию, вернуть сведения об аккаунте и доступных способах входа
+    accDescr: Проверить access JWT, параллельно прочитать пользователя и активную сессию, вернуть данные пользователя и текущей сессии
     A(["GET /account/whoami"]):::http --> B["Проверить access JWT"]:::action
     B --> C[("Прочитать User и активную UserSession")]:::data
     C --> D["Проверить наличие обеих записей"]:::action
@@ -67,17 +67,17 @@ flowchart TD
 
 <a id="library-continue"></a>
 
-## GET /account/library/continue
+## QUERY /account/library/continue
 
-Выбирает раздел «Продолжить просмотр» для текущего пользователя. Параметров пути и тела нет. Пример с access cookie — `GET /account/library/continue?types=movie&types=series`. Успешный ответ — `200`, `Cache-Control: no-store`, `{"status":"onHold"}`.
+Выбирает раздел «Продолжить просмотр» для текущего пользователя. Отправь `QUERY /account/library/continue` с access cookie, `Content-Type: application/json` и телом `{}` или `{"types":["movie","series"]}`. Пример успешного ответа — `200` с телом `{"status":"onHold"}` и заголовками `Cache-Control: no-store` и `Accept-Query: application/json`.
 
-`types` — необязательный повторяемый query-параметр. Допустимы `movie`, `series`, `animatedMovie`, `animatedSeries`, `animeSeries`, `animeMovie`, `game`. При отсутствии `types` участвуют все типы. При наличии требуется хотя бы одно допустимое значение. Дубликаты допустимы. Пустые значения, CSV, `types[]` и неизвестные параметры дают 400.
+`types` — необязательный массив в теле запроса. Допустимы `movie`, `series`, `animatedMovie`, `animatedSeries`, `animeSeries`, `animeMovie`, `game`. При отсутствии поля участвуют все типы. Если поле передано, массив должен содержать хотя бы одно значение. Дубликаты допустимы. Параметры строки запроса, неизвестные поля тела и неверный формат дают 400.
 
 ```mermaid
 flowchart TD
     accTitle: Выбор раздела «Продолжить просмотр»
     accDescr: Проверить типы, JWT, пользователя и сессию, затем выбрать первый непустой статус по приоритету
-    A(["GET /account/library/continue"]):::http --> B["Проверить типы и access JWT"]:::action
+    A(["QUERY /account/library/continue"]):::http --> B["Проверить JSON-тело и access JWT"]:::action
     B --> C[("Прочитать User и активную UserSession")]:::data
     C --> D{"Пользователь и сессия найдены?"}
     D -->|Нет| E(["401 — нет доступа"]):::http
@@ -87,9 +87,9 @@ flowchart TD
 
 Одна агрегация `UserItem` учитывает существующие `Item` с `deletedAt: null`, применяет фильтр типов и выбирает первый непустой статус в порядке `inProgress → onHold → planned`. Если совпадений нет, возвращается `{"status":null}`. Ответ не содержит карточек или полей пагинации. Чтения проходят без общей транзакции.
 
-Ошибки используют `{"error":{"code":"…","message":"…","details":null,"requestId":"…"}}`. Для 400 код `BAD_REQUEST`, в `details` передаётся `{"errors":["…"]}`. Остальные ответы используют `details: null`. Недействительная авторизация даёт `401 UNAUTHORIZED`, превышение лимита 100 запросов в минуту на IP — `429 TOO_MANY_REQUESTS` с `Retry-After`, необработанный сбой — `500 INTERNAL_ERROR`.
+Ошибки используют `{"error":{"code":"…","message":"…","details":null,"requestId":"…"}}`. Ошибки валидации DTO передают `{"errors":["…"]}` в `details`. Недействительная авторизация даёт `401 UNAUTHORIZED`, отклонение запроса общей проверкой CSRF — `403`, превышение лимита 100 запросов в минуту на IP — `429 TOO_MANY_REQUESTS` с `Retry-After`, необработанный сбой — `500 INTERNAL_ERROR`.
 
-**Технические подробности.** [AccountController.readLibraryContinue](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.readLibraryContinue](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → [UserItemRepository.readLibraryContinueStatus](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts). [Запрос](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.query.ts) и [ответ](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.response.ts).
+**Технические подробности.** [AccountController.readLibraryContinue](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.readLibraryContinue](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → [UserItemRepository.readLibraryContinueStatus](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts). [Запрос](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.body.ts) и [ответ](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.response.ts).
 
 <a id="library-history"></a>
 

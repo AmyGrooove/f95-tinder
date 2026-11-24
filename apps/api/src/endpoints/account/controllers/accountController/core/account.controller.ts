@@ -6,9 +6,10 @@ import {
   HttpCode,
   Patch,
   Get,
-  Query,
+  QueryMethod,
+  UseInterceptors,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
@@ -18,9 +19,11 @@ import {
   UsernameBodyDto,
   WhoamiResponseDto,
   AccountService,
-  LibraryContinueQueryDto,
+  LibraryContinueBodyDto,
   LibraryContinueResponseDto,
 } from "@endpoints/account/services/accountService"
+
+import { AccountLibraryRequestInterceptor } from "../../../interceptors/accountLibraryRequest.interceptor"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.account)
 @Controller("account")
@@ -113,9 +116,14 @@ class AccountController {
     return this.accountService.whoami(accessToken)
   }
 
-  @Get("library/continue")
+  @QueryMethod("library/continue")
+  @UseInterceptors(AccountLibraryRequestInterceptor)
+  @HttpCode(200)
   @Header("Cache-Control", "no-store")
+  @Header("Accept-Query", "application/json")
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json")
+  @ApiBody({ type: LibraryContinueBodyDto, required: true })
   @ApiEndpoint({
     operationId: "AccountController_readLibraryContinue",
     summary: SWAGGER_DICTIONARY.account.libraryContinue.summary,
@@ -124,10 +132,17 @@ class AccountController {
       status: 200,
       type: LibraryContinueResponseDto,
       description: SWAGGER_DICTIONARY.account.libraryContinue.response,
+      headers: {
+        "Accept-Query": {
+          schema: { type: "string", enum: ["application/json"] },
+        },
+        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
+      },
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
+      { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       { status: 429, description: SWAGGER_DICTIONARY.common.rateLimitExceeded },
       {
         status: 500,
@@ -137,9 +152,9 @@ class AccountController {
   })
   readLibraryContinue(
     @Cookies("__Host-accessToken") accessToken: unknown,
-    @Query() query: LibraryContinueQueryDto,
+    @Body() body: LibraryContinueBodyDto,
   ) {
-    return this.accountService.readLibraryContinue(accessToken, query)
+    return this.accountService.readLibraryContinue(accessToken, body)
   }
 }
 

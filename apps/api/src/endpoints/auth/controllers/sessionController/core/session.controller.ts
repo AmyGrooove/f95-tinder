@@ -24,14 +24,14 @@ import {
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 @ApiTags(SWAGGER_DICTIONARY.tags.sessions)
-@Controller("auth/session")
+@Controller("auth")
 class SessionController {
   constructor(
     private readonly sessionService: SessionService,
     private readonly securityCookieService: SecurityCookieService,
   ) {}
 
-  @Get()
+  @Get("sessions")
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
   @ApiEndpoint({
@@ -58,7 +58,7 @@ class SessionController {
     return this.sessionService.getSessions(accessToken)
   }
 
-  @Delete("others")
+  @Delete("session/others")
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
@@ -85,7 +85,7 @@ class SessionController {
     await this.sessionService.deleteOtherSessions(accessToken)
   }
 
-  @Delete(":sessionId")
+  @Delete("session/:sessionId")
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
@@ -141,7 +141,7 @@ class SessionController {
     }
   }
 
-  @Patch("refresh")
+  @Patch("session/refresh")
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("refreshCookie")

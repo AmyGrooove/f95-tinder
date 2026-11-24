@@ -17,7 +17,7 @@ import {
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
 
-import { LibraryHistoryRequestInterceptor } from "../interceptors/libraryHistoryRequest.interceptor"
+import { AccountLibraryRequestInterceptor } from "../../../interceptors/accountLibraryRequest.interceptor"
 
 const {
   common,
@@ -32,7 +32,7 @@ class LibraryHistoryController {
   constructor(private readonly libraryHistoryService: LibraryHistoryService) {}
 
   @QueryMethod("history")
-  @UseInterceptors(LibraryHistoryRequestInterceptor)
+  @UseInterceptors(AccountLibraryRequestInterceptor)
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
   @Header("Accept-Query", "application/json")

@@ -333,9 +333,9 @@ const SWAGGER_DICTIONARY = {
       internalError: "Не удалось прочитать библиотеку",
     },
     dto: {
-      libraryContinueQuery: {
+      libraryContinueBody: {
         types:
-          "Типы произведений, например types=movie&types=game; повторы допустимы, без параметра учитываются все типы",
+          'Массив типов произведений, например ["movie","game"]. Повторы допустимы. Если поле отсутствует, учитываются все типы',
       },
       libraryContinueResponse: {
         status:
@@ -374,8 +374,6 @@ const SWAGGER_DICTIONARY = {
         displayName: "Отображаемое имя",
         avatarUrl: "URL аватара",
         email: "Текущий подтверждённый email или null",
-        isPasswordSet: "Установлен ли пароль",
-        isAccessCodeEnabled: "Доступен ли вход по секретному коду",
         role: "Роль пользователя",
       },
     },

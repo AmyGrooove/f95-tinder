@@ -8,7 +8,7 @@
 
 | Маршрут                           | Действие                                            |
 | --------------------------------- | --------------------------------------------------- |
-| `GET /account/whoami`             | Профиль, способы входа и данные текущей сессии      |
+| `GET /account/whoami`             | Профиль и данные текущей сессии                     |
 | `PUT /account/avatar`             | Загрузить или заменить аватар                       |
 | `DELETE /account/avatar`          | Удалить аватар                                      |
 | `PATCH /account/displayName`      | Отображаемое имя                                    |
@@ -19,7 +19,7 @@
 | `PATCH /account/email`            | Подтверждение смены email                           |
 | `PATCH /account/password`         | Смена пароля с текущим паролем                      |
 | `PATCH /auth/login/code`          | Перевыпуск секретного кода                          |
-| `GET /auth/session`               | Список активных сессий, userAgent, даты, isCurrent  |
+| `GET /auth/sessions`              | Список активных сессий, userAgent, даты, isCurrent  |
 | `DELETE /auth/session/others`     | Завершение остальных сессий                         |
 | `DELETE /auth/session/:sessionId` | Завершение выбранной сессии                         |
 | `PATCH /auth/session/refresh`     | Обновление токенов текущей сессии                   |
@@ -32,7 +32,7 @@
 
 Точки проверки: [account controllers](../../../../src/endpoints/account/controllers), [account services](../../../../src/endpoints/account/services), [auth controllers](../../../../src/endpoints/auth/controllers), [auth services](../../../../src/endpoints/auth/services). Подробные правила подтверждений и завершения сессий — в [действующем контракте](../contracts/accountAndAuthSpec.md).
 
-`GET /account/whoami` возвращает `user.avatarUrl`, подтверждённый `email`, `isPasswordSet` и `isAccessCodeEnabled`. Регистрация отвечает `201 { username, accessCode }`, перевыпуск — `200 { accessCode }`. Эти ответы передают новый секретный код один раз. В списке сессий текущую можно выделить через `isCurrent`, а устройство и браузер определить по `userAgent`.
+`GET /account/whoami` возвращает данные профиля, включая `user.avatarUrl` и подтверждённый `user.email`. Регистрация отвечает `201 { username, accessCode }`, перевыпуск — `200 { accessCode }`. Эти ответы передают новый секретный код один раз. В списке сессий текущую можно выделить через `isCurrent`, а устройство и браузер определить по `userAgent`.
 
 ## Дальнейшая работа
 

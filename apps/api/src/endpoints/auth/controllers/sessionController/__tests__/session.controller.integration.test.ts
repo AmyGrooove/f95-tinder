@@ -92,7 +92,7 @@ describe("SessionController", () => {
       .toArray()
     const response = await app.inject({
       method: "GET",
-      url: "/auth/session",
+      url: "/auth/sessions",
       headers: account.headers,
     })
 
@@ -458,7 +458,7 @@ describe("SessionController", () => {
   })
 
   describe.each([
-    { method: "GET", url: "/auth/session" },
+    { method: "GET", url: "/auth/sessions" },
     { method: "DELETE", url: "/auth/session/others" },
     { method: "DELETE", url: "/auth/session/507f1f77bcf86cd799439011" },
     { method: "PATCH", url: "/auth/session/refresh" },

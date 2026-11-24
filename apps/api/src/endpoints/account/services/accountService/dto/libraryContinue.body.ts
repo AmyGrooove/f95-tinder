@@ -5,21 +5,16 @@ import type { TransformFnParams } from "class-transformer"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 import { QueryFieldsDto } from "@entities/shared/dto/query/queryFields.dto"
 import { isArray } from "@shared/functions/checks/isArray"
-import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-class LibraryContinueQueryDto extends PickType(QueryFieldsDto, ["types"]) {
+class LibraryContinueBodyDto extends PickType(QueryFieldsDto, ["types"]) {
   @ApiPropertyOptional({
     uniqueItems: false,
-    description: SWAGGER_DICTIONARY.account.dto.libraryContinueQuery.types,
+    description: SWAGGER_DICTIONARY.account.dto.libraryContinueBody.types,
   })
-  @Transform(({ value }: TransformFnParams) => {
-    if (isUndefined(value)) {
-      return value
-    }
-
-    return isArray(value) ? [...new Set(value)] : [value]
-  })
+  @Transform(({ value }: TransformFnParams) =>
+    isArray(value) ? [...new Set(value)] : value,
+  )
   declare types?: QueryFieldsDto["types"]
 }
 
-export { LibraryContinueQueryDto }
+export { LibraryContinueBodyDto }

@@ -11,7 +11,7 @@ import { isArray } from "@shared/functions/checks/isArray"
 import { isObject } from "@shared/functions/checks/isObject"
 
 @Injectable()
-class LibraryHistoryRequestInterceptor implements NestInterceptor {
+class AccountLibraryRequestInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler<unknown>) {
     const { body, headers, query } = context
       .switchToHttp()
@@ -34,4 +34,4 @@ class LibraryHistoryRequestInterceptor implements NestInterceptor {
   }
 }
 
-export { LibraryHistoryRequestInterceptor }
+export { AccountLibraryRequestInterceptor }

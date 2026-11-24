@@ -37,18 +37,6 @@ class WhoamiUserResponseDto {
   email: string | null
 
   @ApiProperty({
-    description:
-      SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.isPasswordSet,
-  })
-  isPasswordSet: boolean
-
-  @ApiProperty({
-    description:
-      SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.isAccessCodeEnabled,
-  })
-  isAccessCodeEnabled: boolean
-
-  @ApiProperty({
     description: SWAGGER_DICTIONARY.account.dto.whoamiUserResponse.role,
     enum: EUserRole,
   })

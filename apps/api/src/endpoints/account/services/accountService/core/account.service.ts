@@ -18,7 +18,7 @@ import { isNil } from "@shared/functions/checks/isNil"
 import { requestContext } from "@shared/functions/context/requestContext"
 
 import type { WhoamiResponseDto } from "../dto/whoami.response"
-import type { LibraryContinueQueryDto } from "../dto/libraryContinue.query"
+import type { LibraryContinueBodyDto } from "../dto/libraryContinue.body"
 import type { LibraryContinueResponseDto } from "../dto/libraryContinue.response"
 import type { UsernameBodyDto } from "../dto/username.body"
 import type { DisplayNameBodyDto } from "../dto/displayName.body"
@@ -177,8 +177,6 @@ class AccountService {
         displayName: 1,
         avatarUrl: 1,
         email: 1,
-        passwordHash: 1,
-        accessCodeHash: 1,
         role: 1,
       }),
     ])
@@ -196,9 +194,6 @@ class AccountService {
         displayName: user.displayName,
         avatarUrl: user.avatarUrl ?? null,
         email: user.email ?? null,
-        isPasswordSet: !isNil(user.passwordHash),
-        isAccessCodeEnabled:
-          isNil(user.passwordHash) && !isNil(user.accessCodeHash),
         role: user.role,
       },
       session: {
@@ -211,7 +206,7 @@ class AccountService {
 
   async readLibraryContinue(
     accessToken: unknown,
-    query: LibraryContinueQueryDto,
+    body: LibraryContinueBodyDto,
   ): Promise<LibraryContinueResponseDto> {
     const payload = await this.authService.verifyAccessToken(accessToken)
 
@@ -228,7 +223,7 @@ class AccountService {
 
     const status = await this.userItemRepository.readLibraryContinueStatus(
       user._id,
-      query.types,
+      body.types,
     )
 
     return { status }

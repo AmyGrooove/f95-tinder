@@ -38,6 +38,7 @@ describe("AccountController", () => {
         username: user.username,
         displayName: user.displayName,
         avatarUrl: null,
+        email: null,
         role: user.role,
       },
       session: {

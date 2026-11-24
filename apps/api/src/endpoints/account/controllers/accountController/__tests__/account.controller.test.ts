@@ -110,8 +110,6 @@ describe("AccountController", () => {
         displayName: "Имя",
         avatarUrl: null,
         email: null,
-        isPasswordSet: true,
-        isAccessCodeEnabled: false,
         role: EUserRole.USER,
       },
       session: {

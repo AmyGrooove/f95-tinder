@@ -201,15 +201,15 @@ flowchart TD
 
 <a id="get-sessions"></a>
 
-## GET /auth/session
+## GET /auth/sessions
 
-Возвращает собственные действующие сессии. Требует access JWT, существующего User и текущую сессию среди активных. Пример: `GET /auth/session` с access-cookie → `200 [{"id":"507f1f77bcf86cd799439011","userAgent":null,"country":"unknown","createdAt":"2026-10-29T10:00:00.000Z","expiresAt":"2027-02-26T10:00:00.000Z","lastRefreshedAt":null,"isCurrent":true}]`.
+Возвращает собственные действующие сессии. Требует access JWT, существующего User и текущую сессию среди активных. Пример: `GET /auth/sessions` с access-cookie → `200 [{"id":"507f1f77bcf86cd799439011","userAgent":null,"country":"unknown","createdAt":"2026-10-29T10:00:00.000Z","expiresAt":"2027-02-26T10:00:00.000Z","lastRefreshedAt":null,"isCurrent":true}]`.
 
 ```mermaid
 flowchart TD
     accTitle: Список сессий
     accDescr: По access JWT параллельно проверяется пользователь и читаются его активные сессии, затем проверяется присутствие текущей сессии и возвращается массив.
-    A(["GET /auth/session"]):::http --> B["Проверить access JWT"]:::action
+    A(["GET /auth/sessions"]):::http --> B["Проверить access JWT"]:::action
     B --> C[("Проверить существование User")]:::data
     B --> D[("Прочитать активные UserSession пользователя")]:::data
     C --> E["Проверить User и присутствие текущей сессии"]:::action
