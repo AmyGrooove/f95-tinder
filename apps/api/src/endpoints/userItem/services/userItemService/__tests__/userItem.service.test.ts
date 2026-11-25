@@ -55,7 +55,7 @@ describe("UserItemService", () => {
     {} as SiteRatingsStatsRepository,
     events,
   )
-  const updateMetrics = jest.spyOn(stats, "update")
+  let updateMetrics: jest.SpiedFunction<UserItemStatsService["update"]>
   stats.onModuleInit()
 
   const service = new UserItemService(
@@ -103,7 +103,7 @@ describe("UserItemService", () => {
     )
     updateByFilter.mockReset().mockImplementation(async () => entry)
     deleteByFilter.mockReset().mockResolvedValue(entry)
-    updateMetrics.mockReset().mockResolvedValue(undefined)
+    updateMetrics = jest.spyOn(stats, "update").mockResolvedValue(undefined)
   })
 
   it.each([10, null])(
@@ -168,7 +168,7 @@ describe("UserItemService", () => {
     { rating: 8 },
     { isFavorite: false },
     { status: EUserItemStatus.BLOCKED },
-  ])("обновляет метрики при изменении записи %j", async (body) => {
+  ])("передаёт состояния для расчёта метрик при обновлении %j", async (body) => {
     await service.update("token", { id: entry._id, body })
     expect(updateMetrics).toHaveBeenCalledTimes(1)
   })
