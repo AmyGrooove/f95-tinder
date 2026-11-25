@@ -7,7 +7,6 @@ import { USER_ITEM_LIBRARY_STATUSES } from "@entities/userItem/static/USER_ITEM_
 import { MongoEntity } from "@infrastructure/database/types/MongoEntity"
 
 import { EUserActivityType } from "./EUserActivityType"
-import type { TUserLibraryActivityType } from "./EUserActivityType"
 
 type TUserActivityEvent =
   | {
@@ -42,11 +41,6 @@ type TCreateUserActivity = Pick<
   "_id" | "user" | "createdAt" | "updatedAt"
 > &
   TUserActivityEvent
-
-type TUserLibraryActivity = Extract<
-  TCreateUserActivity,
-  { type: TUserLibraryActivityType }
->
 
 const UserActivitySchema = SchemaFactory.createForClass(UserActivity)
 
@@ -94,4 +88,4 @@ UserActivitySchema.index(
 )
 
 export { UserActivity, UserActivitySchema }
-export type { TCreateUserActivity, TUserLibraryActivity }
+export type { TCreateUserActivity, TUserActivityEvent }

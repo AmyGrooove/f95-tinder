@@ -6,7 +6,8 @@
 
 <nav class="endpoint-jumps" aria-label="Области API">
 <a href="#/api/endpoints?id=auth">Вход и сессии<span>11</span></a>
-<a href="#/api/endpoints?id=account">Аккаунт<span>12</span></a>
+<a href="#/api/endpoints?id=account">Аккаунт<span>11</span></a>
+<a href="#/api/endpoints?id=profile">Профиль<span>1</span></a>
 <a href="#/api/endpoints?id=catalog">Каталог и поиск<span>7</span></a>
 <a href="#/api/endpoints?id=library">Личная библиотека<span>9</span></a>
 <a href="#/api/endpoints?id=collections">Подборки<span>8</span></a>
@@ -31,14 +32,13 @@
 <a class="endpoint-row" href="#/api/requestFlows/auth?id=refresh-session"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/auth/session/refresh</code><span>Обновить пару токенов</span></span><span class="endpoint-access">Refresh</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
-<h2 id="account" class="endpoint-group-title">Аккаунт<span>12</span></h2>
-<p class="endpoint-group-description">Профиль, пароль и подтверждение email</p>
+<h2 id="account" class="endpoint-group-title">Аккаунт<span>11</span></h2>
+<p class="endpoint-group-description">Данные аккаунта, пароль и подтверждение email</p>
 <div class="endpoint-list" aria-label="Аккаунт">
 <a class="endpoint-row" href="#/api/requestFlows/account?id=whoami"><span class="endpoint-method endpoint-method--get">GET</span><span class="endpoint-main"><code>/account/whoami</code><span>Узнать текущего пользователя и сессию</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=put-avatar"><span class="endpoint-method endpoint-method--put">PUT</span><span class="endpoint-main"><code>/account/avatar</code><span>Загрузить или заменить аватар</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=delete-avatar"><span class="endpoint-method endpoint-method--delete">DELETE</span><span class="endpoint-main"><code>/account/avatar</code><span>Удалить аватар</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=library-continue"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/account/library/continue</code><span>Выбрать раздел для продолжения просмотра</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
-<a class="endpoint-row" href="#/api/requestFlows/account?id=library-history"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/account/library/history</code><span>Прочитать последние действия и историю библиотеки</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=display-name"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/account/displayName</code><span>Изменить отображаемое имя</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=username"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/account/username</code><span>Изменить уникальный логин</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=password"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/account/password</code><span>Сменить пароль и завершить другие сессии</span></span><span class="endpoint-access">Access + пароль</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
@@ -46,6 +46,12 @@
 <a class="endpoint-row" href="#/api/requestFlows/account?id=confirm-setup"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/account/credentials</code><span>Подтвердить привязку кодом из письма</span></span><span class="endpoint-access">Access + код письма</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=request-email"><span class="endpoint-method endpoint-method--post">POST</span><span class="endpoint-main"><code>/account/email</code><span>Запросить смену email</span></span><span class="endpoint-access">Access + пароль</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 <a class="endpoint-row" href="#/api/requestFlows/account?id=confirm-email"><span class="endpoint-method endpoint-method--patch">PATCH</span><span class="endpoint-main"><code>/account/email</code><span>Подтвердить новый email</span></span><span class="endpoint-access">Access + код письма</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
+</div>
+
+<h2 id="profile" class="endpoint-group-title">Профиль<span>1</span></h2>
+<p class="endpoint-group-description">Последние действия и история профиля</p>
+<div class="endpoint-list" aria-label="Профиль">
+<a class="endpoint-row" href="#/api/requestFlows/profile?id=profile-history"><span class="endpoint-method endpoint-method--query">QUERY</span><span class="endpoint-main"><code>/profile/:userId/history</code><span>Прочитать последние действия и историю профиля</span></span><span class="endpoint-access">Access</span><span class="endpoint-arrow" aria-hidden="true">↗</span></a>
 </div>
 
 <h2 id="catalog" class="endpoint-group-title">Каталог и поиск<span>7</span></h2>

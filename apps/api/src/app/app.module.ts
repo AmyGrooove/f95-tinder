@@ -3,6 +3,7 @@ import { APP_FILTER } from "@nestjs/core"
 
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { AccountModule } from "@endpoints/account/account.module"
+import { ProfileEndpointModule } from "@endpoints/profile/profile.module"
 import { UserItemEndpointModule } from "@endpoints/userItem/userItem.module"
 import { UserEndpointModule } from "@endpoints/user/user.module"
 import { CollectionEndpointModule } from "@endpoints/collection/collection.module"
@@ -54,6 +55,7 @@ import { AppController } from "./controllers/appController"
     HealthModule,
     AuthModule,
     AccountModule,
+    ProfileEndpointModule,
     UserItemEndpointModule,
     UserEndpointModule,
     CollectionEndpointModule,

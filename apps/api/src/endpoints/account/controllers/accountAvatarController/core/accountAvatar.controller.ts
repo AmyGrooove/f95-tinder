@@ -16,7 +16,11 @@ import {
   AccountAvatarService,
 } from "@endpoints/account/services/accountAvatarService"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { ImageUpload } from "@infrastructure/storage/decorators/ImageUpload"
 import { UploadedImage } from "@infrastructure/storage/decorators/UploadedImage"
 import type { IStorageUploadResult } from "@infrastructure/storage/services/storageService"
@@ -41,8 +45,10 @@ class AccountAvatarController {
   })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
+    required: true,
     schema: {
       type: "object",
+      additionalProperties: false,
       required: ["avatar"],
       properties: { avatar: { type: "string", format: "binary" } },
     },
@@ -50,12 +56,21 @@ class AccountAvatarController {
   @ApiEndpoint({
     operationId: "AccountAvatarController_replace",
     summary: SWAGGER_DICTIONARY.account.avatar.replace,
+    description: SWAGGER_DICTIONARY.account.avatar.replaceDescription,
     response: {
       status: 200,
       description: SWAGGER_DICTIONARY.account.avatar.replaced,
       type: AccountAvatarResponseDto,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
+      examples: {
+        replaced: {
+          summary: "Сохранённый аватар",
+          value: { avatarUrl: "https://cdn.example.com/avatars/example.webp" },
+        },
+      },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
@@ -85,9 +100,11 @@ class AccountAvatarController {
   @ApiEndpoint({
     operationId: "AccountAvatarController_remove",
     summary: SWAGGER_DICTIONARY.account.avatar.remove,
+    description: SWAGGER_DICTIONARY.account.avatar.removeDescription,
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.account.avatar.removed,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },

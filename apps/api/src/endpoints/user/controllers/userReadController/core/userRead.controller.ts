@@ -9,6 +9,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common"
 import {
+  ApiConsumes,
   ApiBody,
   ApiCookieAuth,
   ApiParam,
@@ -24,12 +25,15 @@ import {
   UserLibraryService,
 } from "@endpoints/user/services/userLibraryService"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { REGEX } from "@shared/static/REGEX"
 
 import { UserLibraryRequestInterceptor } from "../interceptors/userLibraryRequest.interceptor"
 
-@ApiTags(SWAGGER_DICTIONARY.tags.users)
+@ApiTags(SWAGGER_DICTIONARY.tags.profile)
 @Controller("users")
 class UserReadController {
   constructor(private readonly userLibraryService: UserLibraryService) {}
@@ -43,11 +47,22 @@ class UserReadController {
   @ApiSecurity({})
   @ApiParam({
     name: "id",
+    type: String,
     required: true,
     description: SWAGGER_DICTIONARY.user.library.ownerId,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
-  @ApiBody({ type: UserLibraryBodyDto, required: true })
+  @ApiConsumes("application/json")
+  @ApiBody({
+    type: UserLibraryBodyDto,
+    required: true,
+    examples: {
+      favorites: {
+        summary: "Только избранные произведения",
+        value: { isFavorite: true, limit: 10 },
+      },
+    },
+  })
   @ApiEndpoint({
     operationId: "UserReadController_readLibrary",
     summary: SWAGGER_DICTIONARY.user.library.summary,
@@ -56,11 +71,12 @@ class UserReadController {
       status: 200,
       type: UserLibraryResponseDto,
       description: SWAGGER_DICTIONARY.user.library.response,
-      headers: {
-        "Accept-Query": {
-          schema: { type: "string", enum: ["application/json"] },
+      headers: SWAGGER_RESPONSE_HEADERS.jsonQuery,
+      examples: {
+        noMatches: {
+          summary: "В библиотеке нет записей по фильтру",
+          value: { items: [], nextCursor: null },
         },
-        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
       },
     },
     errors: [

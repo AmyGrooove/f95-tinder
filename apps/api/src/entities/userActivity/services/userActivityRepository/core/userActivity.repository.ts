@@ -4,18 +4,21 @@ import type { Model, Types } from "mongoose"
 
 import { isUndefined } from "@shared/functions/checks/isUndefined"
 
-import { USER_LIBRARY_ACTIVITY_TYPES } from "../../../schemas/EUserActivityType"
 import { UserActivity } from "../../../schemas/userActivity.schema"
 import type {
   TCreateUserActivity,
-  TUserLibraryActivity,
+  TUserActivityEvent,
 } from "../../../schemas/userActivity.schema"
 
-interface IReadLibraryActivityProps {
+interface IReadActivityPageProps {
   userId: Types.ObjectId
   limit: number
+
   after?: { createdAt: Date; id: Types.ObjectId }
 }
+
+type TActivityPageEntry = Pick<UserActivity, "_id" | "createdAt"> &
+  TUserActivityEvent
 
 @Injectable()
 class UserActivityRepository {
@@ -23,11 +26,10 @@ class UserActivityRepository {
     @InjectModel(UserActivity.name) private readonly model: Model<UserActivity>,
   ) {}
 
-  readLibraryPage({ userId, limit, after }: IReadLibraryActivityProps) {
+  readPage({ userId, limit, after }: IReadActivityPageProps) {
     return this.model
       .find({
         user: userId,
-        type: { $in: USER_LIBRARY_ACTIVITY_TYPES },
         ...(!isUndefined(after) && {
           $or: [
             { createdAt: { $lt: after.createdAt } },
@@ -35,9 +37,10 @@ class UserActivityRepository {
           ],
         }),
       })
+      .select({ _id: 1, createdAt: 1, type: 1, payload: 1 })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
-      .lean<TUserLibraryActivity[]>()
+      .lean<TActivityPageEntry[]>()
       .exec()
   }
 

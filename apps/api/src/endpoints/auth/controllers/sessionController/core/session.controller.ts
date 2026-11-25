@@ -13,7 +13,10 @@ import {
 import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
@@ -43,6 +46,7 @@ class SessionController {
       type: SessionResponseDto,
       isArray: true,
       description: SWAGGER_DICTIONARY.auth.getSessions.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       {
@@ -69,6 +73,7 @@ class SessionController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.auth.deleteOtherSessions.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       {
@@ -103,6 +108,7 @@ class SessionController {
       status: 204,
       description: SWAGGER_DICTIONARY.auth.deleteSession.response,
       headers: {
+        ...SWAGGER_RESPONSE_HEADERS.noStore,
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.auth.deleteSession.cookies,
           schema: { type: "string" },
@@ -153,6 +159,7 @@ class SessionController {
       status: 204,
       description: SWAGGER_DICTIONARY.auth.refresh.response,
       headers: {
+        ...SWAGGER_RESPONSE_HEADERS.noStore,
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.authCookies,
           schema: { type: "string" },

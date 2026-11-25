@@ -4,7 +4,7 @@
 
 Семь операций под `/userItems` проверяют access-cookie, активную UserSession и существующий User. Для них `:id` — **ID UserItem**, а `itemId` в создании — ID произведения Item. JSON передаётся с `Content-Type: application/json`; неизвестные поля запрещены. Общие ошибки: 400 — DTO/формат ObjectId; 401 — доступ к `/userItems`; 403 — CSRF; 429 — throttling. Успешные ответы содержат `Cache-Control: no-store`.
 
-Изменения UserItem и его статистики выполняются одной MongoDB-транзакцией. После коммита изменения для [личной истории](account.md#library-history) объединяются в Redis и записываются в `UserActivity` после пяти минут без изменений. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы или числа оценок. HTTP ждёт завершения транзакции.
+Изменения UserItem и его статистики выполняются одной MongoDB-транзакцией. После коммита изменения для [истории профиля](profile.md#profile-history) объединяются в Redis и записываются в `UserActivity` после пяти минут без изменений. ItemStats получает только ненулевые дельты оценок, избранного, завершённых попыток и обычных библиотечных статусов. SiteStats (тип SiteRatingsStats) обновляется только при изменении суммы или числа оценок. HTTP ждёт завершения транзакции.
 
 Изменяющие операции отвечают 204 без тела.
 
@@ -33,7 +33,7 @@ flowchart TD
 
 ## QUERY /users/:id/library
 
-Публичная страница из пяти библиотечных статусов с поиском, фильтрами, сортировкой и курсором. ID в пути принадлежит владельцу библиотеки. Для первой порции на главной передай статус из [continue](account.md#library-continue) и те же типы. Например, `QUERY /users/507f1f77bcf86cd799439011/library` с access-cookie и телом `{"statuses":{"anyOf":["inProgress"]},"types":["movie","series"],"limit":10}`.
+Публичная страница из пяти библиотечных статусов с поиском, фильтрами, сортировкой и курсором. ID в пути принадлежит владельцу библиотеки. Для первой порции на главной передай `inProgress`, `onHold` или `planned` из [continue](account.md#library-continue) и те же типы. При `status: "none"` запрос пропускается. Например, `QUERY /users/507f1f77bcf86cd799439011/library` с access-cookie и телом `{"statuses":{"anyOf":["inProgress"]},"types":["movie","series"],"limit":10}`.
 
 ```mermaid
 flowchart TD

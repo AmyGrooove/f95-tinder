@@ -3,27 +3,26 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
 import { InfrastructureConfigService } from "@infrastructure/config/services/configService"
 
+import { collectOperationTags } from "../functions/collectOperationTags"
+
 const configureSwagger = (app: NestFastifyApplication) => {
   const appConfiguration = app.get(InfrastructureConfigService).app
   const fastify = app.getHttpAdapter().getInstance()
 
   const swaggerConfig = new DocumentBuilder()
-    .setOpenAPIVersion("3.2.0")
+    .setOpenAPIVersion("3.2.1")
     .setTitle(appConfiguration.name)
     .setDescription(appConfiguration.description)
     .setVersion(appConfiguration.version)
     .addCookieAuth("__Host-accessToken", { type: "apiKey" }, "accessCookie")
     .addCookieAuth("__Host-refreshToken", { type: "apiKey" }, "refreshCookie")
     .addBearerAuth(
-      {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-      },
+      { type: "http", scheme: "bearer", bearerFormat: "JWT" },
       "authToken",
     )
     .build()
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
+  collectOperationTags(swaggerDocument)
 
   SwaggerModule.setup("docs", app, swaggerDocument)
 

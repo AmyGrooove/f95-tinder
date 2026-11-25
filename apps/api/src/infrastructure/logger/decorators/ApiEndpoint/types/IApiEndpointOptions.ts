@@ -1,13 +1,16 @@
-import type { ApiResponseOptions } from "@nestjs/swagger"
+import type { ApiResponseOptions, TagObject } from "@nestjs/swagger"
+
+type ApiEndpointTag = Pick<TagObject, "name" | "parent">
 
 interface IApiEndpointOptions {
   operationId: string
   summary: string
 
-  description?: string
-  response?: ApiResponseOptions & { status: number }
+  description: string
+  tags?: (string | ApiEndpointTag)[]
+  response: ApiResponseOptions & { status: number }
   errors?: ApiResponseOptions[]
   auth?: string
 }
 
-export type { IApiEndpointOptions }
+export type { ApiEndpointTag, IApiEndpointOptions }

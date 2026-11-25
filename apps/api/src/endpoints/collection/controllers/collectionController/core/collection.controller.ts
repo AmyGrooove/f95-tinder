@@ -27,8 +27,12 @@ import type { IStorageUploadResult } from "@infrastructure/storage/services/stor
 import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   CollectionService,
@@ -45,6 +49,16 @@ class CollectionController {
   @HttpCode(201)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json")
+  @ApiBody({
+    type: CreateCollectionBodyDto,
+    examples: {
+      emptyCollection: {
+        summary: "Новая подборка с названием",
+        value: { title: { ru: "Космические истории" } },
+      },
+    },
+  })
   @ApiEndpoint({
     operationId: "CollectionController_create",
     summary: SWAGGER_DICTIONARY.collection.create,
@@ -54,11 +68,22 @@ class CollectionController {
       schema: {
         type: "object",
         required: ["id"],
-        properties: { id: { type: "string" } },
+        properties: {
+          id: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
+        },
       },
       description: SWAGGER_DICTIONARY.collection.createResponse,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
+      examples: {
+        created: {
+          summary: "Идентификатор новой подборки",
+          value: { id: "507f1f77bcf86cd799439011" },
+        },
+      },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
@@ -80,8 +105,10 @@ class CollectionController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.collection.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
+  @ApiConsumes("application/json")
   @ApiEndpoint({
     operationId: "CollectionController_update",
     summary: SWAGGER_DICTIONARY.collection.update,
@@ -89,8 +116,11 @@ class CollectionController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.collection.updateResponse,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
@@ -126,8 +156,10 @@ class CollectionController {
   })
   @ApiConsumes("multipart/form-data")
   @ApiBody({
+    required: true,
     schema: {
       type: "object",
+      additionalProperties: false,
       required: ["file"],
       properties: { file: { type: "string", format: "binary" } },
     },
@@ -135,22 +167,26 @@ class CollectionController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.collection.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "CollectionController_replacePoster",
     summary: SWAGGER_DICTIONARY.collection.replacePoster,
+    description: SWAGGER_DICTIONARY.collection.replacePosterDescription,
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.collection.replacePosterResponse,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       {
         status: 404,
-        description: SWAGGER_DICTIONARY.collection.updateNotFound,
+        description: SWAGGER_DICTIONARY.collection.removeNotFound,
       },
       {
         status: 409,
@@ -189,6 +225,7 @@ class CollectionController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.collection.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
@@ -198,6 +235,7 @@ class CollectionController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.collection.removed,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },

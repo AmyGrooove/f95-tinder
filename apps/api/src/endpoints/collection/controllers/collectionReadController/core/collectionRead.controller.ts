@@ -10,12 +10,23 @@ import {
   QueryMethod,
   UseInterceptors,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiParam, ApiSecurity, ApiTags } from "@nestjs/swagger"
+import {
+  ApiConsumes,
+  ApiBody,
+  ApiCookieAuth,
+  ApiParam,
+  ApiSecurity,
+  ApiTags,
+} from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   CollectionResponseDto,
@@ -42,6 +53,7 @@ class CollectionReadController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.collection.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
@@ -52,6 +64,7 @@ class CollectionReadController {
       status: 200,
       type: CollectionResponseDto,
       description: SWAGGER_DICTIONARY.collection.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
@@ -73,8 +86,20 @@ class CollectionReadController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.collection.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
+  @ApiBody({
+    type: ItemCollectionsBodyDto,
+    required: true,
+    examples: {
+      grouped: {
+        summary: "Первые элементы в порядке подборки",
+        value: { mode: "grouped", limit: 10 },
+      },
+    },
+  })
+  @ApiConsumes("application/json")
   @ApiEndpoint({
     operationId: "CollectionReadController_getItems",
     summary: SWAGGER_DICTIONARY.collection.getItems,
@@ -83,14 +108,11 @@ class CollectionReadController {
       status: 200,
       type: ItemCollectionsResponseDto,
       description: SWAGGER_DICTIONARY.collection.itemsResponse,
-      headers: {
-        "Accept-Query": {
-          schema: { type: "string", enum: ["application/json"] },
-        },
-        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
-      },
+      headers: SWAGGER_RESPONSE_HEADERS.jsonQuery,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },

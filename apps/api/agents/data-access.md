@@ -124,7 +124,7 @@ Pagination uses [IPagePagination and ICursorPagination](../src/infrastructure/da
 
 ## Endpoint-owned invariants
 
-[UserActivity](../src/entities/userActivity/schemas/userActivity.schema.ts) stores owner, event type, timestamps and a payload validated for its type. UserActivityRepository reads the owner's library events for the account endpoint using `{ user: 1, createdAt: -1, _id: -1 }` and uses stable IDs for retried inserts.
+[UserActivity](../src/entities/userActivity/schemas/userActivity.schema.ts) stores owner, event type, timestamps and a payload validated for its type. UserActivityRepository reads the owner's events across all types for the profile endpoint using `{ user: 1, createdAt: -1, _id: -1 }` and uses stable IDs for retried inserts.
 
 Read [endpoint implementation routes](endpoints.md) for library status/attempt transitions, collection ownership, versioned updates, membership consistency and content aggregation. The complete storage map is in [the entity inventory](../public/docs/api/entities.md); detailed HTTP contracts are linked from [the API overview](../public/docs/api/readme.md). Endpoint services own these business rules and pass the transaction session to entity operations.
 

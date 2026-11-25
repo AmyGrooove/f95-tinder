@@ -3,7 +3,10 @@ import { ApiParam, ApiTags } from "@nestjs/swagger"
 import { Types } from "mongoose"
 
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { REGEX } from "@shared/static/REGEX"
 
 import {
@@ -23,17 +26,27 @@ class FactController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.fact.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "FactController_getById",
     summary: SWAGGER_DICTIONARY.fact.get,
+    description: SWAGGER_DICTIONARY.fact.description,
     response: {
       status: 200,
       type: FactResponseDto,
       description: SWAGGER_DICTIONARY.fact.response,
-      headers: {
-        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
+      examples: {
+        fact: {
+          summary: "Факт без указанного автора",
+          value: {
+            id: "507f1f77bcf86cd799439011",
+            text: { ru: "Факт о произведении", en: "A fact about the work" },
+            author: null,
+          },
+        },
       },
     },
     errors: [
@@ -42,12 +55,6 @@ class FactController {
       {
         status: 429,
         description: SWAGGER_DICTIONARY.common.rateLimitExceeded,
-        headers: {
-          "Retry-After": {
-            description: SWAGGER_DICTIONARY.fact.retryAfter,
-            schema: { type: "integer" },
-          },
-        },
       },
       { status: 500, description: SWAGGER_DICTIONARY.fact.internalError },
     ],

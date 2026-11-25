@@ -7,12 +7,16 @@ import {
   Post,
   Res,
 } from "@nestjs/common"
-import { ApiTags } from "@nestjs/swagger"
+import { ApiConsumes, ApiTags } from "@nestjs/swagger"
 import { Throttle } from "@nestjs/throttler"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   PasswordResetBodyDto,
@@ -32,6 +36,7 @@ class PasswordResetController {
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AuthController_confirmPasswordReset",
     summary: SWAGGER_DICTIONARY.auth.confirmPasswordReset.summary,
@@ -40,6 +45,7 @@ class PasswordResetController {
       status: 204,
       description: SWAGGER_DICTIONARY.auth.confirmPasswordReset.response,
       headers: {
+        ...SWAGGER_RESPONSE_HEADERS.noStore,
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.clearAuthCookies,
           schema: { type: "string" },
@@ -47,6 +53,8 @@ class PasswordResetController {
       },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       {
         status: 400,
         description:
@@ -73,6 +81,7 @@ class PasswordResetController {
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AuthController_requestPasswordReset",
     summary: SWAGGER_DICTIONARY.auth.requestPasswordReset.summary,
@@ -80,8 +89,11 @@ class PasswordResetController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.auth.requestPasswordReset.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },
       {

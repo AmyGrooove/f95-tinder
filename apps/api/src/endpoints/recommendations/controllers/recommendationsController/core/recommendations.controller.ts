@@ -15,7 +15,12 @@ import {
   RecommendationsResponseDto,
 } from "@endpoints/recommendations/services/recommendationsHttpService"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
+import {
+  ApiEndpoint,
+  createSwaggerErrorExample,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 
 import { RecommendationsBodyInterceptor } from "../services/recommendationsBodyInterceptor"
 
@@ -35,7 +40,16 @@ class RecommendationsController {
   @Header("Cache-Control", "no-store")
   @Header("Accept-Query", "application/json")
   @ApiConsumes("application/json")
-  @ApiBody({ type: RecommendationsBodyDto, required: true })
+  @ApiBody({
+    type: RecommendationsBodyDto,
+    required: true,
+    examples: {
+      firstPage: {
+        summary: "Первая страница рекомендаций",
+        value: { limit: 10 },
+      },
+    },
+  })
   @ApiEndpoint({
     operationId: "RecommendationsController_readPage",
     summary: recommendations.query,
@@ -44,12 +58,47 @@ class RecommendationsController {
       status: 200,
       description: recommendations.response,
       type: RecommendationsResponseDto,
+      headers: SWAGGER_RESPONSE_HEADERS.jsonQuery,
+      examples: {
+        lastPage: {
+          summary: "Последняя карточка списка",
+          value: {
+            items: [
+              {
+                id: "507f1f77bcf86cd799439011",
+                type: "movie",
+                title: { ru: "Орбита", en: "Orbit" },
+                media: [],
+                ratingAverage: 8.4,
+                userRating: null,
+                userStatus: null,
+              },
+            ],
+            count: 1,
+            nextCursor: null,
+          },
+        },
+        exhausted: {
+          summary: "Список рекомендаций исчерпан",
+          value: { items: [], count: 0, nextCursor: null },
+        },
+      },
     },
     errors: [
       { status: 400, description: common.invalidRequest },
       { status: 401, description: common.unauthorized },
       { status: 403, description: common.csrfFailed },
-      { status: 410, description: recommendations.cursorExpired },
+      {
+        status: 410,
+        description: recommendations.cursorExpired,
+        examples: {
+          expiredCursor: createSwaggerErrorExample(
+            410,
+            "Истёк курсор списка рекомендаций",
+            DICTIONARY.recommendation.cursorExpired,
+          ),
+        },
+      },
       { status: 413, description: recommendations.bodyTooLarge },
       { status: 415, description: recommendations.invalidContentType },
       { status: 429, description: common.rateLimitExceeded },

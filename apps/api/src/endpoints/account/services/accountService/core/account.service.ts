@@ -229,7 +229,7 @@ class AccountService {
       body.types,
     )
 
-    return { status }
+    return { status: status ?? "none" }
   }
 }
 

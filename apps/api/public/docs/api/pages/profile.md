@@ -10,7 +10,7 @@
 | Публичный профиль и сводка          | Реализовано                   | [`GET /users/:id`](../requestFlows/userItems.md#user-profile) возвращает публичные поля, дату регистрации и счётчики библиотеки. Источник фона открыт                                                                                                      |
 | Библиотека и избранное              | Реализовано для Item          | [`QUERY /users/:id/library`](../requestFlows/userItems.md#user-library) выдаёт свой и публичный списки, `isFavorite: true` выбирает избранные произведения. Для полного редактора используется [GET /items/:id/user](../requestFlows/catalog.md#item-user) |
 | Созданные и избранные коллекции     | Реализовано                   | [`QUERY /search`](../contracts/searchSpec.md#search) принимает `collections.authorId` и `collections.favoritedByUserId` для своего и чужого профиля                                                                                                        |
-| Последние действия и полная история | Реализовано для новых событий | [`QUERY /account/library/history`](../requestFlows/account.md#library-history) возвращает журнал только владельцу. Правила хранения и удаления истории открыты                                                                                             |
+| Последние действия и полная история | Реализовано для новых событий | [`QUERY /profile/:userId/history`](../requestFlows/profile.md#profile-history) возвращает журнал своего или чужого профиля при действующей сессии. Правила хранения и удаления истории открыты                                                                                             |
 
 ## Дальнейшая работа
 

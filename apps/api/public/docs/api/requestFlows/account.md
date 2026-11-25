@@ -1,4 +1,4 @@
-# Аккаунт и профиль
+# Аккаунт
 
 [← Все эндпоинты](../endpoints.md) · [Авторизация и сессии](auth.md) · [Обозначения](readme.md)
 
@@ -88,38 +88,14 @@ flowchart TD
     C --> D{"Пользователь и сессия найдены?"}
     D -->|Нет| E(["401 — нет доступа"]):::http
     D -->|Да| F[("Найти первый подходящий статус UserItem по данным Item")]:::data
-    F --> G(["200 — статус или null"]):::http
+    F --> G(["200 — статус раздела или none"]):::http
 ```
 
-Одна агрегация `UserItem` учитывает существующие `Item` с `deletedAt: null`, применяет фильтр типов и выбирает первый непустой статус в порядке `inProgress → onHold → planned`. Если совпадений нет, возвращается `{"status":null}`. Ответ не содержит карточек или полей пагинации. Чтения проходят без общей транзакции.
+Одна агрегация `UserItem` учитывает существующие `Item` с `deletedAt: null`, применяет фильтр типов и выбирает первый непустой статус в порядке `inProgress → onHold → planned`. Если совпадений нет, возвращается `{"status":"none"}`. Ответ не содержит карточек или полей пагинации. Чтения проходят без общей транзакции.
 
 Ошибки используют `{"error":{"code":"…","message":"…","details":null,"requestId":"…"}}`. Ошибки валидации DTO передают `{"errors":["…"]}` в `details`. Недействительная авторизация даёт `401 UNAUTHORIZED`, отклонение запроса общей проверкой CSRF — `403`, превышение лимита 100 запросов в минуту на IP — `429 TOO_MANY_REQUESTS` с `Retry-After`, необработанный сбой — `500 INTERNAL_ERROR`.
 
 **Технические подробности.** [AccountController.readLibraryContinue](../../../../src/endpoints/account/controllers/accountController/core/account.controller.ts) → [AccountService.readLibraryContinue](../../../../src/endpoints/account/services/accountService/core/account.service.ts) → [UserItemRepository.readLibraryContinueStatus](../../../../src/entities/userItem/services/userItemRepository/core/userItem.repository.ts). [Запрос](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.body.ts) и [ответ](../../../../src/endpoints/account/services/accountService/dto/libraryContinue.response.ts).
-
-<a id="library-history"></a>
-
-## QUERY /account/library/history
-
-Первый запрос обслуживает блок последних действий. Например, `QUERY /account/library/history` с access-cookie и телом `{"limit":10}`. Следующий запрос передаёт тот же лимит и полученный `nextCursor`. Курсор привязан к пользователю и размеру страницы.
-
-```mermaid
-flowchart TD
-    accTitle: Чтение личной истории библиотеки
-    accDescr: Проверить тело, сессию и курсор, затем прочитать события по владельцу
-    A(["QUERY /account/library/history"]):::http --> B["Проверить тело и access JWT"]:::action
-    B --> C[("Прочитать User и активную UserSession")]:::data
-    C --> D{"Пользователь и сессия найдены?"}
-    D -->|Нет| E(["401 — нет доступа"]):::http
-    D -->|Да| F["Проверить курсор владельца"]:::action
-    F --> G[("Прочитать библиотечные события владельца из UserActivity по createdAt и ID")]:::data
-    G --> I[("Прочитать названия и постеры видимых произведений страницы одним запросом")]:::data
-    I --> H(["200 — события с карточками и следующий курсор"]):::http
-```
-
-История читает библиотечные события из `UserActivity` по ID пользователя из текущей сессии. Запрос сортирует события по `createdAt` и ID по убыванию и читает на одну запись больше лимита, чтобы определить наличие следующей страницы. Для событий самой страницы добавляются название и первый постер. Отсутствующее или удалённое произведение даёт `item: null` без пропуска события. Ответ содержит `items` и `nextCursor`, который равен `null` в конце истории, а также заголовки `Cache-Control: no-store` и `Accept-Query: application/json`.
-
-**Технические подробности.** [Контракт](../contracts/librarySpec.md#личная-история-библиотеки) · [LibraryHistoryController](../../../../src/endpoints/account/controllers/libraryHistoryController/core/libraryHistory.controller.ts) · [LibraryHistoryService](../../../../src/endpoints/account/services/libraryHistoryService/core/libraryHistory.service.ts) · [UserActivityRepository](../../../../src/entities/userActivity/services/userActivityRepository/core/userActivity.repository.ts)
 
 <a id="display-name"></a>
 

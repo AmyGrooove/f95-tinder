@@ -32,7 +32,7 @@
 
 ## Как связаны данные
 
-[`GET /users/:id`](requestFlows/userItems.md#user-profile) выдаёт публичный профиль и сводку по доступным записям библиотеки. [`QUERY /account/library/history`](requestFlows/account.md#library-history) выдаёт владельцу последние действия и страницы истории.
+[`GET /users/:id`](requestFlows/userItems.md#user-profile) выдаёт публичный профиль и сводку по доступным записям библиотеки. [`QUERY /profile/:userId/history`](requestFlows/profile.md#profile-history) выдаёт последние действия и страницы истории своего или чужого профиля пользователю с действующей сессией.
 
 `Item` — единая карточка произведения; EItemType содержит семь типов видео и игр. Точные характеристики хранятся в общих полях и блоках movie/series/game. Tag задаёт справочник категорий, TagItem — связь тега с конкретным Item. Полный список полей и связей — в [сущностях](entities.md).
 

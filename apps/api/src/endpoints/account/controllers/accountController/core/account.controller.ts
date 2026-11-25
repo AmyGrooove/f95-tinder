@@ -11,8 +11,13 @@ import {
 } from "@nestjs/common"
 import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
+import { LibraryQueryRequestInterceptor } from "@endpoints/shared/interceptors/libraryQueryRequestInterceptor"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   DisplayNameBodyDto,
@@ -23,8 +28,6 @@ import {
   LibraryContinueResponseDto,
 } from "@endpoints/account/services/accountService"
 
-import { AccountLibraryRequestInterceptor } from "../../../interceptors/accountLibraryRequest.interceptor"
-
 @ApiTags(SWAGGER_DICTIONARY.tags.account)
 @Controller("account")
 class AccountController {
@@ -34,6 +37,7 @@ class AccountController {
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AccountController_updateDisplayName",
     summary: SWAGGER_DICTIONARY.account.updateDisplayName.summary,
@@ -41,8 +45,11 @@ class AccountController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.account.updateDisplayName.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       {
         status: 401,
@@ -63,6 +70,7 @@ class AccountController {
   @HttpCode(204)
   @Header("Cache-Control", "no-store")
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AccountController_updateUsername",
     summary: SWAGGER_DICTIONARY.account.updateUsername.summary,
@@ -70,8 +78,11 @@ class AccountController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.account.updateUsername.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       {
         status: 401,
@@ -103,6 +114,7 @@ class AccountController {
       status: 200,
       type: WhoamiResponseDto,
       description: SWAGGER_DICTIONARY.account.whoami.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
       {
@@ -117,13 +129,22 @@ class AccountController {
   }
 
   @QueryMethod("library/continue")
-  @UseInterceptors(AccountLibraryRequestInterceptor)
+  @UseInterceptors(LibraryQueryRequestInterceptor)
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
   @Header("Accept-Query", "application/json")
   @ApiCookieAuth("accessCookie")
+  @ApiBody({
+    type: LibraryContinueBodyDto,
+    required: true,
+    examples: {
+      allTypes: {
+        summary: "Продолжить для всех типов произведений",
+        value: {},
+      },
+    },
+  })
   @ApiConsumes("application/json")
-  @ApiBody({ type: LibraryContinueBodyDto, required: true })
   @ApiEndpoint({
     operationId: "AccountController_readLibraryContinue",
     summary: SWAGGER_DICTIONARY.account.libraryContinue.summary,
@@ -132,14 +153,17 @@ class AccountController {
       status: 200,
       type: LibraryContinueResponseDto,
       description: SWAGGER_DICTIONARY.account.libraryContinue.response,
-      headers: {
-        "Accept-Query": {
-          schema: { type: "string", enum: ["application/json"] },
+      headers: SWAGGER_RESPONSE_HEADERS.jsonQuery,
+      examples: {
+        inProgress: {
+          summary: "Есть произведение в процессе",
+          value: { status: "inProgress" },
         },
-        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
       },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       { status: 401, description: SWAGGER_DICTIONARY.common.unauthorized },
       { status: 403, description: SWAGGER_DICTIONARY.common.csrfFailed },

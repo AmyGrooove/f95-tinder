@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common"
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common"
 import { Types } from "mongoose"
 
 import { AuthService } from "@endpoints/auth/services/authService"
@@ -7,7 +11,6 @@ import { ItemRepository } from "@entities/item/services/itemRepository"
 import { DICTIONARY } from "@entities/shared/static/DICTIONARY"
 import { UserRepository } from "@entities/user/services/userRepository"
 import { EUserActivityType } from "@entities/userActivity/schemas/EUserActivityType"
-import type { TUserLibraryActivityType } from "@entities/userActivity/schemas/EUserActivityType"
 import { UserActivityRepository } from "@entities/userActivity/services/userActivityRepository"
 import { CursorService } from "@infrastructure/cache/services/cursorService"
 import { StorageService } from "@infrastructure/storage/services/storageService"
@@ -20,22 +23,18 @@ import { isUndefined } from "@shared/functions/checks/isUndefined"
 import { requestContext } from "@shared/functions/context/requestContext"
 import { REGEX } from "@shared/static/REGEX"
 
-import type { LibraryHistoryBodyDto } from "../dto/libraryHistory.body"
-import { ELibraryHistoryEvent } from "../dto/libraryHistory.response"
-import type { LibraryHistoryResponseDto } from "../dto/libraryHistory.response"
+import type { ProfileHistoryBodyDto } from "../dto/profileHistory.body"
+import { EProfileHistoryEvent } from "../dto/profileHistory.response"
+import type { ProfileHistoryResponseDto } from "../dto/profileHistory.response"
 
-const HISTORY_TYPES: Record<TUserLibraryActivityType, ELibraryHistoryEvent> = {
-  [EUserActivityType.LIBRARY_ITEM_ADDED]: ELibraryHistoryEvent.ADDED,
-  [EUserActivityType.LIBRARY_STATUS_CHANGED]:
-    ELibraryHistoryEvent.STATUS_CHANGED,
-  [EUserActivityType.LIBRARY_RATING_CHANGED]:
-    ELibraryHistoryEvent.RATING_CHANGED,
-  [EUserActivityType.LIBRARY_FAVORITE_CHANGED]:
-    ELibraryHistoryEvent.FAVORITE_CHANGED,
+interface IReadProfileHistoryProps {
+  accessToken: unknown
+  profileUserId: Types.ObjectId
+  body: ProfileHistoryBodyDto
 }
 
 @Injectable()
-class LibraryHistoryService {
+class ProfileHistoryService {
   constructor(
     private readonly authService: AuthService,
     private readonly userRepository: UserRepository,
@@ -45,29 +44,38 @@ class LibraryHistoryService {
     private readonly activityRepository: UserActivityRepository,
   ) {}
 
-  async readPage(
-    accessToken: unknown,
-    props: LibraryHistoryBodyDto,
-  ): Promise<LibraryHistoryResponseDto> {
-    const { cursor, limit = 20 } = props
-
+  async readPage({
+    accessToken,
+    profileUserId,
+    body: { cursor, limit = 20 },
+  }: IReadProfileHistoryProps): Promise<ProfileHistoryResponseDto> {
     const payload = await this.authService.verifyAccessToken(accessToken)
-    const [session, user] = await Promise.all([
+    const [session, viewer] = await Promise.all([
       this.authService.getSession(payload),
       this.userRepository.read.findById(payload.sub, { _id: 1 }),
     ])
 
-    if (isNil(session) || isNil(user)) {
+    if (isNil(session) || isNil(viewer)) {
       throw new UnauthorizedException(DICTIONARY.auth.unauthorized)
     }
 
-    const userId = user._id.toHexString()
-    requestContext.set("userId", userId)
+    requestContext.set("userId", viewer._id.toHexString())
 
-    const scope = ["accountLibraryHistory", userId, limit]
+    const profileId = profileUserId.toHexString()
+    if (!profileUserId.equals(viewer._id)) {
+      const profile = await this.userRepository.read.findById(profileId, {
+        _id: 1,
+      })
+
+      if (isNil(profile)) {
+        throw new NotFoundException(DICTIONARY.user.library.notFound)
+      }
+    }
+
+    const scope = ["accountLibraryHistory", profileId, limit]
     const after = this.readPosition(cursor, scope)
-    const entries = await this.activityRepository.readLibraryPage({
-      userId: user._id,
+    const entries = await this.activityRepository.readPage({
+      userId: profileUserId,
       limit,
       after,
     })
@@ -99,17 +107,36 @@ class LibraryHistoryService {
       items: page.map(({ _id, createdAt, type, payload: eventPayload }) => {
         const itemId = eventPayload.item.toHexString()
 
-        return {
+        const event = {
           id: _id.toHexString(),
           itemId,
           item: cardsById.get(itemId) ?? null,
           createdAt: createdAt.toISOString(),
-          type: HISTORY_TYPES[type],
-          ...("status" in eventPayload && { status: eventPayload.status }),
-          ...("rating" in eventPayload && { rating: eventPayload.rating }),
-          ...("isFavorite" in eventPayload && {
-            isFavorite: eventPayload.isFavorite,
-          }),
+        }
+
+        switch (type) {
+          case EUserActivityType.LIBRARY_ITEM_ADDED:
+          case EUserActivityType.LIBRARY_STATUS_CHANGED:
+            return {
+              ...event,
+              type:
+                type === EUserActivityType.LIBRARY_ITEM_ADDED
+                  ? EProfileHistoryEvent.ADDED
+                  : EProfileHistoryEvent.STATUS_CHANGED,
+              status: eventPayload.status,
+            }
+          case EUserActivityType.LIBRARY_RATING_CHANGED:
+            return {
+              ...event,
+              type: EProfileHistoryEvent.RATING_CHANGED,
+              rating: eventPayload.rating,
+            }
+          case EUserActivityType.LIBRARY_FAVORITE_CHANGED:
+            return {
+              ...event,
+              type: EProfileHistoryEvent.FAVORITE_CHANGED,
+              isFavorite: eventPayload.isFavorite,
+            }
         }
       }),
       nextCursor:
@@ -144,4 +171,4 @@ class LibraryHistoryService {
   }
 }
 
-export { LibraryHistoryService }
+export { ProfileHistoryService }

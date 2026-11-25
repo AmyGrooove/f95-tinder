@@ -7,13 +7,17 @@ import {
   Patch,
   Res,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
+import { ApiConsumes, ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 import { Throttle } from "@nestjs/throttler"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SecurityCookieService } from "@infrastructure/security/services/cookieService"
 
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   AccountService,
@@ -39,6 +43,7 @@ class AccountCredentialsController {
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AccountController_updatePassword",
     summary: SWAGGER_DICTIONARY.account.updatePassword.summary,
@@ -47,6 +52,7 @@ class AccountCredentialsController {
       status: 204,
       description: SWAGGER_DICTIONARY.account.updatePassword.response,
       headers: {
+        ...SWAGGER_RESPONSE_HEADERS.noStore,
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.authCookies,
           schema: { type: "string" },
@@ -54,6 +60,8 @@ class AccountCredentialsController {
       },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       {
         status: 401,
@@ -85,6 +93,7 @@ class AccountCredentialsController {
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AuthController_reissueCode",
     summary: SWAGGER_DICTIONARY.auth.reissueCode.summary,
@@ -94,6 +103,7 @@ class AccountCredentialsController {
       description: SWAGGER_DICTIONARY.auth.reissueCode.response,
       type: LoginCodeResponseDto,
       headers: {
+        ...SWAGGER_RESPONSE_HEADERS.noStore,
         "Set-Cookie": {
           description: SWAGGER_DICTIONARY.common.authCookies,
           schema: { type: "string" },
@@ -101,6 +111,8 @@ class AccountCredentialsController {
       },
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       {
         status: 401,

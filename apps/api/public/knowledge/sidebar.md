@@ -7,6 +7,7 @@ API
 - [Схемы запросов](/api/requestFlows/readme.md)
   - [Вход и сессии](/api/requestFlows/auth.md)
   - [Аккаунт](/api/requestFlows/account.md)
+  - [Профиль](/api/requestFlows/profile.md)
   - [Каталог и поиск](/api/requestFlows/catalog.md)
   - [Библиотека](/api/requestFlows/userItems.md)
   - [Подборки](/api/requestFlows/collections.md)

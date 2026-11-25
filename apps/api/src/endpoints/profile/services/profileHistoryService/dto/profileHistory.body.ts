@@ -2,7 +2,7 @@ import { ApiPropertyOptional, PickType } from "@nestjs/swagger"
 
 import { QueryFieldsDto } from "@entities/shared/dto/query/queryFields.dto"
 
-class LibraryHistoryBodyDto extends PickType(QueryFieldsDto, [
+class ProfileHistoryBodyDto extends PickType(QueryFieldsDto, [
   "limit",
   "cursor",
 ]) {
@@ -10,4 +10,4 @@ class LibraryHistoryBodyDto extends PickType(QueryFieldsDto, [
   declare limit?: QueryFieldsDto["limit"]
 }
 
-export { LibraryHistoryBodyDto }
+export { ProfileHistoryBodyDto }

@@ -12,7 +12,10 @@ import {
   UserItemService,
 } from "@endpoints/userItem/services/userItemService"
 import { MongoObjectIdHandler } from "@infrastructure/database/services/mongoObjectIdHandler"
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { REGEX } from "@shared/static/REGEX"
 
 const { common, item, tags } = SWAGGER_DICTIONARY
@@ -28,6 +31,8 @@ class ItemController {
   @Get(":id")
   @ApiParam({
     name: "id",
+    type: String,
+    description: item.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
@@ -45,7 +50,6 @@ class ItemController {
       {
         status: 429,
         description: common.rateLimitExceeded,
-        headers: { "Retry-After": { schema: { type: "integer" } } },
       },
       { status: 500, description: item.internalError },
     ],
@@ -59,17 +63,24 @@ class ItemController {
   @ApiCookieAuth("accessCookie")
   @ApiParam({
     name: "id",
+    type: String,
+    description: item.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
     operationId: "ItemController_getUserEntry",
     summary: item.getUserEntry,
+    description: item.getUserEntryDescription,
     response: {
       status: 200,
       description: item.userResponse,
       type: ItemUserResponseDto,
-      headers: {
-        "Cache-Control": { schema: { type: "string", enum: ["no-store"] } },
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
+      examples: {
+        absent: {
+          summary: "Произведения нет в личной библиотеке",
+          value: { entry: null },
+        },
       },
     },
     errors: [
@@ -79,7 +90,6 @@ class ItemController {
       {
         status: 429,
         description: common.rateLimitExceeded,
-        headers: { "Retry-After": { schema: { type: "integer" } } },
       },
       { status: 500, description: item.userInternalError },
     ],

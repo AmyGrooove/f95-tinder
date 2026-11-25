@@ -10,10 +10,19 @@ import {
   Patch,
   Post,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiParam, ApiTags } from "@nestjs/swagger"
+import {
+  ApiConsumes,
+  ApiBody,
+  ApiCookieAuth,
+  ApiParam,
+  ApiTags,
+} from "@nestjs/swagger"
 import { Types } from "mongoose"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
 
 import {
@@ -35,6 +44,17 @@ class UserItemController {
 
   @Post()
   @HttpCode(204)
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
+  @ApiBody({
+    type: CreateUserItemBodyDto,
+    required: true,
+    examples: {
+      planned: {
+        summary: "Добавить произведение в планы",
+        value: { itemId: "507f1f77bcf86cd799439011", status: "planned" },
+      },
+    },
+  })
   @ApiEndpoint({
     operationId: "UserItemController_create",
     summary: SWAGGER_DICTIONARY.userItem.create,
@@ -42,8 +62,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.create,
   })
   @Header("Cache-Control", "no-store")
   async create(
@@ -55,6 +76,7 @@ class UserItemController {
 
   @Post("skip")
   @HttpCode(204)
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "UserItemController_skip",
     summary: SWAGGER_DICTIONARY.userItem.skip,
@@ -62,8 +84,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.exclude,
   })
   @Header("Cache-Control", "no-store")
   async skip(
@@ -75,6 +98,7 @@ class UserItemController {
 
   @Post("block")
   @HttpCode(204)
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "UserItemController_block",
     summary: SWAGGER_DICTIONARY.userItem.block,
@@ -82,8 +106,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.exclude,
   })
   @Header("Cache-Control", "no-store")
   async block(
@@ -98,8 +123,10 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.userItem.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
+  @ApiConsumes("application/json")
   @ApiEndpoint({
     operationId: "UserItemController_update",
     summary: SWAGGER_DICTIONARY.userItem.update,
@@ -107,8 +134,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.update,
   })
   @Header("Cache-Control", "no-store")
   async update(
@@ -124,6 +152,7 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.userItem.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiEndpoint({
@@ -133,8 +162,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.removed,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.remove,
   })
   @Header("Cache-Control", "no-store")
   remove(
@@ -149,7 +179,18 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.userItem.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
+  })
+  @ApiConsumes("application/json")
+  @ApiBody({
+    type: CreateAttemptBodyDto,
+    examples: {
+      viewingProgress: {
+        summary: "Попытка с прогрессом просмотра",
+        value: { progress: 35, unit: "minute" },
+      },
+    },
   })
   @ApiEndpoint({
     operationId: "UserItemController_createAttempt",
@@ -158,8 +199,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.createAttempt,
   })
   @Header("Cache-Control", "no-store")
   async createAttempt(
@@ -175,13 +217,16 @@ class UserItemController {
   @ApiParam({
     name: "id",
     type: String,
+    description: SWAGGER_DICTIONARY.userItem.id,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
   @ApiParam({
     name: "attemptId",
     type: String,
+    description: SWAGGER_DICTIONARY.userItem.attemptId,
     schema: { type: "string", pattern: REGEX.MONGO_OBJECT_ID.source },
   })
+  @ApiConsumes("application/json")
   @ApiEndpoint({
     operationId: "UserItemController_updateAttempt",
     summary: SWAGGER_DICTIONARY.userItem.updateAttempt,
@@ -189,8 +234,9 @@ class UserItemController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.userItem.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
-    errors: USER_ITEM_ERRORS,
+    errors: USER_ITEM_ERRORS.updateAttempt,
   })
   @Header("Cache-Control", "no-store")
   async updateAttempt(

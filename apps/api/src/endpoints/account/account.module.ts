@@ -4,7 +4,6 @@ import { RedisModule } from "@nestjs-redis/client"
 import { AuthModule } from "@endpoints/auth/auth.module"
 import { ItemModule } from "@entities/item/item.module"
 import { UserItemModule } from "@entities/userItem/userItem.module"
-import { UserActivityModule } from "@entities/userActivity/userActivity.module"
 import { UserSessionModule } from "@entities/userSession/userSession.module"
 import { UserModule } from "@entities/user/user.module"
 import { CacheModule } from "@infrastructure/cache/cache.module"
@@ -21,21 +20,18 @@ import { AccountAvatarController } from "@endpoints/account/controllers/accountA
 import { AccountSetupController } from "@endpoints/account/controllers/accountSetupController"
 import { AccountEmailController } from "@endpoints/account/controllers/accountEmailController"
 import { AccountCredentialsController } from "@endpoints/account/controllers/accountCredentialsController"
-import { LibraryHistoryController } from "@endpoints/account/controllers/libraryHistoryController"
 import { AccountService } from "@endpoints/account/services/accountService"
 import { AccountAvatarService } from "@endpoints/account/services/accountAvatarService"
 import { AccountAvatarEventsService } from "@endpoints/account/services/accountAvatarEventsService"
 import { AccountAvatarCleanupService } from "@endpoints/account/services/accountAvatarCleanupService"
 import { AccountSetupService } from "@endpoints/account/services/accountSetupService"
 import { AccountEmailService } from "@endpoints/account/services/accountEmailService"
-import { LibraryHistoryService } from "@endpoints/account/services/libraryHistoryService"
 
 @Module({
   imports: [
     AuthModule,
     ItemModule,
     UserItemModule,
-    UserActivityModule,
     UserModule,
     UserSessionModule,
     SecurityModule,
@@ -60,7 +56,6 @@ import { LibraryHistoryService } from "@endpoints/account/services/libraryHistor
     AccountSetupController,
     AccountEmailController,
     AccountCredentialsController,
-    LibraryHistoryController,
   ],
   providers: [
     AccountService,
@@ -69,7 +64,6 @@ import { LibraryHistoryService } from "@endpoints/account/services/libraryHistor
     AccountAvatarCleanupService,
     AccountSetupService,
     AccountEmailService,
-    LibraryHistoryService,
   ],
 })
 class AccountModule {}

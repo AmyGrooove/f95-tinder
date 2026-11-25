@@ -7,11 +7,15 @@ import {
   Patch,
   Post,
 } from "@nestjs/common"
-import { ApiCookieAuth, ApiTags } from "@nestjs/swagger"
+import { ApiConsumes, ApiCookieAuth, ApiTags } from "@nestjs/swagger"
 import { Throttle } from "@nestjs/throttler"
 
-import { ApiEndpoint } from "@infrastructure/logger/decorators/ApiEndpoint"
+import {
+  ApiEndpoint,
+  SWAGGER_RESPONSE_HEADERS,
+} from "@infrastructure/logger/decorators/ApiEndpoint"
 import { SWAGGER_DICTIONARY } from "@endpoints/shared/static/SWAGGER_DICTIONARY"
+import { SWAGGER_REQUEST_ERRORS } from "@endpoints/shared/static/SWAGGER_REQUEST_ERRORS"
 
 import {
   EmailBodyDto,
@@ -29,6 +33,7 @@ class AccountEmailController {
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AccountController_confirmEmail",
     summary: SWAGGER_DICTIONARY.account.confirmEmail.summary,
@@ -36,8 +41,11 @@ class AccountEmailController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.account.confirmEmail.response,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       {
         status: 400,
         description: SWAGGER_DICTIONARY.common.invalidConfirmation,
@@ -66,6 +74,7 @@ class AccountEmailController {
   @Header("Cache-Control", "no-store")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiCookieAuth("accessCookie")
+  @ApiConsumes("application/json", "application/x-www-form-urlencoded")
   @ApiEndpoint({
     operationId: "AccountController_requestEmail",
     summary: SWAGGER_DICTIONARY.account.requestEmail.summary,
@@ -73,8 +82,11 @@ class AccountEmailController {
     response: {
       status: 204,
       description: SWAGGER_DICTIONARY.common.mailQueued,
+      headers: SWAGGER_RESPONSE_HEADERS.noStore,
     },
     errors: [
+      SWAGGER_REQUEST_ERRORS.bodyTooLarge,
+      SWAGGER_REQUEST_ERRORS.unsupportedMediaType,
       { status: 400, description: SWAGGER_DICTIONARY.common.invalidRequest },
       {
         status: 401,
